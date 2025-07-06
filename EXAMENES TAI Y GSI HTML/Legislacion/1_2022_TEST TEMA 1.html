@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMA 1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            position: relative; /* Needed for modal positioning */
+        }
+        .question-card {
+            background-color: #e0f2f7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .answer-option {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        .answer-option:hover {
+            background-color: #f0f4f8;
+            border-color: #9bd3e6;
+        }
+        .answer-option.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .answer-option.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .answer-option.selected {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5);
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+        }
+        .feedback.show {
+            display: block;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        .nav-button, .reset-button, .results-button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:hover, .reset-button:hover, .results-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .reset-button {
+            background-color: #e74c3c;
+        }
+        .reset-button:hover {
+            background-color: #c0392b;
+        }
+        .results-button {
+            background-color: #27ae60;
+        }
+        .results-button:hover {
+            background-color: #229954;
+        }
+        .results-container {
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .results-container h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .results-item {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #bdc3c7;
+        }
+        .results-item:last-child {
+            border-bottom: none;
+        }
+        .results-item span:first-child {
+            font-weight: bold;
+        }
+        .results-item .count {
+            background-color: #ffffff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+        .results-item.correct .count { color: #28a745; }
+        .results-item.incorrect .count { color: #dc3545; }
+        .results-item.unanswered .count { color: #f39c12; }
+
+        /* Radio button styling */
+        .radio-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .radio-input {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            margin-right: 10px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+        }
+        .radio-input:checked {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        .radio-input:checked::before {
+            content: '';
+            display: block;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .answer-option.correct .radio-input {
+            border-color: #28a745;
+        }
+        .answer-option.correct .radio-input:checked {
+            background-color: #28a745;
+        }
+        .answer-option.incorrect .radio-input {
+            border-color: #dc3545;
+        }
+        .answer-option.incorrect .radio-input:checked {
+            background-color: #dc3545;
+        }
+
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s ease;
+        }
+        .modal-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        .modal-button.confirm {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .modal-button.confirm:hover {
+            background-color: #c0392b;
+        }
+        .modal-button.cancel {
+            background-color: #cccccc;
+            color: #333;
+        }
+        .modal-button.cancel:hover {
+            background-color: #b0b0b0;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="text-3xl font-extrabold text-center mb-8 text-blue-800">TEMA 1</h1>
+        <div id="quiz-content">
+            <!-- Questions will be loaded here -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button">Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+        <div class="flex justify-center mt-5">
+            <button id="reset-button" class="reset-button mr-4">Reiniciar Test</button>
+            <button id="show-results-button" class="results-button">Ver Resultados</button>
+        </div>
+        <div id="results-display" class="results-container hidden">
+            <h2>Resultados del Test</h2>
+            <div class="results-item correct">
+                <span>Correctas:</span> <span id="correct-count" class="count">0</span>
+            </div>
+            <div class="results-item incorrect">
+                <span>Incorrectas:</span> <span id="incorrect-count" class="count">0</span>
+            </div>
+            <div class="results-item unanswered">
+                <span>Sin Contestar:</span> <span id="unanswered-count" class="count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <p>¿Estás seguro de que quieres reiniciar el test? Se borrarán todas tus respuestas.</p>
+            <div class="modal-buttons">
+                <button id="modal-confirm-button" class="modal-button confirm">Sí, Reiniciar</button>
+                <button id="modal-cancel-button" class="modal-button cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz data extracted from the provided document
+        const quizData = [
+            {
+                question: "Señale la contestación INCORRECTA. Según establecen los principios rectores de la política social y económica recogidos en el Capítulo Tercero del Título Primero de la Constitución Española de 1978, los poderes públicos promoverán:",
+                options: [
+                    "y tutelarán el acceso a la cultura, a la que todos tienen derecho.",
+                    "las condiciones para la participación libre y eficaz de la juventud en el desarrollo político, social, económico y cultural.",
+                    "la información y la educación de los consumidores y usuarios.",
+                    "**las organizaciones profesionales que contribuyan a la defensa de los intereses económicos que les sean propios.**"
+                ],
+                correctAnswerIndex: 3 // Index of the bolded answer
+            },
+            {
+                question: "Dentro de los derechos y deberes de los ciudadanos recogidos en la Sección 2ª del Capítulo Segundo del Título I de la Constitución Española, se reconoce el derecho:",
+                options: [
+                    "de los trabajadores y empresarios a adoptar medidas de conflicto colectivo.",
+                    "a la propiedad privada y a la herencia delimitando su contenido la función social de estos derechos por ley orgánica.",
+                    "a la huelga de los trabajadores para la defensa de sus intereses.",
+                    "**de petición individual y colectiva, por escrito, en la forma y con los efectos que determine la ley.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Según determina el artículo 27 de la Constitución Española es FALSO que:",
+                options: [
+                    "Se reconoce la libertad de enseñanza.",
+                    "Los poderes públicos garantizan el derecho de todos a la educación, mediante una programación general de la enseñanza, con participación efectiva de todos los sectores afectados y la creación de centros docentes.",
+                    "Los poderes públicos garantizan el derecho que asiste a los padres para que sus hijos reciban la formación religiosa y moral que esté de acuerdo con sus propias convicciones.",
+                    "**Se reconoce a las personas físicas, en casos excepcionales, y a las personas jurídicas, en todo caso, la libertad de creación de centros docentes, dentro del respeto a los principios constitucionales.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Son derechos reconocidos en la Constitución Española:",
+                options: [
+                    "El derecho de reunión.",
+                    "El derecho a participar en los asuntos públicos, directamente o por medio de apoderados.",
+                    "El derecho a obtener la tutela efectiva de los jueces y tribunales en el ejercicio de sus derechos e intereses legítimos, sin que, en ningún caso, pueda producirse indefensión.",
+                    "**Nadie puede ser condenado o sancionado por acciones u omisiones que en el momento de producirse no constituyan delito, falta o infracción administrativa salvo que la legislación lo permita.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Es FALSO que el artículo 16 de la Constitución Española:",
+                options: [
+                    "Garantice la libertad ideológica, religiosa y de culto de los individuos y las comunidades.",
+                    "Dispone que nadie podrá ser obligado a declarar sobre su ideología, religión, creencias y afiliación sindical.",
+                    "Señale que ninguna confesión tendrá carácter estatal.",
+                    "**Establece que los poderes públicos tendrán en cuenta las creencias religiosas de la sociedad española y mantendrán las consiguientes relaciones de cooperación con la Iglesia Católica y las demás confesiones.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "La Constitución Española de 1978 tiene:",
+                options: [
+                    "89 artículos.",
+                    "139 artículos.",
+                    "**169 artículos.**",
+                    "189 artículos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El Título IV de la Constitución Española de 1978 se titula:",
+                options: [
+                    "**Del Gobierno y de la Administración.**",
+                    "Economía y Hacienda.",
+                    "De las Cortes Generales.",
+                    "De la organización territorial del Estado."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La Constitución Española de 1978 diseña la estructura del Estado regulando los órganos básicos que ejercen los poderes estatales. El sistema español conserva el diseño de división de poderes entre:",
+                options: [
+                    "Monárquico, ejecutivo y legislativo.",
+                    "**Ejecutivo, legislativo y judicial.**",
+                    "Jefatura del Estado, Cortes Generales y Gobierno.",
+                    "Monarquía parlamentaria y ejecutivo parlamentario."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El artículo 1 de la Constitución Española de 1978 establece que España se constituye en un Estado social y democrático de Derecho, que propugna como valores superiores de su ordenamiento jurídico:",
+                options: [
+                    "La libertad, la justicia, la igualdad y el pluralismo sindical.",
+                    "La libertad de todos los hombres, su igualdad y el pluralismo en sus opiniones.",
+                    "**La libertad, la justicia, la igualdad y el pluralismo político.**",
+                    "La libertad, la justicia, la igualdad entre los géneros y el pluralismo político."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El artículo 3 de la Constitución Española de 1978 dispone, en relación con las lenguas, que:",
+                options: [
+                    "El castellano es la lengua española oficial del Estado.",
+                    "Todos los españoles tienen el deber de conocerla y el derecho a usarla en cualquier Comunidad Autónoma salvo lo que establezcan sus Estatutos de Autonomía.",
+                    "Las distintas modalidades lingüísticas de España son un patrimonio cultural que será objeto de respeto y protección según determine la ley.",
+                    "**Las demás lenguas españolas serán oficiales en todas las Comunidades Autónomas.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "La reforma constitucional se encuentra en el Título de la Constitución Española de 1978:",
+                options: [
+                    "VI.",
+                    "VII.",
+                    "IX.",
+                    "**X.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "La soberanía nacional reside en:",
+                options: [
+                    "En el Gobierno del que emanan los poderes del Estado.",
+                    "En las Cortes Generales formadas por los representantes del pueblo.",
+                    "**En el pueblo español del que emanan los poderes del Estado.**",
+                    "En el Poder Judicial que controla los poderes del Estado."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La Constitución Española de 1978, en su artículo 9.3 garantiza:",
+                options: [
+                    "El principio de legalidad.",
+                    "La publicidad de las normas.",
+                    "La interdicción de la arbitrariedad de los poderes públicos.",
+                    "**Todas las contestaciones son correctas.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Se entiende por jerarquía normativa:",
+                options: [
+                    "Que los ciudadanos y los poderes públicos están sujetos a la Constitución y al resto del ordenamiento jurídico.",
+                    "Que los ciudadanos tienen que conocer en todo momento que normas le son aplicables.",
+                    "**Que las normas inferiores no pueden ir contra preceptos de normas superiores.**",
+                    "Que no se puede aplicar una disposición con efectos retroactivos cuando pueda producir un daño ya sea material como moral."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El artículo 10 de la Constitución Española de 1978 establece que como fundamento del orden político y de la paz social:",
+                options: [
+                    "El respeto a la ley orgánica.",
+                    "El libre desarrollo de la personalidad física o jurídica.",
+                    "**La dignidad de la persona.**",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La Constitución Española de 1978 dispone que las normas relativas a los derechos fundamentales y a las libertades que la Constitución reconoce se interpretarán:",
+                options: [
+                    "De conformidad con los tratados nacionales sobre las mismas materias ratificados por España.",
+                    "**De conformidad con la Declaración Universal de Derechos Humanos.**",
+                    "De conformidad con lo que determinen las normas jurídicas de la Unión Europea.",
+                    "De conformidad con las decisiones de las Naciones Unidas en materia de igualdad."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Aprobada la reforma constitucional por las Cortes Generales, será sometida a referéndum para su ratificación cuando así lo soliciten, dentro de los quince días siguientes a su aprobación:",
+                options: [
+                    "Cincuenta Diputados.",
+                    "Cincuenta Senadores.",
+                    "**Una décima parte de los miembros de cualquiera de las Cámaras.**",
+                    "Una décima parte de los miembros del Congreso de los Diputados."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Según establece la Constitución Española de 1978 las penas privativas de libertad:",
+                options: [
+                    "Estarán orientadas hacia la educación de los condenados.",
+                    "Podrán consistir, en sentencias muy graves, en trabajos forzados.",
+                    "**Y las medidas de seguridad estarán orientadas hacia la reeducación y reinserción social.**",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El artículo 30 de la Constitución Española dispone que:",
+                options: [
+                    "Podrá establecerse un servicio civil para el cumplimiento de fines de interés general.",
+                    "**Mediante ley orgánica podrán regularse los deberes de los ciudadanos en los casos de grave riesgo, catástrofe o calamidad pública.**",
+                    "La ley fijará las obligaciones militares de los objetores de conciencia.",
+                    "Las causas de exención del servicio militar no impedirán la imposición de medidas sustitutorias."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Según el artículo 18.2 de la Constitución Española de 1978:",
+                options: [
+                    "El domicilio es inviolable salvo en caso de delitos de terrorismo.",
+                    "**Ninguna entrada o registro podrá hacerse en el domicilio sin consentimiento del titular o por resolución judicial.**",
+                    "En caso de flagrante delito podrá autorizarse, necesariamente, la entrada por resolución judicial.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El artículo 20 de la Constitución Española de 1978 establece que se reconocen y protegen los derechos:",
+                options: [
+                    "A expresar y difundir libremente los pensamientos, ideas y opiniones mediante la palabra, el escrito o cualquier otro medio de reproducción salvo censura previa administrativa.",
+                    "A comunicar o recibir libremente información veraz por cualquier medio de difusión.",
+                    "A la producción y creación literaria, artística, científica y técnica, dentro de los límites que establezca la ley.",
+                    "**Todas las contestaciones son correctas.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Todas las personas tienen derecho a obtener la tutela efectiva de los jueces y tribunales en el ejercicio de sus derechos e intereses legítimos, sin que, en ningún caso, pueda producirse indefensión. Asimismo, todo tienen derecho:",
+                options: [
+                    "**Al juez ordinario predeterminado por la ley.**",
+                    "A un proceso público sin demasiadas dilaciones indebidas.",
+                    "A la elección del Juez o Magistrado de su conveniencia.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "El Reglamento del Congreso de los Diputados prevé que las proposiciones procedentes de la propia Cámara para iniciar la reforma de la Constitución deberán ir suscritas por:",
+                options: [
+                    "**Dos grupos parlamentarios o por la quinta parte de los Diputados.**",
+                    "Dos tercios de los Diputados si se trata de una reforma extraordinaria.",
+                    "Cincuenta senadores que no pertenezcan a un único grupo parlamentario.",
+                    "Tres quintos de los Diputados si se trata de una reforma ordinaria."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "El artículo 22 de la Constitución Española de 1978 reconoce el derecho de asociación y determina que:",
+                options: [
+                    "Las asociaciones que persigan fines o utilicen medios no tipificados como delitos son ilegales.",
+                    "Se prohíben las asociaciones que oculten sus verdaderas finalidades y objetivos.",
+                    "Las asociaciones constituidas al amparo de este artículo deberán inscribirse en un registro a los solos efectos de cotizaciones de su personal.",
+                    "**Las asociaciones sólo podrán ser disueltas o suspendidas en sus actividades en virtud de resolución judicial motivada.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "La detención preventiva no podrá durar más del tiempo estrictamente necesario para la realización de las averiguaciones tendentes al esclarecimiento de los hechos y, en todo caso, el detenido deberá ser puesto en libertad o a disposición de la autoridad judicial, en el plazo máximo de:",
+                options: [
+                    "Cuarenta y ocho horas.",
+                    "**Setenta y dos horas.**",
+                    "Setenta y dos horas prorrogables por decisión judicial.",
+                    "Cuarenta y ocho horas prorrogables por decisión judicial."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La persona del Rey de España es inviolable, lo que significa:",
+                options: [
+                    "Que tiene inmunidad penal y únicamente puede ser detenido cuando cometa algún delito.",
+                    "Que tiene inmunidad administrativa y no se le puede sancionar con multas.",
+                    "Que tiene inmunidad parlamentaria y solo puede ser detenido en el Parlamento.",
+                    "**Que tiene inmunidad penal y no puede ser detenido.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "El Rey es el Jefe del Estado, símbolo de su unidad y permanencia y además:",
+                options: [
+                    "**Arbitra y modera el funcionamiento regular de las instituciones.**",
+                    "Asume la más alta representación del Gobierno español.",
+                    "Ejerce las funciones que le atribuyen expresamente las Cortes Generales.",
+                    "Su título es el de Rey de España y podrá utilizar los demás que le otorguen las Cortes Generales."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Los actos del Rey deberán ser refrendados:",
+                options: [
+                    "Siempre.",
+                    "**En la forma establecida en el artículo 64 de la Constitución, careciendo de validez sin dicho refrendo, en todo caso.**",
+                    "No será necesario para realizar el nombramiento de los miembros civiles y militares de su Casa.",
+                    "Por el Presidente del Gobierno y demás Altos Cargos de la Administración del Estado."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El Rey recibe de los Presupuestos del Estado una cantidad global para el sostenimiento de su Familia y Casa:",
+                options: [
+                    "**Y distribuye libremente la misma.**",
+                    "El Ministerio de Hacienda será competente para aprobar la cantidad que se le asigne.",
+                    "Los actos de administración de sus bienes y patrimonio no requieren refrendo.",
+                    "El refrendo lo realiza el Consejo de Ministros."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Según establece el artículo 60.1 de la Constitución Española de 1978 sobre el ejercicio de la tutela:",
+                options: [
+                    "Se ejercerá por mandato constitucional y siempre en nombre del Rey.",
+                    "Su ejercicio no será incompatible con cualquier cargo de representación política.",
+                    "**Si no lo hubiese nombrado el Rey difunto, será tutor el padre o la madre mientras permanezcan viudos.**",
+                    "En ningún caso podrá ser nombrado tutor por las Cortes Generales."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Si no hubiera ninguna persona a quien corresponda la Regencia, está será nombrada por las Cortes Generales:",
+                options: [
+                    "**Y se compondrá de una, tres o cinco personas.**",
+                    "Y se compondrá de una, dos o tres personas.",
+                    "Y se compondrá, en todo caso, de una o tres personas.",
+                    "Y se compondrá de una persona salvo caso especiales que permitirían el nombramiento de dos o tres personas."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Son funciones del Rey según el artículo 63 de la Constitución Española de 1978:",
+                options: [
+                    "Declarar la guerra.",
+                    "Hacer la paz.",
+                    "Manifestar el consentimiento del Gobierno para obligarse internacionalmente por medio de tratados.",
+                    "**Los representantes extranjeros en España están acreditados ante él.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Corresponde al Rey:",
+                options: [
+                    "Sancionar y aprobar las leyes.",
+                    "**Expedir los decretos acordados en el Consejo de Ministros.**",
+                    "Autorizar indultos generales.",
+                    "Presidir las sesiones del Consejo de Ministros, cuando lo estime oportuno el Presidente del Gobierno."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Es cierto que según el artículo 57 de la Constitución Española:",
+                options: [
+                    "Extinguidas todas las líneas llamadas en Derecho, el Congreso de los Diputados proveerá a la sucesión en la Corona en la forma que más convenga a los intereses de España.",
+                    "Aquellas personas que teniendo derecho a la sucesión en el trono contrajeran matrimonio contra la expresa prohibición del Rey quedarán excluidas en la sucesión a la Corona salvo autorización de las Cortes Generales.",
+                    "**Las abdicaciones y renuncias y cualquier duda de hecho o de derecho que ocurra en el orden de sucesión a la Corona se resolverán por una ley orgánica.**",
+                    "El Príncipe o Princesa herederos, desde su nacimiento o desde que se produzca el hecho que origine el llamamiento, tendrán la dignidad de Príncipe o Princesa de Asturias."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Será tutor del Rey menor:",
+                options: [
+                    "La persona que hubiera nombrado el Rey inhabilitado.",
+                    "La persona o personas que hubiesen designado las Cortes Generales.",
+                    "Si no hubiera ninguna personal a quien corresponda la Tutoría, esta será nombrada por las Cortes Generales, y se compondrá de una, tres o cinco personas.",
+                    "**Si no lo hubiese nombrado el Rey difunto, lo será el padre o la madre, mientras permanezcan viudos.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Para ejercer la Regencia es preciso ser:",
+                options: [
+                    "**Español y mayor de edad.**",
+                    "Español de nacimiento y mayor de edad.",
+                    "Nacional de cualquier país de la Unión Europea y mayor de edad.",
+                    "De cualquier nación con lazos históricos con España y su Corona."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La Reina consorte o el consorte de la Reina:",
+                options: [
+                    "Podrán asumir algunas funciones constitucionales.",
+                    "**No podrán asumir funciones constitucionales, salvo lo dispuesto para la Regencia.**",
+                    "Podrán asumir las funciones constitucionales que les atribuyan las Cortes Generales.",
+                    "No podrán asumir las funciones constitucionales, salvo lo dispuesto para la tutoría."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "En defecto de previsión constitucional, el tutor será nombrado por las Cortes Generales:",
+                options: [
+                    "Pudiendo excepcionalmente acumularse los cargos de Regente y de tutor siempre que sea en un familiar en línea directa.",
+                    "**No podrán acumularse los cargos de Regente y tutor, en ningún caso.**",
+                    "Podrán acumularse los cargos de Regente y tutor en un ascendiente directo del Rey.",
+                    "Todas las contestaciones son incorrectas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones es incorrecta?",
+                options: [
+                    "**Los jueces administran justicia en nombre del Rey y en su defecto en nombre del Regente.**",
+                    "El Rey confiere empleos civiles y militares y concede honores y distinciones.",
+                    "Corresponde al Rey el mando supremo de las Fuerzas Armadas.",
+                    "Se atribuye al Rey el alto patronazgo de las Reales Academias."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La sucesión en el trono seguirá el orden regular de:",
+                options: [
+                    "Primogenitura y representación.",
+                    "**Primogenitura y descendencia.**",
+                    "Descendencia y representación.",
+                    "Representación y herencia."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "En el orden regular de la sucesión al trono será preferida:",
+                options: [
+                    "**La línea anterior a la posterior de más edad.**",
+                    "En la misma línea el grado más remoto al más próximo.",
+                    "En el mismo grado, el varón o la mujer.",
+                    "En mismo sexo, la persona de más edad a la de menos."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Quién refrendará los Reales Decretos en el caso de propuesta de candidato a la Presidencia del Gobierno?",
+                options: [
+                    "**El Presidente del Congreso de los Diputados.**",
+                    "El presidente de las Cortes Generales.",
+                    "El Presidente del Congreso de los Diputados y simultáneamente el Presidente del Senado.",
+                    "Las propuestas no requieren refrendo."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Según establece el artículo 61 de la Constitución Española el Rey, al ser proclamado ante las Cortes Generales, prestará juramento, entre otras funciones, la de:",
+                options: [
+                    "**Desempeñar fielmente sus funciones.**",
+                    "Guardar y hacer guardar la Constitución con fidelidad al Rey.",
+                    "Guardar y hacer guardar los Estatutos de Autonomía aprobados por los Parlamentos de las Comunidades Autónomas.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Corresponde al Rey:",
+                options: [
+                    "Disolver las Cortes Generales cuando lo estime pertinente.",
+                    "Nombrar y separar a los miembros del Gobierno, a propuesta del Presidente de las Cortes Generales.",
+                    "**Expedir los decretos acordados en el Consejo de Ministros y los decretos-leyes una vez convalidados por el Congreso de los Diputados.**",
+                    "Ejercer el derecho de gracia con arreglo a la ley, que no podrá autorizar indultos generales."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿A quién le corresponde declarar la guerra y hacer la paz?",
+                options: [
+                    "Al Rey, previa autorización del Congreso de los Diputados.",
+                    "Al Rey, previa autorización del Presidente del Gobierno.",
+                    "**Al Rey, previa autorización de las Cortes Generales.**",
+                    "Al Rey, previa autorización del Consejo de Ministros."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Son potestades derivadas de la función arbitral del Rey:",
+                options: [
+                    "**Designa a la persona que ha de someterse a la investidura del Congreso de los Diputados y, en su caso, lo nombra Presidente del Gobierno.**",
+                    "Nombra y releva libremente a los miembros civiles y militares de su Casa y del Ministerio de Defensa.",
+                    "Sanciona y promulga las leyes.",
+                    "Expide los Decretos-Leyes."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La forma política del Estado español es según el artículo 1.3 de la Constitución Española de 1978::",
+                options: [
+                    "La Monarquía, social y democrática de Derecho.",
+                    "**La Monarquía parlamentaria.**",
+                    "La Monarquía parlamentaria y autonómica.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Según establece el artículo 168 de la Constitución Española de 1978 cuando se propusiere la revisión total de la Constitución o una parcial que afecte al Título II, se procederá a la aprobación del principio:",
+                options: [
+                    "Por mayoría de tres quintos de cada Cámara.",
+                    "Por mayoría de tres quintos del Congreso de los Diputados.",
+                    "**Por mayoría de dos tercios de cada Cámara.**",
+                    "Por mayoría de dos tercios del Congreso de los Diputados."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El ejercicio de la tutela es:",
+                options: [
+                    "Compatible con el cargo de Diputado o Senador.",
+                    "Es Incompatible con el cargo de Diputado pero es compatible con el cargo de Senador.",
+                    "Es compatible con el cargo de Diputado pero no de Senador.",
+                    "**Es incompatible con el de todo cargo o representación política.**"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Señale cuál de las siguientes funciones está atribuida constitucionalmente al Rey:",
+                options: [
+                    "El Rey concede honores y distinciones.",
+                    "Al Rey le corresponde acreditar embajadores y otros representantes diplomáticos.",
+                    "Nombrar y separar a los miembros del Gobierno, a propuesta de su Presidente.",
+                    "**Todas las contestaciones son correctas.**"
+                ],
+                correctAnswerIndex: 3
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores the index of the selected answer for each question
+
+        // Get modal elements
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalConfirmButton = document.getElementById('modal-confirm-button');
+        const modalCancelButton = document.getElementById('modal-cancel-button');
+
+        // Function to show the custom modal
+        function showModal() {
+            confirmationModal.classList.add('show');
+        }
+
+        // Function to hide the custom modal
+        function hideModal() {
+            confirmationModal.classList.remove('show');
+        }
+
+        // Initialize or load state from LocalStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Initialize userAnswers array with nulls if no saved state
+                userAnswers = new Array(quizData.length).fill(null);
+            }
+            renderQuestion();
+        }
+
+        // Save state to LocalStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Render the current question
+        function renderQuestion() {
+            const quizContent = document.getElementById('quiz-content');
+            const question = quizData[currentQuestionIndex];
+            quizContent.innerHTML = `
+                <div class="question-card" data-question-index="${currentQuestionIndex}">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${question.question}</p>
+                    <div class="options-container">
+                        ${question.options.map((option, index) => `
+                            <label class="answer-option" data-option-index="${index}">
+                                <input type="radio" name="question-${currentQuestionIndex}" value="${index}" class="radio-input" ${userAnswers[currentQuestionIndex] === index ? 'checked' : ''} ${userAnswers[currentQuestionIndex] !== null ? 'disabled' : ''}>
+                                ${option.replace(/\*\*(.*?)\*\*/g, '$1')}
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+
+            // Add event listeners to options
+            const options = quizContent.querySelectorAll('.answer-option');
+            options.forEach(option => {
+                option.addEventListener('click', (event) => {
+                    // Prevent re-answering if already answered
+                    if (userAnswers[currentQuestionIndex] !== null) {
+                        return;
+                    }
+
+                    const selectedOptionIndex = parseInt(option.dataset.optionIndex);
+                    userAnswers[currentQuestionIndex] = selectedOptionIndex;
+                    saveQuizState(); // Save answer immediately
+
+                    checkAnswer(option, selectedOptionIndex);
+                    updateNavigationButtons(); // Update button state after answering
+                });
+            });
+
+            // If the question was already answered, show feedback and disable options
+            if (userAnswers[currentQuestionIndex] !== null) {
+                const selectedOption = quizContent.querySelector(`.answer-option[data-option-index="${userAnswers[currentQuestionIndex]}"]`);
+                checkAnswer(selectedOption, userAnswers[currentQuestionIndex], true); // Pass true to force display feedback
+                // Disable all radio buttons for this question
+                quizContent.querySelectorAll(`.radio-input`).forEach(input => input.disabled = true);
+            }
+
+            updateNavigationButtons();
+            hideResults(); // Hide results when navigating questions
+        }
+
+        // Check the selected answer and provide feedback
+        function checkAnswer(selectedOptionElement, selectedOptionIndex, forceDisplay = false) {
+            const question = quizData[currentQuestionIndex];
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+
+            // Remove previous feedback classes
+            selectedOptionElement.parentNode.querySelectorAll('.answer-option').forEach(opt => {
+                opt.classList.remove('correct', 'incorrect', 'selected');
+            });
+
+            // Mark the selected option
+            selectedOptionElement.classList.add('selected');
+
+            if (selectedOptionIndex === question.correctAnswerIndex) {
+                selectedOptionElement.classList.add('correct');
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.style.color = '#28a745';
+            } else {
+                selectedOptionElement.classList.add('incorrect');
+                feedbackDiv.textContent = 'Incorrecto. La respuesta correcta era: ' + question.options[question.correctAnswerIndex].replace(/\*\*(.*?)\*\*/g, '$1');
+                feedbackDiv.style.color = '#dc3545';
+                // Highlight the correct answer if an incorrect one was selected
+                const correctOptionElement = selectedOptionElement.parentNode.querySelector(`.answer-option[data-option-index="${question.correctAnswerIndex}"]`);
+                if (correctOptionElement) {
+                    correctOptionElement.classList.add('correct');
+                }
+            }
+            feedbackDiv.classList.add('show');
+
+            // Disable all radio buttons for the current question after an answer is selected
+            document.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(input => {
+                input.disabled = true;
+            });
+        }
+
+        // Update the state of navigation buttons (enabled/disabled)
+        function updateNavigationButtons() {
+            document.getElementById('prev-button').disabled = currentQuestionIndex === 0;
+            document.getElementById('next-button').disabled = currentQuestionIndex === quizData.length - 1;
+        }
+
+        // Navigate to the next question
+        document.getElementById('next-button').addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                saveQuizState();
+                renderQuestion();
+            }
+        });
+
+        // Navigate to the previous question
+        document.getElementById('prev-button').addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveQuizState();
+                renderQuestion();
+            }
+        });
+
+        // Event listener for the Reset button to show the modal
+        document.getElementById('reset-button').addEventListener('click', () => {
+            showModal();
+        });
+
+        // Event listener for the modal's Confirm button
+        modalConfirmButton.addEventListener('click', () => {
+            hideModal();
+            localStorage.removeItem('currentQuestionIndex');
+            localStorage.removeItem('userAnswers');
+            currentQuestionIndex = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            renderQuestion();
+            hideResults();
+        });
+
+        // Event listener for the modal's Cancel button
+        modalCancelButton.addEventListener('click', () => {
+            hideModal();
+        });
+
+        // Show quiz results
+        document.getElementById('show-results-button').addEventListener('click', () => {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach((answerIndex, qIndex) => {
+                if (answerIndex === null) {
+                    unansweredCount++;
+                } else if (answerIndex === quizData[qIndex].correctAnswerIndex) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('incorrect-count').textContent = incorrectCount;
+            document.getElementById('unanswered-count').textContent = unansweredCount;
+
+            document.getElementById('results-display').classList.remove('hidden');
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.querySelector('.navigation-buttons').classList.add('hidden');
+            document.getElementById('show-results-button').classList.add('hidden');
+            document.getElementById('reset-button').classList.add('hidden');
+        });
+
+        // Hide results display
+        function hideResults() {
+            document.getElementById('results-display').classList.add('hidden');
+            document.getElementById('quiz-content').classList.remove('hidden');
+            document.querySelector('.navigation-buttons').classList.remove('hidden');
+            document.getElementById('show-results-button').classList.remove('hidden');
+            document.getElementById('reset-button').classList.remove('hidden');
+        }
+
+        // Initial load of the quiz
+        window.onload = loadQuizState;
+    </script>
+</body>
+</html>

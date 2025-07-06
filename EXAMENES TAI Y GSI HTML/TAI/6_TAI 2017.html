@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI-L Interactivo 2017</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+        .options label:hover:not(.disabled-option) {
+            background-color: #eef2ff;
+            border-color: #818cf8;
+        }
+        .options input[type="radio"] {
+            display: none;
+        }
+        .options input[type="radio"] + span {
+            display: block;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Style for selected correct answer */
+        .options input[type="radio"]:checked + span.correct-option-feedback {
+            background-color: #10b981; /* Green */
+            color: #fff;
+            border-color: #10b981;
+        }
+        /* Style for selected wrong answer */
+        .options input[type="radio"]:checked + span.wrong-option-feedback {
+            background-color: #ef4444; /* Red */
+            color: #fff;
+            border-color: #ef4444;
+        }
+        /* Style for correct answer when a wrong one was chosen */
+        .options .correct-highlight {
+            background-color: #d1fae5; /* Light green for correct answer highlight */
+            border-color: #10b981;
+            color: #1f2937;
+        }
+        .disabled-option {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .submit-button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+        }
+        .submit-button:hover {
+            background-color: #4338ca;
+        }
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f4f8;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+        }
+        .result-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e7ff;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .correct-answer {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .wrong-answer {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .feedback-text {
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .correct-feedback-text {
+            color: #10b981;
+        }
+        .wrong-feedback-text {
+            color: #ef4444;
+        }
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background-color: #6b7280;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+        .nav-button:hover {
+            background-color: #4b5563;
+        }
+        .nav-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="section-title">Test TAI-L 2017</h1>
+
+        <div id="test-container"></div>
+
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+
+        <button id="submit-test" class="submit-button mt-6 hidden">Finalizar Test</button>
+        <button id="reset-test" class="submit-button mt-6 bg-red-500 hover:bg-red-600">Reiniciar Test</button>
+
+
+        <div id="results" class="results-section hidden">
+            <h2 class="section-title">Resultados del Test</h2>
+            <div id="results-content"></div>
+            <button id="retake-test" class="submit-button mt-6">Volver a Intentar</button>
+        </div>
+    </div>
+
+    <script>
+        // Preguntas y opciones del test de 2017 (Primera Parte)
+        const allQuestions = [
+            {
+                id: 'P1',
+                question: 'Según la Constitución Española, en relación con las leyes orgánicas:',
+                options: {a: 'La derogación de una ley orgánica requiere el voto favorable de la mayoría absoluta de los miembros del Senado.', b: 'Será una ley orgánica la que regulará las condiciones y el procedimiento de las distintas modalidades de referéndum previstas en esta Constitución.', c: 'En caso de extraordinaria y urgente necesidad, el Gobierno podrá dictar disposiciones legislativas provisionales que tomarán la forma de leyes orgánicas.', d: 'Son las relativas al desarrollo de los derechos humanos y de las libertades privadas, las que aprueben los Estatutos de Autonomía y el régimen electoral general y las demás previstas en la Constitución.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P2',
+                question: 'Cuál de las siguientes afirmaciones es correcta en referencia a las Cortes Generales:',
+                options: {a: 'Las Cortes Generales ejercen la potestad ejecutiva del Estado, aprueban sus Presupuestos, controlan la acción del Gobierno y tienen las demás competencias que les atribuya la Constitución.', b: 'Los Presidentes de las Cámaras ejercen en nombre de las mismas todos los poderes administrativos y facultades de policía en el interior de sus respectivas sedes.', c: 'El Congreso se compone de un mínimo de 200 y un máximo de 400 Diputados.', d: 'Se podrá ser miembro de las dos Cámaras simultáneamente siempre que sean elegidos por sufragio universal, libre, igual, directo y secreto, en los términos que establezca la ley.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P3',
+                question: 'Según la Constitución Española, la función que le corresponde al Rey es:',
+                options: {a: 'Establecer el programa político del Gobierno y determinar las directrices de la política interior y exterior y velar por su cumplimiento.', b: 'Convocar a referéndum en los casos previstos en la Constitución.', c: 'Plantear ante el Congreso de los Diputados, previa deliberación del Consejo de Ministros, la cuestión de confianza.', d: 'Representar al Gobierno.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P4',
+                question: 'Según la Constitución Española, de los miembros que componen el Tribunal Constitucional, 4 de ellos son a propuesta del:',
+                options: {a: 'Congreso por mayoría de tres quintos de sus miembros.', b: 'Senado por mayoría de dos quintos de sus miembros.', c: 'Gobierno.', d: 'Consejo General del Poder Judicial.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P5',
+                question: 'Según la Constitución Española, el Gobierno responde solidariamente en su gestión política ante:',
+                options: {a: 'el Congreso de los Diputados.', b: 'el Rey.', c: 'el Senado.', d: 'las Cámaras y sus Comisiones.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P6',
+                question: 'El candidato a la Presidencia del Gobierno es:',
+                options: {a: 'Elegido por los ciudadanos.', b: 'Propuesto por el Congreso de los Diputados.', c: 'Propuesto por el Rey.', d: 'Elegido por el Presidente del Congreso.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P7',
+                question: 'Señale cuál de las siguientes competencias, NO pertenecen al Tribunal Constitucional:',
+                options: {a: 'Recurso previo de inconstitucionalidad.', b: 'Recurso contra disposiciones reglamentarias.', c: 'Recurso de amparo.', d: 'Impugnaciones del artículo 161 de la Constitución.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P8',
+                question: 'El Tercer Plan de Acción de Gobierno Abierto de España (2017-2019) tiene 5 grandes ejes, que son:',
+                options: {a: 'Colaboración, Participación, Transparencia, Compartición y Comunicación.', b: 'Colaboración, Inclusión, Transparencia, Rendición de cuentas y Formación.', c: 'No discriminación, Participación, Transparencia, Planificación y Formación.', d: 'Colaboración, Participación, Transparencia, Rendición de cuentas y Formación.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P9',
+                question: 'Según se establece en su art. 15 el Real Decreto Legislativo 5/2015, por el que se aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público, señale cuál de los siguientes derechos individuales se ejercitan de manera colectiva:',
+                options: {a: 'La libertad sindical.', b: 'Las vacaciones, descansos, permisos y licencias.', c: 'La libre asociación profesional.', d: 'La progresión en la carrera profesional y promoción intema según principios constitucionales de igualdad, mérito y capacidad mediante la implantación de sistemas objetivos y transparentes de evaluación.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P10',
+                question: 'Las disposiciones del texto refundido de la Ley del Estatuto Básico del Empleado Público aplicarán directamente, sólo cuando así lo disponga su legislación específica, al personal de:',
+                options: {a: 'Las Administraciones de las entidades locales.', b: 'Las Universidades Públicas.', c: 'Jueces, Magistrados, Fiscales y demás personal funcionario al servicio de la Administración de Justicia.', d: 'Los organismos públicos, agencias y demás entidades de derecho público con personalidad jurídica propia, vinculadas o dependientes de cualquiera de las Administraciones Públicas.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P11',
+                question: 'Según se establece por la Constitución Española de 1978, en caso de extraordinaria y urgente necesidad, el Gobierno podrá dictar disposiciones legislativas provisionales que tomarán la forma de:',
+                options: {a: 'Proyecto de ley.', b: 'Proposición de ley.', c: 'Decreto-ley.', d: 'Decreto legislativo.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P12',
+                question: 'Según el art. 63 de la Ley Orgánica 1/2004, de Medidas de Protección Integral contra la Violencia de Género, referido a la protección de datos y las limitaciones a la publicidad, en las actuaciones y procedimientos relacionados con la violencia de género se protegerá la intimidad de las víctimas:',
+                options: {a: 'En especial, sus datos de género y religiosos.', b: 'Los datos asociados a su actividad social.', c: 'En especial, sus datos personales, los de sus descendientes y los de cualquier otra persona que esté bajo su guarda o custodia.', d: 'Todos los referidos a su actividad profesional.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P13',
+                question: 'Según se establece en el art.3 del Reglamento (UE) 910/2014, ¿cuántos tipos de sello electrónico se consideran?',
+                options: {a: '2 tipos de sello electrónico: sello electrónico y sello electrónico avanzado.', b: '3 tipos de sello electrónico: sello electrónico, sello electrónico avanzado y sello electrónico cualificado.', c: '2 tipos de sello electrónico: sello electrónico avanzado y el sello electrónico cualificado.', d: '3 tipos de sello electrónico: sello electrónico cualificado, sello electrónico reconocido y sello electrónico avanzado.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P14',
+                question: 'En relación con la revocación del consentimiento en el Reglamento (UE) 2016/679, relativo a protección de datos y a la libre circulación de estos datos, RGPD:',
+                options: {a: 'El consentimiento será más difícil de revocar que de dar.', b: 'Revocar el consentimiento será más difícil de darlo.', c: 'El consentimiento solo se podrá revocar por norma de rango de Ley.', d: 'Será tan fácil de revocar el consentimiento como de darlo.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P15',
+                question: 'Cuál de los siguientes es el proveedor de los servicios de la Dirección Electrónica Habilitada (DEH):',
+                options: {a: 'Agencia Tributaria (AEAT).', b: 'Fábrica Nacional de Moneda y Timbre (FNMT).', c: 'Seguridad Social.', d: 'Correos.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P16',
+                question: 'La Declaración de Conformidad con el ENS es de aplicación a sistemas de información de categoría:',
+                options: {a: 'Alta', b: 'Media', c: 'Básica', d: 'Media o alta'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P17',
+                question: 'La solución integral de firma electrónica, proporcionada por el CTT, que permite simplificar todos los requisitos de creación de firmas basadas tanto en certificados locales como en certificados en la nube se llama:',
+                options: {a: 'VALIDE', b: 'Stork', c: 'FIRE', d: 'Autofirma'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P18',
+                question: 'Señale la respuesta correcta sobre el sistema de archivos ReFS:',
+                options: {a: 'Es el nuevo sistema de archivos de Mac OS.', b: 'Longitud máxima del nombre del archivo es 512 caracteres.', c: 'El tamaño máximo de archivo es 18 EB (exabytes).', d: 'Su nombre significa Sistema de Archivos Repetible.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P19',
+                question: 'El "contador de programa" de una CPU contiene la:',
+                options: {a: 'instrucción a ejecutar en código ASCII.', b: 'Instrucción a ejecutar en código binario.', c: 'dirección de la instrucción a ejecutar.', d: 'dirección en el que dejar el resultado.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P20',
+                question: 'Respecto a los distintos tipos de memoria ROM podemos decir:',
+                options: {a: 'PROM: se suministran vírgenes y el usuario puede programarla cuantas veces quiera, mediante un dispositivo especial.', b: 'EPROM: puede ser borrada y grabada repetidas veces, para borrarla se aplican rayos infrarrojos.', c: 'EEPROM: puede ser borrada y grabada repetidas veces eléctricamente.', d: 'EPPROM: puede ser borrada y grabada repetidas veces, para borrar y grabar se utiliza un dispositivo especial de ancho espectro.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P21',
+                question: 'La unidad de medida de la potencia de un microprocesador es:',
+                options: {a: 'Gigabyte', b: 'Flops', c: 'FPS', d: 'FBS'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P22',
+                question: 'El valor decimal del número hexadecimal 1C9 es:',
+                options: {a: '477', b: '467', c: '457', d: '447'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P23',
+                question: 'Hablando de zonas de un disco duro, señale la FALSA:',
+                options: {a: 'Cilindro es un conjunto de varias pistas.', b: 'Clúster es un conjunto continuo de sectores.', c: 'Sector es cada uno de los lados un plato.', d: 'Pista es una circunferencia dentro de una cara.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P24',
+                question: 'Según la nueva especificación de la interface USB, denominada USB-PD (Power Delivery), la potencia MÁXIMA que es capaz de alcanzar es:',
+                options: {a: '18W', b: '36W', c: '60W', d: '100W'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P25',
+                question: 'Es un algoritmo de la teoría de grafos para encontrar un árbol recubridor mínimo en un grafo conexo y ponderado:',
+                options: {a: 'Quicksort', b: 'Kruskal', c: 'QR', d: 'Rijndael'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P26',
+                question: 'La estructura de datos que permite inserciones por un extremo y borrados por los dos es una:',
+                options: {a: 'Cola de salida restringida.', b: 'Bicola de entrada restringida.', c: 'Lista de entrada restringida.', d: 'Ese tipo de estructura no existe.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P27',
+                question: 'Entre los métodos para la compresión de imágenes con pérdidas se encuentra:',
+                options: {a: 'Codificación en planos de bits (como RLE).', b: 'Codificación de longitud variable (como Huffman).', c: 'Algoritmos de diccionario adaptables (como LZW).', d: 'Codificación por transformación (como TDC).'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P28',
+                question: '¿Qué formato de fichero es de gráficos vectoriales?',
+                options: {a: 'SVG', b: 'EXIF', c: 'HEIF', d: 'JPEG'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P29',
+                question: 'El método del intercambio directo o algoritmo de la burbuja, es un algoritmo clásico de:',
+                options: {a: 'ordenación que recorre un vector de elementos e intercambia en cada recorrido un elemento con su sucesor si no están en orden.', b: 'ordenación que recorre un vector de elementos hasta encontrar el menor de todos e intercambiarlo con el que está en la primera posición. Luego el segundo más pequeño, y así sucesivamente hasta ordenar todo.', c: 'búsqueda que compara secuencialmente el elemento deseado con los valores contenidos en las posiciones 1..n del vector de elementos hasta que lo encuentre.', d: 'búsqueda que compara secuencialmente el elemento deseado con los valores contenidos en las posiciones 1..n del vector de elementos hasta que lo encuentre, requisito indispensable es que el vector esté previamente ordenado.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P30',
+                question: 'En UNIX una llamada fork(), señale la FALSA:',
+                options: {a: 'Retorna al proceso padre el PID del proceso creado.', b: 'Crea un nuevo proceso hijo.', c: 'Crea un nuevo proceso copia de sí mismo.', d: 'Devuelve al proceso hijo el ID del proceso padre.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P31',
+                question: 'El comando UNIX: ps -ef | grep $USER, muestra todos los procesos:',
+                options: {a: 'activos que está ejecutando el usuario "grep".', b: 'que está ejecutando el usuario llamado "$USER".', c: 'que está ejecutando el usuario actual.', d: 'no activos que está ejecutando el usuario actual.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P32',
+                question: 'En Linux, la carpeta /bin:',
+                options: {a: 'Es la papelera de reciclaje.', b: 'Contiene ficheros ejecutables y algunas utilidades del sistema operativo.', c: 'Contiene los directorios de los usuarios.', d: 'Contiene programas, ficheros y directorios del usuario.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P33',
+                question: 'Haciendo uso del comando de Linux grep, indique cuál de las siguientes opciones devuelve el número total de líneas en que aparece la palabra "Autor" en el fichero "libro.txt":',
+                options: {a: 'grep -c libro.txt Autor', b: 'grep -n libro.txt Autor', c: 'grep -n Autor libro.txt', d: 'grep -c Autor libro.txt'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P34',
+                question: 'Indique cuál de los siguientes es un sistema operativo para móviles:',
+                options: {a: 'Knoppix', b: 'Ubuntu', c: 'MeeGo', d: 'Suse'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P35',
+                question: 'La versión 4.1 del sistema operativo Android es:',
+                options: {a: 'Ice Cream Sandwich', b: 'Jelly Bean', c: 'KitKat', d: 'Lollipop'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P36',
+                question: 'Cypher es:',
+                options: {a: 'Un lenguaje de consulta sobre bases de datos Neo4j.', b: 'Una base de datos de tipo clave-valor.', c: 'Una base de datos orientada a documentos.', d: 'Una base de datos orientada a grafos.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P37',
+                question: '¿Cuál de los siguientes proyectos de Apache relacionados con Hadoop provee de servicios de serialización de datos?',
+                options: {a: 'Flume', b: 'Chukwa', c: 'Avro', d: 'Jaql'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P38',
+                question: 'Indique cuál de los siguientes NO es un gestor de bases de datos relacional:',
+                options: {a: 'MaxDB', b: 'MySQL', c: 'JSON', d: 'PostgreSQL'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P39',
+                question: 'En un Diagrama de Flujo de Datos o DFD se denomina proceso primitivo a:',
+                options: {a: 'A cualquiera de los procesos que aparecen en el nivel 1 de descomposición.', b: 'Al proceso principal del Diagrama de Contexto a descomponer.', c: 'Aquel proceso que no necesita descomposición.', d: 'Aquel proceso que coordina y sincroniza las actividades de otros procesos.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P40',
+                question: 'Una tabla se encuentra en 5NF, Quinta Forma Normal, si:',
+                options: {a: 'Si y solo si esta en 4NF o en BCNF (cualquiera de ambas) y no posee dependencias multivaluadas no triviales.', b: 'Si y solo si está en 4FN y cada dependencia funcional no trivial tiene una clave candidata como determinante.', c: 'Si y solo si está en 4NF y cada dependencia de unión (join) en ella es implicada por las claves candidatas.', d: 'Si y solo si ninguno de sus atributos no-principales son funcionalmente dependientes en una parte (subconjunto propio) de una clave candidata.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P41',
+                question: 'Cuál de las siguientes afirmaciones NO es uno de los objetivos que se persigue al normalizar una base de datos:',
+                options: {a: 'Organizar los datos en grupos lógicos.', b: 'Reducir las relaciones existentes entre tablas.', c: 'Garantizar la integridad de la información.', d: 'Minimizar la repetición de información.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P42',
+                question: 'En la teoría de la normalización se utiliza ei concepto de dependencia funcional, ¿cuál de las siguientes NO es una de sus características?',
+                options: {a: 'Son propiedades inherentes al contenido semántico de los datos, que se han de cumplir para cualquier extensión del esquema de relación.', b: 'Se tratan de restricciones de integridad que permiten conocer qué interrelaciones existen entre los atributos del mundo real.', c: 'Todas las restricciones de integridad se pueden representar mediante estas dependencias.', d: 'Son invariantes en el tiempo.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P43',
+                question: 'Indique cuál sería la salida que se obtendría ejecutando el siguiente trozo de código en C++: for (int i=1 i++<10;i++) {( (i==5)? cout<<"Cinco": cout << i << ""); }',
+                options: {a: '02468', b: '13 Cinco 79', c: '2 4 6 8 10', d: '13579'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P44',
+                question: 'Indique cuál de los siguientes se considera un lenguaje de programación orientado a la educación:',
+                options: {a: 'Scratch', b: 'C#', c: 'Abap', d: 'Python'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P45',
+                question: 'Señale la afirmación correcta:',
+                options: {a: 'DML permiten definir el esquema de la base de datos.', b: 'DCL permiten controlar el acceso a los datos.', c: 'DDL permiten controlar el acceso a los datos.', d: 'DCL permiten definir el esquema de la base de datos.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P46',
+                question: 'En una empresa hay una tabla de empleados: EMPLEADO(EMP_ID, NOMBRE, CATEGORIA, SUELDO). Elija qué sentencia nos dará como resultado la categoría y sueldo medio de aquellas categorías cuyo sueldo medio es inferior al sueldo medio de todos los empleados de la empresa.',
+                options: {a: 'SELECT CATEGORIA, AVG(SUELDO) FROM EMPLEADO GROUP BY CATEGORIA HAVING AVG(SUELDO) < (SELECT AVG(SUELDO) FROM EMPLEADO)', b: 'SELECT CATEGORIA, AVG(SUELDO) FROM EMPLEADO HAVING CATEGORIA GROUP BY AVG(SUELDO)<(SELECT AVG(SUELDO) FROM EMPLEADO)', c: 'SELECT CATEGORIA, AVG(SUELDO) FROM EMPLEADO WHERE SUELDO < AVG(SUELDO) GROUP BY CATEGORIA', d: 'SELECT CATEGORIA, AVG(SUELDO) FROM EMPLEADO WHERE AVG(SUELDO)<(SELECT SUELDO FROM EMPLEADO)'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P47',
+                question: 'En una base de datos en la que se almacena información de clientes a través de la tabla Clientes, existen, entre otras, las siguientes columnas: "id", "Nombre", "Apellido1", etc. ¿Cuál de las siguientes sentencias SQL devuelve el número de nombres (sólo Nombre, sin incluir apellidos) diferentes que hay en la tabla?',
+                options: {a: 'SELECT DISTINCT(Nombre) FROM Clientes', b: 'SELECT SUM(UNIQUE(Nombre)) FROM Clientes', c: 'SELECT COUNT(DISTINCT(Nombre)) FROM Clientes', d: 'SELECT SUM(DISTINCT(Nombre)) FROM Clientes'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P48',
+                question: '¿Cuál de las siguientes operaciones NO es una operación de agregación en SQL?',
+                options: {a: 'AVG', b: 'COUNT', c: 'DISTINCT', d: 'SUM'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P49',
+                question: 'Qué sentencia de las siguientes nunca altera el contenido de la base de datos:',
+                options: {a: 'STOCK.NUM ITEM AND PEDIDOS.PRECIO > 300', b: 'UPDATE STOCK SET STOCK.NUM_ITEM = 0 WHERE STOCK.VALIDO = \'Sl\'', c: 'COMMIT', d: 'SELECT PEDIDOS.PRECIO, PEDIDOS.ITEM, STOCK.VALIDO FROM PEDIDOS, STOCK WHERE PEDIDOS.NUM_ITEM ='},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P50',
+                question: 'En el contexto de la programación orientada a objetos, ¿qué entendemos por superclase?',
+                options: {a: 'Una clase padre de la que pueden derivar una serie de subclases.', b: 'Una clase padre en la que se definen todas las variantes de métodos y atributos de sus clases heredadas, denominadas subclases.', c: 'Una clase que deriva de otra completando los métodos que deja sin definir.', d: 'Una clase resultado de fusión de dos o más clases padres.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P51',
+                question: 'La característica de los lenguajes orientados a objetos que permite declarar y definir dos métodos con el mismo nombre, pero distintos argumentos, se denomina:',
+                options: {a: 'Sobrescritura', b: 'Polimorfismo', c: 'Herencia', d: 'Sobrecarga'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P52',
+                question: 'El patrón de diseño cuyo propósito es desacoplar una abstracción de su implementación de manera que las dos puedan evolucionar independientemente es:',
+                options: {a: 'Facade', b: 'Bridge', c: 'Adapter', d: 'Wrapper'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P53',
+                question: 'Java DB es:',
+                options: {a: 'La distribución de Oracle para la base de datos de código abierto Apache Derby.', b: 'Una API de acceso a bases de datos no relacionales en Java.', c: 'La distribución gratuita de la base de datos Oracle 11g.', d: 'Una versión de PostgreSQL configurada para la plataforma Java SE.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P54',
+                question: 'Señale cuál de las siguientes herramientas sirve para realizar pruebas de estrés en Java:',
+                options: {a: 'Jmeter', b: 'SonarQube', c: 'Junit', d: 'Piwik'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P55',
+                question: 'En el contexto del lenguaje C de ANSI, ¿cuál de las siguientes opciones consigue que los valores de "a" y "b" sean respectivamente 10 y 11?',
+                options: {a: 'int a=11, b;b=a-;', b: 'int a=11,b;b=--a;', c: 'int a=10, b a;b=++a;', d: 'int a=10,b;b=a++'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P56',
+                question: 'Una diferencia entre las APIs de Java, SAX y JDOM, es:',
+                options: {a: 'SAX permite acceso directo a los elementos del XML, con JDOM el acceso es secuencial.', b: 'SAX requiere más memoria para procesar el documento XML que JDOM.', c: 'JDOM es recomendable para la edición o cambios en documentos XML, SAX para la lectura de documentos XML', d: 'JDOM lanza un evento cuando encuentra un elemento en el documento XML, SAX no lanza eventos.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P57',
+                question: 'En ASP.NET cuál de las siguientes alternativas NO representa un modo válido de almacenamiento de los datos de sesión:',
+                options: {a: 'inProc', b: 'StateServer', c: 'SqlServer', d: 'AppServer'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P58',
+                question: 'Señale la respuesta correcta respecto a las arquitecturas de microservicios:',
+                options: {a: 'Tienen nombres únicos (como direcciones URL) que se usan para resolver su ubicación.', b: 'Deben ser escritos en lenguajes de programación específicos.', c: 'Interactúan con otros microservicios por medio de protocolos cerrados.', d: 'Service Fabric es la plataforma de microservicios de Apache.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P59',
+                question: 'De las siguientes opciones, representa un método válido dentro del protocolo HTTP:',
+                options: {a: 'OPTIONS', b: 'UPDATE', c: 'RETRIEVE', d: 'TRACK'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P60',
+                question: 'En un documento WSDL 2.0, el elemento <binding> especifica:',
+                options: {a: 'el conjunto de puertos y dirección de los mismos.', b: 'los protocolos de comunicación usados.', c: 'los tipos de datos usados en los mensajes.', d: 'las operaciones permitidas.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P61',
+                question: 'Si quiero aplicar un estilo a todos los elementos con atributo class="titulo" en varias páginas HTML, definiré en la hoja de estilos CSS3 asociada el selector:',
+                options: {a: '#titulo', b: ':titulo', c: '.titulo', d: 'titulo'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P62',
+                question: 'En una hoja de estilos CSS3, el estilo definido en el selector div + p se aplicaría a todos los elementos:',
+                options: {a: '<p> situados dentro de elementos <div>.', b: '<p> situados justo después de un elemento <div>.', c: '<div> y todos los elementos <p>.', d: '<p> cuyo padre sea un elemento <div>'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P63',
+                question: 'Indique la afirmación verdadera, ECMAScript 7 (también llamado ECMAScript 2016) añade:',
+                options: {a: 'Try/catch', b: 'Soporte para JSON.', c: 'Operador exponencial (**)', d: 'Expresiones regulares.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P64',
+                question: 'En PHP 7, dado el siguiente array: $monedas = array("bitcoin", "ada", "ripple"), ¿qué sentencia permite mostrar el número de elementos que tiene?',
+                options: {a: 'echo str_len($monedas);', b: 'echo count($monedas);', c: 'echo size($monedas);', d: 'echo length($monedas);'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P65',
+                question: 'De los siguientes, ¿cuál es un preprocesador de CSS?',
+                options: {a: 'kotlin', b: 'Stylus', c: 'Babel', d: 'Flexbox'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P66',
+                question: 'Es un framework que permite el desarrollo de aplicaciones para dispositivos móviles:',
+                options: {a: 'Ionic', b: 'Atom', c: 'Ark', d: 'ZTE'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P67',
+                question: '¿Cuál de las siguientes es una nueva etiqueta introducida en HTML5?',
+                options: {a: '<dialog>', b: '<noscript>', c: '<abbr>', d: '<del>'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P68',
+                question: 'En las pautas de accesibilidad para el contenido web 2.0 se han identificado 4 niveles de orientación, señale la respuesta correcta que enumera estos niveles desde lo más general a lo más particular:',
+                options: {a: 'Principios, pautas, criterios de conformidad, técnicas suficientes y recomendables.', b: 'Principios, criterios de conformidad, pautas, técnicas suficientes y recomendables.', c: 'Principios, pautas, técnicas suficientes y recomendables, criterios de conformidad.', d: 'Principios, criterios de conformidad, técnicas suficientes y recomendables, pautas.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P69',
+                question: '¿Cuál de los siguientes NO es un concepto directamente relacionado con la Web Semántica?',
+                options: {a: 'RDF', b: 'SPARQL', c: 'OWL', d: 'WebM'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P70',
+                question: 'La aplicación JAWS es:',
+                options: {a: 'Una herramienta para medir el tráfico de un página web.', b: 'Un \'sniffer\' de red.', c: 'Un lector de pantalla para invidentes.', d: 'Una herramienta de realización de pruebas automáticas.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P71',
+                question: 'Siendo el nombre remoto "origin", y la rama "master", para subir los commits de una rama local a un repositorio remoto, ¿cuál sería el comando en Git?',
+                options: {a: 'git push origin master', b: 'git pull origin master', c: 'git init origin master', d: 'git start origin master'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P72',
+                question: 'El término "kubernetes" está relacionado con:',
+                options: {a: 'Redes de Nueva Generación.', b: 'Gestión de Contenedores.', c: 'Multiple Input Multiple Output.', d: 'Gestión de LUNs en cabinas.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P73',
+                question: 'De entre las siguientes, ¿cuál es una plataforma de contenedores?',
+                options: {a: 'OpenShift', b: 'Bickbucket', c: 'AMQ', d: 'MDM'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P74',
+                question: 'En el ámbito de los sistemas operativos de Microsoft, la extensión que permite mantener actualizado el sistema operativo es:',
+                options: {a: 'Windows Online', b: 'Windows Update', c: 'Windows Defender', d: 'Microsoft Edge'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P75',
+                question: '¿Con qué comando de Linux se puede comprobar la integridad de un sistema de ficheros ext3?',
+                options: {a: 'fix.ext3', b: 'e2fsck', c: 'chkdsk', d: 'melt'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P76',
+                question: 'El comando de Linux que permite conocer la ruta completa de un comando es:',
+                options: {a: 'which', b: 'apropos', c: 'catch', d: 'tee'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P77',
+                question: 'De los siguientes comandos Linux, ¿cuál permite cambiar el sistema al nivel de ejecución 3?',
+                options: {a: 'rlevel 3', b: 'inittab 3', c: 'switch_root 3', d: 'init 3'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P78',
+                question: 'Advanced Package Tool (APT) es un sistema de gestión de paquetes creado por el proyecto:',
+                options: {a: 'Debian', b: 'Fedora', c: 'Red Hat', d: 'Ubuntu'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P79',
+                question: 'El código devuelto por un servidor SMTP para indicar que la transmisión del mensaje ha finalizado es:',
+                options: {a: '250', b: '220', c: '450', d: '200'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P80',
+                question: 'Indique la afirmación correcta referente a un segmento Keep-Alive según RFC 1122:',
+                options: {a: 'Se envía aleatoriamente.', b: 'Si el segmento se envía y no recibe respuesta, siempre se corta la conexión con el otro dispositivo.', c: 'Se envía para comprobar si la conexión con otro dispositivo está activa.', d: 'Ninguna de las anteriores.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P81',
+                question: 'De entre los siguientes, ¿cuál es un protocolo de gestión de redes?',
+                options: {a: 'OCSP', b: 'SNMP', c: 'SMTP', d: 'RFID'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P82',
+                question: 'En Linux, ¿qué información se muestra tras ejecutar en consola "who -r"?',
+                options: {a: 'Indica el nivel de ejecución.', b: 'Muestra la hora en la que el sistema se ha iniciado.', c: 'Lista los usuarios que han iniciado sesión remota.', d: 'Muestra los usuarios que pertenecen al grupo de administradores (root).'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P83',
+                question: 'Indique cuál de las siguientes herramientas es un Desktop Service o un Gestor de Atención al Usuario CAU:',
+                options: {a: 'BMC REMEDY', b: 'MS OUTLOOK', c: 'VISIO', d: 'SUBVERSION'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P84',
+                question: '¿Cómo se denomina la vulnerabilidad web consistente en la ejecución de un comando malicioso de acceso o modificación de una base de datos como parte de una petición?',
+                options: {a: 'CRLF injection', b: 'RFI', c: 'SQL injection', d: 'Cross Site Scripting'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P85',
+                question: 'Indique la afirmación INCORRECTA de las siguientes relacionadas con la seguridad informática:',
+                options: {a: 'Activo: componente o funcionalidad de un sistema de Información susceptible de ser atacado deliberada o accidentalmente con consecuencias para la organización.', b: 'Ataque: evento que puede originar un incidente produciendo daños materiales o pérdidas inmateriales.', c: 'Vulnerabilidad: posibilidad de ocurrencia, es decir, de materialización de una amenaza sobre un activo.', d: 'Impacto: consecuencia de la materialización de una armenaza.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P86',
+                question: 'La técnica que permite dar acceso a Internet a todos los equipos de una red interna a través de una única IP externa es:',
+                options: {a: 'IP Mask', b: 'IP Masquerade', c: 'IP Translate', d: 'DHCP'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P87',
+                question: 'Para obtener la dirección física (MAC) de un dispositivo, el comando a utilizar es:',
+                options: {a: 'ipconfig /all (en Unix).', b: 'getmac_addrss (en Unix).', c: 'ifconfig (en Windows).', d: 'getmac (en Windows).'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P88',
+                question: '¿Cuál es la dirección de difusión o broadcasting de la red a la que pertenece un host cuya IP es 34.254.0.17?',
+                options: {a: '34.254.255.255', b: '34.254.0.255', c: '34.254.0.0', d: '34.255.255.255'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P89',
+                question: 'El campo que desaparece en la cabecera estándar de la versión 6 del protocolo TCP/IP con respecto a la versión 4 es el campo:',
+                options: {a: 'fragmento, que pasa a ser un tipo de cabecera de extensión.', b: 'etiqueta de flujo, que pasa a ser un tipo de cabecera de extensión.', c: 'longitud de carga útil, que pasa a ser un tipo de cabecera de extensión.', d: 'límite de saltos, que pasa a ser un tipo de cabecera de extensión.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P90',
+                question: 'Dada la siguiente dirección de red 213.114.93.0, con máscara de red 255.255.255.192, indique cuál es su dirección de broadcast:',
+                options: {a: '213.114.93.63', b: '213.114.93.127', c: '213.114.93.31', d: '213.114.93.255'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P91',
+                question: 'Indique la afirmación INCORRECTA en relación a protocolos y su puerto conocido de escucha:',
+                options: {a: 'FTP, puerto 21.', b: 'TELNET, puerto 23.', c: 'SMTP, puerto 27.', d: 'POP3, puerto 110.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P92',
+                question: 'La política o mecanismo de seguridad estandarizado que sirve para indicar a los navegadores que una web (y todos sus enlaces) deben ser accedidos exclusivamente utilizando HTTPS se llama:',
+                options: {a: 'SHTS', b: 'AHTS', c: 'HSTS', d: 'SHTP'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P93',
+                question: 'El protocolo NTP (Network Time Protocol) tiene asignado el puerto:',
+                options: {a: '123', b: '137', c: '139', d: '143'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P94',
+                question: 'De los siguientes códigos de respuesta de HTTP, identifique el correcto:',
+                options: {a: '401 Forbidden.', b: '403 Unathorized.', c: '408 Request Timeout.', d: '500 Bad Gateway.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P95',
+                question: 'Entre los riesgos de las redes inalámbricas, el "eavesdropping" sucede cuando un individuo no autorizado:',
+                options: {a: 'inyecta peticiones masivas de asociación a los AP (Access Point o puntos de acceso) dejándolos incapacitados para responder a las peticiones de los clientes legítimos.', b: 'se coloca en medio de la comunicación inalámbrica entre emisor y receptor, suplantando a una de las partes y haciendo creer a la otra que está hablando con el comunicante legítimo.', c: 'utiliza alguna herramienta (normalmente antenas de gran alcance) para capturar de forma pasiva el tráfico inalámbrico.', d: 'suplanta una dirección MAC autorizada para lograr el acceso a un AP que tenga configurada una lista de direcciones MAC permitidas.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P96',
+                question: 'En relación a MAC spoofing indique la afirmación correcta:',
+                options: {a: 'Consiste en la suplantación de una dirección MAC.', b: 'Puede hacerse con el comando ipconfig de Unix.', c: 'Windows no permite hacer MAC spoofing.', d: 'Sólo lo permite la distribución Kali Linux.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P97',
+                question: 'Cuál de las siguientes opciones se refiere a un método que se utiliza para redirigir el tráfico dirigido a ciertas IPs por razones de seguridad, para analizar, o detectar comportamientos anómalos y prevenir ataques de malware:',
+                options: {a: 'DNS spoofing', b: 'DNS sinkholing', c: 'DNS redirecting', d: 'DNS poisoning'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P98',
+                question: 'La herramienta del CCN para Auditoría de Cumplimiento ENS/STIC en Sistemas Windows se denomina:',
+                options: {a: 'LUCIA', b: 'VANESA', c: 'LORETO', d: 'CLARA'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P99',
+                question: 'En relación a las dimensiones de seguridad y sus posibles amenazas, indique la afirmación correcta:',
+                options: {a: 'La confidencialidad se ve afectada por la modificación.', b: 'La confidencialidad se ve afectada por la fabricación.', c: 'La integridad se ve afectada por la intercepción.', d: 'La disponibilidad se ve afectada por la interrupción.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P100',
+                question: '¿Cuál de las siguientes NO se considera una topología de red inalámbrica?',
+                options: {a: 'Topología ad-hoc.', b: 'Topología infraestructura.', c: 'Topología mesh o malla.', d: 'Topología de anillo.'},
+                correctAnswer: 'd'
+            },
+            // Preguntas de reserva (Primera Parte)
+            {
+                id: 'PR1',
+                question: 'En las placas base, el factor de forma MicroATX:',
+                options: {a: 'No existe.', b: 'Tiene una limitación de tamaño mínimo de 9,6x9,6 pulgadas.', c: 'Tiene una limitación de tamaño máximo de 12x9,6 pulgadas.', d: 'Deriva del factor de forma ATX.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'PR2',
+                question: 'Entre los productos existentes para la gestión de integración continua de software (entrega continua desde el código hasta el despliegue) se encuentra:',
+                options: {a: 'Magnolia', b: 'Bamboo', c: 'DevExpress', d: 'InterSystems Ensemble'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'PR3',
+                question: '¿Cuál de las siguientes afirmaciones acerca de OSPF es verdadera?',
+                options: {a: 'Es un protocolo vector distancia.', b: 'OSPF versión 3 soporta IPv6.', c: 'El RFC que define la versión 2 es RFC1202.', d: 'Es un protocolo de pasarela exterior.'},
+                correctAnswer: 'b'
+            },
+            // BLOQUE IV (2017)
+            {
+                id: 'B4-P1',
+                question: 'Necesita saber si en el servidor Linux, que está actualmente en funcionamiento, está instalado el paquete que envía anónimamente estadísticas a los desarrolladores sobre los paquetes que más se usan en el servidor. ¿Cuál es el nombre del paquete para poder localizarlo?',
+                options: {a: 'installed-pkg', b: 'popularity-contest', c: 'debian-poll', d: 'debian-comunity'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P2',
+                question: 'En la nueva máquina Linux, recién instalada, le indican que NO está instalado el servidor de SSH. Indique el comando para proceder a su instalación:',
+                options: {a: 'apt-get install ssh', b: 'apt install sshd', c: 'aptitude openssh-server', d: 'dpkg -U ssh-server'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P3',
+                question: '¿Qué paquete en Linux, equivalente al htop que muestra el uso de CPU, permite mostrar información de E/S del disco?',
+                options: {a: 'disk-status', b: 'iotop', c: 'zzuf', d: 'uisp'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P4',
+                question: 'Tras instalar postgreSQL en el nuevo servidor Linux, usando el paquete "postgresql-all". ¿Qué comando le permitirá comprobar que el servidor postgres está ejecutándose, usando el usuario postgres?',
+                options: {a: 'ps -ef postgres', b: 'ps -v server', c: 'ps -U postgres -u postgres u', d: 'ps--process=postgres'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P5',
+                question: 'Para establecer las reglas de firewall oportunas, necesitamos conocer el puerto por defecto en el que escucha por defecto el servidor de postgreSQL, ¿cuál de los siguientes es?',
+                options: {a: '80', b: '5432', c: '563', d: '8080'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P6',
+                question: 'El comando del sistema, desde el usuario postgres, que se puede usar para crear usuarios en postgreSQL es:',
+                options: {a: 'createuser', b: 'admin-postgresql', c: 'su-u postgres-add', d: 'posgresql-accounts'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P7',
+                question: 'Para realizar un backup de todas las bases de datos que están en el servidor antiguo, desde el usuario postgres, es el comando:',
+                options: {a: 'pg_dumpall > ficherosalida', b: 'postgres-backup-output=ficherosalida', c: 'db-backup -O ficherosalida', d: 'export-db ficherosalida'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P8',
+                question: 'Se le ha solicitado configurar un RAID 5, ¿cuál es el número mínimo de discos requerido para ser implementada esta configuración?',
+                options: {a: '2', b: '1', c: '4', d: '3'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P9',
+                question: 'Le solicitan que recomiende una solución que proporcione un entorno de virtualización. ¿Cuál de las siguientes propuestas elegiría?',
+                options: {a: 'Cassandra', b: 'Proxmox VE', c: 'Gkrellm', d: 'Hadoop'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P10',
+                question: 'Se ha seleccionado Zabbix para monitorizar los elementos de la red. Como requisito para Zabbix, se necesita instalar mariaDB en la máquina Linux. Una vez ha instalado el paquete con la orden apt correspondiente, ¿qué comando debe ejecutar para lanzar el script de securización de mariaDB?',
+                options: {a: 'mysql_secure_installation', b: 'mariadb-secure-script', c: 'dpkg--configure --security mariadb', d: '/etc/init.d/mariadb-security-server start'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P11',
+                question: '¿Con qué comando reiniciaría el agente de Zabbix, con los privilegios adecuados?',
+                options: {a: 'start-stop-daemon zabbix-agent --restart', b: '/etc/init/zabbix-agent restart', c: 'systemctl restart zabbix-agent', d: '/usr/bin/zabbix-agent restart'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P12',
+                question: 'Necesita verificar que en el servidor de Zabbix, su base de datos está escuchando por el puerto de mysql. ¿Qué opción de las siguientes le permitiría obtener esta información?',
+                options: {a: 'ifconfig --list --port=3306', b: 'ss -1 | grep mysql', c: 'netstat -g | grep 3306', d: 'netstat -i | grep mysql'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P13',
+                question: 'En el shell Bash del servidor Linux, ¿qué variable interna permite mostrar el directorio actual de trabajo?',
+                options: {a: '$BashPID', b: '$PWD', c: '$$', d: 'No existe, hay que capturar la salida de un comando.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P14',
+                question: 'A las medidas para prevenir el abuso de datos de identificación y autenticación, impidiendo que alguien se haga pasar por quien no es, se les denomina:',
+                options: {a: 'Anti-spam', b: 'Anti-spoof', c: 'Eavesdropping', d: 'Anti-spyware'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P15',
+                question: '¿Cómo podríamos localizar los ficheros binarios, fuentes o páginas de manual para un comando dado, por ejemplo, para el comando llamado zabbix?',
+                options: {a: 'dpkg --get-selections --find zabbix', b: 'apropos zabbix', c: 'findmnt zabbix', d: 'whereis zabbix'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P16',
+                question: 'Durante la instalación del nuevo servidor de bases de datos en Linux, se necesita sincronizar de forma periódica ciertas carpetas del servidor antiguo en el nuevo hasta que se haga el cambio. ¿Qué comando de Linux debería ejecutarse?',
+                options: {a: 'robocopy', b: 'rsync', c: 'rtar', d: 'xcp'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P17',
+                question: 'Dada la siguiente dirección IP, 10.31.93.128/29, indique cuál es su dirección de broadcast:',
+                options: {a: '10.31.93.129', b: '10.31.93.135', c: '10.31.93.128', d: '10.31.93.255'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P18',
+                question: '¿Cuál es, en binario, la primera IP disponible para asignar en la red 10.31.93.128/29?',
+                options: {a: '00001010.00011110.01011101.10000000', b: '00001010.00001111.01011101.10010110', c: '00001010.00011111.01011101.10000001', d: '00011010.00011111.01011101.10010101'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P19',
+                question: '¿A qué red pertenece el equipo 10.31.93.25/29?',
+                options: {a: '10.31.93.24/29', b: '10.31.93.31/29', c: '10.31.93.30/29', d: '10.31.93.21/29'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P20',
+                question: 'Entre los comandos que podemos ejecutar desde Linux y que nos muestran la versión del sistema operativo NO se encontraría por tener otra finalidad el siguiente:',
+                options: {a: 'lsb_release -a', b: 'uname -n', c: 'cat /etc/*release', d: 'cat/etc/issue'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P21',
+                question: 'SSH permite restringir el acceso a un conjunto de usuarios, o a un determinado grupo, utilizando determinadas directivas desde su fichero de configuración. ¿Cuál de los siguientes comandos, le permite conocer que usuarios pertenecen a un grupo llamado usuarios_ssh?',
+                options: {a: 'cat/etc/group | grep usuarios_ssh', b: 'sysadmin-check-group usuarios_ssh', c: 'groupadd --list | grep usuarios_ssh', d: 'grep usuarios_ssh /etc/* -R-S'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P22',
+                question: 'En la máquina Linux, ¿cómo eliminaría al usuario denominado "u" de un grupo de usuarios denominado "usuarios_ssh"?',
+                options: {a: 'deluser u usuarios_ssh', b: 'groupdel -u u usuarios_ssh', c: 'groupmod --delete u usuarios_ssh', d: 'gpasswd u usuarios_ssh'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P23',
+                question: 'En el servidor Linux, ¿qué fichero permite comprobar el acceso a hosts concretos al sistema?',
+                options: {a: '/etc/hosts.allow', b: '/etc/sshd/sshd.conf', c: '/etc/remote.conf', d: '/etc/hosts'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P24',
+                question: '¿Con qué comando se puede crear un nuevo grupo de volumen de LVM en el servidor Linux?',
+                options: {a: 'vgcreate', b: 'volume-add', c: 'lvm-add-volume', d: 'pvcreate'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P25',
+                question: 'En el servidor Linux en LVM, ¿con qué comando podemos crear un volumen lógico?',
+                options: {a: 'pvcreate -I', b: 'lvm-add-logical', c: 'lvcreate', d: 'lvadd'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P26',
+                question: 'En el puesto Windows de usuario final, usando Powershell, se quiere obtener un listado del software instalado con Windows Installer en cada uno de los puestos cliente que están usando Windows 7. ¿Cómo podría obtener esta información?',
+                options: {a: 'Get-PackageProvider --list', b: 'Get-Object installed-software', c: 'Get-WmiObject win32_product', d: 'Get-InstalledSoftware'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P27',
+                question: 'En el puesto Windows de usuario final, ¿qué comando de Powershell nos permitirá obtener el historial de comandos introducidos?',
+                options: {a: 'Get-Last', b: 'Get-History', c: '!last', d: 'Get-Cmdlet'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P28',
+                question: 'En el puesto Windows de usuario final, usando Powershell, ¿cuál sería el comando para poder obtener el listado de servicios en el puesto?',
+                options: {a: 'Get-Service', b: 'Get-InstalledServices', c: 'Get-Object Service', d: 'Set-Command Services.msc'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P29',
+                question: 'Es una herramienta desarrollada por el CCN-CERT para la gestión de ciberincidentes en las entidades del ámbito de aplicación del ENS, con ella se pretende mejorar la coordinación entre el CERT y los distintos organismos y organizaciones con las que colabora:',
+                options: {a: 'VANESA', b: 'CARMEN', c: 'LUCIA', d: 'PILAR'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P30',
+                question: 'En postgreSQL, ¿qué comando permite desde consola, en la máquina Linux y con el usuario postgres, crear una base de datos?',
+                options: {a: 'createdb', b: 'db_create', c: 'ps-create-database', d: 'psql-create'},
+                correctAnswer: 'a'
+            },
+            // Preguntas de reserva (Bloque IV)
+            {
+                id: 'B4-PR1',
+                question: '¿Qué red es un conjunto de infraestructuras de comunicaciones y servicios básicos que conecta las redes de las Administraciones Públicas Españolas e Instituciones Europeas facilitando el intercambio de información y el acceso a los servicios?',
+                options: {a: 'STORK', b: 'DIR3', c: 'SARA', d: 'ORVE'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-PR2',
+                question: '¿Cuál sería la primera IP disponible para asignar a un host en la red "RED001", 172.30.23.0/20 ?',
+                options: {a: '172.30.8.0', b: '172.30.14.1', c: '172.30.16.1', d: '172.30.23.1'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-PR3',
+                question: 'Si la versión del sistema operativo de los macOS de la unidad administrativa es "Product Version:10.13.4". ¿Con qué nombre de versión, entre las que siguen, se corresponde?',
+                options: {a: 'El Capitán', b: 'Maveriks', c: 'Yosemite', d: 'High Sierra'},
+                correctAnswer: 'd'
+            }
+        ];
+
+        const questions = allQuestions; // Se incluyen todas las preguntas ahora.
+
+        let userAnswers = {};
+        let currentQuestionIndex = 0;
+
+        const testContainer = document.getElementById('test-container');
+        const submitButton = document.getElementById('submit-test');
+        const resultsSection = document.getElementById('results');
+        const resultsContent = document.getElementById('results-content');
+        const retakeTestButton = document.getElementById('retake-test');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-test'); // Nuevo botón de reinicio
+
+        // Claves para LocalStorage
+        const LOCAL_STORAGE_ANSWERS_KEY = 'taiTestAnswers';
+        const LOCAL_STORAGE_INDEX_KEY = 'taiTestCurrentIndex';
+
+        // Función para guardar el estado en LocalStorage
+        function saveState() {
+            localStorage.setItem(LOCAL_STORAGE_ANSWERS_KEY, JSON.stringify(userAnswers));
+            localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, currentQuestionIndex);
+        }
+
+        // Función para cargar el estado desde LocalStorage
+        function loadState() {
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_ANSWERS_KEY);
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_INDEX_KEY);
+
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+        }
+
+        // Función para verificar la respuesta seleccionada y proporcionar retroalimentación inmediata
+        function checkAnswer(questionId, selectedValue) {
+            const questionData = questions.find(q => q.id === questionId);
+            if (!questionData) return;
+
+            userAnswers[questionId] = selectedValue; // Almacenar la respuesta del usuario
+            saveState(); // Guardar el estado después de cada respuesta
+
+            const optionsDiv = document.querySelector(`#test-container .question-card .options`);
+            const allRadios = optionsDiv.querySelectorAll('input[type="radio"]');
+            const allSpans = optionsDiv.querySelectorAll('label span');
+
+            // Deshabilitar todos los botones de radio para esta pregunta
+            allRadios.forEach(radio => radio.disabled = true);
+            allSpans.forEach(span => span.parentElement.classList.add('disabled-option'));
+
+            const selectedSpan = optionsDiv.querySelector(`input[value="${selectedValue}"] + span`);
+
+            if (selectedValue === questionData.correctAnswer) {
+                selectedSpan.classList.add('correct-option-feedback');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text correct-feedback-text';
+                feedbackMessage.textContent = '¡Correcto!';
+                optionsDiv.appendChild(feedbackMessage);
+            } else {
+                selectedSpan.classList.add('wrong-option-feedback');
+                // Resaltar la respuesta correcta
+                const correctSpan = optionsDiv.querySelector(`input[value="${questionData.correctAnswer}"] + span`);
+                correctSpan.classList.add('correct-highlight');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text wrong-feedback-text';
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+        }
+
+        // Función para renderizar una pregunta
+        function renderQuestion(index) {
+            testContainer.innerHTML = ''; // Limpiar el contenedor
+            const questionData = questions[index];
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `<strong>${index + 1}.</strong> ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options';
+
+            const hasAnswered = userAnswers.hasOwnProperty(questionData.id);
+
+            for (const key in questionData.options) {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${questionData.id}`;
+                input.value = key;
+                input.disabled = hasAnswered; // Deshabilitar si ya ha sido respondida
+                input.onclick = (e) => checkAnswer(questionData.id, e.target.value); // Usar onclick para retroalimentación inmediata
+
+                const span = document.createElement('span');
+                span.textContent = `${key}) ${questionData.options[key]}`;
+
+                label.appendChild(input);
+                label.appendChild(span);
+                optionsDiv.appendChild(label);
+
+                // Si ya se ha respondido, seleccionar la opción del usuario y aplicar estilos de feedback
+                if (hasAnswered) {
+                    label.classList.add('disabled-option');
+                    if (userAnswers[questionData.id] === key) {
+                        input.checked = true; // Seleccionar la respuesta del usuario
+                        if (key === questionData.correctAnswer) {
+                            span.classList.add('correct-option-feedback');
+                        } else {
+                            span.classList.add('wrong-option-feedback');
+                        }
+                    } else if (key === questionData.correctAnswer) {
+                        span.classList.add('correct-highlight');
+                    }
+                }
+            }
+            questionCard.appendChild(optionsDiv);
+            testContainer.appendChild(questionCard);
+
+            // Si ya se ha respondido, añadir el mensaje de feedback
+            if (hasAnswered) {
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = `feedback-text ${userAnswers[questionData.id] === questionData.correctAnswer ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedbackMessage.textContent = userAnswers[questionData.id] === questionData.correctAnswer ? '¡Correcto!' : 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+
+            updateNavigationButtons();
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1) {
+                submitButton.classList.remove('hidden');
+            } else {
+                submitButton.classList.add('hidden');
+            }
+        }
+
+        // Event listeners para los botones de navegación
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveState(); // Guardar el estado al cambiar de pregunta
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                saveState(); // Guardar el estado al cambiar de pregunta
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Función para enviar el test y mostrar resultados
+        submitButton.addEventListener('click', () => {
+            let correctAnswers = 0;
+            let wrongAnswers = 0;
+            resultsContent.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[q.id];
+                const isCorrect = userAnswer === q.correctAnswer;
+
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const questionTitle = document.createElement('p');
+                questionTitle.innerHTML = `<strong>${index + 1}. ${q.question}</strong>`;
+                resultItem.appendChild(questionTitle);
+
+                const userAnswerText = document.createElement('p');
+                userAnswerText.innerHTML = `Tu respuesta: <span class="${isCorrect ? 'correct-answer' : 'wrong-answer'}">${userAnswer ? `${userAnswers[q.id]}) ${q.options[userAnswer]}` : 'Sin responder'}</span>`;
+                resultItem.appendChild(userAnswerText);
+
+                const correctAnswerText = document.createElement('p');
+                correctAnswerText.innerHTML = `Respuesta correcta: <span class="correct-answer">${q.correctAnswer}) ${q.options[q.correctAnswer]}</span>`;
+                resultItem.appendChild(correctAnswerText);
+
+                const feedback = document.createElement('p');
+                feedback.className = `feedback-text ${isCorrect ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedback.textContent = isCorrect ? '¡Correcto!' : 'Incorrecto.';
+                resultItem.appendChild(feedback);
+
+                resultsContent.appendChild(resultItem);
+
+                if (isCorrect) {
+                    correctAnswers++;
+                } else {
+                    wrongAnswers++;
+                }
+            });
+
+            const finalScore = document.createElement('h3');
+            finalScore.className = 'section-title mt-4';
+            finalScore.textContent = `Puntuación final: ${correctAnswers} aciertos y ${wrongAnswers} fallos de ${questions.length} preguntas.`;
+            resultsContent.prepend(finalScore); // Añadir la puntuación al principio
+
+            testContainer.classList.add('hidden');
+            submitButton.classList.add('hidden');
+            prevButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            resetButton.classList.add('hidden'); // Ocultar el botón de reinicio al finalizar
+            resultsSection.classList.remove('hidden');
+        });
+
+        // Función para volver a intentar el test (desde la sección de resultados)
+        retakeTestButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar LocalStorage
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY);   // Limpiar LocalStorage
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            resetButton.classList.remove('hidden'); // Mostrar el botón de reinicio
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Nuevo botón para reiniciar el test completamente (desde cualquier punto)
+        resetButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar LocalStorage
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY);   // Limpiar LocalStorage
+            resultsSection.classList.add('hidden'); // Asegurarse de que la sección de resultados esté oculta
+            testContainer.classList.remove('hidden'); // Asegurarse de que el contenedor del test esté visible
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            submitButton.classList.add('hidden'); // Ocultar el botón de finalizar
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Inicializar el test
+        loadState(); // Cargar el estado al inicio
+        renderQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>

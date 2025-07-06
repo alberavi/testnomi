@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSI 2017</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to prevent vertical centering issues on long content */
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%; /* Fluid width */
+            margin: 20px auto;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: 600;
+        }
+        .question-container {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+        .question-number {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #3f51b5;
+            font-size: 1.15em;
+        }
+        .question-text {
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .options label {
+            display: flex; /* Use flex for alignment */
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 12px 15px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            font-size: 1em;
+            line-height: 1.4;
+        }
+        .options label:hover {
+            background-color: #e8f0fe;
+            border-color: #a7c7ed;
+        }
+        .options input[type="radio"] {
+            margin-right: 12px;
+            transform: scale(1.2); /* Slightly larger radio buttons */
+        }
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: right;
+            padding-right: 5px;
+        }
+        .correct {
+            color: #28a745; /* Green */
+        }
+        .incorrect {
+            color: #dc3545; /* Red */
+        }
+        .navigation-buttons, .result-buttons {
+            text-align: center;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        .navigation-buttons button, .result-buttons button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background-color: #1a73e8;
+            color: white;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .navigation-buttons button:hover, .result-buttons button:hover {
+            background-color: #0d47a1;
+            transform: translateY(-2px);
+        }
+        .navigation-buttons button:active, .result-buttons button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .results-summary {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid #cce5ff;
+            border-radius: 8px;
+            background-color: #e0f2f7;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 500;
+            color: #004085;
+            line-height: 1.8;
+        }
+        .results-summary p {
+            margin: 8px 0;
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+                margin: 10px auto;
+            }
+            h1 {
+                font-size: 1.6em;
+                margin-bottom: 20px;
+            }
+            .question-text {
+                font-size: 1em;
+            }
+            .options label {
+                padding: 10px;
+                font-size: 0.95em;
+            }
+            .navigation-buttons button, .result-buttons button {
+                padding: 10px 18px;
+                font-size: 0.9em;
+                margin: 5px;
+            }
+            .results-summary {
+                font-size: 1.1em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GSI 2017 - Test Interactivo</h1>
+        <div id="test-container">
+            <div id="question-area">
+                <!-- Questions will be loaded here by JavaScript -->
+            </div>
+            <div class="navigation-buttons">
+                <button id="prev-btn" class="hidden">Anterior</button>
+                <button id="next-btn">Siguiente</button>
+                <button id="finish-btn">Finalizar Test</button>
+                <!-- Moved Reiniciar Test button here -->
+                <button id="restart-btn">Reiniciar Test</button>
+            </div>
+        </div>
+        <div id="results-area" class="hidden">
+            <h2>Resultados del Test</h2>
+            <div class="results-summary">
+                <p>Correctas: <span id="correct-count">0</span></p>
+                <p>Incorrectas: <span id="incorrect-count">0</span></p>
+                <p>Sin Contestar: <span id="unanswered-count">0</span></p>
+            </div>
+            <!-- Removed restart-btn from here -->
+        </div>
+    </div>
+
+    <script>
+        // Answer key parsed from Plant_DefGSI-L1EJER_154AB89SD658.pdf
+        const answerKey = {
+            "Única": "C", "1": "C", "2": "A", "3": "A", "4": "C", "5": "B",
+            "6": "D", "7": "B", "8": "A", "9": "B", "10": "D", "11": "C",
+            "12": "D", "13": "C", "14": "B", "15": "B", "16": "B", "17": "B",
+            "18": "D", "19": "A", "20": "B", "21": "A", "22": "D", "23": "D",
+            "24": "B", "25": "A", "26": "B", "27": "A", "28": "A", "29": "C",
+            "30": "D", "31": "B", "32": "A", "33": "A", "34": "B", "35": "B",
+            "36": "B", "37": "B", "38": "B", "39": "D", "40": "B", "41": "C",
+            "42": "A", "43": "B", "44": "C", "45": "A", "46": "D", "47": "C",
+            "48": "B", "49": "B", "50": "B", "51": "C", "52": "A", "53": "B",
+            "54": "C", "55": "A", "56": "C", "57": "A", "58": "C", "59": "B",
+            "60": "A", "61": "A", "62": "B", "63": "B", "64": "C", "65": "D",
+            "66": "B", "67": "C", "68": "B", "69": "A", "70": "D", "71": "C",
+            "72": "B", "73": "A", "74": "C", "75": "A", "76": "B", "77": "A",
+            "78": "B", "79": "D", "80": "C", "81": "D", "82": "D", "83": "B",
+            "84": "B", "85": "C", "86": "C", "87": "B", "88": "D", "89": "A",
+            "90": "D", "91": "A", "92": "B", "93": "C", "94": "D", "95": "A",
+            "96": "B", "97": "C", "98": "D", "99": "C", "100": "A",
+            "Reserva 1": "B", "Reserva 2": "B", "Reserva 3": "D"
+        };
+
+        // Questions parsed from GSI202017.pdf
+        const questions = [
+            { "number": "Única", "question": "Señale cuál de las siguientes funciones corresponde al Rey:", "options": { "a": "Plantear ante el Congreso de los Diputados, previa deliberación del Consejo de Ministros, la cuestión de confianza.", "b": "Dirigir la política de defensa y ejercer respecto de las Fuerzas Armadas las funciones previstas en la legislación reguladora de la defensa nacional y de la organización militar.", "c": "Nombrar y separar a los miembros del Gobierno, a propuesta de su Presidente.", "d": "Interponer el recurso de inconstitucionalidad." } },
+            { "number": "1", "question": "Según el artículo 66 de la Constitución Española, ¿a quién corresponde aprobar los Presupuestos del Estado?", "options": { "a": "Al Gobierno.", "b": "Al Congreso de los Diputados.", "c": "Al Congreso de los Diputados y Senado, en sesión conjunta.", "d": "A las Cortes Generales." } },
+            { "number": "2", "question": "Según se establece por la Constitución Española de 1978, las disposiciones del Gobierno que contengan legislación delegada recibirán el título de:", "options": { "a": "Decretos Legislativos.", "b": "Decretos Leyes.", "c": "Proposiciones de Ley.", "d": "Leyes Orgánicas." } },
+            { "number": "3", "question": "Según se establece por la Constitución Española de 1978, las disposiciones del Gobierno que contengan legislación delegada recibirán el título de:", "options": { "a": "Decretos Legislativos.", "b": "Decretos Leyes.", "c": "Proposiciones de Ley.", "d": "Leyes Orgánicas." } },
+            { "number": "4", "question": "De acuerdo con el artículo 116 de la Constitución Española, el estado de sitio será declarado por:", "options": { "a": "El Gobierno mediante Decreto acordado en el Consejo de Ministros, dando cuenta al Congreso de los Diputados.", "b": "Mayoría de $3/5$ de las Cortes Generales, a propuesta del Gobierno.", "c": "Mayoría absoluta del Congreso de los Diputados, a propuesta exclusiva del Gobierno.", "d": "El Gobierno mediante Decreto acordado en el Consejo de Ministros y previa autorización del Congreso de los Diputados." } },
+            { "number": "5", "question": "Señale la respuesta correcta en relación con la moción de censura regulada en el artículo 113 de la Constitución:", "options": { "a": "El Congreso de los Diputados puede exigir responsabilidad política del Gobierno mediante la adopción por mayoría simple de la moción de censura.", "b": "La moción de censura deberá ser propuesta al menos por la décima parte de los Diputados y habrá de incluir un candidato a la Presidencia del Gobierno.", "c": "La moción de censura no podrá ser votada hasta que transcurran 5 días desde su presentación. No podrán presentarse mociones alternativas.", "d": "Si la moción de censura no fuera aprobada por el Congreso, sus signatarios podrán volver a presentarla transcurrido el plazo de un mes." } },
+            { "number": "6", "question": "Según se establece en la Ley $19/2013$, de Transparencia, Acceso a la Información Pública y Buen Gobierno, en su artículo 14 en el que se establece los límites al derecho de acceso, este derecho podrá ser limitado cuando acceder a la información suponga un perjuicio para:", "options": { "a": "La seguridad social.", "b": "La protección del Patrimonio Histórico.", "c": "El turismo.", "d": "La protección del medio ambiente." } },
+            { "number": "7", "question": "El III Plan de Acción de España 2017-2019 de la Alianza para el Gobierno Abierto contiene 20 compromisos estructurados en torno a los siguientes 5 ejes:", "options": { "a": "Colaboración, participación, transparencia, rendición de cuentas y buen gobierno.", "b": "Colaboración, participación, transparencia, rendición de cuentas y formación.", "c": "Colaboración, participación, publicidad activa, derecho de acceso a la información y rendición de cuentas.", "d": "Colaboración, participación, transparencia, rendición de cuentas y datos abiertos." } },
+            { "number": "8", "question": "En relación con la reclamación ante el Consejo de la Transparencia y Buen Gobierno regulada en el artículo 24 de la Ley $19/2013$, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno, es cierto que:", "options": { "a": "Tiene carácter potestativo y previo a su impugnación en vía contencioso-administrativa.", "b": "Las resoluciones se publicarán íntegramente, conteniendo los datos personales de los interesados.", "c": "El plazo para interponerla será de 6 meses desde el día siguiente a la notificación del acto impugnado.", "d": "Transcurrido el plazo máximo para resolver y notificar la resolución, la reclamación se entenderá estimada." } },
+            { "number": "9", "question": "Según se establece en el Real Decreto Legislativo $5/2015$, texto refundido de la Ley del Estatuto Básico del Empleado Público, para una Unidad electoral con un censo de 451 funcionarios, el número de representantes a elegir para esa Junta de Personal será de:", "options": { "a": "9", "b": "13", "c": "17", "d": "21" } },
+            { "number": "10", "question": "En relación con la estructura de la Administración General del Estado, el artículo 55 de la Ley $40/2015$, de 1 de octubre, de Régimen del Sector Público establece que:", "options": { "a": "Los Ministros y los Secretarios de Estado son órganos directivos.", "b": "Los Subsecretarios y Secretarios Generales son órganos superiores.", "c": "Los Delegados del Gobierno son órganos superiores y los Subdelegados del Gobierno órganos directivos.", "d": "Los Directores Generales y los Subdirectores Generales son órganos directivos." } },
+            { "number": "11", "question": "De acuerdo con el Real Decreto $5/2015,$ de 30 de octubre, por el que se aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público, una de las circunstancias que debe darse para el nombramiento de un funcionario interino son el exceso o acumulación de tareas por plazo máximo de:", "options": { "a": "3 meses, dentro de un período de 6 meses.", "b": "12 meses, dentro de un período de 18 meses.", "c": "6 meses, dentro de un período de 12 meses.", "d": "8 meses, dentro de un período de 12 meses." } },
+            { "number": "12", "question": "De acuerdo con la Constitución española de 1978, cualquier alteración de los límites provinciales habrá de ser aprobada por:", "options": { "a": "Real Decreto del Consejo de Ministros.", "b": "Decreto de la Comunidad Autónoma respectiva.", "c": "Ley ordinaria de las Cortes Generales.", "d": "Ley Orgánica de las Cortes Generales." } },
+            { "number": "13", "question": "De acuerdo al artículo 6 de la Ley Orgánica $3/2007$, para la igualdad efectiva de mujeres y hombres, se define discriminación directa por razón de sexo a:", "options": { "a": "cualquier comportamiento realizado con el propósito o el efecto de atentar contra su dignidad y de crear un entorno intimidatorio, degradante u ofensivo.", "b": "hacer efectivo el derecho constitucional de la Igualdad.", "c": "la situación en que se encuentra una persona que sea, haya sido o pudiera ser tratada, en atención a su sexo, de manera menos favorable que otra en situación comparable.", "d": "legislar contra el derecho al aborto." } },
+            { "number": "14", "question": "El artículo 17 de la Ley Orgánica $3/2007$, de 22 de marzo, para la igualdad efectiva de mujeres y hombres obliga a establecer un Plan Estratégico de Igualdad de Oportunidades:", "options": { "a": "A todas las Comunidades Autónomas.", "b": "Al Gobierno, en las materias que sean competencia del Estado.", "c": "A todas las empresas.", "d": "A las empresas con más de 250 trabajadores." } },
+            { "number": "15", "question": "Según se establece en el reglamento eIDAS, Reglamento (UE) $910/2014,$ en su artículo 22, las listas de confianza las publicará, firmadas o selladas electrónicamente, y en una forma apropiada para el tratamiento automático:", "options": { "a": "La Comisión Europea.", "b": "Cada Estado miembro de la Unión Europea.", "c": "El Parlamento Europeo.", "d": "El Consejo de la Unión Europea." } },
+            { "number": "16", "question": "Según el Reglamento (UE) $2016/679$ de Protección de Datos (RGPD), ¿quién debe llevar un registro de las actividades de tratamiento efectuadas bajo su responsabilidad?", "options": { "a": "El delegado de protección de datos.", "b": "Cada responsable y, en su caso, su representante.", "c": "El interesado.", "d": "El responsable de seguridad." } },
+            { "number": "17", "question": "Según el del Reglamento (UE) $2016/679$, de 27 de abril, Reglamento General de Protección de Datos, ¿resulta obligatoria la designación de un Delegado de Protección de Datos en las Administraciones Públicas?", "options": { "a": "No.", "b": "Sí, excepto los Tribunales cuándo actúen en ejercicio de su función judicial.", "c": "Si, con excepción de la Administración Local.", "d": "Únicamente en el ámbito de la Administración General del Estado." } },
+            { "number": "18", "question": "La Ley 39/2015, del Procedimiento Administrativo Común de las Administraciones Públicas, establece en su artículo 100 los medios por los que se efectuará la ejecución forzosa, entre ellos Incluye:", "options": { "a": "Compulsión tributaria.", "b": "Multa sobre el patrimonio.", "c": "Apremio coercitivo.", "d": "Ejecución subsidiaria." } },
+            { "number": "19", "question": "Según el artículo 17 de la Ley $39/2015$, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas, la Administración deberá mantener un archivo electrónico único de documentos electrónicos:", "options": { "a": "que correspondan a procedimientos finalizados.", "b": "y en papel, que correspondan a procedimientos finalizados.", "c": "que correspondan a procedimientos ablertos o finalizados.", "d": "y en papel, que correspondan a procedimientos abiertos o finalizados" } },
+            { "number": "20", "question": "En el Real Decreto 1495/2011, que desarrolla la Ley $37/2007$, sobre reutilización de la información del sector público estatal, en su artículo 5 establece por parte de la Secretaría de Estado para la Función Pública y la Secretaría de Estado de Telecomunicaciones y para la Sociedad de la Información del mantenimiento de lo que se conoce como:", "options": { "a": "Plataforma de Intermediación.", "b": "Catálogo de Información Pública reutilizable.", "c": "Catálogo de Servicios y Datos reutilizables Comunes.", "d": "Infraestructura de Uso Común." } },
+            { "number": "21", "question": "Entre los servicios que encontramos en el Centro de Transferencia de Tecnología entre Administraciones (CTT), ¿qué es FIRE?", "options": { "a": "Una solución que simplifica el uso y realización de firmas electrónicas de usuario.", "b": "Un sistema que permite generar formularios y encuestas para su cumplimentación vía web.", "c": "El Punto General de entrada de facturas de la Administración General del Estado.", "d": "Una aplicación web de archivo definitivo de expedientes y documentos electrónicos." } },
+            { "number": "22", "question": "¿En cuál de las siguientes tecnologías los datos son procesados en el punto más lejano a donde son recogidos?", "options": { "a": "Device Computing.", "b": "Edge Computing.", "c": "Fog Computing.", "d": "Cloud Computing." } },
+            { "number": "23", "question": "Cuál de las siguientes afirmaciones es FALSA en relación con el proyecto OpenStack:", "options": { "a": "Es un proyecto de computación en la nube.", "b": "Es software libre y código abierto distribuido bajo los términos de la licencia Apache.", "c": "En su arquitectura modular se encuentra Neutron para la gestión de redes y direcciones IP.", "d": "Proporciona una solución de Software como Servicio (SaaS) a través de un conjunto de servicios interrelacionados." } },
+            { "number": "24", "question": "La ejecución especulativa es un mecanismo de paralelización automática que:", "options": { "a": "no usa la memoria caché.", "b": "se usa en tiempo de ejecución.", "c": "no usa predicciones de saltos.", "d": "se usa en tiempo de compilación." } },
+            { "number": "25", "question": "En Linux, si queremos añadir una entrada en la tabla de rutas IPs del kernel, utilizamos el comando:", "options": { "a": "route add", "b": "traceroute add", "c": "Ifconfig -a", "d": "wget -a" } },
+            { "number": "26", "question": "¿Cuál es la versión de Android pensada para los teléfonos de menos de 1GB de RAM?", "options": { "a": "Oreo Little", "b": "Oreo Go", "c": "L-Oreo", "d": "Oreo Agile" } },
+            { "number": "27", "question": "El comando en Linux que muestra la versión del kernel es:", "options": { "a": "cat/proc/version", "b": "cat /proc/kernel", "c": "cat/proc/cpuinfo", "d": "cat /proc/sys" } },
+            { "number": "28", "question": "¿Cuál de las siguientes soluciones que se proponen es la más óptima para almacenar grandes cantidades de datos sin procesar?", "options": { "a": "Data Lake.", "b": "Data Warehouse.", "c": "Data Marts.", "d": "Data Universe." } },
+            { "number": "29", "question": "¿Qué capa del modelo OSI se encarga de la sincronización, requerimiento de respuestas, establecimiento, disolución y vigilancia de una sesión?", "options": { "a": "Aplicación.", "b": "Presentación.", "c": "Sesión.", "d": "Estas tareas se comparten entre las tres capas anteriores." } },
+            { "number": "30", "question": "Señale la respuesta correcta sobre el campo ToS de la cabecera del protocolo IPv4, según la RFC 791, un valor en sus tres primeros bits (precedencia) de:", "options": { "a": "001 indica que el paquete es de control de red.", "b": "010 indica que el paquete es prioritario.", "c": "011 indica que el paquete es prioritario.", "d": "111 indica que el paquete es de control de red." } },
+            { "number": "31", "question": "¿Cuál de los siguientes es un tipo de almacenamiento en HTML5?", "options": { "a": "HTMLStorage", "b": "SessionStorage", "c": "HTMLCookie", "d": "SessionCookie" } },
+            { "number": "32", "question": "El formato de un JWT (JSON Web Token) tiene una estructura definida y estándar que está basada en tres partes denominadas:", "options": { "a": "Header, payload, signature.", "b": "Envelope, body, foot.", "c": "Id, timestamp, checksum.", "d": "Sessionid duration" } },
+            { "number": "33", "question": "Señale cuál de las siguientes etiquetas de HTML5 permite definir contenido autónomo que podría existir independientemente del resto del contenido:", "options": { "a": "<article>", "b": "<aside>", "c": "<section>", "d": "<main>" } },
+            { "number": "34", "question": "Señale cuál de las siguientes versiones de PILAR es una versión reducida, destinada a la realización de análisis de riesgos muy rápidos:", "options": { "a": "PILAR Basic", "b": "PILAR Mini", "c": "PILAR", "d": "RMAT" } },
+            { "number": "35", "question": "La técnica de MAGERIT v3 que se utiliza para modelar las diferentes formas de alcanzar un objetivo se denomina:", "options": { "a": "Análisis logaritmico.", "b": "Árboles de ataque.", "c": "Valoración Delphi.", "d": "Gráficos de radar." } },
+            { "number": "36", "question": "Las herramientas que permiten realizar técnicas de auditoría asistidas por ordenador se conocen como:", "options": { "a": "CASES", "b": "CAATS", "c": "CATES", "d": "CADES" } },
+            { "number": "37", "question": "Señale cuál de las siguientes herramientas utilizadas en informática forense es software propietario:", "options": { "a": "The Sleuth Kit", "b": "Oxygen Forensic Suite", "c": "Volatility", "d": "Santoku" } },
+            { "number": "38", "question": "Señale qué herramienta del CCN-CERT permite el intercambio de información de ciberamenazas:", "options": { "a": "LUCIA", "b": "CARMEN", "c": "ROCIO", "d": "REYES" } },
+            { "number": "39", "question": "Señale cuál de los siguientes tipos de licencia es de software libre con copyleft:", "options": { "a": "Apache 2.0", "b": "X11", "c": "BSD (original)", "d": "GPL" } },
+            { "number": "40", "question": "El \"cuadrante mágico\" de Gartner es:", "options": { "a": "Un gráfico en el que se muestran las debilidades, amenazas y oportunidades.", "b": "Un análisis detallado de áreas y mercados específicos de soluciones y fabricantes de tecnología.", "c": "Una herramienta para la planificación de proyectos cuyo resultado es un gráfico con 4 cuadrantes que clasifican la viabilidad y oportunidad de la acometida del mismo en base a los parámetros introducidos.", "d": "División visual del estado de una tarea que utiliza el método Kanban." } },
+            { "number": "41", "question": "Señale cuál de las siguientes es una técnica de posicionamiento SEO:", "options": { "a": "Trunking", "b": "Jigsaw", "c": "Link baiting", "d": "Link hanging" } },
+            { "number": "42", "question": "En relación a los almacenes de datos, ¿en qué consiste un proceso ETL?", "options": { "a": "Es un proceso que permite extraer datos heterogéneos, transformarlos y cargarlos sobre un sistema homogéneo.", "b": "Es un proceso que permite extraer datos homogéneos, truncarlos y cargarlos sobre un sistema heterogéneo.", "c": "Es un lenguaje estandarizado para consolidar los procesos de extracción de datos.", "d": "Es una carga extendida que permite realizar la carga de datos heterogéneos sobre un sistema homogéneo sin procesarlos (raw)." } },
+            { "number": "43", "question": "La técnica del Diagrama de Extrapolación, definido en el documento de Técnicas y Prácticas de Métrica v3, se utiliza para:", "options": { "a": "La representación del plan de trabajo, mostrando las tareas a realizar, el momento de su comienzo y su terminación y la forma en que las distintas tareas están encadenadas entre sí.", "b": "Realizar un seguimiento de los proyectos software y obtener previsiones de desviaciones en la duración del desarrollo del proyecto.", "c": "Documentar mediante una imagen una situación específica.", "d": "Representar las actividades de un proceso, definir las dependencias y relaciones entre dichas actividades, los controles que determinan o limitan su ejecución, los mecanismos que los ponen en marcha, así como los datos que se utilizan, comparten o transforman en los procesos." } },
+            { "number": "44", "question": "Señale el principio que NO se encuentra recogido en el Manifiesto Ágil para el desarrollo de software:", "options": { "a": "La simplicidad, o el arte de maximizar la cantidad de trabajo no realizado, es esencial.", "b": "El software funcionando es la medida principal de progreso.", "c": "Los proyectos se desarrollan sobre procesos y herramientas consolidados.", "d": "Aceptamos que los requisitos cambien, incluso en etapas tardías del desarrollo." } },
+            { "number": "45", "question": "Dentro de la metodología para gestión y desarrollo de software Scrum, ¿a qué se refiere el concepto \"sprint planning\"?", "options": { "a": "Reunión en la que se determinan los elementos del Product Backlog que van a formar parte del sprint.", "b": "Tablero con notas cuyo objetivo es planificar de manera general, mediante fases predeterminadas, como se van completando las tareas.", "c": "Reunión diaria de seguimiento de proyecto en la que se controla el cumplimiento de las tareas del backlog.", "d": "Técnica que tiene como objetivo la representación del sprint, mostrando las tareas a realizar, el momento de su comienzo y su terminación y la forma en que las distintas tareas están encadenadas entre sí." } },
+            { "number": "46", "question": "De acuerdo a Métrica v3, indique cuál de los siguientes participantes pertenece a la categoría de perfil Analista:", "options": { "a": "Especialista en Comunicaciones.", "b": "Equipo de Arquitectura.", "c": "Consultor Informático.", "d": "Usuarios expertos." } },
+            { "number": "47", "question": "Según la metodología MÉTRICA v3, el conjunto de pruebas de integración consistente en determinar que los tiempos de respuesta están dentro de los intervalos establecidos en las especificaciones del sistema son pruebas de:", "options": { "a": "Volumen", "b": "Comunicaciones", "c": "Rendimiento", "d": "Sobrecarga" } },
+            { "number": "48", "question": "Indique los participantes de la tarea \"Definición del Esquema de Formación\" de la actividad CSI-7.1 de Métrica v3, definición de la formación de usuarios finales:", "options": { "a": "Analistas.", "b": "Analistas y Equipo de Formación.", "c": "Equipo de Formación.", "d": "Equipo de Formación y Equipo del Proyecto." } },
+            { "number": "49", "question": "De acuerdo al estándar IEEE 830, ¿cuáles de las siguientes combinaciones de características es deseable que posean los requisitos?", "options": { "a": "Confidencialidad, No ambiguos, Completos, Consistentes, Clasificados, Verificables, Modificables, Trazables.", "b": "Corrección, No ambiguos, Completos, Consistentes, Clasificados, Verificables, Modificables, Trazables.", "c": "Corrección, No ambiguos, Completos, Consistentes, Disponibles, Verificables, Modificables, Trazables.", "d": "Corrección, No ambiguos, Completos, Integros, Clasificados, Verificables, Modificables, Trazables." } },
+            { "number": "50", "question": "La agregación en el modelo entidad/relación extendido sirve para:", "options": { "a": "Indicar que un conjunto (o tipo) de entidades está formado por otro conjunto de entidades.", "b": "Construir un nuevo tipo de entidad como composición de otros y su tipo de relación.", "c": "Especializar un conjunto (o tipo) de entidades, por ejemplo un empleado puede ser un administrativo, un analista, etc.", "d": "Indicar que un conjunto (o tipo) de entidades se identifican con el identificador de otro conjunto de entidades, más un conjunto de atributos propios." } },
+            { "number": "51", "question": "Dentro del modelo entidad/relación extendido, la característica que representa la participación en la relación de cada una de las entidades afectadas, se denomina:", "options": { "a": "Grado", "b": "Tipo de correspondencia", "c": "Cardinalidad", "d": "Asociación" } },
+            { "number": "52", "question": "Respecto del algoritmo de Dijkstra:", "options": { "a": "Entre otros, como el de Kruskal y Prim, está considerado como un algoritmo greedy.", "b": "Es un método general para hallar el camino más corto dado un vértice origen en grafos sin pesos.", "c": "Es un método para calcular el \"minimum spanning tree\".", "d": "Funciona en cualquier tipo de grafo." } },
+            { "number": "53", "question": "Atendiendo al manual de Técnicas de Métrica v3, ¿qué cualidades debe cumplir la calidad estructural de un diseño?", "options": { "a": "Alta cohesión y alto acoplamiento.", "b": "Alta cohesión y bajo acoplamiento.", "c": "Baja cohesión y alto acoplamiento.", "d": "Baja cohesión y bajo acoplamiento." } },
+            { "number": "54", "question": "En el contexto del diseño software, ordene los siguientes niveles de cohesión definidos en la metodología Métrica v3, de mayor a menor cohesión:", "options": { "a": "Casual > Temporal > Procedimental > Secuencial > Funcional", "b": "Secuencial > Procedimental > Funcional > Casual > Temporal", "c": "Funcional > Secuencial > Procedimental > Temporal > Casual", "d": "Temporal > Casual > Secuencial > Procedimental > Funcional" } },
+            { "number": "55", "question": "¿Cuál de los siguientes estándares proporciona requisitos para el diseño y desarrollo de la documentación del usuario del software como parte de los procesos del ciclo de vida?", "options": { "a": "ISO/IEC 26514", "b": "ISO/IEC 9295", "c": "ISO/IEC 27002", "d": "ISO/IEC 25101" } },
+            { "number": "56", "question": "Señale cuál de los siguientes tipos de prueba se considera una técnica de pruebas de caja blanca:", "options": { "a": "Particiones o clases de equivalencia.", "b": "Análisis de valores límite.", "c": "Cobertura de sentencias.", "d": "Grafos causa-efecto." } },
+            { "number": "57", "question": "Indique cuál de los siguientes entornos de virtualización de servidores es de código abierto:", "options": { "a": "Proxmox VE", "b": "Vmware", "c": "PowerVM", "d": "XenApp" } },
+            { "number": "58", "question": "¿En qué proceso de Métrica v3 se establece el acuerdo de nivel de servicio?", "options": { "a": "DSI", "b": "CSI", "c": "IAS", "d": "MSI" } },
+            { "number": "59", "question": "En un modelo de casos de uso de UML, un caso de uso A tiene una relación de extensión (con el estereotipo \"extend\") con un caso de uso B. El caso de uso extendido es A (la flecha de la relación apunta a A):", "options": { "a": "El caso de uso A tiene que incluir el caso de uso B para que sea un caso de uso completo.", "b": "El caso de uso A puede opcionalmente incluir el caso de uso B, pero el caso de uso A es completo por sí solo.", "c": "Antes de que se ejecute el caso de uso A, es necesaria la ejecución del caso de uso B.", "d": "Antes de que se ejecute el caso de uso B, es necesaria la ejecución del caso de uso A." } },
+            { "number": "60", "question": "¿Cuál de las siguientes afirmaciones sobre el protocolo AJP (Apache Jserv Protocol) es cierta?", "options": { "a": "Es un protocolo orientado a paquetes que permite la comunicación desde un servidor web Apache hasta uno o varios servidores de aplicaciones.", "b": "La comunicación entre el servidor web Apache y el servidor de aplicaciones se realiza mediante el protocolo UDP.", "c": "El formato de los paquetes intercambiados por AJP es texto plano por motivos de rendimiento.", "d": "AJP no permite persistencia de sesiones entre el servidor web y el de aplicaciones." } },
+            { "number": "61", "question": "¿Cuál de las siguientes opciones define una interfaz estándar de proveedor de servicios (SPI) con la que se puede desarrollar un agente de autenticación de nivel de mensaje para contenedores Java EE en el lado del cliente o del servidor?", "options": { "a": "JSR 196", "b": "JSR 197", "c": "JSR 198", "d": "JSR 199" } },
+            { "number": "62", "question": "Señale cuál de los siguientes servidores, se debería utilizar para tener una plataforma de integración de procesos de negocio basados en .NET:", "options": { "a": "Geronimo", "b": "BizTalk", "c": "Rails", "d": "WebLogic" } },
+            { "number": "63", "question": "Señale cuál de las siguientes opciones NO está relacionada con el ámbito del software de contenedores:", "options": { "a": "Kubernetes", "b": "Bitbucket", "c": "Docker", "d": "OpenShift" } },
+            { "number": "64", "question": "¿Qué tecnología está relacionada con la creación de contenidos RIA (Rich Internet Application)?", "options": { "a": "La tabla de particiones GUID (GPT).", "b": "Extensible Firmware Interface (EFI).", "c": "JavaFX.", "d": "AptX." } },
+            { "number": "65", "question": "En relación a la creación de conexiones SSL (Secure Socket Layer) en aplicaciones Java entre cliente y servidor:", "options": { "a": "Para la inclusión de certificados en el fichero Keystore se utiliza la herramienta 'keytool', mientras que para la inclusión de certificados en el Truststore se utiliza la herramienta 'trustedtool'", "b": "El fichero Keystore almacena únicamente claves públicas para la verificación de credenciales.", "c": "El formato del fichero Keystore es texto plano.", "d": "El fichero Truststore almacena certificados de terceras partes u otras autoridades certificadoras (CAs) que permiten a la aplicación java la identificación de éstas terceras partes." } },
+            { "number": "66", "question": "¿Cuál de las siguientes afirmaciones es correcta respecto a mod_security?", "options": { "a": "Permite el control de acceso a Bases de Datos distribuidas.", "b": "Monitorización en tiempo real y control de acceso de aplicaciones web.", "c": "Control de acceso en la transmisión de paquetes a través del protocolo SFTP.", "d": "Control y monitorización para despliegues automatizados en un entorno de integración continua." } },
+            { "number": "67", "question": "En relación a las siguientes tecnologías de gestión de entornos, señale la correcta:", "options": { "a": "Vagrant es un software de gestión de flujos de trabajo, utilizado en la creación, despliegue y mantenimiento de recursos.", "b": "Docker es una herramienta de gestión de la configuración de código abierto.", "c": "Ansible es una herramienta que permite orquestar, provisionar y desplegar entornos y aplicaciones de manera automatizada.", "d": "Puppet es un software utilizado para la creación y mantenimiento de entornos virtuales sobre los que se ejecutaran las distintas aplicaciones." } },
+            { "number": "68", "question": "Indique cuál de los siguientes NO es un factor de calidad que haga referencia a la \"Revisión del producto\" según el Modelo de Calidad de McCall:", "options": { "a": "Facilidad de mantenimiento", "b": "Reusabilidad", "c": "Facilidad de prueba", "d": "Flexibilidad" } },
+            { "number": "69", "question": "Según la WCAG 2.0, la pauta de accesibilidad del contenido: \"No diseñe un contenido de manera que se sepa que puede causar ataques\", se corresponde con el principio:", "options": { "a": "Operable", "b": "Perceptible", "c": "Robusto", "d": "Comprensible" } },
+            { "number": "70", "question": "¿Cuál de las siguientes características en relación a las bases de datos SQL y NoSQL es FALSA?", "options": { "a": "NoSQL no suele utilizar SQL como lenguaje de consultas.", "b": "No se suelen realizar operaciones JOIN en NoSQL por el alto coste.", "c": "Es más sencillo realizar escalado horizontal en NoSQL que en una base de datos SQL", "d": "Las bases de datos NoSQL garantizan completamente las propiedades ACID." } },
+            { "number": "71", "question": "La operación Pivot sobre un modelo multidimensional consiste en:", "options": { "a": "Ir de lo específico a lo general mediante la eliminación de un atributo de la consulta, eliminando de esta manera un criterio de análisis.", "b": "Bajar por una jerarquía definida en un cubo; es ir de los general a lo específico.", "c": "Seleccionar el orden de visualización de los atributos e indicadores, con el objetivo de analizar la información desde diferentes perspectivas.", "d": "Apreciar los datos en menor nivel de detalle, subiendo por una jerarquía definida en un cubo." } },
+            { "number": "72", "question": "¿Cuál de las siguientes Bases de Datos NoSQL es del tipo clave-valor?", "options": { "a": "mongoDB", "b": "Redis", "c": "CouchDB", "d": "Knosys" } },
+            { "number": "73", "question": "¿Cuál de las siguientes afirmaciones es INCORRECTA respecto al concepto MapReduce?", "options": { "a": "El proceso Map consiste en tomar las salidas del proceso Reduce y combina dichas tuplas en un conjunto más pequeño.", "b": "Además de los procesos Map y Reduce, incorpora una fase intermedia de Shuffle que permite balancear la carga de las tuplas de entrada.", "c": "Es un paradigma de programación utilizado en plataformas de Big Data.", "d": "Proceso Map toma un conjunto de datos y lo convierte en otro conjunto, separando los elementos individuales en tuplas (pares clave/valor)." } },
+            { "number": "74", "question": "Según estándar Filesystem Hierarchy Standard (FHS) en un sistema Linux, ¿en qué ruta deberían residir los comandos Is, cp, cat, mkdir y rm?", "options": { "a": "/srv", "b": "/usr", "c": "/bin", "d": "/opt" } },
+            { "number": "75", "question": "¿Qué tipo de mantenimiento hace referencia a los cambios que sufre el equipo por motivos de ampliaciones de la capacidad del sistema, un aumento del nivel de servicio, entre otros?", "options": { "a": "Perfectivo", "b": "Adaptativo", "c": "Preventivo", "d": "Correctivo" } },
+            { "number": "76", "question": "El comando Linux que deberemos usar si queremos saber las dependencias de librerías que tiene el programa bash:", "options": { "a": "lib/bin/bash", "b": "Idd/bin/bash", "c": "Icd/bin/bash", "d": "Isoft/bin/bash" } },
+            { "number": "77", "question": "Señale cuál es la longitud máxima en caracteres del campo nombre de un job en JCL:", "options": { "a": "8", "b": "10", "c": "14", "d": "16" } },
+            { "number": "78", "question": "Señale qué configuración RAID se conoce como distribuida de doble paridad:", "options": { "a": "RAID 5", "b": "RAID 6", "c": "RAID 0+1", "d": "RAID 1+0" } },
+            { "number": "79", "question": "La revisión 3.2 de la interfaz de bus SATA, eleva el ancho de banda disponible hasta los:", "options": { "a": "6 Gbit/s", "b": "10 Gbit/s", "c": "12 Gbit/s", "d": "16 Gbit/s" } },
+            { "number": "80", "question": "La especificación OVF es un:", "options": { "a": "Formato abierto para gestores de bases de datos volátiles.", "b": "Formato abierto para aplicaciones ofimáticas.", "c": "Estándar abierto para empaquetar y distribuir appliances para ejecutar en máquinas virtuales.", "d": "Estándar abierto para formatos de imagen admitido en la NTI de catálogo de estándares." } },
+            { "number": "81", "question": "En relación con el protocolo DHCP, señale cuál NO es un modo de asignación de direcciones IP permitido por el protocolo:", "options": { "a": "Asignación dinámica.", "b": "Asignación manual.", "c": "Asignación estática.", "d": "Asignación automática." } },
+            { "number": "82", "question": "NO es una herramienta para monitorización de redes:", "options": { "a": "Zabbix", "b": "Nagios", "c": "WhatsUp Gold", "d": "Sinnaps" } },
+            { "number": "83", "question": "¿Qué valor toma el campo \"tipo\" de la cabecera ICMPv6 para indicar que se trata de un mensaje de solicitud de eco (echo request)?", "options": { "a": "127", "b": "128", "c": "129", "d": "130" } },
+            { "number": "84", "question": "Protegería un CPD de los ataques Tempest mediante:", "options": { "a": "Sistemas biométricos.", "b": "Jaulas de Faraday.", "c": "Cifrados asimétricos.", "d": "Antivirus." } },
+            { "number": "85", "question": "Según Magerit v3, un riesgo es:", "options": { "a": "Consecuencia que sobre un activo tiene la materialización de una amenaza.", "b": "Evento que puede desencadenar un incidente en la Organización, produciendo daños materiales o pérdidas inmateriales en sus archivos.", "c": "Estimación del grado de exposición a que una amenaza se materialice sobre uno o más activos causando daños o perjuicios a la Organización.", "d": "Debilidad en la seguridad de un sistema de información. Se determina por dos medidas: frecuencia de ocurrencia y degradación causada." } },
+            { "number": "86", "question": "Si necesitamos una disponibilidad del 99,76% anual para los servicios online, necesitaremos disponer de un CPD con un nivel de al menos:", "options": { "a": "Tier I", "b": "Tier II", "c": "Tier III", "d": "Tier IV" } },
+            { "number": "87", "question": "En relación con los centros de tratamiento de información y la recuperación ante posibles desastres, el tiempo que un proceso permanecerá detenido antes de que su funcionamiento sea restaurado, se conoce como:", "options": { "a": "RPO", "b": "RTO", "c": "MTD", "d": "ROL" } },
+            { "number": "88", "question": "¿Cuál de las siguientes opciones NO corresponde a un tipo de mensaje en el protocolo BGP?", "options": { "a": "OPEN", "b": "UPDATE", "c": "NOTIFICATION", "d": "ACKNOWLEDGE" } },
+            { "number": "89", "question": "En un sistema de control de accesos, el EER (Equal Error Rate) se da cuando:", "options": { "a": "La tasa de falsos positivos es igual a la de falsos negativos $(FAR=FRR)$.", "b": "La tasa de falsos positivos es mayor a la de falsos negativos (FAR > FRR).", "c": "La tasa de falsos positivos es menor a la de falsos negativos $(FAR<FRR)$.", "d": "La tasa de falsos positivos es igual cero $(FAR=0)$ y la tasa de falsos negativos es mayor que 0 y menor que 1 $(0<FRR <1)$." } },
+            { "number": "90", "question": "Señale cuál de las siguientes es una variante de phishing, que en lugar del correo electrónico, se realiza a través de llamadas telefónicas a las víctimas:", "options": { "a": "Spear phishing", "b": "Smishing", "c": "Whaling", "d": "Vishing" } },
+            { "number": "91", "question": "EI CERT nacional competente en la prevención, mitigación y respuesta ante incidentes cibernéticos en el ámbito de las empresas, los ciudadanos y los operadores de infraestructuras críticas es:", "options": { "a": "CERTSI", "b": "CERT-CCN", "c": "OSI", "d": "CNI" } },
+            { "number": "92", "question": "Meltdown y Spectre son dos tipos de:", "options": { "a": "Sistemas operativos de software libre.", "b": "Vulnerabilidades críticas que afectan a procesadores Intel, entre otros.", "c": "Ransomware que afectan a la criptomoneda.", "d": "Phishing que afectan a aplicaciones como Netflix y Paypal." } },
+            { "number": "93", "question": "La herramienta web del CCN que nos permite realizar auditorías de seguridad sobre configuraciones de equipos de comunicaciones es:", "options": { "a": "CLARA", "b": "INES", "c": "ROCIO", "d": "VANESA" } },
+            { "number": "94", "question": "Señale el protocolo de publicación/suscripción utilizado para la comunicación machine-to-machine (M2M) en el Internet of Things (IoT):", "options": { "a": "ATP (AppleTalk Transacction Protocol).", "b": "ACSE (Association Control Service Element).", "c": "RSVP (Resource Reservation Protocol).", "d": "MQTT (Message Queue Telemetry Transport)." } },
+            { "number": "95", "question": "Si queremos realizar una transmisión de audio sobre una red IP, ¿con que códec ocuparíamos más ancho de banda?", "options": { "a": "G.711", "b": "G.726", "c": "G.728", "d": "G.729" } },
+            { "number": "96", "question": "IP Multimedia Subsystem (IMS) consta de los siguientes planos o capas:", "options": { "a": "Acceso, enlace, transporte, sesión y aplicación.", "b": "Acceso, transporte, control y aplicación.", "c": "Físico, enlace, red, transporte, sesión, presentación y aplicación.", "d": "Físico, adaptación, control, usuario y administración." } },
+            { "number": "97", "question": "Según la Ley General de Telecomunicaciones 9/2014, artículo 27, ¿qué operadores deberán financiar el coste neto de la obligación de prestación del servicio universal?", "options": { "a": "El operador más significativo del mercado, siendo Telefónica desde la existencia del servicio.", "b": "Los operadores más significativos del mercado, pudiendo la CNMV exonerar a determinados operadores de la obligación de contribuir a la financiación del servicio universal cuando su volumen de negocios a escala nacional se sitúe por debajo de un umbral preestablecido.", "c": "Aquellos operadores que obtengan por la explotación de redes o la prestación de servicios de comunicaciones electrónicas unos ingresos brutos de explotación anuales superiores a 100 millones de euros.", "d": "Telefónica, Vodafone y Orange." } },
+            { "number": "98", "question": "Señale qué técnica mejorada de retransmisión de paquetes se emplea en HSDPA para la mejora de velocidad en el enlace descendente:", "options": { "a": "CDMA", "b": "DS-CDMA", "c": "OVSF", "d": "HARQ" } },
+            { "number": "99", "question": "En una infraestructura de red WI-FI, un servidor RADIUS es un servidor de:", "options": { "a": "direcciones IP.", "b": "estado de la red.", "c": "autenticación.", "d": "almacenamiento." } },
+            { "number": "100", "question": "Los servicios de televisión OTT (Over The Top):", "options": { "a": "Pueden ser ofertados por empresas que no sean operadores de telecomunicaciones.", "b": "Son regulados por los operadores de comunicaciones de cada país.", "c": "Son controlados por la Comisión Nacional de los Mercados y la Competencia.", "d": "Están obligados a inscribirse en el Registro de servicios OTT del Ministerio de Energía, Turismo Agenda Digital." } },
+            { "number": "Reserva 1", "question": "Unidad de información que se corresponde con 128 bytes:", "options": { "a": "1 Gigabit", "b": "1 Kibibit (Kibit)", "c": "1 Mebibit (Mibit)", "d": "1 Megabit" } },
+            { "number": "Reserva 2", "question": "¿Cuál de las siguientes definiciones se refiere a las pruebas Benchmark?", "options": { "a": "Verifican la estructura interna del componente con independencia de la funcionalidad establecida para el mismo.", "b": "Son pruebas que se realizan para medir el rendimiento de un sistema o uno de sus componentes y poder comparar los resultados con máquinas similares.", "c": "Comprueban el correcto funcionamiento de los componentes del sistema analizando entradas y salidas y verificando que el resultado es correcto.", "d": "Son pruebas que tienen como objetivo ejercitar profundamente el sistema comprobando la integración del sistema de información globalmente." } },
+            { "number": "Reserva 3", "question": "Señale la respuesta correcta en relación a DNS (Domain Name Server), el tipo de registro AAAA:", "options": { "a": "Especifica una clave pública asociada a un nombre DNS.", "b": "Define un sistema principal intercambiador de correo para el dominio.", "c": "Proporciona información sobre el servidor DNS primario de la zona.", "d": "Especifica la dirección IPv6 de un sistema principal." } }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Stores user's selected answers {questionNumber: selectedOption}
+        let testStarted = false;
+
+        const questionArea = document.getElementById('question-area');
+        const resultsArea = document.getElementById('results-area');
+        const nextButton = document.getElementById('next-btn');
+        const prevButton = document.getElementById('prev-btn');
+        const finishButton = document.getElementById('finish-btn');
+        const restartButton = document.getElementById('restart-btn');
+
+        /**
+         * Loads the test state from LocalStorage.
+         * If a state exists, it updates the current question index and user answers.
+         */
+        function loadState() {
+            const savedState = localStorage.getItem('gsi2017TestState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                userAnswers = state.userAnswers;
+                testStarted = state.testStarted;
+            }
+        }
+
+        /**
+         * Saves the current test state (question index and user answers) to LocalStorage.
+         */
+        function saveState() {
+            const state = {
+                currentQuestionIndex: currentQuestionIndex,
+                userAnswers: userAnswers,
+                testStarted: testStarted
+            };
+            localStorage.setItem('gsi2017TestState', JSON.stringify(state));
+        }
+
+        /**
+         * Renders the current question on the page.
+         * Clears previous content, creates elements for question number, text, and options.
+         * Handles pre-selection of answers if already answered and displays feedback.
+         * Manages visibility of navigation buttons.
+         */
+        function renderQuestion() {
+            questionArea.innerHTML = ''; // Clear previous question content
+            if (currentQuestionIndex < questions.length) {
+                const q = questions[currentQuestionIndex];
+                const questionDiv = document.createElement('div');
+                questionDiv.classList.add('question-container');
+
+                const questionNumber = document.createElement('div');
+                questionNumber.classList.add('question-number');
+                questionNumber.textContent = `Pregunta ${q.number}:`;
+                questionDiv.appendChild(questionNumber);
+
+                const questionText = document.createElement('div');
+                questionText.classList.add('question-text');
+                questionText.textContent = q.question;
+                questionDiv.appendChild(questionText);
+
+                const optionsDiv = document.createElement('div');
+                optionsDiv.classList.add('options');
+                
+                const selectedAnswer = userAnswers[q.number];
+
+                // Iterate over options and create radio buttons
+                for (const optionKey in q.options) {
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = `question-${q.number}`; // Unique name for radio group
+                    input.value = optionKey;
+                    input.dataset.questionNumber = q.number; // Store question number for easy access
+
+                    // Pre-select if already answered
+                    if (selectedAnswer === optionKey) {
+                        input.checked = true;
+                    }
+
+                    // Add event listener for answer selection
+                    input.addEventListener('change', handleAnswerSelection);
+
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(` ${optionKey}) ${q.options[optionKey]}`));
+                    optionsDiv.appendChild(label);
+                }
+                questionDiv.appendChild(optionsDiv);
+
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.classList.add('feedback');
+                feedbackDiv.id = `feedback-${q.number}`; // Unique ID for feedback
+                questionDiv.appendChild(feedbackDiv);
+
+                questionArea.appendChild(questionDiv);
+
+                // Update navigation button visibility based on current question index
+                prevButton.classList.toggle('hidden', currentQuestionIndex === 0);
+                nextButton.classList.toggle('hidden', currentQuestionIndex === questions.length - 1);
+                finishButton.classList.toggle('hidden', currentQuestionIndex !== questions.length - 1);
+
+                // Display feedback immediately if the question was already answered
+                checkAndDisplayFeedback(q.number);
+            } else {
+                // If all questions are rendered, display results
+                displayResults();
+            }
+            saveState(); // Save state after rendering
+        }
+
+        /**
+         * Handles the selection of an answer.
+         * Stores the selected answer and updates the feedback for the question.
+         * @param {Event} event - The change event from the radio button.
+         */
+        function handleAnswerSelection(event) {
+            const selectedOption = event.target.value;
+            const questionNumber = event.target.dataset.questionNumber;
+            userAnswers[questionNumber] = selectedOption; // Store the user's answer
+            checkAndDisplayFeedback(questionNumber); // Provide immediate feedback
+            saveState(); // Save state after answer selection
+        }
+
+        /**
+         * Checks the selected answer against the correct answer and displays feedback.
+         * @param {string} questionNumber - The number of the question to check.
+         */
+        function checkAndDisplayFeedback(questionNumber) {
+            const feedbackDiv = document.getElementById(`feedback-${questionNumber}`);
+            const selectedOption = userAnswers[questionNumber];
+            const correctAnswer = answerKey[questionNumber];
+
+            if (feedbackDiv) {
+                feedbackDiv.textContent = ''; // Clear previous feedback
+                feedbackDiv.classList.remove('correct', 'incorrect'); // Remove previous styling
+
+                if (selectedOption) {
+                    if (selectedOption === correctAnswer) {
+                        feedbackDiv.textContent = '¡Correcto!';
+                        feedbackDiv.classList.add('correct');
+                    } else {
+                        feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer.toUpperCase()}`;
+                        feedbackDiv.classList.add('incorrect');
+                    }
+                }
+            }
+        }
+
+        /**
+         * Displays the final results of the test.
+         * Hides the test container and shows the results summary.
+         * Calculates and displays counts for correct, incorrect, and unanswered questions.
+         */
+        function displayResults() {
+            document.getElementById('test-container').classList.add('hidden');
+            resultsArea.classList.remove('hidden');
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (const q of questions) {
+                const userAnswer = userAnswers[q.number];
+                const correctAnswer = answerKey[q.number];
+
+                if (userAnswer) {
+                    if (userAnswer === correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                } else {
+                    unansweredCount++;
+                }
+            }
+
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('incorrect-count').textContent = incorrectCount;
+            document.getElementById('unanswered-count').textContent = unansweredCount;
+        }
+
+        /**
+         * Resets the test to its initial state.
+         * Clears LocalStorage, resets variables, and re-renders the first question.
+         */
+        function resetTest() {
+            localStorage.removeItem('gsi2017TestState'); // Clear saved state
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            testStarted = false;
+            document.getElementById('test-container').classList.remove('hidden'); // Show test
+            resultsArea.classList.add('hidden'); // Hide results
+            renderQuestion(); // Render the first question
+        }
+
+        // Event Listeners for navigation and control buttons
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        finishButton.addEventListener('click', displayResults);
+        restartButton.addEventListener('click', resetTest);
+
+        // Initialize test on page load
+        loadState(); // Load any previously saved state
+        if (!testStarted && Object.keys(userAnswers).length === 0) {
+             // If no state saved and no answers, start from beginning and mark as started.
+            testStarted = true;
+            saveState();
+        }
+        renderQuestion(); // Render the initial question
+    </script>
+</body>
+</html>

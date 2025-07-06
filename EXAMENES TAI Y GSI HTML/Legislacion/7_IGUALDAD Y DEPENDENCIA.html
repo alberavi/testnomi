@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMA 7</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+        .answer-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .answer-option:hover {
+            background-color: #edf2f7;
+            border-color: #a0aec0;
+        }
+        .answer-option.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .answer-option.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .answer-option.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .answer-option input[type="radio"] {
+            margin-right: 15px;
+            transform: scale(1.2);
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 5px;
+        }
+        .feedback.correct {
+            color: #155724;
+            background-color: #d4edda;
+        }
+        .feedback.incorrect {
+            color: #721c24;
+            background-color: #f8d7da;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+        .nav-button:disabled {
+            background-color: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+        .prev-button {
+            background-color: #a0aec0;
+            color: #ffffff;
+        }
+        .prev-button:hover:not(:disabled) {
+            background-color: #718096;
+            transform: translateY(-2px);
+        }
+        .next-button, .submit-button {
+            background-color: #4299e1;
+            color: #ffffff;
+        }
+        .next-button:hover:not(:disabled), .submit-button:hover:not(:disabled) {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+        .reset-button {
+            background-color: #f56565;
+            color: #ffffff;
+        }
+        .reset-button:hover {
+            background-color: #e53e3e;
+            transform: translateY(-2px);
+        }
+        .results-summary {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: #f0f4f8;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .results-summary h2 {
+            font-size: 1.5rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .results-summary p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .results-summary .correct-count { color: #28a745; font-weight: bold; }
+        .results-summary .incorrect-count { color: #dc3545; font-weight: bold; }
+        .results-summary .unanswered-count { color: #ffc107; font-weight: bold; }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .modal-button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .modal-button.confirm {
+            background-color: #f56565;
+            color: white;
+        }
+
+        .modal-button.confirm:hover {
+            background-color: #e53e3e;
+        }
+
+        .modal-button.cancel {
+            background-color: #cbd5e0;
+            color: #333;
+        }
+
+        .modal-button.cancel:hover {
+            background-color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-6 text-blue-700">TEMA 7</h1>
+        <div id="quiz-container">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button prev-button">Anterior</button>
+            <button id="next-button" class="nav-button next-button">Siguiente</button>
+            <button id="submit-button" class="nav-button submit-button" style="display: none;">Finalizar Test</button>
+        </div>
+        <div class="text-center mt-6">
+            <button id="reset-button" class="nav-button reset-button">Reiniciar Test</button>
+        </div>
+        <div id="results" class="results-summary" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Correctas: <span id="correct-count" class="correct-count">0</span></p>
+            <p>Incorrectas: <span id="incorrect-count" class="incorrect-count">0</span></p>
+            <p>Sin contestar: <span id="unanswered-count" class="unanswered-count">0</span></p>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Confirmations -->
+    <div id="custom-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <div class="modal-buttons">
+                <button id="modal-confirm-button" class="modal-button confirm">Sí</button>
+                <button id="modal-cancel-button" class="modal-button cancel">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de preguntas del test con sus opciones y la respuesta correcta
+        const questions = [
+            {
+                question: "Según dispone la Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres, serán criterios generales de actuación de los Poderes Públicos:",
+                options: [
+                    "La implantación de un lenguaje feminista en el ámbito administrativo y su fomento en la totalidad de relaciones sociales, culturales y artísticas.",
+                    "La protección de la maternidad, con especial atención a la asunción por la sociedad de los efectos derivados del embarazo, parto y lactancia.",
+                    "La participación equilibrada, siempre que sea posible, de mujeres y hombres en las candidaturas electorales y en la toma de decisiones.",
+                    "El compromiso con el derecho constitucional de igualdad de mujeres y hombres."
+                ],
+                correctAnswer: "El compromiso con el derecho constitucional de igualdad de mujeres y hombres."
+            },
+            {
+                question: "El Observatorio de la Igualdad de Oportunidades entre mujeres y hombres está gestionado por:",
+                options: [
+                    "Ministerio de la Mujer y Política Social.",
+                    "Ministerio de Sanidad.",
+                    "Instituto de la Mujer.",
+                    "Ministerio de Trabajo y Economía Social."
+                ],
+                correctAnswer: "Instituto de la Mujer."
+            },
+            {
+                question: "Con objeto de facilitar la promoción profesional de las empleadas públicas y su acceso a puestos directivos en la Administración General del Estado, en las convocatorias de los correspondientes cursos de formación se reservará para las mujeres, al menos:",
+                options: [
+                    "Un 30% de las plazas.",
+                    "Un 35% de las plazas.",
+                    "Un 40% de las plazas.",
+                    "Un 60% de las plazas."
+                ],
+                correctAnswer: "Un 40% de las plazas."
+            },
+            {
+                question: "¿Cuál de los siguientes órganos o unidades no está previsto en la Administración General del Estado para favorecer el desarrollo de políticas de igualdad de género?:",
+                options: [
+                    "La Delegación Especial del Gobierno contra la Violencia sobre la Mujer.",
+                    "El Centro de Información Administrativa para la Mujer.",
+                    "El Observatorio Estatal de Violencia sobre la Mujer.",
+                    "La Unidad de “Mujer y Ciencia”."
+                ],
+                correctAnswer: "El Centro de Información Administrativa para la Mujer."
+            },
+            {
+                question: "El Gobierno promoverá la plena incorporación de las mujeres en la Sociedad de la Información mediante:",
+                options: [
+                    "La adopción sistemática de la educación en materia de tecnologías de la información.",
+                    "La promoción de los contenidos creados por mujeres en el ámbito de la Sociedad de la Información.",
+                    "Políticas activas de ayudas a la creación intelectual de la autoría femenina.",
+                    "El fomento de la investigación científica en la Sociedad de la Información."
+                ],
+                correctAnswer: "La promoción de los contenidos creados por mujeres en el ámbito de la Sociedad de la Información."
+            },
+            {
+                question: "La figura jurídica de la titularidad compartida busca el reconocimiento pleno de los derechos de las mujeres:",
+                options: [
+                    "En las políticas urbanas de ordenación territorial y vivienda.",
+                    "En la política española de cooperación al desarrollo.",
+                    "En el sector industrial.",
+                    "En el sector agrario."
+                ],
+                correctAnswer: "En el sector agrario."
+            },
+            {
+                question: "¿Cuál será el porcentaje máximo de mujeres u hombres en los tribunales y órganos de selección del personal de la Administración General del Estado?",
+                options: [
+                    "70%",
+                    "60%",
+                    "50%",
+                    "40%"
+                ],
+                correctAnswer: "60%"
+            },
+            {
+                question: "Según establece el artículo 31 de la Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres, el Gobierno, en el ámbito de sus competencias:",
+                options: [
+                    "Fomentará el acceso a la vivienda de las mujeres en situación de necesidad o en riesgo de exclusión.",
+                    "También de las que hayan sido víctimas de violencia de género.",
+                    "Especialmente cuando, en los casos anteriores, tengan hijos menores exclusivamente a su cargo.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Es cierto que en relación con la igualdad de trato en el acceso a bienes y servicios:",
+                options: [
+                    "Los costes relacionados con el embarazo y el parto justificarán diferencias en las primas.",
+                    "Ningún contratante podrá indagar sobre la situación de embarazo de una mujer demandante de bienes y servicios.",
+                    "En ningún caso se podrán fijar los supuestos en los que sea admisible determinar diferencias de las primas cuando el sexo constituya un factor determinante de la evaluación del riesgo.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswer: "Ningún contratante podrá indagar sobre la situación de embarazo de una mujer demandante de bienes y servicios."
+            },
+            {
+                question: "Según dispone la Ley Orgánica 5/1985 de Régimen Electoral, las candidaturas para elecciones al Congreso de los Diputados deberán tener una composición equilibrada de mujeres y hombres, de forma que en el conjunto de la lista los candidatos de cada uno de los sexos supongan como mínimo el cuarenta por ciento. Situación que no será exigible en las candidaturas que se presenten en los municipios:",
+                options: [
+                    "Con un número de residentes igual o inferior a 2.000 habitantes.",
+                    "Con un número de residentes igual o inferior a 3.000 habitantes.",
+                    "Con un número de residentes igual o inferior a 4.000 habitantes.",
+                    "Con un número de residentes igual o inferior a 5.000 habitantes."
+                ],
+                correctAnswer: "Con un número de residentes igual o inferior a 3.000 habitantes."
+            },
+            {
+                question: "¿Qué Órgano concederá un distintivo de Igualdad en la Empresa (DIE) creará un distintivo para reconocer a aquellas empresas que destaquen por la aplicación de políticas de igualdad de trato y de oportunidades con sus trabajadores y trabajadoras, que podrá ser utilizado en el tráfico comercial de la empresa y con fines publicitarios?",
+                options: [
+                    "La Dirección General de Diversidad Sexual y Derechos LGTBI.",
+                    "El Instituto de la Mujer.",
+                    "La Delegación del Gobierno contra la Violencia de Género.",
+                    "La Dirección General para la Igualdad de trato y Diversidad Étnico Racial."
+                ],
+                correctAnswer: "El Instituto de la Mujer."
+            },
+            {
+                question: "Para la prevención del acoso sexual y del acoso por razón de sexo, las Administraciones públicas negociarán con la representación legal de las trabajadoras y trabajadores, un protocolo de actuación que comprenderá, al menos, los siguientes principios:",
+                options: [
+                    "La identificación de las personas responsables de atender a quienes formulen una queja o denuncia.",
+                    "El tratamiento público de las denuncias de hechos que pudieran ser constitutivos de acoso sexual o de acoso por razón de sexo.",
+                    "La instrucción al personal sindical de su deber de respetar la dignidad de las personas.",
+                    "El compromiso de la Administración General del Estado de prevenir y no tolerar el acoso sexual salvo que éste sea manifiesto."
+                ],
+                correctAnswer: "La identificación de las personas responsables de atender a quienes formulen una queja o denuncia."
+            },
+            {
+                question: "En los temarios para la celebración de pruebas selectivas para el acceso al empleo público incluirán al menos un tema relativo a:",
+                options: [
+                    "La normativa vigente en materia de protección medio ambiental.",
+                    "La normativa vigente en materia de igualdad de género.",
+                    "La normativa vigente en materia de calidad en la prestación de los servicios públicos.",
+                    "La normativa vigente en materia de prevención de riesgos laborales."
+                ],
+                correctAnswer: "La normativa vigente en materia de igualdad de género."
+            },
+            {
+                question: "Las Administraciones públicas, en el ámbito de sus respectivas competencias y en aplicación del principio de igualdad entre mujeres y hombres, deberán:",
+                options: [
+                    "Fomentar la formación en igualdad, tanto en el acceso al empleo público como a lo largo de la carrera profesional.",
+                    "Establecer medidas efectivas de protección frente al acoso sexual y el acoso por razón de sexo.",
+                    "Evaluar periódicamente la efectividad del principio de igualdad en sus respectivos ámbitos de actuación.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "El Observatorio Estatal de Violencia de Género es un órgano colegiado:",
+                options: [
+                    "Del Ministerio de Trabajo y Economía Social.",
+                    "Del Ministerio de Sanidad.",
+                    "Del Ministerio de Igualdad.",
+                    "Del Ministerio de Inclusión, Seguridad Social y Migraciones."
+                ],
+                correctAnswer: "Del Ministerio de Igualdad."
+            },
+            {
+                question: "Los Fiscales intervendrán en los procedimientos penales por los hechos constitutivos de delitos o faltas cuya competencia esté atribuida a los Juzgados de Violencia sobre la Mujer:",
+                options: [
+                    "Y además en los procesos civiles de nulidad.",
+                    "La a) es correcta pero no intervendrán en los procesos civiles de separación.",
+                    "La b) es correcta pero solo intervendrán en los procesos civiles de divorcio.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswer: "Y además en los procesos civiles de nulidad." // Asumiendo que la respuesta correcta es la más completa que incluye los procesos civiles.
+            },
+            {
+                question: "¿Qué rango tiene el Delegado del Gobierno contra la Violencia de Género?",
+                options: [
+                    "Subsecretario.",
+                    "Director General.",
+                    "Subdirector General.",
+                    "Su rango será establecido por Orden Ministerial."
+                ],
+                correctAnswer: "Subsecretario."
+            },
+            {
+                question: "Las mujeres víctimas de violencia de género tienen derecho, según la Ley Orgánica 1/2004, de 28 de diciembre, de Medidas de Protección Integral contra la Violencia de Género a servicios sociales de:",
+                options: [
+                    "Emergencia.",
+                    "Apoyo y acogida.",
+                    "Recuperación integral.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "La organización de los servicios sociales anteriores por parte de las Comunidades autónomas y las Corporaciones Locales, responderá a los principios de atención permanente, actuación urgente, especialización de prestaciones y multidisciplinariedad profesional. La atención multidisciplinar implicará especialmente:",
+                options: [
+                    "Formación preventiva en los valores de igualdad dirigida a su desarrollo personal y a la adquisición de habilidades en la resolución no violenta de conflictos.",
+                    "Seguimiento de las reclamaciones de los derechos de la mujer.",
+                    "Apoyo educativo a la unidad familiar.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Formación preventiva en los valores de igualdad dirigida a su desarrollo personal y a la adquisición de habilidades en la resolución no violenta de conflictos." // La opción más específica y relevante.
+            },
+            {
+                question: "La Ley 39/2006, de 14 de diciembre, de Promoción de la Autonomía Personal y Atención a las personas en situación de dependencia prevé los siguientes grados de dependencia:",
+                options: [
+                    "Grado I. Incapacidad Temporal; Grado II. Incapacidad permanente. Grado III. Gran incapacidad.",
+                    "Grado I. Dependencia moderada; Grado II. Dependencia severa. Grado III. Gran dependencia.",
+                    "Grado I. Dependencia por movilidad reducida; Grado II. Dependencia sensorial. Grado III. Dependencia múltiple.",
+                    "Grado I. Incapacidad requerida de asistencia puntual. Grado II. Incapacidad requerida de Teleasistencia. Grado III. Incapacidad requerida de Servicio de Ayuda a Domicilio."
+                ],
+                correctAnswer: "Grado I. Dependencia moderada; Grado II. Dependencia severa. Grado III. Gran dependencia."
+            },
+            {
+                question: "Señale la opción verdadera en cuanto a la revisión del programa individual de atención:",
+                options: [
+                    "Las prestaciones pueden ser modificadas pero no extinguidas por variación de los requisitos.",
+                    "La revisión puede ser realizada siempre que exista dotación presupuestaria.",
+                    "La revisión podrá ser de oficio en caso de un empeoramiento de la situación de dependencia.",
+                    "Podrá revisarse con motivo del cambio de residencia a otra Entidad Local."
+                ],
+                correctAnswer: "La revisión podrá ser de oficio en caso de un empeoramiento de la situación de dependencia."
+            },
+            {
+                question: "La acción protectora del sistema especial de prestaciones sociales y económicas para las personas con discapacidad que por no desarrollar una actividad laboral, no están incluidos en el campo de aplicación del Sistema de la Seguridad Social, NO comprenderá:",
+                options: [
+                    "Rehabilitación y habilitación profesionales.",
+                    "Subsidio de movilidad y compensación por gastos de transportes en desplazamientos a distintas Comunidades Autónomas.",
+                    "Asistencia sanitaria y prestación farmacéutica.",
+                    "Recuperación profesional."
+                ],
+                correctAnswer: "Subsidio de movilidad y compensación por gastos de transportes en desplazamientos a distintas Comunidades Autónomas."
+            },
+            {
+                question: "El Real Decreto Legislativo 1/2013, de 29 de noviembre, por el que se aprueba el Texto Refundido de la Ley General de derechos de las personas con discapacidad y de su inclusión social, señala que cuando una persona o grupo, en que se integra es objeto de un trato discriminatorio debido a su relación con otra por motivo o razón de discapacidad, estaremos ante:",
+                options: [
+                    "Discriminación indirecta.",
+                    "Discriminación directa.",
+                    "Discriminación por asociación.",
+                    "Discriminación por accesibilidad universal."
+                ],
+                correctAnswer: "Discriminación por asociación."
+            },
+            {
+                question: "Señale la opción verdadera:",
+                options: [
+                    "El sistema de arbitraje como medida de defensa sobre quejas y reclamaciones en relación a la discapacidad tiene carácter voluntario.",
+                    "Uno de los servicios que puede prestar el sistema de dependencia pueden ser el de atención residencial para mayores de 65 años.",
+                    "El Gobierno acuerda las cuantías de las prestaciones y las aprueba por real decreto.",
+                    "El Gobierno establecerá la oferta pública de Red de servicios sociales."
+                ],
+                correctAnswer: "El sistema de arbitraje como medida de defensa sobre quejas y reclamaciones en relación a la discapacidad tiene carácter voluntario."
+            },
+            {
+                question: "El Grado II de dependencia equivale a:",
+                options: [
+                    "Dependencia moderada.",
+                    "Dependencia alta.",
+                    "Dependencia severa.",
+                    "Gran dependencia."
+                ],
+                correctAnswer: "Dependencia severa."
+            },
+            {
+                question: "¿Cuáles son los servicios de los que pueden beneficiarse las personas en situación de dependencia?",
+                options: [
+                    "Servicios de Prevención de las situaciones de dependencia, servicio de teleasistencia, servicio de ayuda a domicilio, servicio de atención Residencial y servicio de Centro de día y de noche.",
+                    "Servicios de Prevención de las situaciones de dependencia, servicio de día para mayores de 65 años y servicio de ayuda a domicilio.",
+                    "Servicio de noche, Centro de día para menores de 65 años y servicio de ayuda a domicilio.",
+                    "Ninguna de las anteriores es correcta."
+                ],
+                correctAnswer: "Servicios de Prevención de las situaciones de dependencia, servicio de teleasistencia, servicio de ayuda a domicilio, servicio de atención Residencial y servicio de Centro de día y de noche."
+            },
+            {
+                question: "La Ley 39/2006, de Promoción de la Autonomía Personal y Atención a las Personas en Situación de Dependencia prevé los siguientes grados de dependencia: ¿Qué es la autonomía personal?",
+                options: [
+                    "Cuando una persona aún puede valerse por si misma.",
+                    "Es la situación permanente, en la que se encuentran las personas que precisan ayudas importantes de otra u otras personas para realizar actividades básicas de la vida diaria.",
+                    "Es la realización de tareas elementales de la persona.",
+                    "La capacidad de controlar, afrontar y tomar, por propia iniciativa, decisiones personales acerca de cómo vivir de acuerdo con las normas y preferencias propias."
+                ],
+                correctAnswer: "La capacidad de controlar, afrontar y tomar, por propia iniciativa, decisiones personales acerca de cómo vivir de acuerdo con las normas y preferencias propias."
+            },
+            {
+                question: "¿Cuál es el título competencial en el que se fundamenta la Ley 39/2006, de Promoción de la Autonomía Personal y Atención a las Personas en Situación de Dependencia?",
+                options: [
+                    "El artículo 149.1.1 de la Constitución, que establece la competencia exclusiva del Estado para regular las condiciones básicas que garanticen la igualdad de todos los españoles en el ejercicio de los derechos y el cumplimiento de los deberes constitucionales.",
+                    "El artículo 149.1.17 de la Constitución, que establece la competencia exclusiva del Estado para la legislación básica y el régimen económico de la Seguridad Social.",
+                    "El artículo 149.1.16 de la Constitución, que establece la competencia exclusiva del Estado sobre las bases y coordinación general de la sanidad.",
+                    "El artículo 149.1.13, que establece la competencia exclusiva del Estado para el establecimiento de las bases y coordinación de la planificación general de la actividad económica."
+                ],
+                correctAnswer: "El artículo 149.1.1 de la Constitución, que establece la competencia exclusiva del Estado para regular las condiciones básicas que garanticen la igualdad de todos los españoles en el ejercicio de los derechos y el cumplimiento de los deberes constitucionales."
+            },
+            {
+                question: "Señale la opción verdadera:",
+                options: [
+                    "Uno de los servicios que puede prestar el sistema de dependencia pueden ser el de atención residencial para mayores de 65 años.",
+                    "El Gobierno establecerá la oferta pública de Red de servicios sociales.",
+                    "El Gobierno acuerda las cuantías de las prestaciones y las aprueba por real decreto.",
+                    "El sistema de arbitraje como medida de defensa sobre quejas y reclamaciones en relación a la discapacidad tiene carácter voluntario."
+                ],
+                correctAnswer: "Uno de los servicios que puede prestar el sistema de dependencia pueden ser el de atención residencial para mayores de 65 años." // Esta es la correcta del documento original, aunque la 4 también es verdadera.
+            },
+            {
+                question: "En la financiación del Sistema de Promoción de la Autonomía y Atención a la dependencia, la Ley 39/2006 establece que:",
+                options: [
+                    "Corresponderá exclusivamente al Estado.",
+                    "Corresponderá exclusivamente a las Comunidades Autónomas.",
+                    "La aportación del Estado será, para cada año, al menos igual a la de la Comunidad Autónoma respectiva.",
+                    "La aportación de la Comunidad Autónoma será, para cada año, al menos igual a la de la Administración General del Estado."
+                ],
+                correctAnswer: "La aportación del Estado será, para cada año, al menos igual a la de la Comunidad Autónoma respectiva."
+            },
+            {
+                question: "En la financiación del sistema, el beneficiario de las prestaciones de dependencia:",
+                options: [
+                    "No participará en la financiación de las mismas.",
+                    "No participará directamente en la financiación de las mismas, pero sí indirectamente, a través de las aportaciones al Régimen General o Especial de Seguridad Social.",
+                    "Participarán en su financiación según el tipo y coste del servicio y su capacidad económica personal.",
+                    "Aportará como regla general el 10% del valor económico de la prestación, salvo que acredite insuficiencia de recursos."
+                ],
+                correctAnswer: "Participarán en su financiación según el tipo y coste del servicio y su capacidad económica personal."
+            },
+            {
+                question: "Son notas que definen el concepto de dependencia a efectos de la Ley 39/2006:",
+                options: [
+                    "Carácter permanente o temporal de la dependencia.",
+                    "Pérdida de autonomía física, mental, intelectual o sensorial.",
+                    "Exclusión del concepto legal de dependencia, aquélla que trae su causa de discapacidad intelectual o enfermedad mental.",
+                    "Todas las anteriores son notas que definen el concepto legal de dependencia."
+                ],
+                correctAnswer: "Todas las anteriores son notas que definen el concepto legal de dependencia."
+            },
+            {
+                question: "Son principios de la Ley de Dependencia:",
+                options: [
+                    "El carácter público de las prestaciones del Sistema para la Autonomía y Atención a la Dependencia.",
+                    "La atención a las personas en situación de dependencia de forma integral e integrada.",
+                    "La transversalidad de las políticas de atención a las personas en situación de dependencia.",
+                    "Todos son principios previstos en la Ley."
+                ],
+                correctAnswer: "Todos son principios previstos en la Ley."
+            },
+            {
+                question: "Señale el número de niveles en que se divide cada grado de dependencia según el Baremo de Valoración de Dependencia",
+                options: [
+                    "En dos niveles cada grado.",
+                    "En tres niveles cada grado.",
+                    "En dos niveles los Grados I y II, y en tres niveles el Grupo III.",
+                    "En tres niveles los Grados I y II, y en dos niveles el Grupo III."
+                ],
+                correctAnswer: "En dos niveles cada grado." // Cada grado se divide en dos niveles.
+            },
+            {
+                question: "¿A quién corresponde la aprobación del baremo en el que se establecen los criterios de valoración de los diferentes grados y niveles de dependencia?",
+                options: [
+                    "A cada Comunidad Autónoma, mediante Decreto del Consejo de Gobierno.",
+                    "A cada Comunidad Autónoma, mediante Orden del Titular del Departamento con competencia en materia de asuntos sociales.",
+                    "Al Gobierno, mediante Real Decreto.",
+                    "Al Consejo Territorial del Sistema para la Autonomía y Atención a la Dependencia."
+                ],
+                correctAnswer: "Al Gobierno, mediante Real Decreto."
+            },
+            {
+                question: "La resolución que reconozca la situación de dependencia determinará los tipos de servicios o prestaciones que correspondan al solicitante, atendiendo para ello:",
+                options: [
+                    "A la capacidad económica del solicitante.",
+                    "A la capacidad económica de la unidad familiar del solicitante.",
+                    "Al grado de dependencia reconocido.",
+                    "Las tres respuestas anteriores son correctas."
+                ],
+                correctAnswer: "Las tres respuestas anteriores son correctas."
+            },
+            {
+                question: "De conformidad con lo previsto por la Ley 39/2006, de Promoción de la Autonomía Personal y Atención a las Personas en Situación de Dependencia a decisión sobre el ingreso en un centro residencial:",
+                options: [
+                    "La adoptará libremente la persona en situación de dependencia",
+                    "Se adoptará, indistintamente, por los guardadores o cuidadores.",
+                    "Se adoptará por los guardadores o cuidadores, previa comunicación al Consejo Territorial del Sistema para la Autonomía y Atención a la Dependencia.",
+                    "Se adoptará por los guardadores o cuidadores, previa aprobación del Consejo Territorial del Sistema para la Autonomía y Atención a la Dependencia."
+                ],
+                correctAnswer: "La adoptará libremente la persona en situación de dependencia" // O si la persona no tiene capacidad, sus representantes legales. La opción más general es la que se refiere a la libertad de la persona.
+            },
+            {
+                question: "Las personas en situación de dependencia y, en su caso, sus familiares o quienes les representen, no estarán obligados a aportar información, datos o documentación para la valoración de su grado y nivel de dependencia a la Administración que se lo solicite en los siguientes supuestos:",
+                options: [
+                    "Cuando éstos obren en poder de alguna de las distintas Administraciones Públicas.",
+                    "Cuando la Administración Pública que los solicite, de acuerdo con la legislación vigente, pueda obtenerlos por sus propios medios.",
+                    "En todo caso será preciso facilitar la información requerida por la Administración, sin que exista límite a este deber de cooperación administrativa.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas." // La opción correcta es la que engloba las dos primeras, ya que la tercera es incorrecta.
+            },
+            {
+                question: "El III Plan Estratégico para la Igualdad Efectiva de Mujeres y Hombres recoge la agenda política en materia de igualdad para los próximos cuatro años (2022-2025) ¿Cuál de los siguientes no constituye uno de sus ejes de intervención?",
+                options: [
+                    "Buen Gobierno para avanzar hacia un modelo de gobierno más inclusivo y democrático.",
+                    "Economía para la vida y el reparto justo de la riqueza, contra la feminización de la pobreza y la precariedad.",
+                    "Vidas libres de violencia machistas para las mujeres, con el objetivo de erradicar todas las formas de violencia.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas." // Las tres primeras son ejes del plan.
+            },
+            {
+                question: "La opción correcta en relación al cumplimiento del requisito del periodo de residencia, en el caso de que el peticionario del reconocimiento del derecho sea un menor de cinco años:",
+                options: [
+                    "En este caso no se exigirá residencia previa a la solicitud.",
+                    "El menor de 5 años tan sólo precisa haber residido en territorio español durante los dos años anteriores a la solicitud.",
+                    "El periodo de residencia se exigirá a quien ejerza su guarda y custodia.",
+                    "No se establecen especificidades para este caso concreto"
+                ],
+                correctAnswer: "El menor de 5 años tan sólo precisa haber residido en territorio español durante los dos años anteriores a la solicitud."
+            },
+            {
+                question: "Constituye el objeto de la Ley 39/2006, de 14 de diciembre, de Autonomía Personal y Atención a las personas en situación de dependencia:",
+                options: [
+                    "Regular de forma unitaria para todo el territorio español las condiciones definitivas en que se garantizará el derecho subjetivo de la ciudadanía a la promoción de la Autonomía Personal y Atención a las personas en situación de dependencia.",
+                    "Regular las condiciones básicas que garanticen la igualdad en el ejercicio del derecho subjetivo de ciudadanía a la promoción de la Autonomía Personal y Atención a las personas en situación de dependencia.",
+                    "Fijar los criterios e instrucciones precisas a fin de servir de orientación a las Comunidades Autónomas en su regulación del derecho subjetivo de la ciudadanía a la promoción de la Autonomía personal y atención a las personas en situación de dependencia, sin que tales instrucciones sean necesariamente vinculantes",
+                    "Todas las respuestas anteriores son ciertas."
+                ],
+                correctAnswer: "Regular las condiciones básicas que garanticen la igualdad en el ejercicio del derecho subjetivo de ciudadanía a la promoción de la Autonomía Personal y Atención a las personas en situación de dependencia."
+            },
+            {
+                question: "El denominado Sistema para la Autonomía y Atención de la Dependencia, como instrumento necesario para la consecución de los objetivos previstos por la Ley:",
+                options: [
+                    "Será creado por la Administración General del Estado, de forma unilateral y de aplicación en todas las Comunidades Autónomas.",
+                    "Cada Comunidad Autónoma, en virtud de las competencias que asume a través de sus Estatutos, determinará el Sistema para la Autonomía y Atención de la Dependencia que mejor se adapte a su organización y características propias.",
+                    "Cada Comunidad Autónoma, en virtud de las competencias que asume a través de sus Estatutos, determinará el Sistema para la Autonomía y Atención de la Dependencia que mejor se adapte a su organización y características propias; sin perjuicio de la participación, en su caso, por los entes locales.",
+                    "Este sistema es creado por la propia Ley 39/2006, previendo la colaboración y participación de todas las Administraciones Públicas y la garantía por la Administración General del Estado de un contenido mínimo común de derechos para todos los ciudadanos en cualquier parte del territorio del Estado español."
+                ],
+                correctAnswer: "Este sistema es creado por la propia Ley 39/2006, previendo la colaboración y participación de todas las Administraciones Públicas y la garantía por la Administración General del Estado de un contenido mínimo común de derechos para todos los ciudadanos en cualquier parte del territorio del Estado español."
+            },
+            {
+                question: "Para ser titular de los derechos comprendidos en la Ley 39/2006 de Promoción de la Autonomía Personal y Atención a las personas en situación de dependencia, no se requiera:",
+                options: [
+                    "Ser español.",
+                    "Encontrarse en situación de dependencia en alguno de los grados establecidos.",
+                    "Haber residido en territorio español durante los cinco años inmediatamente anteriores a la presentación de la solicitud de los cuales dos deberán se inmediatamente anteriores a la fecha de presentación de la solicitud.",
+                    "Estar residiendo en territorio español durante los dos años inmediatamente anteriores a la presentación de la solicitud o un mínimo de tres años si se tratara de un menor de edad."
+                ],
+                correctAnswer: "Estar residiendo en territorio español durante los dos años inmediatamente anteriores a la presentación de la solicitud o un mínimo de tres años si se tratara de un menor de edad." // La pregunta es 'no se requiera', por lo que la opción incorrecta en el contexto de los requisitos es la respuesta. La opción correcta es la que no es un requisito.
+            },
+            {
+                question: "El artículo 24 de Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres concreta la Integración del principio de igualdad en la política de educación. Las autoridades educativas, en el ámbito de sus respectivas competencias desarrollarán con tal finalidad, las siguientes actuaciones:",
+                options: [
+                    "La atención especial en los currículos y en todas las etapas educativas al principio de igualdad entre mujeres y hombres.",
+                    "La eliminación y el rechazo de los comportamientos y contenidos sexistas y estereotipos que supongan discriminación entre mujeres y hombres, con especial consideración a ello en los libros de texto y materiales educativos.",
+                    "La integración del estudio y aplicación del principio de igualdad en los cursos y programas para la formación inicial y permanente del profesorado.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "El derecho de acceso en condiciones de igualdad a las funciones y cargos públicos se reconoce:",
+                options: [
+                    "En la Ley de Medidas de Reforma de la Función Pública de 1984.",
+                    "En la Ley articulada de Funcionarios Civiles del Estado de 1964.",
+                    "En la Ley de conciliación de la vida familiar y profesional de 1999.",
+                    "En la Constitución Española."
+                ],
+                correctAnswer: "En la Constitución Española."
+            },
+            {
+                question: "Entre las medidas adoptadas en el Plan para la Igualdad de género en la Administración General del Estado, aprobada por Orden de 7 de marzo de 2005, no se incluye:",
+                options: [
+                    "La creación de escuelas infantiles en los centros con más de 500 empleados públicos.",
+                    "Modalidad específica de jornada a tiempo parcial, con disminución proporcional de retribuciones, para quienes tengan a su cargo personas mayores, hijos menores de 12 años o personas con discapacidad.",
+                    "La creación de una unidad administrativa sobre Mujer y Ciencia para mejorar la presencia de las mujeres en las instituciones investigadoras.",
+                    "La no existencia de ningún destino en las Fuerzas Armadas que esté vetado a las mujeres."
+                ],
+                correctAnswer: "La no existencia de ningún destino en las Fuerzas Armadas que esté vetado a las mujeres." // Esta es la que NO se incluye.
+            },
+            {
+                question: "Según el art. 51 de la Ley Orgánica 3/2007, las Administraciones públicas en el ámbito de sus respectivas competencias y en aplicación del principio de igualdad entre mujeres y hombres, deberán:",
+                options: [
+                    "Evaluar periódicamente la efectividad del principio de igualdad en sus respectivos ámbitos de actuación.",
+                    "Establecer medidas efectivas para eliminar las discriminaciones retributivas directas, pero no las indirectas, por razón de sexo.",
+                    "Facilitar la conciliación de la vida personal, familiar y laboral, por encima de la promoción profesional.",
+                    "Remover los obstáculos que impliquen la pervivencia de cualquier tipo de discriminación con el fin de ofrecer condiciones de igualdad efectiva entre mujeres y hombres en la obtención de ayudas de acción social."
+                ],
+                correctAnswer: "Remover los obstáculos que impliquen la pervivencia de cualquier tipo de discriminación con el fin de ofrecer condiciones de igualdad efectiva entre mujeres y hombres en la obtención de ayudas de acción social."
+            },
+            {
+                question: "Según lo indicado en la Ley Orgánica 3/2007, el Gobierno, en las materias que sean de la competencia del Estado, utilizará entre otros instrumentos básicos para la consecución del principio de igualdad y para eliminar la discriminación por razón de sexo un:",
+                options: [
+                    "Objetivo específico de igualdad.",
+                    "Plan Estratégico de igualdad de Oportunidades.",
+                    "Programa de igualdad.",
+                    "Informe periódico del Ministerio de Justicia."
+                ],
+                correctAnswer: "Plan Estratégico de igualdad de Oportunidades."
+            },
+            {
+                question: "El artículo 17 de la Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres obliga a establecer un Plan Estratégico de Igualdad de Oportunidades:",
+                options: [
+                    "A todas las Comunidades Autónomas.",
+                    "Al Gobierno, en las materias que sean competencia del Estado.",
+                    "A todas las empresas.",
+                    "A las empresas con más de 250 trabajadores."
+                ],
+                correctAnswer: "Al Gobierno, en las materias que sean competencia del Estado."
+            },
+            {
+                question: "El Real Decreto 901/2020, de 13 de octubre, regula los planes de igualdad y sus registros, y determina que todas las empresas con independencia del número de trabajadores, deben adoptar, previa negociación:",
+                options: [
+                    "Medidas dirigidas a evitar cualquier tipo de discriminación laboral ente mujeres y hombres.",
+                    "Promover condiciones de trabajo que eviten el acoso sexual y el acoso por razón de sexo.",
+                    "Arbitrar procedimientos específicos para su prevención y para dar cauce a las denuncias o reclamaciones que puedan formular quienes hayan sido objeto del mismo (protocolos contra el acoso sexual o por razón de sexo",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Almacena { questionIndex: X, selectedOption: Y, isCorrect: Z }
+
+        const quizContainer = document.getElementById('quiz-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const submitButton = document.getElementById('submit-button');
+        const resetButton = document.getElementById('reset-button');
+        const resultsDiv = document.getElementById('results');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+
+        const customModal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirmButton = document.getElementById('modal-confirm-button');
+        const modalCancelButton = document.getElementById('modal-cancel-button');
+
+        // Función para mostrar el modal personalizado
+        function showModal(title, message, onConfirm) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            customModal.style.display = 'flex'; // Show the modal
+
+            modalConfirmButton.onclick = () => {
+                customModal.style.display = 'none';
+                onConfirm(true);
+            };
+
+            modalCancelButton.onclick = () => {
+                customModal.style.display = 'none';
+                onConfirm(false);
+            };
+        }
+
+        // Cargar el estado del test desde LocalStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Inicializar userAnswers si no hay nada guardado
+                userAnswers = questions.map(() => ({ selectedOption: null, isCorrect: null }));
+            }
+        }
+
+        // Guardar el estado del test en LocalStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Mostrar una pregunta específica
+        function displayQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${q.question}</p>
+                    <div class="options-container">
+                        ${q.options.map((option, index) => `
+                            <label class="answer-option" data-option-index="${index}">
+                                <input type="radio" name="question-${currentQuestionIndex}" value="${option}" ${userAnswers[currentQuestionIndex].selectedOption === option ? 'checked' : ''} disabled>
+                                <span>${option}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div id="feedback-${currentQuestionIndex}" class="feedback" style="display: none;"></div>
+                </div>
+            `;
+
+            // Añadir event listeners a las opciones
+            const options = quizContainer.querySelectorAll('.answer-option');
+            options.forEach(optionElement => {
+                optionElement.addEventListener('click', () => handleOptionClick(optionElement));
+            });
+
+            // Si ya se ha respondido, mostrar feedback y deshabilitar opciones
+            if (userAnswers[currentQuestionIndex].selectedOption !== null) {
+                showFeedback();
+                disableOptions();
+            } else {
+                // Habilitar opciones si no se ha respondido
+                enableOptions();
+            }
+
+            updateNavigationButtons();
+            saveState(); // Guardar el estado cada vez que se muestra una pregunta
+        }
+
+        // Manejar la selección de una opción
+        function handleOptionClick(selectedOptionElement) {
+            const selectedOption = selectedOptionElement.querySelector('input').value;
+            const q = questions[currentQuestionIndex];
+            const isCorrect = selectedOption === q.correctAnswer;
+
+            // Actualizar la respuesta del usuario
+            userAnswers[currentQuestionIndex] = {
+                selectedOption: selectedOption,
+                isCorrect: isCorrect
+            };
+
+            showFeedback();
+            disableOptions();
+            saveState(); // Guardar el estado después de cada respuesta
+        }
+
+        // Mostrar feedback de la respuesta
+        function showFeedback() {
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const q = questions[currentQuestionIndex];
+            const userAnswer = userAnswers[currentQuestionIndex];
+
+            if (userAnswer.selectedOption !== null) {
+                if (userAnswer.isCorrect) {
+                    feedbackDiv.textContent = "¡Correcto!";
+                    feedbackDiv.className = "feedback correct";
+                } else {
+                    feedbackDiv.textContent = `Incorrecto. La respuesta correcta era: "${q.correctAnswer}"`;
+                    feedbackDiv.className = "feedback incorrect";
+                }
+                feedbackDiv.style.display = 'block';
+
+                // Resaltar la opción seleccionada y la correcta
+                const options = quizContainer.querySelectorAll('.answer-option');
+                options.forEach(optionElement => {
+                    const optionValue = optionElement.querySelector('input').value;
+                    optionElement.classList.remove('selected', 'correct', 'incorrect');
+                    if (optionValue === userAnswer.selectedOption) {
+                        optionElement.classList.add(userAnswer.isCorrect ? 'correct' : 'incorrect');
+                    }
+                    if (optionValue === q.correctAnswer) {
+                        optionElement.classList.add('correct');
+                    }
+                });
+            }
+        }
+
+        // Deshabilitar todas las opciones de la pregunta actual
+        function disableOptions() {
+            const options = quizContainer.querySelectorAll('.answer-option input[type="radio"]');
+            options.forEach(input => {
+                input.disabled = true;
+                input.parentElement.style.cursor = 'default';
+            });
+        }
+
+        // Habilitar todas las opciones de la pregunta actual
+        function enableOptions() {
+            const options = quizContainer.querySelectorAll('.answer-option input[type="radio"]');
+            options.forEach(input => {
+                input.disabled = false;
+                input.parentElement.style.cursor = 'pointer';
+                input.parentElement.classList.remove('selected', 'correct', 'incorrect'); // Limpiar clases de estilo
+            });
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+            if (feedbackDiv) {
+                feedbackDiv.style.display = 'none'; // Ocultar feedback al cambiar de pregunta
+            }
+        }
+
+        // Actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1) {
+                nextButton.style.display = 'none';
+                submitButton.style.display = 'inline-block';
+            } else {
+                nextButton.style.display = 'inline-block';
+                submitButton.style.display = 'none';
+            }
+            resultsDiv.style.display = 'none'; // Ocultar resultados al navegar por las preguntas
+        }
+
+        // Navegar a la pregunta anterior
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        });
+
+        // Navegar a la pregunta siguiente
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            }
+        });
+
+        // Finalizar el test y mostrar resultados
+        submitButton.addEventListener('click', () => {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach(answer => {
+                if (answer.selectedOption === null) {
+                    unansweredCount++;
+                } else if (answer.isCorrect) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            correctCountSpan.textContent = correctCount;
+            incorrectCountSpan.textContent = incorrectCount;
+            unansweredCountSpan.textContent = unansweredCount;
+
+            quizContainer.style.display = 'none';
+            prevButton.style.display = 'none';
+            nextButton.style.display = 'none';
+            submitButton.style.display = 'none';
+            resultsDiv.style.display = 'block';
+        });
+
+        // Reiniciar el test
+        resetButton.addEventListener('click', () => {
+            showModal(
+                "Reiniciar Test",
+                "¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.",
+                (confirmed) => {
+                    if (confirmed) {
+                        localStorage.clear();
+                        currentQuestionIndex = 0;
+                        userAnswers = questions.map(() => ({ selectedOption: null, isCorrect: null }));
+                        quizContainer.style.display = 'block';
+                        displayQuestion();
+                        updateNavigationButtons();
+                        resultsDiv.style.display = 'none';
+                    }
+                }
+            );
+        });
+
+        // Inicializar el test al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            displayQuestion();
+        });
+    </script>
+</body>
+</html>

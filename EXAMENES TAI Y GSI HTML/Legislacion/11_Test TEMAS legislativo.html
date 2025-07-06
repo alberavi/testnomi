@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST LEGISLATIVO</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-container {
+            margin-bottom: 25px;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background-color: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 1rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background-color: #d1d8e0;
+            border-color: #a0aec0;
+            transform: translateY(-2px);
+        }
+        .option-button.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+            color: #2b6cb0;
+        }
+        .option-button.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: 600;
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: 600;
+        }
+        .option-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .feedback-message {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .feedback-message.show {
+            opacity: 1;
+        }
+        .feedback-message.correct-feedback {
+            background-color: #d4edda;
+            color: #28a745;
+        }
+        .feedback-message.incorrect-feedback {
+            background-color: #f8d7da;
+            color: #dc3545;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        .nav-button, .reset-button, .results-button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-button-primary {
+            background-color: #4299e1;
+            color: #ffffff;
+            border: 1px solid #4299e1;
+        }
+        .nav-button-primary:hover:not(:disabled) {
+            background-color: #2b6cb0;
+            border-color: #2b6cb0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+        }
+        .nav-button-secondary {
+            background-color: #cbd5e1;
+            color: #4a5568;
+            border: 1px solid #cbd5e1;
+        }
+        .nav-button-secondary:hover:not(:disabled) {
+            background-color: #a0aec0;
+            border-color: #a0aec0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(160, 174, 192, 0.3);
+        }
+        .nav-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .reset-button {
+            background-color: #f56565;
+            color: #ffffff;
+            border: 1px solid #f56565;
+        }
+        .reset-button:hover {
+            background-color: #e53e3e;
+            border-color: #e53e3e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(245, 101, 101, 0.3);
+        }
+        .results-button {
+            background-color: #48bb78;
+            color: #ffffff;
+            border: 1px solid #48bb78;
+        }
+        .results-button:hover {
+            background-color: #38a169;
+            border-color: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+        }
+        .results-container {
+            text-align: center;
+            padding: 20px;
+        }
+        .results-container h2 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .results-container p {
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .results-container .score-item {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .results-container .correct-score {
+            color: #28a745;
+        }
+        .results-container .incorrect-score {
+            color: #dc3545;
+        }
+        .results-container .unanswered-score {
+            color: #ffc107;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h3 {
+            font-size: 1.5rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .modal-content p {
+            color: #4a5568;
+            margin-bottom: 25px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .modal-button.confirm {
+            background-color: #f56565;
+            color: #ffffff;
+            border: 1px solid #f56565;
+        }
+        .modal-button.confirm:hover {
+            background-color: #e53e3e;
+        }
+        .modal-button.cancel {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            border: 1px solid #cbd5e1;
+        }
+        .modal-button.cancel:hover {
+            background-color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">TEST LEGISLATIVO</h1>
+        <div id="quiz-container">
+            <div id="question-display" class="question-container">
+                <p id="question-text" class="question-text"></p>
+                <div id="options-container">
+                    <!-- Las opciones se cargarán aquí mediante JavaScript -->
+                </div>
+                <div id="feedback-message" class="feedback-message"></div>
+            </div>
+
+            <div class="navigation-buttons">
+                <button id="prev-button" class="nav-button nav-button-secondary" disabled>Anterior</button>
+                <button id="next-button" class="nav-button nav-button-primary">Siguiente</button>
+            </div>
+            <div class="navigation-buttons mt-4">
+                <button id="reset-button" class="reset-button">Reiniciar Test</button>
+                <!-- Este botón se mostrará cuando sea la última pregunta -->
+                <button id="show-results-button" class="results-button hidden">Ver Resultados</button>
+            </div>
+        </div>
+
+        <!-- Contenedor para mostrar los resultados al finalizar el test -->
+        <div id="results-container" class="results-container hidden">
+            <h2 class="text-3xl font-bold">Resultados del Test</h2>
+            <p class="score-item correct-score">Correctas: <span id="correct-count">0</span></p>
+            <p class="score-item incorrect-score">Incorrectas: <span id="incorrect-count">0</span></p>
+            <p class="score-item unanswered-score">Sin contestar: <span id="unanswered-count">0</span></p>
+            <button id="restart-from-results-button" class="reset-button mt-6">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <!-- Modal personalizado para confirmaciones -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <div class="modal-buttons">
+                <button id="modal-confirm-button" class="modal-button confirm">Confirmar</button>
+                <button id="modal-cancel-button" class="modal-button cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos de preguntas y respuestas
+        const questions = [
+            // Test 1
+            {
+                question: "1. Según el artículo 27.2 CE la educación tendrá por objeto:",
+                options: [
+                    "a. Los principios democráticos de convivencia.",
+                    "b. El pleno desarrollo de la personalidad humana.",
+                    "c. El respeto a los principios constitucionales.",
+                    "d. El pleno desarrollo de los derechos y libertades fundamentales."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "2. ¿Cuántas Disposiciones Transitorias tiene la Constitución?",
+                options: [
+                    "a. 9",
+                    "b. 1",
+                    "c. Ninguna",
+                    "d. 4"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "3. No es una función del Rey:",
+                options: [
+                    "a. Dirigir la acción militar.",
+                    "b. Acreditar a los embajadores y otros representantes diplomáticos.",
+                    "c. Relevar libremente los miembros civiles y militares de su Casa.",
+                    "d. Distribuir libremente su presupuesto."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "4. A tenor del art. 1 de la Constitución Española de 1978, son valores superiores del ordenamiento jurídico:",
+                options: [
+                    "a. La libertad, la tolerancia, la justicia, la igualdad y el pluralismo político",
+                    "b. La libertad, la justicia, la igualdad y el pluralismo político",
+                    "c. La justicia, la igualdad y el pluralismo político",
+                    "d. La libertad, la tolerancia, la igualdad y el pluralismo político"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "5. Según el artículo 6 CE los partidos políticos:",
+                options: [
+                    "a. Concurren a la formación y manifestación de la voluntad política.",
+                    "b. Expresan el pluralismo político.",
+                    "c. Son instrumento fundamental para la participación popular.",
+                    "d. Todas las respuestas son correctas."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "6. A tenor de lo establecido en el art.25 de la CE, no es correcto que:",
+                options: [
+                    "a. Las penas privativas de libertad y las medidas de seguridad estarán orientadas hacia la reeducación y reinserción social y no podrán consistir en trabajos forzados",
+                    "b. El condenado a pena de prisión que estuviere cumpliendo la misma gozará de los derechos fundamentales del Capítulo segundo, a excepción de los que se vean expresamente limitados por el contenido del fallo condenatorio, el sentido de la pena y la ley penitenciaria",
+                    "c. Si las circunstancias lo permiten, tendrán derecho a un trabajo remunerado y a los beneficios correspondientes de la Seguridad Social, así como al acceso a la cultura y al desarrollo integral de su personalidad",
+                    "d. Nadie puede ser condenado o sancionado por acciones u omisiones que en el momento de producirse no constituyan delito, falta o infracción administrativa, según la legislación vigente en aquel momento"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "7. De conformidad con lo establecido en el art.43.3 de la CE, los poderes públicos fomentarán:",
+                options: [
+                    "a. La educación física",
+                    "b. La adecuada utilización de ocio",
+                    "c. Las prestaciones y servicios necesarios para garantizar la salud pública",
+                    "d. La protección de la salud"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "8. El Jefe de Estado a tenor del art.56 de la CE es:",
+                options: [
+                    "a. El Presidente del Senado",
+                    "b. El Presidente del Gobierno",
+                    "c. El Rey",
+                    "d. El Presidente del Congreso"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "9. Según el artículo 53 CE, el derecho a disfrutar de una vivienda digna y adecuada:",
+                options: [
+                    "a. Sólo podrá ser alegado ante la Jurisdicción ordinaria de acuerdo con lo que dispongan las leyes que lo desarrollen.",
+                    "b. Puede ser tutelado a través del recurso de amparo ante el Tribunal Constitucional.",
+                    "c. Vincula a todos los poderes públicos.",
+                    "d. Sólo por ley, que en todo caso deberá respetar su contenido esencial, podrá regularse su ejercicio."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "10. Según el artículo 13.1 CE, los extranjeros gozarán en España:",
+                options: [
+                    "a. De los mismos derechos y libertades que los españoles en los términos que establezcan los tratados y la ley",
+                    "b. De los derechos y libertades que garantiza la Constitución en los términos que establezcan los tratados y la ley",
+                    "c. De las libertades públicas que garantiza el Título I en los términos que establezcan los tratados y la ley",
+                    "d. De las libertades públicas que garantiza la Constitución en los términos que establezcan los tratados y la ley y atendiendo a criterios de reciprocidad"
+                ],
+                correctAnswerIndex: 3
+            },
+            // Test 2
+            {
+                question: "1. Teniendo en cuenta lo dispuesto en los artículos 82 a 85 relativos a los Decretos Legislativos, señale la afirmación incorrecta:",
+                options: [
+                    "a. No cabe delegación legislativa en aquellas materias que exijan ley orgánica para su regulación",
+                    "b. La ley que autorice la refundición de textos legales no podrá facultar para dictar normas con carácter retroactivo",
+                    "c. La delegación legislativa no permite la subdelegación en autoridades distintas del propio Gobierno",
+                    "d. Las leyes de delegación podrán establecer en cada caso fórmulas adicionales de control"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "2. Según el artículo 23 LOTC, cuando un Magistrado del Tribunal Constitucional incurriere en incompatibilidad sobrevenida:",
+                options: [
+                    "a. El Presidente del TC decretará su cese",
+                    "b. El Tribunal en Pleno decidirá sobre su cese por mayoría simple de sus miembros",
+                    "c. El Tribunal en Pleno decidirá sobre su cese por mayoría de las dos terceras partes de sus miembros",
+                    "d. El Tribunal en Pleno decidirá sobre su cese por mayoría de las tres cuartas partes de sus miembros"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "3. Según el artículo 2 LODP, de no obtenerse la mayoría exigida en primera votación del candidato propuesto, en las sucesivas propuestas:",
+                options: [
+                    "a. Bastará mayoría absoluta del Congreso y simple del Senado",
+                    "b. Bastará mayoría absoluta de cada Cámara",
+                    "c. Decidirá el Congreso por el voto de la mayoría absoluta de sus miembros",
+                    "d. Bastará la mayoría de 3/5 del Congreso y mayoría absoluta del Senado"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "4. Del juego de los artículos 53 y 81 CE, resulta que la regulación del derecho de fundación:",
+                options: [
+                    "a. Ninguna de las respuestas es correcta",
+                    "b. Exigirá ley orgánica",
+                    "c. No exigirá una norma con rango de ley",
+                    "d. Exigirá ley ordinaria"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "5. De conformidad con lo establecido en el art.80 de la CE, las sesiones plenarias de las Cámaras serán:",
+                options: [
+                    "a. Serán privadas, salvo acuerdo en contrario de cada Cámara, adoptado por mayoría absoluta o con arreglo al Reglamento",
+                    "b. Serán públicas, en todo caso",
+                    "c. Serán públicas, salvo acuerdo en contrario de cada Cámara, adoptado por mayoría simple o con arreglo al Reglamento",
+                    "d. Serán públicas, salvo acuerdo en contrario de cada Cámara, adoptado por mayoría absoluta o con arreglo al Reglamento"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "6. ¿Quién puede acordar que unos documentos secretos no sean remitidos al Defensor del Pueblo? Art. 22 LO Defensor del Pueblo",
+                options: [
+                    "a. El Presidente del Gobierno",
+                    "b. El Tribunal Supremo",
+                    "c. Cualquiera de los Ministros",
+                    "d. El Consejo de Ministros"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "7. Qué ley determinará las causas de inelegibilidad e incompatibilidad de los Diputados o Senadores:",
+                options: [
+                    "a. La Ley del Poder Judicial",
+                    "b. La Ley de Incompatibilidades Estatales",
+                    "c. La Ley de Enjuiciamiento Criminal",
+                    "d. La Ley Electoral General"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "8. En base al artículo 32 LOTC ¿Puede una Asamblea de la CCAA interponer un recurso de inconstitucionalidad frente a una normativa del Estado?",
+                options: [
+                    "a. Sí, en cualquier caso",
+                    "b. No, en ningún caso",
+                    "c. No, solo frente a normativa autonómica",
+                    "d. Sí, siempre que afecte al ámbito de su autonomía"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "9. ¿En que materia no está prohibida la iniciativa popular para la presentación de proposiciones de ley, según el artículo 87.3 CE?:",
+                options: [
+                    "a. Materia propia de ley de bases",
+                    "b. Materia propia de ley orgánica",
+                    "c. Materia tributaria",
+                    "d. Materia de carácter internacional"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "10. Están legitimados para interponer el recurso de inconstitucionalidad, señala la incorrecta:",
+                options: [
+                    "a. el Ministerio Fiscal.",
+                    "b. el Presidente del Gobierno.",
+                    "c. 50 Senadores.",
+                    "d. los órganos colegiados ejecutivos de las Comunidades Autónomas."
+                ],
+                correctAnswerIndex: 0
+            },
+            // Test 3
+            {
+                question: "1. Según la CE, en primera vuelta de votación para elegir Presidente del Gobierno por parte del Congreso ¿Qué mayoría se precisa para ser proclamado?",
+                options: [
+                    "a. Mayoría absoluta",
+                    "b. Mayoría simple",
+                    "c. Mayoría de tres quintas partes",
+                    "d. Mayoría de tres cuartas partes"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "2. ¿Quién no obligatoriamente forma parte del Gobierno?",
+                options: [
+                    "a. Los Ministros sin cartera.",
+                    "b. El Vicepresidente.",
+                    "c. Los Ministros.",
+                    "d. El Presidente."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "3. Según el artículo 102 CE, en caso de que alguno de los miembros del Gobierno fuera acusado por traición, la acusación sólo podrá ser planteada:",
+                options: [
+                    "a. A iniciativa de la cuarta parte de los miembros del Congreso y con la aprobación de la mayoría absoluta del mismo",
+                    "b. A iniciativa de la mayoría absoluta del Congreso y con la aprobación de las tres quintas partes del mismo",
+                    "c. A iniciativa de la cuarta parte de los miembros de cualquiera de las Cámaras y con la aprobación de la mayoría absoluta del Congreso",
+                    "d. A iniciativa de la cuarta parte de los miembros de cualquiera de las Cámaras y con la aprobación de la mayoría absoluta de las mismas"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "4. Según la CE, ¿Cómo se regulará el estatuto e incompatibilidades de los miembros del Gobierno?",
+                options: [
+                    "a. Ley orgánica",
+                    "b. La Constitución",
+                    "c. Ley ordinaria",
+                    "d. Real Decreto"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "5. Según el art. 97 de la CE ¿Cuál es una función encomendada al Gobierno?",
+                options: [
+                    "a. La defensa del Estado.",
+                    "b. La Administración de las Comunidades Autónomas.",
+                    "c. La función presupuestaria.",
+                    "d. La función legislativa."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "6. Según el artículo 6 LG, las Comisiones Delegadas del Gobierno son creadas, modificadas y suprimidas:",
+                options: [
+                    "a. Por Real Decreto del Consejo de Ministros, a propuesta del Presidente del Gobierno",
+                    "b. Por Real Decreto del Consejo de Ministros, a propuesta del Ministro de la Presidencia",
+                    "c. Por Real Decreto del Presidente del Gobierno, a propuesta del Consejo de Ministros",
+                    "d. Por Real Decreto del Presidente del Gobierno, previa deliberación del Consejo de Ministros"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "7. Señale la incorrecta. El Presidente del Gobierno en funciones no podrá ejercer las siguientes facultades...",
+                options: [
+                    "a. Proponer al Rey la disolución de alguna de las Cámaras, o de las Cortes Generales.",
+                    "b. Gestión de despacho ordinario de los asuntos públicos.",
+                    "c. Proponer al Rey la convocatoria de un referéndum consultivo.",
+                    "d. Plantear la cuestión de confianza."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "8. Según el artículo 26.5 LG, cuando la norma pudiera afectar a la distribución de competencias entre el Estado y las Comunidades Autónomas (sólo Administrativos del Estado):",
+                options: [
+                    "a. Será además necesario el dictamen del Consejo de Estado",
+                    "b. Será además necesario dictamen del Consejo de Estado",
+                    "c. Será además necesario dar audiencia a las Comunidades Autónomas por plazo no inferior a 15 días hábiles",
+                    "d. Será además necesario informe previo del Ministerio de Hacienda y Administraciones Públicas"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "9. Según la CE, el acceso de los ciudadanos a los archivos y registros administrativos estará regulado por:",
+                options: [
+                    "a. Ley ordinaria",
+                    "b. Ley orgánica",
+                    "c. La Constitución",
+                    "d. Real Decreto"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "10. Según el artículo 102 CE y tratándose de la responsabilidad criminal del Presidente y de los demás miembros del Gobierno, si la acusación fuera por traición o por cualquier otro delito contra la seguridad del Estado en el ejercicio de sus funciones, sólo podrá ser planteada:",
+                options: [
+                    "a. Por iniciativa de la cuarta parte de los miembros de cualquiera de las Cámaras y con la aprobación de la mayoría absoluta de la Cámara que tomó la iniciativa",
+                    "b. Por iniciativa de la cuarta parte de los miembros de ambas Cámaras y con la aprobación de las mayoría absoluta de las mismas",
+                    "c. Por iniciativa de la décima parte de los miembros de cualquiera de las Cámaras y con la aprobación de la mayoría absoluta de la Cámara que tomó la iniciativa",
+                    "d. Por iniciativa de la cuarta parte de los miembros del Congreso y con la aprobación de la mayoría absoluta del mismo"
+                ],
+                correctAnswerIndex: 3
+            },
+            // Test 4
+            {
+                question: "1. Según establece la Ley 19/2013, de 9 de diciembre ¿Cuántos miembros componen la Comisión de Transparencia y Buen Gobierno?",
+                options: [
+                    "a. 12",
+                    "b. 6",
+                    "c. 8",
+                    "d. 10"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "2. En base al art. 70, la ejecución de la oferta de empleo público o instrumento similar deberá desarrollarse dentro del plazo improrrogable de:",
+                options: [
+                    "a. Un año",
+                    "b. Tres años",
+                    "c. Cuatro años",
+                    "d. Dos años"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "3. Corresponde al Presidente del Consejo de Transparencia y Buen Gobierno, de acuerdo con la Ley 19/2013, ejercer la función de-art.38-",
+                options: [
+                    "a. Todas las respuestas son correctas.",
+                    "b. Responder las consultas de los órganos encargados de tramitar y resolver las solicitudes de acceso a la información.",
+                    "c. Velar por el cumplimiento de las obligaciones de publicidad activa.",
+                    "d. Conocer de las reclamaciones previstas en el artículo 24 de la Ley."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "4. Según el TREBEP, las retribuciones básicas estarán integradas única y exclusivamente por:",
+                options: [
+                    "a. Sueldo y pagas extraordinarias",
+                    "b. Sueldo",
+                    "c. Sueldo, pagas extraordinarias y trienios",
+                    "d. Sueldo y trienios"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "5. El artículo 60 del TREBEP nos regula los órganos de selección ¿Cómo será siempre la pertenencia a dichos órganos de selección?",
+                options: [
+                    "a. El TREBEP no hace mención de la pertenencia.",
+                    "b. A título individual, no pudiendo ostentarse esta representación o por cuenta de nadie",
+                    "c. A título colegiado, siendo necesaria la aceptación previa por parte de dicho miembro.",
+                    "d. A título de nombramiento"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "6. El acceso únicamente se podrá autorizar en caso de que se contase con el consentimiento expreso y por escrito del afectado-art.15.1-",
+                options: [
+                    "a. No hace falta especial autorización desde el preciso instante en que la información de que estamos hablando se considera integrada en el ámbito de aplicación objetivo de la norma",
+                    "b. Siempre que la información solicitada contuviera datos especialmente protegidos a menos que dicho afectado hubiese hecho manifiestamente públicos los datos con anterioridad a que se solicitase el acceso",
+                    "c. Siempre que la información solicitada contuviera datos especialmente protegidos",
+                    "d. En todo caso"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "7. Agenda 2030-Promover una agricultura sostenible es una meta referida al objetivo-",
+                options: [
+                    "a. Hambre cero",
+                    "b. Salud y bienestar",
+                    "c. Igualdad de género",
+                    "d. Trabajo decente y crecimiento económico"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "8. En base al Real Decreto 364/1995, los funcionarios cuyo puesto de trabajo sea objeto de supresión como consecuencia de un Plan de Empleo podrán ser destinados a otro puesto de trabajo por el procedimiento de:",
+                options: [
+                    "a. Movilidad por cambio de adscripción de puestos de trabajo",
+                    "b. Reingreso al servicio activo",
+                    "c. Reasignación de efectivos",
+                    "d. Redistribución de efectivos"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "9. Se inadmitirán a trámite, mediante resolución motivada, las solicitudes-art.18.1-",
+                options: [
+                    "a. Relativas a información para cuya divulgación no sea necesaria una acción previa de reelaboración.",
+                    "b. Dirigidas a un órgano en cuyo poder no obre la información y que además no se conozca el competente.",
+                    "c. Que se refieran a información que haya sido elaborada y esté publicada con carácter general.",
+                    "d. Todas son causas de inadmisión contenidas en el art. 18 de la norma"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "10. La condición de funcionario de carrera se adquiere por el cumplimiento sucesivo de los siguientes requisitos pero, ¿cuál de los siguientes requisitos no se ajusta a la normativa?:",
+                options: [
+                    "a. Toma de posesión en el plazo de siete días",
+                    "b. Nombramiento por el órgano o autoridad competente, que será publicado en el Diario Oficial correspondiente.",
+                    "c. Acto de acatamiento de la Constitución y, en su caso, del Estatuto de Autonomía correspondiente y del resto del Ordenamiento Jurídico.",
+                    "d. Superación del proceso selectivo."
+                ],
+                correctAnswerIndex: 0
+            },
+            // Test 5
+            {
+                question: "1. Las medidas de protección integral establecidas en la LO 1/2004, de 28 de diciembre, de Medidas de Protección Integral contra la Violencia de Género tienen como finalidad:",
+                options: [
+                    "a. Prevenir, sancionar y erradicar la violencia de género y prestar asistencia a sus víctimas",
+                    "b. Prevenir, sancionar y erradicar la violencia de género y prestar asistencia a las mujeres, a sus hijos menores y a los menores sujetos a su tutela, o guarda y custodia, víctimas de esta violencia.",
+                    "c. Prevenir, sancionar, detectar y eliminar la violencia de género y prestar asistencia a las mujeres, a sus hijos y a los demás parientes víctimas de esta violencia.",
+                    "d. Prevenir, detectar y sancionar la violencia de género y prestar asistencia a las mujeres víctimas de esta violencia y a sus hijos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "2. Según la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, se considera que un prestador opera mediante un establecimiento permanente situado en territorio español- art.2. 2-",
+                options: [
+                    "a. Cuando se disponga en el mismo, de forma continuada o habitual, de instalaciones o lugares de trabajo, en los que realice toda o parte de su actividad",
+                    "b. Cuando el prestador tenga la residencia o domicilio social en España",
+                    "c. Cuando se usen medios tecnológicos situados en España para la prestación del servicio",
+                    "d. Cuando esté ahí centralizada la gestión administrativa y la dirección de sus negocios"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "3. ¿Cuál de las siguientes es la correcta en relación a la fecha de aprobación de la LO para la igualdad efectiva de mujeres y hombres?",
+                options: [
+                    "a. 4 de mayo de 2004.",
+                    "b. 14 marzo de 2004.",
+                    "c. 25 de abril de 2007.",
+                    "d. 22 de marzo de 2007."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "4. Según la Ley Orgánica de Igualdad entre hombres y mujeres, ¿en qué esferas, singularmente, esta ley quiere eliminar la discriminación de la mujer? Señale la respuesta incorrecta:",
+                options: [
+                    "a. Política",
+                    "b. Social.",
+                    "c. Profesional",
+                    "d. Cultural"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "5. El artículo 32 del RDL 1/2013, regula la reserva de viviendas para personas con discapacidad y condiciones de accesibilidad, estableciendo que, en los proyectos de viviendas protegidas, se programará:",
+                options: [
+                    "a. Un máximo de un cincuenta por ciento con las características constructivas y de diseño adecuadas que garantice el acceso y desenvolvimiento de personas con discapacidad",
+                    "b. Un mínimo de un veinte por ciento con las características constructivas y de diseño adecuadas que garantice el acceso y desenvolvimiento de personas con discapacidad",
+                    "c. Un máximo de un diez por ciento con las características constructivas y de diseño adecuadas que garantice el acceso y desenvolvimiento de personas con discapacidad",
+                    "d. Un mínimo de un cuatro por ciento con las características constructivas y de diseño adecuadas que garantice el acceso y desenvolvimiento de personas con discapacidad"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "6. La publicidad que utilice la imagen de la mujer con carácter vejatorio o discriminatorio tiene la consideración de:",
+                options: [
+                    "a. Abusiva",
+                    "b. Ilícita",
+                    "c. Ilegal",
+                    "d. Antijurídica"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "7. El principio de igualdad de trato entre mujeres y hombres según la L.O, 3/2007, supone:",
+                options: [
+                    "a. La ausencia de toda discriminación, directa o indirecta, por razón de sexo.",
+                    "b. Únicamente la ausencia de toda discriminación directa por razón de sexo.",
+                    "c. La ausencia de toda diferencia de trato basada en una característica relacionada con el sexo.",
+                    "d. La ausencia de toda diferenciación, directa o indirecta."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "8. Según la Ley Orgánica de Igualdad, El principio de igualdad de trato entre mujeres y hombres supone la ausencia de toda discriminación, por razón de sexo y en especial:",
+                options: [
+                    "a. La maternidad, el estado civil y las obligaciones familiares.",
+                    "b. La maternidad, el estado civil y la asunción de obligaciones familiares.",
+                    "c. La maternidad y la paternidad y el estado civil.",
+                    "d. La paternidad, el estado civil y las obligaciones familiares."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "9. El artículo 5 de la Ley 39/2006, regula la titularidad de derechos, donde con carácter general establece residir en territorio español y haberlo hecho durante:",
+                options: [
+                    "a. Siete años",
+                    "b. Tres años",
+                    "c. Cinco años",
+                    "d. Dos años"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "10. En base a la Ley Orgánica 3/2007, El principio de igualdad de trato y de oportunidades entre mujeres y hombres en el acceso al empleo se garantizará:",
+                options: [
+                    "a. En la afiliación y participación en las organizaciones sindicales y empresariales.",
+                    "b. Todas las opciones son correctas.",
+                    "c. En las condiciones de trabajo, con excepción de aquellas que se consideren retributivas.",
+                    "d. En el acceso al empleo público, exceptuando el trabajo por cuenta propia que contará con su propia regulación"
+                ],
+                correctAnswerIndex: 0
+            },
+            // Test 6
+            {
+                question: "1. Según la Ley 6/2020, de los Servicios Electrónicos de Confianza, el plazo máximo para dictar y notificar resolución en un procedimiento de verificación previa del cumplimiento de los requisitos del Reglamento comunitario 910/2014, es de-art.16.2-",
+                options: [
+                    "a. Dos años, tras los cuales se entiende el desistimiento",
+                    "b. Seis meses, tras los cuales sin resolución expresa se entiende desestimatoria",
+                    "c. Un año, tras el cual sin resolución expresa se entiende caducado el procedimiento",
+                    "d. Tres meses, tras los cuales sin resolución expresa se entiende desestimatoria"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "2. Según la Ley 6/2020, de los Servicios Electrónicos de Confianza, si hablamos de las limitaciones de responsabilidad de los prestadores de servicios electrónicos de confianza-art.11-, indica la respuesta que procede",
+                options: [
+                    "a. Cuando no se tenga en cuenta la suspensión o pérdida de vigencia del certificado se entenderá que el destinatario actúa de forma negligente",
+                    "b. El prestador de servicios de confianza será responsable de los daños y perjuicios ocasionados a la persona a la que ha prestado sus servicios o a terceros de buena fe, si esta última no ha proporcionado al prestador información veraz, completa y exacta para la prestación del servicio",
+                    "c. o Cuando no se usan datos de creación de firma, sello o autenticación de sitio web si ha expirado el período de validez, entendemos que el prestador de servicios de confianza le ha notificado a la persona a la que le presta los servicios la suspensión de la vigencia de estos últimos",
+                    "d. El prestador de servicios de confianza será responsable de los daños y perjuicios, en caso de inexactitud de los datos que consten en el certificado electrónico si estos le han sido acreditados mediante documento público u oficial"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "3. AGENDA DIGITAL- Indica la medida que pertenece al eje Conectividad Digital",
+                options: [
+                    "a. Plan de atracción de infraestructuras digitales transfronterizas",
+                    "b. Puesto de trabajo de nueva generación",
+                    "c. Accesibilidad multiforma de los servicios públicos",
+                    "d. Corredores de transporte 5G"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "4. Según el Real Decreto 1553/ 2005, por el que se regula la expedición del documento nacional de identidad y sus certificados de firma electrónica, en el anverso no figurará ( art 11):",
+                options: [
+                    "a. Sexo",
+                    "b. Nacionalidad",
+                    "c. Fotografía",
+                    "d. Nombre de los padres"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "5. Según la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, en la elaboración de códigos de conducta, cuyo contenido pueda afectar al interés de un consumidor y usuario- art.18-, se tendrá especialmente en cuenta",
+                options: [
+                    "a. La dignidad humana",
+                    "b. Su accesibilidad por vía electrónica",
+                    "c. La traducción a otras lenguas",
+                    "d. El etiquetado de dicho título"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "6. Según la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, si hablamos de las restricciones a la prestación de servicios y procedimiento de cooperación intracomunitario, ¿cuál es el primer paso del procedimiento para establecer restricciones a un Estado miembro?-art.8.4-",
+                options: [
+                    "a. Requerir al Estado miembro para que adopte las medidas oportunas en el plazo máximo de 15 días",
+                    "b. Notificación a la Comisión Europea o al Comité Mixto del Espacio Europeo",
+                    "c. Ninguna es correcta",
+                    "d. Cesión de datos para identificar al responsable del servicio de la Sociedad de la Información, tras la comparecencia en el procedimiento"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "7. Según la Ley 6/2020, de los Servicios Electrónicos de Confianza, ¿cuál es el importe mínimo del seguro de responsabilidad civil si el prestador pertenece al sector público-art.9.3-",
+                options: [
+                    "a. 150.000 euros",
+                    "b. Ninguna es correcta",
+                    "c. 500.000 euros",
+                    "d. 250.000 euros"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "8. Según el Real Decreto 1553/ 2005, por el que se regula la expedición del documento nacional de identidad y sus certificados de firma electrónica, para solicitar la expedición del DNI, no es necesario (art.5):",
+                options: [
+                    "a. Volante de empadronamiento",
+                    "b. Certificado de no antecedentes penales",
+                    "c. Certificado literal de nacimiento",
+                    "d. Abono de la tasa correspondiente"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "9. AGENDA DIGITAL-Si hablamos del progreso de la digitalización en España, ¿en qué terreno ha sido más limitado?",
+                options: [
+                    "a. Empresa I+D+i",
+                    "b. Turismo",
+                    "c. Ciudades modernas",
+                    "d. Financiero"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "10. Según la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, si hablamos de la validez de los contratos celebrados por vía electrónica-art.23-, indica la respuesta incorrecta-",
+                options: [
+                    "a. Es preciso el previo acuerdo entre las partes sobre la utilización de medios electrónicos",
+                    "b. Si la ley exige que un contrato conste por escrito, se entiende satisfecho si el contrato o la información está en un soporte electrónico",
+                    "c. Se rigen, entre otras, por las normativas mercantiles",
+                    "d. Alguna es incorrecta"
+                ],
+                correctAnswerIndex: 0
+            },
+            // Test 7
+            {
+                question: "1. Los derechos reconocidos en los artículos 15 a 22 del Reglamento (UE) 2016/679, podrán ejercerse:",
+                options: [
+                    "a. Sólo indirectamente, por medio de representante legal voluntario o involuntario",
+                    "b. Directamente o por medio de representante legal o voluntario.",
+                    "c. Directa o indirectamente, por medio de acciones legales o voluntarias.",
+                    "d. Todas las respuestas son incorrectas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "2. En caso de fallecimiento de personas con discapacidad, las facultades de acceso a sus datos personales y, en su caso, su rectificación o supresión podrá ejercerse por:",
+                options: [
+                    "a. quienes hubiesen sido designados para el ejercicio de funciones de apoyo, si el Ministerio Fiscal así lo decide",
+                    "b. quienes hubiesen sido designados para el ejercicio de funciones de apoyo, si tales facultades se entendieran comprendidas en las medidas de apoyo prestadas por el designado",
+                    "c. ninguna es correcta",
+                    "d. quienes hubiesen sido designados para el ejercicio de funciones de apoyo, en cualquier caso"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "3. De acuerdo con la normativa vigente, RGPD, en materia de protección de datos personales algunos de los principios que rigen el tratamiento de los datos personales son:",
+                options: [
+                    "a. Licitud, coordinación, transparencia y limitación de la finalidad",
+                    "b. Licitud, lealtad, transparencia y limitación de la finalidad.",
+                    "c. Licitud, lealtad, publicidad y limitación de la finalidad.",
+                    "d. El principio de eficacia, jerarquía, desconcentración y coordinación."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "4. ¿Quiénes estarán sujetas al deber de confidencialidad al que se refiere el artículo 5?1.f) del Reglamento (UE) 2016/679?",
+                options: [
+                    "a. Los redactores de los datos así como todas las personas que intervengan en cualquier fase de este.",
+                    "b. Los creadores del tratamiento de datos así como todas las personas que intervengan en cualquier fase de este.",
+                    "c. Los responsables y encargados del tratamiento de datos así como todas las personas que intervengan en cualquier fase de este.",
+                    "d. Todas las personas que intervengan en cualquier fase de este."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "5. Los derechos de acceso, rectificación, cancelación, oposición o cualesquiera otros que pudieran corresponderles en el contexto de la presente ley orgánica podrán ser ejercitados por los titulares de la patria potestad en nombre y representación de:",
+                options: [
+                    "a. los menores de 16 años",
+                    "b. los menores de 14 años",
+                    "c. los menores de 18 años",
+                    "d. los menores de 13 años"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "6. Los responsables y encargados del tratamiento de datos así como todas las personas que intervengan en cualquier fase de este estarán sujetas al deber de:",
+                options: [
+                    "a. confidencialidad",
+                    "b. custodia",
+                    "c. cuidado",
+                    "d. sigilo"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "7. No podrá supeditarse la ejecución del contrato a que el afectado consienta el tratamiento de los datos personales:",
+                options: [
+                    "a. Para finalidades ocultas al paciente, que no hayan sido firmadas o consentidas por él.",
+                    "b. Para experimentos que tengan que ver con finalidades internas del hospital.",
+                    "c. Para finalidades que no guarden relación con el mantenimiento, desarrollo o control de la relación contractual.",
+                    "d. Todas las respuestas son correctas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "8. De acuerdo con el Reglamento (UE) 2016/679, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos, el Delegado de Protección de Datos:",
+                options: [
+                    "a. No será destituido ni sancionado por el responsable o el encargado por desempeñar sus funciones.",
+                    "b. Podrá ser destituido o sancionado en el desempeño de sus funciones por el responsable del tratamiento, exclusivamente.",
+                    "c. Podrá ser destituido o sancionado en el desempeño de sus funciones por el encargado del tratamiento, exclusivamente.",
+                    "d. Podrá ser destituido o sancionado en el desempeño de sus funciones por el responsable del tratamiento o por el encargado del tratamiento."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "9. El encargado:",
+                options: [
+                    "a. podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos si así se estableciere en el contrato o acto jurídico que les vincule",
+                    "b. podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos solo si así se estableciere en el acto jurídico que les vincule",
+                    "c. podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos solo si así se estableciere en el contrato que les vincule",
+                    "d. no podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "10. El registro completo de los datos referidos a condenas e infracciones penales podrá realizarse conforme con lo establecido en la regulación de:",
+                options: [
+                    "a. el Derecho de la Unión o de los Estados miembros",
+                    "b. los sistemas de información del responsable",
+                    "c. el Sistema de registros administrativos de apoyo a la Administración de Justicia",
+                    "d. los derechos relacionados con las decisiones individuales automatizadas"
+                ],
+                correctAnswerIndex: 2
+            },
+            // Test 8
+            {
+                question: "1. ¿Cuál o cuáles son los principios específicos de la interoperabilidad de acuerdo con el Real Decreto 4/2010 do 8 de enero por el que se regula el Esquema Nacional de Interoperabilidad en el ámbito de la Administración electrónica?",
+                options: [
+                    "a. Son tres: se pueden ejecutar para cualquier propósito. Permiten conocer su código fuente. Se pueden modificar o mejorar.",
+                    "b. Son tres: la interoperabilidad como calidad integral. Carácter multidimensional de la interoperabilidad. Enfoque de soluciones multilaterales.",
+                    "c. Los mecanismos públicos para garantizar la seguridad en las comunicaciones electrónicas entre los ciudadanos y los organismos oficiales en el ámbito competencial de las Comunidades Autónomas.",
+                    "d. La accesibilidad por medios electrónicos de los ciudadanos de nacionalidad española a las Administraciones públicas de ámbito local, provincial, autonómico o estatal."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "2. Según establece el Art. 46 del Real Decreto 203/2021, de 30 de marzo, por el que se aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos, ¿Cómo se denomina la información de cualquier naturaleza en forma electrónica, archivada en un soporte electrónico, según un formato determinado y susceptible de identificación y tratamiento diferenciado admitido en el Esquema Nacional de Interoperabilidad y normativa correspondiente, y que haya sido generada, recibida o incorporada por las Administraciones Públicas en el ejercicio de sus funciones sujetas a Derecho administrativo?",
+                options: [
+                    "a. Expediente administrativo electrónico",
+                    "b. Documento administrativo electrónico",
+                    "c. Copias autenticas de documentos",
+                    "d. Archivo electrónico administrativo"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "3. La posibilidad de que aplicaciones de distintos desarrolladores de software funcionen en máquinas de diversos fabricantes, se conoce como:",
+                options: [
+                    "a. Interoperabilidad",
+                    "b. Integrabilidad",
+                    "c. Portabilidad",
+                    "d. Escalabilidad"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "4. ¿En qué artículo del ENI se recomienda el uso de la Licencia Pública de la Unión Europea para el licenciamiento de las Administraciones Públicas?",
+                options: [
+                    "a. 17",
+                    "b. 16",
+                    "c. 15",
+                    "d. 18"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "5. La conservación de los documentos electrónicos que menciona el artículo 54 del Real Decreto 203/2021, deberá realizarse de forma que permita su acceso y comprenda, como mínimo:",
+                options: [
+                    "a. Formato.",
+                    "b. Sello.",
+                    "c. Datos.",
+                    "d. Autorización."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "6. Señale la incorrecta. Según establece el Art. 32 del Real Decreto 203/2021, la acreditación en la actuación por medio de representante puede acreditarse mediante cualquier medio válido en Derecho que deje constancia fidedigna de su existencia, entre otros:",
+                options: [
+                    "a. Mediante acreditación de su inscripción en el registro electrónico de apoderamientos de la Administración Pública competente o en sus registros particulares de apoderamientos.",
+                    "b. Mediante apoderamiento apud acta efectuado por comparecencia personal en las oficinas de asistencia en materia de registros o comparecencia electrónica en la correspondiente sede electrónica o sede electrónica asociada.",
+                    "c. Mediante documento público cuya matriz conste en un archivo notarial o de una inscripción practicada en un registro mercantil",
+                    "d. Mediante un certificado electrónico no cualificado de representante."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "7. Según establece el artículo 2 del Real Decreto 203/2021, de 30 de marzo, por el que se aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos, ¿Cuál es el principio entendido como el conjunto de principios y técnicas que se deben respetar al diseñar, construir, mantener y actualizar los servicios electrónicos para garantizar la igualdad y la no discriminación en el acceso de las personas usuarias, en particular de las personas con discapacidad y de las personas mayores?",
+                options: [
+                    "a. Interoperabilidad",
+                    "b. Accesibilidad",
+                    "c. Facilidad",
+                    "d. Proporcionalidad"
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "8. En base a la Orden PCM/1383/2021, de 9 de diciembre, por la que se regula el Registro de Funcionarios Habilitados en el ámbito de la Administración General del Estado, sus Organismos Públicos y Entidades de Derecho Público, la inscripción como personal funcionario habilitado tendrá una duración:",
+                options: [
+                    "a. Máxima de cinco años",
+                    "b. Máxima de tres años",
+                    "c. Máxima de seis años",
+                    "d. Indefinida"
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "9. El Esquema Nacional de Interoperabilidad establece que los sistemas han de ser objeto de una auditoría regular ordinaria al menos:",
+                options: [
+                    "a. Cada año",
+                    "b. Cada 2 años",
+                    "c. Cada 6 meses",
+                    "d. El Esquema Nacional de Interoperabilidad no especifica nada respecto a auditorías"
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "10. Según establece el artículo 12 del Real Decreto 203/2021, de 30 de marzo, por el que se aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos, el titular de la sede electrónica y, en su caso, de la sede electrónica asociada ¿De que serán responsables?",
+                options: [
+                    "a. La integridad, veracidad y actualización de la información y los servicios de su competencia a los que pueda accederse a través de la misma.",
+                    "b. La integridad, autenticidad e interoperabilidad de la información y los servicios de su competencia a los que pueda accederse a través de la misma.",
+                    "c. La integridad, autenticidad y actualización de la información y los servicios de su competencia a los que pueda accederse a través de la misma.",
+                    "d. La rectitud, veracidad y actualización de la información y los servicios de su competencia a los que pueda accederse a través de la misma."
+                ],
+                correctAnswerIndex: 0
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Almacena el índice de la opción seleccionada para cada pregunta, o null si no se ha contestado
+
+        // Obtener elementos del DOM
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const showResultsButton = document.getElementById('show-results-button');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+        const restartFromResultsButton = document.getElementById('restart-from-results-button');
+
+        // Elementos del modal
+        const customModal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirmButton = document.getElementById('modal-confirm-button');
+        const modalCancelButton = document.getElementById('modal-cancel-button');
+
+        /**
+         * Muestra un cuadro de diálogo modal personalizado.
+         * @param {string} title - El título del modal.
+         * @param {string} message - El mensaje a mostrar en el modal.
+         * @returns {Promise<boolean>} Una promesa que se resuelve en true si se confirma, false si se cancela.
+         */
+        function showCustomModal(title, message) {
+            return new Promise((resolve) => {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                customModal.classList.add('open');
+
+                const handleConfirm = () => {
+                    customModal.classList.remove('open');
+                    modalConfirmButton.removeEventListener('click', handleConfirm);
+                    modalCancelButton.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    customModal.classList.remove('open');
+                    modalConfirmButton.removeEventListener('click', handleConfirm);
+                    modalCancelButton.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+
+                modalConfirmButton.addEventListener('click', handleConfirm);
+                modalCancelButton.addEventListener('click', handleCancel);
+            });
+        }
+
+
+        /**
+         * Muestra la pregunta actual y sus opciones.
+         */
+        function displayQuestion() {
+            // Ocultar el contenedor de resultados si está visible
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+
+            const question = questions[currentQuestionIndex];
+            questionTextElement.textContent = question.question;
+            optionsContainer.innerHTML = ''; // Limpiar opciones anteriores
+            feedbackMessage.textContent = '';
+            feedbackMessage.classList.remove('show', 'correct-feedback', 'incorrect-feedback');
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.index = index; // Almacenar el índice de la opción
+
+                // Añadir listener de click a cada botón de opción
+                button.addEventListener('click', () => selectAnswer(index));
+
+                optionsContainer.appendChild(button);
+            });
+
+            // Actualizar la interfaz de usuario basándose en la respuesta guardada
+            if (userAnswers[currentQuestionIndex] !== undefined && userAnswers[currentQuestionIndex] !== null) {
+                const selectedOptionIndex = userAnswers[currentQuestionIndex];
+                applyAnswerFeedback(selectedOptionIndex, question.correctAnswerIndex);
+                disableOptions();
+            }
+
+            updateNavigationButtons();
+            saveProgress();
+        }
+
+        /**
+         * Maneja la selección de una respuesta.
+         * @param {number} selectedIndex - El índice de la opción seleccionada.
+         */
+        function selectAnswer(selectedIndex) {
+            // Si ya se ha seleccionado una respuesta para esta pregunta, no hacer nada
+            if (userAnswers[currentQuestionIndex] !== undefined && userAnswers[currentQuestionIndex] !== null) {
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedIndex; // Guardar la respuesta del usuario
+
+            applyAnswerFeedback(selectedIndex, question.correctAnswerIndex);
+            disableOptions();
+            saveProgress(); // Guardar el progreso después de responder
+            updateNavigationButtons(); // Actualizar botones después de seleccionar una respuesta (ej. mostrar botón de resultados)
+        }
+
+        /**
+         * Aplica retroalimentación visual a las opciones después de seleccionar una respuesta.
+         * @param {number} selectedIndex - El índice de la opción seleccionada por el usuario.
+         * @param {number} correctIndex - El índice de la opción correcta.
+         */
+        function applyAnswerFeedback(selectedIndex, correctIndex) {
+            const buttons = optionsContainer.querySelectorAll('.option-button');
+            buttons.forEach((button, index) => {
+                button.classList.add('disabled'); // Deshabilitar todas las opciones después de la selección
+
+                if (index === selectedIndex) {
+                    button.classList.add('selected'); // Marcar la opción seleccionada
+                }
+
+                if (index === correctIndex) {
+                    button.classList.add('correct'); // Marcar la opción correcta
+                } else if (index === selectedIndex && index !== correctIndex) {
+                    button.classList.add('incorrect'); // Marcar la opción seleccionada incorrecta
+                }
+            });
+
+            // Mostrar mensaje de retroalimentación
+            if (selectedIndex === correctIndex) {
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.add('show', 'correct-feedback');
+            } else {
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta era: ' + questions[currentQuestionIndex].options[correctIndex];
+                feedbackMessage.classList.add('show', 'incorrect-feedback');
+            }
+        }
+
+        /**
+         * Deshabilita todos los botones de opción para la pregunta actual.
+         */
+        function disableOptions() {
+            const buttons = optionsContainer.querySelectorAll('.option-button');
+            buttons.forEach(button => {
+                button.classList.add('disabled');
+                button.removeEventListener('click', () => selectAnswer(parseInt(button.dataset.index)));
+            });
+        }
+
+        /**
+         * Actualiza el estado de los botones de navegación (Anterior, Siguiente, Ver Resultados).
+         */
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+
+            // Si es la última pregunta, ocultar "Siguiente" y mostrar "Ver Resultados"
+            if (currentQuestionIndex === questions.length - 1) {
+                nextButton.classList.add('hidden');
+                showResultsButton.classList.remove('hidden');
+            } else {
+                nextButton.classList.remove('hidden');
+                showResultsButton.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Navega a la siguiente pregunta.
+         */
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            }
+        }
+
+        /**
+         * Navega a la pregunta anterior.
+         */
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        /**
+         * Guarda el progreso actual del test en LocalStorage.
+         */
+        function saveProgress() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        /**
+         * Carga el progreso del test desde LocalStorage.
+         */
+        function loadProgress() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Inicializar el array userAnswers con nulos si no hay datos guardados
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            displayQuestion();
+        }
+
+        /**
+         * Reinicia el test borrando LocalStorage y comenzando de nuevo.
+         */
+        async function resetTest() {
+            const confirmed = await showCustomModal(
+                'Reiniciar Test',
+                '¿Estás seguro de que quieres reiniciar el test? Se borrará todo tu progreso.'
+            );
+
+            if (confirmed) {
+                localStorage.removeItem('currentQuestionIndex');
+                localStorage.removeItem('userAnswers');
+                currentQuestionIndex = 0;
+                userAnswers = new Array(questions.length).fill(null);
+                displayQuestion();
+                quizContainer.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                showResultsButton.classList.add('hidden'); // Asegurarse de que el botón de resultados esté oculto al reiniciar
+                nextButton.classList.remove('hidden'); // Asegurarse de que el botón Siguiente sea visible
+            }
+        }
+
+        /**
+         * Calcula y muestra los resultados del test.
+         */
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                const userAnswer = userAnswers[i];
+                const correctAnswer = questions[i].correctAnswerIndex;
+
+                if (userAnswer === null || userAnswer === undefined) {
+                    unansweredCount++;
+                } else if (userAnswer === correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            }
+
+            correctCountSpan.textContent = correctCount;
+            incorrectCountSpan.textContent = incorrectCount;
+            unansweredCountSpan.textContent = unansweredCount;
+
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // Event Listeners
+        nextButton.addEventListener('click', nextQuestion);
+        prevButton.addEventListener('click', prevQuestion);
+        resetButton.addEventListener('click', resetTest);
+        showResultsButton.addEventListener('click', showResults);
+        restartFromResultsButton.addEventListener('click', resetTest);
+
+        // Cargar el progreso cuando la página se carga
+        window.onload = loadProgress;
+    </script>
+</body>
+</html>

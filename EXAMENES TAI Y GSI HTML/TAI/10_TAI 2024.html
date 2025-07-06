@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI LI 2024 A</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to allow scrolling */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Max width for the container */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Slightly different background for question card */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Subtle border */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Light blue for selected option */
+            border-color: #3b82f6; /* Blue border */
+        }
+        input[type="radio"] {
+            display: none; /* Hide native radio button */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Light green */
+            border-color: #10b981; /* Green border */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gray */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: center; /* Align items vertically in the center */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Very light green background */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.2rem; /* Slightly smaller font for individual stats */
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 8px;
+        }
+        .final-score-container .total-score {
+            font-size: 1.5rem; /* Larger font for total score */
+            font-weight: 700;
+            color: #047857;
+            margin-top: 15px;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test TAI LI 2024 - Modelo A</h1>
+        <div id="quiz-questions">
+            <!-- Questions will be loaded here -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary">Anterior</button>
+            <button id="reset-test-btn" class="button-secondary">Reiniciar Test</button> <!-- New button for full reset -->
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Aciertos: <span id="correct-answers-display" class="text-green-700"></span></p>
+            <p>Fallos: <span id="incorrect-answers-display" class="text-red-700"></span></p>
+            <p class="total-score">Has completado <span id="total-questions-answered-display"></span> de <span id="total-questions-display"></span> preguntas.</p>
+            <button id="restart-btn" class="button-primary mt-6">Revisar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            {
+                id: "P1-1",
+                section: "Primera Parte",
+                question: "1. ¿Cuál de los siguientes derechos recogidos en el Capítulo Segundo del Título I de la Constitución Española NO forma parte de los Derechos Fundamentales y Libertades Públicas (Artículos 15 a 29)?",
+                options: {
+                    A: "Derecho a sindicarse libremente.",
+                    B: "Derecho a la propiedad privada.",
+                    C: "Derecho a la producción y creación literaria, artística, científica y técnica.",
+                    D: "Derecho a elegir libremente su residencia."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-2",
+                section: "Primera Parte",
+                question: "2. Según el Título I, Capítulo Cuarto, \"De las garantías de las libertades y derechos fundamentales\" de la Constitución Española de 1978, señale la opción correcta:",
+                options: {
+                    A: "Los derechos y libertades reconocidos no vinculan a todas las Administraciones Públicas.",
+                    B: "Sólo por ley orgánica podrá regularse el ejercicio de tales derechos y libertades.",
+                    C: "Una ley orgánica regulará la institución del Defensor del Pueblo.",
+                    D: "El reconocimiento, el respeto y la protección de los principios reconocidos en el Capítulo tercero, informará la judicialización positiva, la práctica legislativa y la actuación de los poderes públicos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-3",
+                section: "Primera Parte",
+                question: "3. Señale la respuesta INCORRECTA de acuerdo con el Título II, artículo 62 de la Constitución Española de 1978. Corresponde al Rey:",
+                options: {
+                    A: "Convocar a referéndum en los casos previstos en la Constitución, previa autorización de las Cortes Generales.",
+                    B: "Convocar y disolver las Cortes Generales y convocar elecciones en los términos previstos en la Constitución.",
+                    C: "Proponer el candidato a Presidente de Gobierno y, en su caso, nombrarlo, así como poner fin a sus funciones en los términos previstos en la Constitución.",
+                    D: "Nombrar y separar a los miembros del Gobierno, a propuesta de su Presidente."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-4",
+                section: "Primera Parte",
+                question: "4. ¿Quién puede ser elegido Defensor del Pueblo, según la Ley Orgánica 3/1981, de 6 de abril?",
+                options: {
+                    A: "Cualquier Magistrado elegido por las Cortes Generales.",
+                    B: "Cualquier Senador elegido por las Cortes Generales.",
+                    C: "Cualquier persona que se encuentre en el pleno disfrute de sus derechos civiles.",
+                    D: "Cualquier español mayor de edad que se encuentre en el pleno disfrute de sus derechos civiles y políticos."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-5",
+                section: "Primera Parte",
+                question: "5. Según el artículo 71 de la Constitución Española de 1978, ¿quién es el competente en las causas contra Diputados y Senadores?",
+                options: {
+                    A: "Sala de lo Penal del Tribunal Constitucional.",
+                    B: "Sala de lo Contencioso Administrativo del Tribunal Supremo.",
+                    C: "Sala de lo Penal del Tribunal Supremo.",
+                    D: "Sala de lo Civil del Tribunal Supremo."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-6",
+                section: "Primera Parte",
+                question: "6. Según el Título III \"De las Cortes Generales\" de la Constitución Española de 1978, las Cámaras podrán:",
+                options: {
+                    A: "Recibir peticiones individuales y colectivas, siempre por escrito, quedando prohibida la presentación directa por manifestaciones ciudadanas.",
+                    B: "Delegar en las Comisiones Legislativas Permanentes la aprobación de proyectos o proposiciones de ley relativas a los Presupuestos Generales del Estado.",
+                    C: "Reunirse en sesión extraordinaria a petición de la mayoría simple de los miembros de cualquiera de las Cámaras.",
+                    D: "Nombrar conjuntamente Comisiones de Investigación sobre asuntos de interés público. Sus conclusiones serán vinculantes para los Tribunales."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-7",
+                section: "Primera Parte",
+                question: "7. Según lo establecido en el artículo 159 de la Constitución Española de 1978, los miembros del Tribunal Constitucional serán designados por períodos de:",
+                options: {
+                    A: "9 años y se renovarán por terceras partes cada 3.",
+                    B: "9 años y se renovarán por terceras partes cada 2.",
+                    C: "6 años y se renovarán por terceras partes cada 3.",
+                    D: "6 años y se renovarán por terceras partes cada 2."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-8",
+                section: "Primera Parte",
+                question: "8. El Gobierno se rige, en su organización y funcionamiento, entre otras, por la Ley:",
+                options: {
+                    A: "Ley 50/1997, de 27 de noviembre.",
+                    B: "Ley 50/1999, de 26 de noviembre.",
+                    C: "Ley 50/1996, de 28 de noviembre.",
+                    D: "Ley 50/1998, de 29 de noviembre."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-9",
+                section: "Primera Parte",
+                question: "9. La Constitución Española de 1978 en su artículo 113 establece que:",
+                options: {
+                    A: "El Congreso de los Diputados puede exigir la responsabilidad jurídica del Gobierno mediante la adopción por mayoría absoluta de la moción de censura.",
+                    B: "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno mediante la adopción por mayoría simple de la moción de censura.",
+                    C: "El Congreso de los Diputados puede exigir la responsabilidad civil del Gobierno mediante la adopción por mayoría absoluta de la moción de censura.",
+                    D: "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno mediante la adopción por mayoría absoluta de la moción de censura."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-10",
+                section: "Primera Parte",
+                question: "10. Señale la respuesta INCORRECTA sobre el uso obligatorio de firma requerida a los interesados por parte de las Administraciones Públicas que recoge el artículo 11 de Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas:",
+                options: {
+                    A: "Conocer el estado de la tramitación.",
+                    B: "Desistir de acciones.",
+                    C: "Presentar declaraciones responsables o comunicaciones.",
+                    D: "Formular solicitudes."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-11",
+                section: "Primera Parte",
+                question: "11. Tal y como se recoge en la Resolución de 14 de diciembre de 2015, de la Dirección de Tecnologías de la Información y las Comunicaciones, por la que se establecen las prescripciones técnicas necesarias para el desarrollo y aplicación del sistema Cl@ve, señale la respuesta correcta:",
+                options: {
+                    A: "Es un sistema que está dirigido a los ciudadanos que cumplan con los requisitos indicados en las Prescripciones Técnicas.",
+                    B: "Ofrece tres niveles de garantía de registro asociados a la forma y a las garantías que ofrezca la comunicación de la información de registro por parte del ciudadano.",
+                    C: "Proporcionará a los usuarios tres modalidades de identificación electrónica basadas en el uso de claves concertadas.",
+                    D: "Permitirá también el acceso a servicios de firma electrónica, en particular, a servicios de firma de documentos electrónicos mediante certificados electrónicos centralizados."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-12",
+                section: "Primera Parte",
+                question: "12. Señale la respuesta correcta sobre la solicitud de acceso a la información pública que recoge el artículo 17 de la Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno:",
+                options: {
+                    A: "Sólo se podrá presentar en castellano.",
+                    B: "Es obligatorio indicar una dirección de contacto electrónica, a efectos de comunicaciones.",
+                    C: "Deberá motivarse.",
+                    D: "Deberá dirigirse al titular del órgano administrativo o entidad que posea la información."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-13",
+                section: "Primera Parte",
+                question: "13. Indique la respuesta correcta sobre la vigencia que tienen los certificados electrónicos reconocidos incorporados al documento nacional de identidad, según la legislación vigente:",
+                options: {
+                    A: "No podrá ser superior a tres años.",
+                    B: "No podrá ser superior a cuatro años.",
+                    C: "No podrá ser superior a cinco años.",
+                    D: "No podrá ser superior a seis años."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-14",
+                section: "Primera Parte",
+                question: "14. La Ley 56/2007, de 28 de diciembre, de Medidas de Impulso de la Sociedad de la Información, ¿qué establece sobre la factura electrónica en el artículo 1?",
+                options: {
+                    A: "Los formatos estructurados de las facturas electrónicas permitirán su visualización y emisión en las distintas lenguas oficiales existentes y en inglés, con la finalidad de garantizar los derechos de los usuarios nacionales y extranjeros.",
+                    B: "Los formatos estructurados de las facturas electrónicas permitirán su visualización y emisión en las distintas lenguas oficiales existentes, con la finalidad de garantizar los derechos de los usuarios.",
+                    C: "No trata en ningún artículo sobre la factura electrónica.",
+                    D: "La factura electrónica solo se utilizará en contratación, estando excluida de la justificación de ayudas y subvenciones."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-15",
+                section: "Primera Parte",
+                question: "15. ¿Qué principio relativo al tratamiento de datos personales definido en el Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos y por el que se deroga la Directiva 95/46/CE (Reglamento general de protección de datos) se refiere a que los datos serán adecuados, pertinentes y limitados a lo necesario en relación con los fines para los que son tratados?",
+                options: {
+                    A: "Limitación de la finalidad.",
+                    B: "Exactitud.",
+                    C: "Minimización de datos.",
+                    D: "Adecuación de datos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-16",
+                section: "Primera Parte",
+                question: "16. Señale la respuesta correcta respecto a las notificaciones según la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas:",
+                options: {
+                    A: "Toda notificación deberá ser cursada dentro del plazo de quince dias a partir de la fecha en que el acto haya sido dictado.",
+                    B: "Cuando los interesados en un procedimiento sean desconocidos, se ignore el lugar de la notificación o bien, intentada ésta, no se hubiese podido practicar, la notificación se hará por medio de un anuncio publicado en el BOE.",
+                    C: "Las notificaciones se practicarán preferentemente en papel y, en todo caso, cuando el interesado resulte obligado a recibirlas por esta vía.",
+                    D: "Cuando la notificación se practique en el domicilio del interesado, de no hallarse presente éste en el momento de entregarse la notificación, podrá hacerse cargo de ella cualquier persona mayor de dieciséis años que se encuentre en el domicilio y haga constar su identidad."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-17",
+                section: "Primera Parte",
+                question: "17. De acuerdo con el Real Decreto 203/2021, de 30 de marzo, por el que se aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos, ¿cuál de las siguientes opciones forma parte del contenido mínimo que debe contener una sede electrónica?",
+                options: {
+                    A: "Relación de los canales de acceso electrónico a dicha sede como instrumento de comunicación para los ciudadanos.",
+                    B: "Relación de los Puntos de Acceso General electrónicos que la referencian directa o indirectamente.",
+                    C: "Normativa reguladora del Registro al que se acceda a través de la sede electrónica.",
+                    D: "Enlace directo al Boletín Oficial correspondiente."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-18",
+                section: "Primera Parte",
+                question: "18. Marque la respuesta correcta relacionada con el nodo eIDAS español:",
+                options: {
+                    A: "Para las Administraciones Públicas, la integración con el nodo eIDAS español se realiza a través de @Firma.",
+                    B: "Permite el reconocimiento de identidades en soportes físicos emitidas por otros países.",
+                    C: "Facilita la aceptación del DNI electrónico en servicios de Administración Electrónica de otras administraciones integrantes de la OCDE.",
+                    D: "Utiliza un sistema de intercambio de mensajes conforme al estándar SAML 2.0."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-19",
+                section: "Primera Parte",
+                question: "19. ¿Qué es la taxonomía de Flynn?",
+                options: {
+                    A: "Una clasificación de patrones de diseño para objetos de software, centrados en su creación, relación e interacción.",
+                    B: "Una clasificación para las computadoras con arquitectura paralela atendiendo al flujo de datos e instrucciones en un sistema.",
+                    C: "Una clasificación que pretende clarificar los diferentes tipos de tecnologías, técnicas y mecanismos que abarca el concepto abstracto de \"Inteligencia Artificial\".",
+                    D: "Una clasificación de los tipos de controladores (drivers) JDBC."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-20",
+                section: "Primera Parte",
+                question: "20. Indique, de las siguientes palabras, cuál indica además un número hexadecimal válido:",
+                options: {
+                    A: "EBOCA",
+                    B: "BECADAS",
+                    C: "ACCEDA",
+                    D: "CEGADA"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-21",
+                section: "Primera Parte",
+                question: "21. Señale cuál de las siguientes es un formato de interfaz SSD:",
+                options: {
+                    A: "HHP",
+                    B: "MMVe",
+                    C: "MMD",
+                    D: "M.2"
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-22",
+                section: "Primera Parte",
+                question: "22. Un controlador de dispositivo periférico:",
+                options: {
+                    A: "Es el componente electrónico de la unidad de entrada y salida.",
+                    B: "Es el componente mecánico de la unidad de entrada y salida.",
+                    C: "Es la interfaz entre el adaptador y la unidad de entrada y salida.",
+                    D: "Es la interfaz entre la tarjeta controladora y el cable de conexión."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-23",
+                section: "Primera Parte",
+                question: "23. Con respecto a los árboles 2-3-4, señale la respuesta correcta:",
+                options: {
+                    A: "Cumple las propiedades del árbol binario de búsqueda.",
+                    B: "Las hojas pueden estar a distinto nivel.",
+                    C: "Los nodos pueden tener 2, 3 o 4 hijos (2-nodo, 3-nodo o 4-nodo).",
+                    D: "Las reestructuraciones se realizan desde las hojas hacia la raíz."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-24",
+                section: "Primera Parte",
+                question: "24. Señale la respuesta correcta referente al tipo abstracto de datos (TAD) Cola:",
+                options: {
+                    A: "Basada en el principio LIFO (last-in, first-out).",
+                    B: "Es un tipo especial de lista en la que se pueden insertar y eliminar por cualquier extremo.",
+                    C: "Cada nodo tiene dos enlaces, uno al nodo siguiente, y otro al anterior.",
+                    D: "Se pude implementar usando una estructura dinámica."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-25",
+                section: "Primera Parte",
+                question: "25. Señale la respuesta INCORRECTA acerca de los tipos abstractos de datos (TAD):",
+                options: {
+                    A: "Es una colección de propiedades y operaciones que se definen mediante una especificación que es independiente de cualquier representación.",
+                    B: "Nos permiten diseñar nuestros propios tipos para encapsular lógica algorítmica y proveer abstracción a las capas de software de más alto nivel.",
+                    C: "Se pueden escribir usando lenguaje natural, usando pseudo-código o incluso algún lenguaje de programación.",
+                    D: "En JAVA, una estructura de datos (interface) debe implementar todas las operaciones definidas en su TAD (class)."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-26",
+                section: "Primera Parte",
+                question: "26. ¿Cuál es la función del kernel en un sistema operativo Unix/Linux?",
+                options: {
+                    A: "Gestionar la interfaz gráfica..",
+                    B: "Controlar los procesos, la memoria y la administración de dispositivos.",
+                    C: "Proveer servicios de red como TCP/IP.",
+                    D: "Facilitar la comunicación entre usuarios a través de terminales."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-27",
+                section: "Primera Parte",
+                question: "27. Señale la respuesta INCORRECTA. Android NDK:",
+                options: {
+                    A: "Es un conjunto de herramientas que permiten implementar partes de las aplicaciones de Android mediante C y C++.",
+                    B: "Genera librerías binarias para cada arquitectura de procesador que se pueden invocar desde Java por medio de JNI (Java Native Interface).",
+                    C: "Se recomienda su uso con aplicaciones intensivas a nivel computacional, como juegos o simulaciones físicas.",
+                    D: "No permite la reutilización de código, no pudiendo usar bibliotecas de otros desarrolladores."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-28",
+                section: "Primera Parte",
+                question: "28. ¿Cuál es la característica diferenciadora de las claves foráneas en una base de datos relacional?",
+                options: {
+                    A: "Un atributo que no tiene relación con otras tablas.",
+                    B: "Un atributo que referencia la clave primaria de otra tabla.",
+                    C: "Un atributo que puede tener valores duplicados. de datos.",
+                    D: "Un atributo que se utiliza solo para consultas."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-29",
+                section: "Primera Parte",
+                question: "29. ¿Cuál de los siguientes es un Sistema de Gestión de Bases de Datos Orientadas a Objetos (SGDBOO)?",
+                options: {
+                    A: "Cézanne.",
+                    B: "Picasso.",
+                    C: "Matisse.",
+                    D: "Rembrandt."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-30",
+                section: "Primera Parte",
+                question: "30. ¿Qué es el lenguaje OQL en el contexto de las bases de datos orientadas a objetos?",
+                options: {
+                    A: "OQL no es un lenguaje en el contexto de las bases de datos orientadas a objetos.",
+                    B: "Un lenguaje de definición de datos.",
+                    C: "Un lenguaje de consulta de datos.",
+                    D: "Un lenguaje de manipulación de datos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-31",
+                section: "Primera Parte",
+                question: "31. De acuerdo con Métrica v3, en el Modelo Entidad/Relación Extendido, ¿cuál es el término que representa la participación en la relación de cada una de las entidades afectadas?",
+                options: {
+                    A: "Atributo.",
+                    B: "Cardinalidad.",
+                    C: "Tipo de Correspondencia.",
+                    D: "Dominio."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-32",
+                section: "Primera Parte",
+                question: "32. Señale la respuesta correcta sobre la normalización de bases de datos en Métrica v3:",
+                options: {
+                    A: "Un atributo tiene dependencia funcional completa de otro si, y sólo si, depende de él a través de otro atributo.",
+                    B: "Una relación en 3FN estará también en 2FN, pero no en 1FN.",
+                    C: "Una entidad está en 1FN si tiene grupos repetitivos, es decir, un atributo puede tomar varios valores de un dominio simple.",
+                    D: "Una entidad está en 2FN si está en 1FN y todos los atributos que no forman parte de las claves candidatas tienen dependencia funcional completa respecto de éstas."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-33",
+                section: "Primera Parte",
+                question: "33. Señale, de entre las siguientes opciones, el mecanismo en el Modelo Entidad/Relación Extendido que recoge Métrica v3 consistente en relacionar dos tipos de entidades que normalmente son de dominios independientes, pero coyunturalmente se asocian:",
+                options: {
+                    A: "Asociación.",
+                    B: "Generalización.",
+                    C: "PERT.",
+                    D: "Regresión."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-34",
+                section: "Primera Parte",
+                question: "34. Para las variables a=1, b=2, c=3, d=1 ¿cuál es la operación lógica que da un resultado true?",
+                options: {
+                    A: "( ((a>b) or (a<c)) and ( ((a=c) or ( (a>=b))",
+                    B: "((a>=b) or (a<d)) and ((a>=d) or (c>d))",
+                    C: "Not (a==c) and ( (c>b)",
+                    D: "Not (a>=d) and not (c>=b)"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-35",
+                section: "Primera Parte",
+                question: "35. Señale la respuesta correcta en relación con las funciones y los procedimientos:",
+                options: {
+                    A: "Una llamada a un procedimiento puede aparecer como operando de una expresión.",
+                    B: "El paso de parámetros por referencia envía una copia del valor que tenga el parámetro real, por lo que no se podrá alterar el contenido de la variable.",
+                    C: "Los parámetros por referencia se pueden emplear como parámetros de entrada/salida.",
+                    D: "Todo procedimiento debe ejecutar una sentencia de return."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-36",
+                section: "Primera Parte",
+                question: "36. Suponga el siguiente programa escrito en un lenguaje de programación estándar: integer x=0; while x<100 do (x=x+1 print x; x=x-1;)",
+                options: {
+                    A: "Este programa imprime los números enteros del 1 al 100.",
+                    B: "Este programa imprime los números impares del 1 al 100.",
+                    C: "Este programa imprime los números pares del 1 al 100.",
+                    D: "Este programa es un bucle infinito."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-37",
+                section: "Primera Parte",
+                question: "37. Referente a los comandos DML del lenguaje SQL, señale la respuesta correcta:",
+                options: {
+                    A: "DML es acrónimo de Data Manager Language.",
+                    B: "Permiten crear nuevas bases de datos, añadiendo y eliminando elementos.",
+                    C: "El comando TRUNCATE es un comando DML.",
+                    D: "El comando SELECT es un comando DML."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-38",
+                section: "Primera Parte",
+                question: "38. Referente al comando DROP de SQL, es correcto decir:",
+                options: {
+                    A: "Es un comando DCL.",
+                    B: "Puede ser ejecutado por disparadores (triggers).",
+                    C: "Se utiliza para eliminar la estructura de una tabla junto con cualquier dato almacenado en ella.",
+                    D: "Utiliza WHERE para condiciones de filtrado."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-39",
+                section: "Primera Parte",
+                question: "39. Señale la respuesta INCORRECTA referente a los disparadores o triggers de una base de datos:",
+                options: {
+                    A: "Son procedimientos que se ejecutan o activan cada vez que ocurre un evento determinado sobre una tabla determinada.",
+                    B: "Los eventos que se pueden asociar a la ejecución de un trigger son: INSERT, UPDATE, DELETE.",
+                    C: "Puede decidirse que se activen antes o después de un evento determinado.",
+                    D: "Un error durante la ejecución de cualquier trigger no cancela automáticamente la operación que lo disparó, la cancelación hay que programarla."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-40",
+                section: "Primera Parte",
+                question: "40. En diseño y programación orientada a objetos, una relación de generalización entre clases:",
+                options: {
+                    A: "Implica que la subclase hereda las propiedades, el comportamiento y las relaciones de la superclase, a la vez que puede añadir sus propias propiedades, relaciones y comportamiento.",
+                    B: "Describe un conjunto de enlaces, que definen las interconexiones semánticas entre las instancias de las clases que participan en la relación.",
+                    C: "Asume una subordinación conceptual del tipo \"todo/parte\", o bien \"tiene un\".",
+                    D: "Se representa mediante una línea discontinua que une la superclase y subclase con un rectángulo al lado de la superclase."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-41",
+                section: "Primera Parte",
+                question: "41. Señale la respuesta INCORRECTA respecto al Lenguaje de Modelado Unificado (UML):",
+                options: {
+                    A: "Es un lenguaje basado en diagramas para la especificación, visualización, construcción y documentación de cualquier sistema software.",
+                    B: "Es independiente de las metodologías de análisis y diseño y de los lenguajes de programación que se utilicen en la construcción del software.",
+                    C: "Se basa en el paradigma de la orientación a objetos.",
+                    D: "Muestra únicamente el modelado estático de un sistema software, que puede utilizarse en las diferentes fases de su ciclo de desarrollo."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-42",
+                section: "Primera Parte",
+                question: "42. Señale la respuesta INCORRECTA. El patrón de diseño \"Composite\":",
+                options: {
+                    A: "Es un patrón de diseño estructural que permite componer objetos en estructuras de árbol.",
+                    B: "Sirve para construir objetos complejos a partir de otros más simples y similares entre sí.",
+                    C: "Simplifica el tratamiento de los objetos creados que, al poseer de una interfaz común, se tratan todos de la misma manera.",
+                    D: "Se recomienda su uso cuando se quiere añadir responsabilidades a objetos concretos de manera dinámica y transparente y sin afectar a otros objetos."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-43",
+                section: "Primera Parte",
+                question: "43. ¿Qué es .NET MAUI?",
+                options: {
+                    A: ".NET MAUI es un marco multiplataforma para crear aplicaciones móviles y de escritorio nativas con C# y XAML.",
+                    B: "Es una plataforma para desarrollar aplicaciones en Java.",
+                    C: "Es una herramienta de pruebas automatizadas.",
+                    D: "Es una plataforma para desarrollar aplicaciones móviles que se puede ejecutar en sistema Android solamente."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-44",
+                section: "Primera Parte",
+                question: "44. En el ámbito de ASP.NET Core, señale la respuesta correcta respecto a Razor:",
+                options: {
+                    A: "Razor es la sintaxis de plantillas utilizada en ASP.NET Core para crear vistas dinámicas en aplicaciones web.",
+                    B: "Es uno de los lenguajes de programación que se utilizan con ASP.NET Core.",
+                    C: "Razor se ejecuta directamente en el navegador del cliente.",
+                    D: "Razor utiliza el @simbolo para realizar la transición de C# a HTML."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-45",
+                section: "Primera Parte",
+                question: "45. La persistencia en Jakarta EE se gestiona principalmente a través de la especificación Jakarta Persistence API (JPA). Indique la respuesta correcta:",
+                options: {
+                    A: "Una de sus ventajas es que no necesita utilizar un proveedor de JPA.",
+                    B: "El lenguaje de consulta similar a SQL pero orientado a objetos de JPA es JPSQL.",
+                    C: "Normalmente, una entidad representa una tabla en una base de datos relacional y cada instancia de la entidad corresponde a una fila de esa tabla.",
+                    D: "JPA no permite definir relaciones entre entidades del tipo uno a muchos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-46",
+                section: "Primera Parte",
+                question: "46. ¿Cuál es una característica de los sistemas distribuidos?",
+                options: {
+                    A: "Falta de transparencia: un nodo no puede acceder a otros nodos del sistema y comunicarse con ellos.",
+                    B: "Procesamiento independiente: varias máquinas no pueden procesar la misma función a la vez.",
+                    C: "Escalabilidad: la capacidad computacional y de procesamiento puede escalarse hacia arriba según sea necesario cuando se añaden máquinas adicionales.",
+                    D: "Comunicación diferencial: usan nodos distintos para comunicarse y sincronizarse a través de redes independientes entre si."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-47",
+                section: "Primera Parte",
+                question: "47. Señale la opción correcta sobre la arquitectura de servicios web REST:",
+                options: {
+                    A: "En la arquitectura REST, el servicio no almacena información sobre el estado del cliente entre peticiones.",
+                    B: "El uso de identificadores está basado en SOA.",
+                    C: "En la arquitectura REST, la interfaz para acceder a los recursos expuestos puede ser HTTP o FTP.",
+                    D: "Es una arquitectura no orientada a recursos."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-48",
+                section: "Primera Parte",
+                question: "48. ¿Cuál de las siguientes es una diferencia entre HTML y XHTML?",
+                options: {
+                    A: "HTML exige que las etiquetas se escriban en minúscula, mientras que XHTML no.",
+                    B: "XHTML permite que haya elementos no vacios sin cerrar, mientras que HTML no.",
+                    C: "En HTML es obligatorio que los valores de los atributos vayan entre comillas, mientras que en XHTML no.",
+                    D: "En XHTML es obligatoria la presencia del elemento <head>."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-49",
+                section: "Primera Parte",
+                question: "49. ¿Qué evento de HTML utilizaría para producir un efecto al situar el puntero del ratón sobre un elemento?",
+                options: {
+                    A: "onclick.",
+                    B: "onmouseover.",
+                    C: "onmousedown.",
+                    D: "onmouseout."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-50",
+                section: "Primera Parte",
+                question: "50. Con respecto a las solicitudes de información accesible y quejas, el Real Decreto 1112/2018, de 7 de septiembre, sobre accesibilidad de los sitios web y aplicaciones para dispositivos móviles del sector público establece que:",
+                options: {
+                    A: "Recibidas las solicitudes de información accesible y quejas, la entidad obligada deberá responder a la persona interesada en el plazo de veinte días naturales.",
+                    B: "Recibidas las solicitudes de información accesible y quejas, la entidad obligada deberá responder a la persona interesada en el plazo de veinte días hábiles.",
+                    C: "Recibidas las solicitudes de información accesible y quejas, la entidad obligada deberá responder a la persona interesada en el plazo de diez días naturales.",
+                    D: "Recibidas las solicitudes de información accesible y quejas, la entidad obligada deberá responder a la persona interesada en el plazo de diez días hábiles."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-51",
+                section: "Primera Parte",
+                question: "51. En relación a los principios del Diseño Universal, señale cuál es uno de ellos:",
+                options: {
+                    A: "Seguridad.",
+                    B: "Información operable.",
+                    C: "Robustez.",
+                    D: "Alto esfuerzo físico."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-52",
+                section: "Primera Parte",
+                question: "52. Señale la respuesta correcta referente al término ATAG:",
+                options: {
+                    A: "Son Pautas de Accesibilidad que explican cómo hacer que el contenido web sea más accesible para las personas con discapacidades.",
+                    B: "Es una Suite que define una forma de hacer que el contenido web y las aplicaciones web sean más accesibles para las personas con discapacidades.",
+                    C: "Son Pautas de Accesibilidad que explican cómo hacer que los agentes de usuario sean accesibles para las personas con discapacidades.",
+                    D: "Son un conjunto de normas que deben cumplir las herramientas de autor para ser accesibles y generar contenidos también accesibles."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-53",
+                section: "Primera Parte",
+                question: "53. ¿Cuál de las siguientes opciones se utilizan para el control de versiones?",
+                options: {
+                    A: "Mercurial, CVS y Selenium.",
+                    B: "GitLab, GitHub y Apache Subversion.",
+                    C: "SVN, Git y Cucumber.",
+                    D: "Selenium, Cucumber y GitLab."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-54",
+                section: "Primera Parte",
+                question: "54. Según establece Métrica V3, en la construcción de un sistema de información, las pruebas que permiten verificar que los componentes o subsistemas interactúan correctamente a través de sus interfaces, tanto internas como externas, cubren la funcionalidad establecida y se ajustan a los requisitos especificados en las verificaciones correspondientes son:",
+                options: {
+                    A: "Pruebas unitarias.",
+                    B: "Pruebas de integración.",
+                    C: "Pruebas del sistema.",
+                    D: "Pruebas de migración."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-55",
+                section: "Primera Parte",
+                question: "55. ¿Cuál de los siguientes conceptos permite que un proceso ejecute múltiples tareas de manera simultánea o concurrente en un sistema operativo?",
+                options: {
+                    A: "Segmentación.",
+                    B: "Paginación.",
+                    C: "Prepaging.",
+                    D: "Hilos."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-56",
+                section: "Primera Parte",
+                question: "56. El comando sfc /scannow:",
+                options: {
+                    A: "Examina todos los archivos de sistema protegidos y reemplaza los archivos dañados con una copia en caché.",
+                    B: "Rrepara el entorno de arranque ubicado en la partición del sistema.",
+                    C: "Muestra o establece la directiva de red de área de almacenamiento (sanSAN) para el sistema operativo.",
+                    D: "Analizar uno o varios servidores con una directiva generada por SCW."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-57",
+                section: "Primera Parte",
+                question: "57. ¿Cuánta carga útil puede almacenar un jumboframe?",
+                options: {
+                    A: "7.000 bytes.",
+                    B: "1.500 bytes.",
+                    C: "9.000 bytes.",
+                    D: "10.000 bytes."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-58",
+                section: "Primera Parte",
+                question: "58. ¿Qué protocolo hay que utilizar para obtener una dirección física a partir de una dirección lógica?",
+                options: {
+                    A: "RARP.",
+                    B: "NAT.",
+                    C: "ARP.",
+                    D: "PAT."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-59",
+                section: "Primera Parte",
+                question: "59. ¿Qué topología de red consiste en conectar todos los nodos directamente a un nodo central?",
+                options: {
+                    A: "Estrella.",
+                    B: "Anillo.",
+                    C: "Bus.",
+                    D: "Árbol."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-60",
+                section: "Primera Parte",
+                question: "60. La regla 3-2-1 de las copias de seguridad consiste en:",
+                options: {
+                    A: "Conservar 3 copias de los datos, en 2 medios diferentes con 1 copia almacenada en un lugar externo a la organización.",
+                    B: "Conservar 3 copias de los datos, en 2 medios iguales con 1 copia almacenada en un lugar externo a la organización.",
+                    C: "Conservar 3 copias de los datos, en 2 medios iguales con 1 copia almacenada en un lugar interno a la organización.",
+                    D: "Conservar 3 copias de los datos, en 2 medios diferentes con 1 copia almacenada en un lugar interno a la organización."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-61",
+                section: "Primera Parte",
+                question: "61. Señale la respuesta correcta referente a los sistemas de almacenamiento SAN y NAS:",
+                options: {
+                    A: "SAN es más económico y fácil de configurar.",
+                    B: "SAN es el acrónimo de Storage Attached Network.",
+                    C: "NAS es un dispositivo de almacenamiento compartido basado en archivos.",
+                    D: "NAS es el acrónimo de Network Area Storage."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-62",
+                section: "Primera Parte",
+                question: "62. Señale la respuesta correcta:",
+                options: {
+                    A: "Los backups utilizan poca capacidad de almacenamiento.",
+                    B: "Los backups son manuales, los snapshots son programables.",
+                    C: "Los backups pueden almacenarse en localizaciones y medios distintos.",
+                    D: "Los backups son una representación instantánea del estado de un sistema en un momento específico."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-63",
+                section: "Primera Parte",
+                question: "63. ¿Cuál es una ventaja del uso del protocolo IMAP en lugar de POP3?",
+                options: {
+                    A: "Permite visualizar los correos directamente en el servidor sin descargarlos.",
+                    B: "Es más sencillo que POP3.",
+                    C: "No requiere autenticación.",
+                    D: "Descarga los correos automáticamente del servidor."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-64",
+                section: "Primera Parte",
+                question: "64. Señale cuáles de las siguientes son tecnologías relacionadas con la contenerización y la gestión de contenedores:",
+                options: {
+                    A: "Docker, Containerd y Podman.",
+                    B: "Docker, CRI-O y nginx.",
+                    C: "Podman, Kubernetes y Ubuntu.",
+                    D: "Docker, Kubernetes y Debian."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-65",
+                section: "Primera Parte",
+                question: "65. Indique la respuesta INCORRECTA respecto a PoE (Power over Ethernet):",
+                options: {
+                    A: "Power over Ethernet (PoE) es una tecnologia que permite que los conmutadores de red transmitan energía y datos a través de un cable Ethernet simultáneamente.",
+                    B: "Existen dos tipos: PoE activo y PoE pasivo.",
+                    C: "PoE pasivo no se adhiere a ningún estándar IEEE.",
+                    D: "El último estándar de PoE activo es el IEEE 802.3at."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-66",
+                section: "Primera Parte",
+                question: "66. La norma IEEE 802.11 se refiere a:",
+                options: {
+                    A: "Redes inalámbricas.",
+                    B: "Redes de área metropolitana.",
+                    C: "Redes integradas para voz y datos.",
+                    D: "Seguridad de red."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-67",
+                section: "Primera Parte",
+                question: "67. ¿Cuál de las siguientes es una herramienta de ticketing para la gestión de incidentes de seguridad en las entidades del ámbito de aplicación del Esquema Nacional de Seguridad?",
+                options: {
+                    A: "ATENEA.",
+                    B: "MONICA.",
+                    C: "LUCIA.",
+                    D: "INES."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-68",
+                section: "Primera Parte",
+                question: "68. Indique la respuesta correcta sobre el formato de firma digital CADES:",
+                options: {
+                    A: "Es apropiado para firmar ficheros grandes, especialmente si la firma contiene el documento original.",
+                    B: "Es el formato de firma que utiliza Microsoft Office.",
+                    C: "El resultado es un fichero de texto XML. No es adecuado cuando el fichero original es muy grande.",
+                    D: "Es el formato más adecuado cuando el documento original es un PDF."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-69",
+                section: "Primera Parte",
+                question: "69. Indique la respuesta correcta sobre tipos de ataque a un sistema de información:",
+                options: {
+                    A: "El sniffing es la generación de tráfico utilizando un origen falseado.",
+                    B: "El spoofing es la captura del tráfico que circula por una red.",
+                    C: "Denegacion de servicio distribuida (DDoS) es un ataque a varios objetivos desde un solo punto, con la finalidad de degradar total o parcialmente los servicios prestados por esos recursos a sus usuarios legítimos.",
+                    D: "El barrido (\"escaneo\") de puertos es un ataque que trata de obtener información básica acerca de qué servicios se ofrecen en un determinado sistema, así como otros detalles técnicos del mismo."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-70",
+                section: "Primera Parte",
+                question: "70. La norma ISO/IEC 27001 se refiere a:",
+                options: {
+                    A: "Gestión de la calidad.",
+                    B: "Gestión de servicios de TI.",
+                    C: "Sistemas de gestión de seguridad de la información.",
+                    D: "Gestión de proyectos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-71",
+                section: "Primera Parte",
+                question: "71. ¿Cuál de los siguientes es un principio fundamental de la seguridad de la información?",
+                options: {
+                    A: "Disponibilidad.",
+                    B: "Escalabilidad.",
+                    C: "Rendimiento.",
+                    D: "Flexibilidad."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-72",
+                section: "Primera Parte",
+                question: "72. ¿Qué tipo de ataque se produce cuando un atacante intercepta y retransmite mensajes entre dos partes que creen estar comunicándose directamente entre sí?",
+                options: {
+                    A: "Phishing.",
+                    B: "Man-in-the-middle (MitM).",
+                    C: "Denegación de servicio (DoS).",
+                    D: "Inyección SQL."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-73",
+                section: "Primera Parte",
+                question: "73. ¿Cuál es el propósito principal de un firewall en una red?",
+                options: {
+                    A: "Aumentar la velocidad de la red.",
+                    B: "Filtrar el tráfico de red y controlar el acceso.",
+                    C: "Almacenar copias de seguridad de los datos.",
+                    D: "Proporcionar direcciones IP dinámicas."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-74",
+                section: "Primera Parte",
+                question: "74. ¿Qué es un certificado digital?",
+                options: {
+                    A: "Un documento físico que acredita la identidad de una persona.",
+                    B: "Un archivo electrónico que vincula una clave pública a una identidad.",
+                    C: "Una contraseña cifrada para acceder a servicios en línea.",
+                    D: "Un software antivirus para proteger el equipo."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-75",
+                section: "Primera Parte",
+                question: "75. ¿Qué significa la sigla VPN?",
+                options: {
+                    A: "Virtual Private Network.",
+                    B: "Very Personal Network.",
+                    C: "Video Processing Node.",
+                    D: "Voice Protocol Number."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-76",
+                section: "Primera Parte",
+                question: "76. ¿Cuál de los siguientes es un método de autenticación multifactor?",
+                options: {
+                    A: "Contraseña y huella dactilar.",
+                    B: "Solo contraseña.",
+                    C: "Solo PIN.",
+                    D: "Solo reconocimiento facial."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-77",
+                section: "Primera Parte",
+                question: "77. ¿Qué es un honeypot en seguridad informática?",
+                options: {
+                    A: "Un sistema diseñado para atraer y atrapar a los atacantes.",
+                    B: "Un tipo de malware que se disfraza de software legítimo.",
+                    C: "Una herramienta para cifrar comunicaciones.",
+                    D: "Un dispositivo para detectar intrusiones en la red."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-78",
+                section: "Primera Parte",
+                question: "78. ¿Cuál es la finalidad principal de un sistema de detección de intrusiones (IDS)?",
+                options: {
+                    A: "Prevenir ataques de malware.",
+                    B: "Cifrar datos sensibles.",
+                    C: "Monitorizar la red en busca de actividades sospechosas.",
+                    D: "Gestionar las contraseñas de los usuarios."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-79",
+                section: "Primera Parte",
+                question: "79. ¿Qué medida de seguridad es fundamental para proteger los datos en tránsito a través de una red pública?",
+                options: {
+                    A: "Uso de contraseñas débiles.",
+                    B: "Cifrado de datos.",
+                    C: "Desactivación de firewalls.",
+                    D: "Compartir información personal en línea."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-80",
+                section: "Primera Parte",
+                question: "80. ¿Cuál de los siguientes es un ejemplo de ataque de ingeniería social?",
+                options: {
+                    A: "Ataque de fuerza bruta.",
+                    B: "Phishing.",
+                    C: "Inyección de código.",
+                    D: "Desbordamiento de búfer."
+                },
+                correctAnswer: "B"
+            },
+            // Preguntas de Reserva - Primera Parte
+            {
+                id: "PR1-1",
+                section: "Preguntas de Reserva (Primera Parte)",
+                question: "1. Señale cuál es una resolución válida para una pantalla:",
+                options: {
+                    A: "8K UHD- 7680x3840 píxeles.",
+                    B: "Ultra HD - 4320x1280 píxeles.",
+                    C: "WQHD 2560 x 1440 pixeles.",
+                    D: "HD -1920x1080 píxeles."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "PR1-2",
+                section: "Preguntas de Reserva (Primera Parte)",
+                question: "2. ¿Cuál es un tipo de panel de una pantalla LCD?",
+                options: {
+                    A: "IPS (In-Plane Switching).",
+                    B: "VN (Vertical Nematic).",
+                    C: "TA (Twisted Alignment).",
+                    D: "PSI (Plane Switching Input)."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "PR1-3",
+                section: "Preguntas de Reserva (Primera Parte)",
+                question: "3. El protocolo de IEEE para Rapid Spanning Tree Protocol es:",
+                options: {
+                    A: "802.1w.",
+                    B: "802.1Q.",
+                    C: "802.1D.",
+                    D: "802.1aq."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "PR1-4",
+                section: "Preguntas de Reserva (Primera Parte)",
+                question: "4. En CSS3, ¿cuál de las siguientes unidades de medida NO es relativa?",
+                options: {
+                    A: "Q",
+                    B: "VW",
+                    C: "ex",
+                    D: "ch"
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "PR1-5",
+                section: "Preguntas de Reserva (Primera Parte)",
+                question: "5. Señale la respuesta correcta:",
+                options: {
+                    A: "Xcode es un IDE que contiene herramientas destinadas exclusivamente al desarrollo software para iOS.",
+                    B: "Xcode Cloud no existe.",
+                    C: "SwiftUI es un framework que facilita la creación de aplicaciones para cualquier dispositivo Apple.",
+                    D: "iOS SDK permite el desarrollo de aplicaciones para macOS, iOS, watchOS y tvOS."
+                },
+                correctAnswer: "C"
+            },
+
+            // Supuesto II
+            {
+                id: "SII-1",
+                section: "Supuesto II",
+                question: "1. ¿Cuántas direcciones hay disponibles para hosts en la subred del organismo?",
+                options: {
+                    A: "4094",
+                    B: "65534",
+                    C: "4096",
+                    D: "65536"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-2",
+                section: "Supuesto II",
+                question: "2. Al arrancar el servidor donde se aloja la web de profesores, aparecen errores en la partición sda8. ¿Qué comando hay que usar para reparar de forma automática los errores en el sistema de ficheros correspondiente, que no ha podido montarse?",
+                options: {
+                    A: "mount –T /dev/sda8",
+                    B: "fsck -y /dev/sda8",
+                    C: "fsck -m /dev/sda8",
+                    D: "checkdisk /dev/sda8"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-3",
+                section: "Supuesto II",
+                question: "3. Analizando la seguridad del sistema, surge la duda de si abrir o no el puerto 80 en un servidor web expuesto mediante HTTPS. El Centro Criptológico Nacional recomienda:",
+                options: {
+                    A: "Exhibir una web estática en el puerto 80 indicando que esa no es la web actual.",
+                    B: "Cambiar el puerto HTTPS al 8892.",
+                    C: "Utilizar un analizador de peticiones en las cabeceras HTTP en el puerto 80.",
+                    D: "Disponer del puerto TCP/80, configurando el servidor web para que lleve a cabo una redirección automática de HTTP a HTTPS."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SII-4",
+                section: "Supuesto II",
+                question: "4. El CPD donde está alojado el sistema tiene una puerta cuyo control de acceso es con tarjeta inteligente y PIN, que sólo conocen los operadores. Hace dos días, se supo que alguien no autorizado había entrado esperando agazapado a que alguien autorizado entrase, pasando detrás de él sin que éste advirtiera que tenía a un intruso detrás. Este incidente de ingeniería social en seguridad física se conoce con el nombre de:",
+                options: {
+                    A: "Tailgating o piggybacking.",
+                    B: "Quid pro quo.",
+                    C: "Pretexto.",
+                    D: "Disrupción."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-5",
+                section: "Supuesto II",
+                question: "5. El organismo tiene, para controlar la seguridad física del CPD, un circuito cerrado de televisión con cámaras que usa una red coaxial y se necesita interconectar esta red a la red local Ethernet para poder monitorizarlas. ¿Con qué dispositivo de red puede hacerlo?",
+                options: {
+                    A: "Un cortafuegos (firewall).",
+                    B: "Una pasarela (gateway).",
+                    C: "Un conmutador (switch).",
+                    D: "Un repetidor (repeater)."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-6",
+                section: "Supuesto II",
+                question: "6. En el sistema se utilizan los protocolos DNS y FTP seguro. De acuerdo con el modelo TCP/IP, estos protocolos se diferencian en que:",
+                options: {
+                    A: "DNS es un protocolo de usuario y FTP es un protocolo de soporte.",
+                    B: "DNS es siempre un protocolo orientado a la conexión mientras que FTP no.",
+                    C: "No existe diferencia entre ambos protocolos, ambos son protocolos de soporte.",
+                    D: "FTP es un protocolo de usuario y DNS es un protocolo de soporte."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SII-7",
+                section: "Supuesto II",
+                question: "7. En un switch Cisco que hay en la organización, se ejecuta el comando “switchport access vlan 1”. Esto permitirá:",
+                options: {
+                    A: "Asignar un puerto a la VLAN 1.",
+                    B: "Asignar el puerto 1 del switch a la VLAN donde estamos situados en la consola del switch.",
+                    C: "Visualizar todos los hosts asignados a la VLAN 1.",
+                    D: "Asignar todos los hosts conectados a cualquier puerto del switch a la VLAN 1."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-8",
+                section: "Supuesto II",
+                question: "8. La base de datos se ha corrompido y además, los usuarios no pueden acceder a la información. Se tiene toda la información de cómo se produjo el incidente y cuál es la persona que lo ha causado y por qué, pero, este incidente, ¿a qué dimensión o dimensiones de la seguridad afecta?",
+                options: {
+                    A: "A la disponibilidad porque no está accesible la base de datos y la integridad porque el fichero de la base de datos está corrupto.",
+                    B: "A la confidencialidad porque los datos, una vez dañados, pueden ser accesibles por cualquiera.",
+                    C: "Sólo a la disponibilidad porque la base de datos está temporalmente fuera de servicio hasta que se repare si es posible el fichero donde se aloja.",
+                    D: "A la trazabilidad, porque no podremos averiguar lo que ha pasado por mucho que nos esforcemos, la seguridad es así."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-9",
+                section: "Supuesto II",
+                question: "9. La red de área local está implementada con Gigabit Ethernet y, al conectar un nuevo dispositivo a la red, en su tarjeta, parpadea una luz de color naranja. ¿A qué puede deberse?",
+                options: {
+                    A: "A que está mal configurada la VLAN donde está ubicado el dispositivo.",
+                    B: "A que la tarjeta de red del dispositivo transmite a menor velocidad de la que permite la red.",
+                    C: "A que la tarjeta de red está estropeada y no hay conexión entre el dispositivo y la red.",
+                    D: "A que el cable del dispositivo es coaxial y no Ethernet."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-10",
+                section: "Supuesto II",
+                question: "10. Nos anuncian que hay una vulnerabilidad que afecta a una determinada versión del kernel de Linux Ubuntu. ¿Con qué comando podemos saber qué versión del kernel tiene nuestro sistema operativo Ubuntu?",
+                options: {
+                    A: "sudo dpkg -i linux*.deb",
+                    B: "uname -r",
+                    C: "uname -o",
+                    D: "kexec -l"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-11",
+                section: "Supuesto II",
+                question: "11. Para descargar algunos ficheros del servidor BIBLIOTECA, los administradores están sopesando entre el uso de SFTP y FTPS. Indique, de las siguientes afirmaciones, la INCORRECTA:",
+                options: {
+                    A: "SFTP usa típicamente el puerto 22 de SSH mientras que FTPS usa el puerto en el que tengamos definido el protocolo SSL/TLS.",
+                    B: "SFTP usa autenticación con certificado (clave pública) mientras que FTPS usa autenticación con usuario y contraseña.",
+                    C: "FTPS usa dos puertos, uno para los comandos y otro para descargarse los datos mientras que SFTP usa el mismo puerto para ambas tareas.",
+                    D: "FTPS no contiene comandos estandarizados para manipular directorios o listar atributos, mientras que SFTP sí."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-12",
+                section: "Supuesto II",
+                question: "12. Para la detección de malware complejo y movimiento lateral relacionado con APTs (Advanced Persistent Threats), se ha instalado en los PC de los profesores, la solución del CCN, CLAUDIA. ¿Cómo define el Centro Criptológico Nacional una APT?",
+                options: {
+                    A: "Es un tipo de ransomware como, por ejemplo, WannaCry, que te cifra los archivos del PC y se requiere la clave de descifrado a cambio del pago de un rescate.",
+                    B: "Es un ataque de suplantación de identidad de un usuario corriente en un organismo para después mediante escalada de privilegios obtener las credenciales de un alto cargo de la empresa u organización.",
+                    C: "Es un ataque selectivo de ciberespionaje o cibersabotaje llevado a cabo bajo el auspicio o la dirección de un país u organización adversaria, por razones que van más allá de las meramente financieras/delictivas o de protesta política.",
+                    D: "Es un ataque masivo a una organización ocurrido por un fallo que no se había advertido hasta ese momento y, por tanto, no se cuenta con la salvaguarda o parche para prevenirlo."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SII-13",
+                section: "Supuesto II",
+                question: "13. Para mejorar la escalabilidad del sistema, está estudiando implantar una arquitectura de microservicios con Kubernetes. ¿Qué protocolos para servicios pueden utilizarse con Kubernetes?",
+                options: {
+                    A: "SCTP, TCP (por defecto) y UDP.",
+                    B: "HTTP (por defecto), HTTPS y FTP.",
+                    C: "SSH, SFTP (por defecto) y UDP.",
+                    D: "UDP (por defecto) y TCP."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-14",
+                section: "Supuesto II",
+                question: "14. Para poder atender las llamadas de las guardias de sistemas, se han comprado veinte móviles. Su responsable le pide realizar el enrolamiento de estos móviles, pero, ¿en qué consiste esta tarea?",
+                options: {
+                    A: "Emparejar, en el sistema MDM (Mobile Device Management) de la organización, a cada usuario con su móvil.",
+                    B: "Dar de alta en una base de datos de administración todos los dispositivos móviles.",
+                    C: "Insertar la tarjeta SIM correspondiente a cada móvil.",
+                    D: "Formatear a fábrica todos los dispositivos móviles."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-15",
+                section: "Supuesto II",
+                question: "15. Se ha instalado un servidor web con HTTPS y certificado SSL de servidor para proteger la conexión entre los clientes y el servidor, para lo cual la conexión usará TLS. Según las recomendaciones del Centro Criptológico Nacional, ¿cuál es la versión mínima y la recomendada a usar en TLS?",
+                options: {
+                    A: "La versión mínima aceptable es la 1.1 y se recomienda usar esa misma versión 1.1",
+                    B: "La versión mínima aceptable es la 1.0 y se recomienda usar 1.1",
+                    C: "La versión mínima aceptable es la 1.2 y se recomienda usar la 1.3",
+                    D: "La versión mínima aceptable es la 1.1 y se recomienda usar la 1.3"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SII-16",
+                section: "Supuesto II",
+                question: "16. Se ha descargado del sitio web del CCN-CERT una herramienta de antimalware y justo debajo aparece un hash de comprobación. ¿Qué tipo de medida de seguridad es este hash en este contexto?",
+                options: {
+                    A: "Una medida antimalware, pues el hash aplicado al fichero descargado nos sanitiza el fichero y ya se puede usar sin problemas, pues está limpio de malware, lo cual en una herramienta antimalware es altamente necesario.",
+                    B: "Una medida para asegurar la integridad del fichero de descarga, pues si al calcular nosotros el hash del fichero descargado no coincide con el que nos aparece en la página del CCN, el fichero descargado no sería válido para su uso.",
+                    C: "El hash es la firma del CCN como autoridad de certificación de productos que garantiza que el software descargado es apto para ser usado en sistemas categorizados como de nivel ALTO o incluso en sistemas clasificados como reservado nacional.",
+                    D: "El hash es la firma del CCN de la página web donde se presenta la herramienta que estamos intentando descargar y es una medida para evitar que los hackers puedan manipular la página y subir otro fichero en vez del que se pretende descargar."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-17",
+                section: "Supuesto II",
+                question: "17. Se ha implantado una solución VoIP que usa el protocolo SIP pero, al establecer sesiones con usuarios de fuera del organismo, la llamada se corta o congela y después, se restablece. Este problema no sucede en sesiones entre usuarios internos del organismo, ¿por qué puede ser?",
+                options: {
+                    A: "Se están usando incorrectamente los códecs.",
+                    B: "La salida a Internet está empleando NAT.",
+                    C: "El tráfico entre origen y destino está interceptado en el cortafuegos de Internet.",
+                    D: "La CPU del ordenador es insuficiente y provoca estos problemas."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-18",
+                section: "Supuesto II",
+                question: "18. Se ha instalado un servidor de correo con Postfix y se está decidiendo si utilizar POP3 o IMAP en los clientes de correo. ¿Cuál de las siguientes opciones es INCORRECTA?",
+                options: {
+                    A: "Con IMAP, los mensajes se almacenan en un servidor remoto y los usuarios pueden iniciar sesión en varios clientes de correo electrónico y leer los mismos mensajes.",
+                    B: "POP3 solo admite la sincronización de correo unidireccional, lo que solo permite a los usuarios descargar correos electrónicos desde un servidor a un cliente.",
+                    C: "Con IMAP, el correo enviado y recibido se almacena en el servidor hasta que el usuario lo elimina permanentemente.",
+                    D: "Con POP3, si los usuarios organizan sus correos electrónicos en un dispositivo mediante carpetas, ya no tendrán que hacerlo en el resto de dispositivos porque se replica la organización en carpetas."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SII-19",
+                section: "Supuesto II",
+                question: "19. Se necesita saber los usuarios que acceden a la base de datos de la biblioteca y desde qué host o IP. Para averiguarlo, en la consola de administración de la base de datos, ejecutará el comando:",
+                options: {
+                    A: "SELECT * FROM all_users",
+                    B: "mysql> SELECT user FROM mysql.user",
+                    C: "mysql> SELECT user,host FROM mysql.user",
+                    D: "sudo mysql -u root -p"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SII-20",
+                section: "Supuesto II",
+                question: "20. Se quiere aplicar políticas de seguridad al grupo de usuarios Profesores utilizando Directorio Activo y GPOs. Una buena práctica es definir primero:",
+                options: {
+                    A: "Una Unidad Organizativa (OU) para el grupo de usuarios Profesores.",
+                    B: "Las ACLs (Access Control Lists) que tendrán las GPO del grupo de usuarios Profesores.",
+                    C: "Un nuevo bosque de Directorio Activo.",
+                    D: "Relaciones de confianza entre el Directorio Activo actual y el dominio de seguridad del grupo de usuarios Profesores."
+                },
+                correctAnswer: "A"
+            },
+
+            // Preguntas de Reserva - Supuesto II
+            {
+                id: "SR2-1",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "1. Como administrador de correo, quiere cambiar el mensaje HELO que aparece cuando se establecen conexiones al servidor SMTP. Actualmente aparece el nombre del servidor, pero quiere que muestre \"CORREOBIBLIOTECA\" y además, que el cambio se aplique en todos los servidores SMTP que existan, no solo en aquel en el que está trabajando. ¿Cómo lo haría?",
+                options: {
+                    A: "Editando el parámetro $client en el fichero /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix.",
+                    B: "Accediendo al servidor SMTP y ejecutando EHLO -name CORREOBIBLIOTECA en la consola.",
+                    C: "Editando el parámetro smtp_helo en el fichero /etc/postfix/master.cf y reiniciando posteriormente el servidor Postfix.",
+                    D: "Editando el parámetro $helo_name en /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SR2-2",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "2. Como no hay suficientes tomas Ethernet en la zona física donde están los profesores, se va a instalar una red WiFi con protocolo WPA3-Enterprise. En este caso, para acceder a la red WiFi habrá que utilizar:",
+                options: {
+                    A: "Una contraseña de 64 bits.",
+                    B: "Una contraseña de 128 bits.",
+                    C: "Un servidor RADIUS o cualquier solución que permita EAP-TLS.",
+                    D: "Una contraseña de 192 bits usando el algoritmo GMCP-256."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SR2-3",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "3. En la base de datos MySQL de Profesores, nos piden que añadamos una tabla de los profesores para el curso de INGLES BASICO, que se llamará \"ProfesoresIngles\" con sus nombres y apellidos. Para ello, y tras acceder como root a MYSQL, ingresaremos el comando:",
+                options: {
+                    A: "CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));",
+                    B: "CREATE TABLE ProfesoresIngles KEY id, nombre, apellidos;",
+                    C: "CREAR TABLA ProfesoresIngles KEY apellidos, nombre;",
+                    D: "CREATE TABLE ProfesoresIngles (nombre, apellido);"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SR2-4",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "4. Ha instalado el servicio Nagios para monitorizar los servidores y servicios en su sistema y quiere monitorizar, además, la URL de profesores (https://profesores.es), pero antes quiere comprobar que este servicio está configurado correctamente. Para ello, utilizará el comando:",
+                options: {
+                    A: "nagios –v /usr/local/nagios/etc/nagios.cfg",
+                    B: "/mnt/nagios –check",
+                    C: "systemctl status nagios",
+                    D: "https://profesores.es nagios"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SR2-5",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "5. Se ha instalado un servidor web con HTTPS y certificado SSL de servidor para proteger la conexión entre los clientes y el servidor, para lo cual la conexión usará TLS. Según las recomendaciones del Centro Criptológico Nacional, ¿cuál es la versión mínima y la recomendada a usar en TLS?",
+                options: {
+                    A: "La versión mínima aceptable es la 1.1 y se recomienda usar esa misma versión 1.1",
+                    B: "La versión mínima aceptable es la 1.0 y se recomienda usar 1.1",
+                    C: "La versión mínima aceptable es la 1.2 y se recomienda usar la 1.3",
+                    D: "La versión mínima aceptable es la 1.1 y se recomienda usar la 1.3"
+                },
+                correctAnswer: "C"
+                }
+        ];
+
+        // Filter out questions from "Supuesto I" and "Preguntas de Reserva (Supuesto I)"
+        const questions = allQuestions.filter(q =>
+            q.section !== "Supuesto I" && q.section !== "Preguntas de Reserva (Supuesto I)"
+        );
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // To store user answers
+        let quizSubmitted = false;
+        let answeredQuestions = new Set(); // To keep track of answered questions
+
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const correctAnswersDisplay = document.getElementById('correct-answers-display'); // New element
+        const incorrectAnswersDisplay = document.getElementById('incorrect-answers-display'); // New element
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const totalQuestionsAnsweredDisplay = document.getElementById('total-questions-answered-display'); // New element
+        const restartBtn = document.getElementById('restart-btn'); // This is the "Revisar Test" button
+        const resetTestBtn = document.getElementById('reset-test-btn'); // The new "Reiniciar Test" button
+
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizSubmitted', quizSubmitted);
+            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedSubmitted = localStorage.getItem('quizSubmitted');
+            const savedAnswered = localStorage.getItem('answeredQuestions');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedSubmitted !== null) {
+                quizSubmitted = savedSubmitted === 'true';
+            }
+            if (savedAnswered !== null) {
+                answeredQuestions = new Set(JSON.parse(savedAnswered));
+            }
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizQuestionsContainer.innerHTML = ''; // Clear the container
+
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = q.section;
+            quizQuestionsContainer.appendChild(sectionTitle);
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-lg font-semibold text-gray-700 mb-4';
+            questionText.textContent = q.question;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = `options-q${currentQuestionIndex}`; // ID for the options container
+
+            for (const key in q.options) {
+                const optionId = `q${currentQuestionIndex}-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = key;
+                input.className = 'hidden'; // Hide native radio button
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.textContent = `${key}) ${q.options[key]}`;
+
+                // If an answer is already saved, mark it
+                if (userAnswers[currentQuestionIndex] === key) {
+                    input.checked = true;
+                }
+
+                // If the question has already been answered (and not in final review mode),
+                // or if the quiz has been submitted, disable options and show feedback.
+                if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                    input.disabled = true;
+                    if (key === q.correctAnswer) {
+                        label.classList.add('correct-answer');
+                    } else if (userAnswers[currentQuestionIndex] === key && userAnswers[currentQuestionIndex] !== q.correctAnswer) {
+                        label.classList.add('incorrect-answer');
+                    }
+                }
+
+                // Handle selection change
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !answeredQuestions.has(currentQuestionIndex)) {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        answeredQuestions.add(currentQuestionIndex); // Mark as answered
+                        checkAnswerAndProvideFeedback(currentQuestionIndex, event.target.value, optionsDiv);
+                        saveQuizState(); // Save state after each answer
+                    }
+                });
+
+                optionsDiv.appendChild(input);
+                optionsDiv.appendChild(label);
+            }
+            questionCard.appendChild(optionsDiv);
+
+            // If the question has already been answered or the quiz has been submitted, show individual result
+            if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                const resultMessage = document.createElement('div');
+                resultMessage.className = 'result-message';
+                if (userAnswers[currentQuestionIndex] === q.correctAnswer) {
+                    resultMessage.classList.add('correct');
+                    resultMessage.textContent = '¡Correcto!';
+                } else {
+                    resultMessage.classList.add('incorrect');
+                    resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+                }
+                questionCard.appendChild(resultMessage);
+            }
+
+            quizQuestionsContainer.appendChild(questionCard);
+            updateNavigationButtons();
+        }
+
+        function checkAnswerAndProvideFeedback(qIndex, selectedAnswer, optionsContainer) {
+            const q = questions[qIndex];
+            const radios = optionsContainer.querySelectorAll(`input[name="question-${qIndex}"]`);
+            const labels = optionsContainer.querySelectorAll('.option-label');
+
+            // Disable all options for this question
+            radios.forEach(radio => radio.disabled = true);
+
+            // Highlight the selected and correct answers
+            labels.forEach(label => {
+                const input = document.getElementById(label.htmlFor);
+                if (input.value === q.correctAnswer) {
+                    label.classList.add('correct-answer');
+                } else if (input.value === selectedAnswer && selectedAnswer !== q.correctAnswer) {
+                    label.classList.add('incorrect-answer');
+                }
+            });
+
+            // Show feedback message
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (selectedAnswer === q.correctAnswer) {
+                resultMessage.classList.add('correct');
+                resultMessage.textContent = '¡Correcto!';
+            } else {
+                resultMessage.classList.add('incorrect');
+                resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+            }
+            optionsContainer.parentNode.appendChild(resultMessage); // Add it to the question card
+        }
+
+
+        function updateNavigationButtons() {
+            // Always show "Reiniciar Test" button
+            resetTestBtn.style.display = 'inline-block';
+
+            // Logic for other buttons remains similar to before
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+            submitBtn.style.display = currentQuestionIndex === questions.length - 1 && !quizSubmitted ? 'inline-block' : 'none';
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                // When quiz is submitted, the "Reiniciar Test" button is still visible
+                // but the "Revisar Test" button on the results page is used for review.
+            }
+        }
+
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let answeredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i]) { // Check if the question was answered
+                    answeredCount++;
+                    if (userAnswers[i] === questions[i].correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            }
+
+            correctAnswersDisplay.textContent = correctCount;
+            incorrectAnswersDisplay.textContent = incorrectCount;
+            totalQuestionsAnsweredDisplay.textContent = answeredCount;
+            totalQuestionsDisplay.textContent = questions.length; // Total questions available in the test
+
+            document.getElementById('quiz-app').style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            saveQuizState(); // Save state when quiz is submitted
+            // Reload all questions to show individual results
+            currentQuestionIndex = 0; // Go back to the first question to review
+            loadQuestion(); // Load the first question with feedback
+            document.getElementById('quiz-app').style.display = 'block'; // Ensure quiz is visible
+            quizResultsDiv.style.display = 'none'; // Hide final results temporarily
+            showResults(); // Show the final summary
+        });
+
+        restartBtn.addEventListener('click', () => {
+            // This button is for reviewing the test, not a full reset
+            currentQuestionIndex = 0;
+            quizSubmitted = true; // Stay in submitted state to show feedback
+            quizResultsDiv.style.display = 'none';
+            document.getElementById('quiz-app').style.display = 'block';
+            loadQuestion();
+        });
+
+        // Event listener for the new "Reiniciar Test" button
+        resetTestBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            answeredQuestions.clear(); // Clear the record of answered questions
+            localStorage.clear(); // Clear all saved data from localStorage
+            quizResultsDiv.style.display = 'none'; // Hide results if visible
+            document.getElementById('quiz-app').style.display = 'block'; // Show quiz app
+            loadQuestion();
+        });
+
+        // Initialize the quiz
+        loadQuizState(); // Load state when the page loads
+        loadQuestion();
+    </script>
+</body>
+</html>

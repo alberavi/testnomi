@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMA 4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+        .question-card {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background-color: #f8fafc;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+        .answer-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #ffffff;
+            color: #4a5568;
+        }
+        .answer-option:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #edf2f7;
+            border-color: #a0aec0;
+        }
+        .answer-option.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .answer-option.correct {
+            background-color: #d4edda;
+            border-color: #48bb78;
+            color: #276749;
+            font-weight: 500;
+        }
+        .answer-option.incorrect {
+            background-color: #fde8e8;
+            border-color: #e53e3e;
+            color: #9b2c2c;
+            font-weight: 500;
+        }
+        .feedback-message {
+            margin-top: 10px;
+            font-weight: 600;
+            text-align: right;
+            padding-right: 10px;
+        }
+        .feedback-message.correct-feedback {
+            color: #38a169;
+        }
+        .feedback-message.incorrect-feedback {
+            color: #e53e3e;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .navigation-buttons button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .prev-button {
+            background-color: #a0aec0;
+            color: white;
+        }
+        .prev-button:hover:not(:disabled) {
+            background-color: #718096;
+        }
+        .next-button {
+            background-color: #4299e1;
+            color: white;
+        }
+        .next-button:hover:not(:disabled) {
+            background-color: #3182ce;
+        }
+        .submit-button {
+            background-color: #48bb78;
+            color: white;
+        }
+        .submit-button:hover:not(:disabled) {
+            background-color: #38a169;
+        }
+        .reset-button {
+            background-color: #e53e3e;
+            color: white;
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .reset-button:hover {
+            background-color: #c53030;
+        }
+        .results-container {
+            margin-top: 30px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background-color: #f8fafc;
+        }
+        .results-container h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .results-summary p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+        .results-summary p strong {
+            color: #2d3748;
+        }
+        .results-summary .correct-count {
+            color: #38a169;
+        }
+        .results-summary .incorrect-count {
+            color: #e53e3e;
+        }
+        .results-summary .unanswered-count {
+            color: #dd6b20;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">TEMA 4 - Test Interactivo</h1>
+        <div id="quiz-content">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="prev-button" disabled>Anterior</button>
+            <button id="next-btn" class="next-button">Siguiente</button>
+            <button id="submit-btn" class="submit-button hidden">Finalizar Test</button>
+        </div>
+        <button id="reset-btn" class="reset-button">Reiniciar Test</button>
+    </div>
+
+    <script>
+        // Array of quiz questions and their options, with the correct answer indicated
+        const questions = [
+            {
+                question: "El Grupo de Trabajo Interministerial para la Agenda 2030 no estará formado por:",
+                options: [
+                    "El Alto Comisionado contra la Pobreza Infantil.",
+                    "La Comisionada para el Reto demográfico.",
+                    "El Embajador en Misión especial para la Agenda 2030.",
+                    "Un representante de las Comunidades Autónomas."
+                ],
+                correctAnswer: "Un representante de las Comunidades Autónomas."
+            },
+            {
+                question: "Es FALSO que la Orden HFP/134/2018, de 15 de febrero, por la que se crea el Foro de Gobierno Abierto disponga que el Foro desarrollará como funciones las siguientes:",
+                options: [
+                    "Ser informado sobre los informes de evaluación de los Planes de Acción",
+                    "Fortalecer el diálogo y la interlocución con la sociedad civil en el desarrollo de iniciativas relacionadas con la igualdad de género.",
+                    "Canalizar, promover y dar a conocer iniciativas de gobierno abierto que afecten a las instituciones representadas.",
+                    "Potenciar el intercambio y la difusión de buenas prácticas de gobierno abierto."
+                ],
+                correctAnswer: "Fortalecer el diálogo y la interlocución con la sociedad civil en el desarrollo de iniciativas relacionadas con la igualdad de género."
+            },
+            {
+                question: "La Orden HFP/134/2018, de 15 de febrero, por la que se crea el Foro de Gobierno Abierto con la finalidad de institucionalizar la colaboración y fortalecer el diálogo permanente entre las Administraciones Públicas y la sociedad civil en materias relacionadas con el gobierno abierto, establece la dependencia de dicho Foro de:",
+                options: [
+                    "La Secretaría de Estado de Agenda Digital.",
+                    "La Secretaría de Estado de Telecomunicaciones y de la Sociedad de la Información.",
+                    "La Secretaría de Estado de Función Pública.",
+                    "La Secretaría de Estado de Energía e Industria."
+                ],
+                correctAnswer: "La Secretaría de Estado de Función Pública."
+            },
+            {
+                question: "España participa en la Alianza de Gobierno Abierto desde el año 2011 al compartir los objetivos para que los Gobiernos:",
+                options: [
+                    "No necesiten rendir cuentas a los ciudadanos.",
+                    "Estrechen vínculos con la sociedad civil sin necesidad de elecciones generales.",
+                    "Mejoren la capacidad de respuesta hacia sus ciudadanos.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Mejoren la capacidad de respuesta hacia sus ciudadanos."
+            },
+            {
+                question: "Son miembros del Foro de Gobierno Abierto en representación de las Administraciones Públicas los siguientes:",
+                options: [
+                    "4.",
+                    "16.",
+                    "32.",
+                    "48."
+                ],
+                correctAnswer: "32."
+            },
+            {
+                question: "Es FALSO que el Gobierno Abierto:",
+                options: [
+                    "Suponga el acceso libre a la información y la restricción en el acceso a la protección de datos.",
+                    "Sea una doctrina política que surge a partir de la adaptación de la filosofía del movimiento del software libre a los principios de la democracia.",
+                    "Signifique que los ciudadanos colaboren en el robustecimiento de la transparencia y la rendición de cuentas.",
+                    "Tenga por objetivo que la ciudadanía colabore en la creación y mejora de los servicios públicos."
+                ],
+                correctAnswer: "Suponga el acceso libre a la información y la restricción en el acceso a la protección de datos."
+            },
+            {
+                question: "El Foro podrá funcionar en Pleno y en Comisión Permanente que estará compuesta por los Vicepresidentes Primero y Segundo y:",
+                options: [
+                    "Treinta y dos vocales en representación de las Administraciones Públicas y otros treinta y dos en representación de la sociedad civil.",
+                    "Veinticuatro vocales en representación de las Administraciones Públicas y otros veinticuatro en representación de la sociedad civil.",
+                    "Dieciocho vocales en representación de las Administraciones Públicas y otros dieciocho en representación de la sociedad civil.",
+                    "Seis vocales en representación de las Administraciones Públicas y otros seis en representación de la sociedad civil."
+                ],
+                correctAnswer: "Dieciocho vocales en representación de las Administraciones Públicas y otros dieciocho en representación de la sociedad civil."
+            },
+            {
+                question: "El Consejo de Desarrollo Sostenible podrá actuar en Pleno y en Comisión Permanente. ¿Cuántos vocales componen la Comisión Permanente?",
+                options: [
+                    "17 vocales.",
+                    "16 vocales.",
+                    "15 vocales.",
+                    "14 vocales."
+                ],
+                correctAnswer: "14 vocales."
+            },
+            {
+                question: "El Gobierno Abierto es una idea ligada principalmente al concepto de:",
+                options: [
+                    "Cercanía los ciudadanos.",
+                    "Democracia universal.",
+                    "Innovación",
+                    "Desarrollo de la sociedad de la información."
+                ],
+                correctAnswer: "Innovación"
+            },
+            {
+                question: "El Gobierno Abierto es una cultura de gobernanza que promueve los principios de:",
+                options: [
+                    "Transparencia, Colaboración, Moderación y Participación.",
+                    "Transparencia, Participación e Innovación.",
+                    "Transparencia, Rendición de Cuentas y Moderación.",
+                    "Transparencia, Colaboración y Participación."
+                ],
+                correctAnswer: "Transparencia, Participación e Innovación."
+            },
+            {
+                question: "Los Objetivos de Desarrollo Sostenible:",
+                options: [
+                    "Son jurídicamente obligatorios para los Gobiernos.",
+                    "Son jurídicamente obligatorios para los Gobiernos de los Países ricos.",
+                    "No son jurídicamente obligatorios para los Gobiernos.",
+                    "Solo son obligatorios para países del Tercer Mundo."
+                ],
+                correctAnswer: "No son jurídicamente obligatorios para los Gobiernos."
+            },
+            {
+                question: "El Desarrollo capaz de satisfacer las necesidades del presente sin comprometer la capacidad de las futuras generaciones para satisfacer sus propias necesidades se conoce como:",
+                options: [
+                    "Desarrollo singular y sostenible.",
+                    "Desarrollo sostenible.",
+                    "Desarrollo contra la pobreza.",
+                    "Desarrollo económico-social."
+                ],
+                correctAnswer: "Desarrollo sostenible."
+            },
+            {
+                question: "La Agenda 2030 para el Desarrollo Sostenible incluye:",
+                options: [
+                    "169 medios de ejecución y 230 indicadores.",
+                    "17 metas y 230 indicadores.",
+                    "17 objetivos, 169 indicadores y 230 metas.",
+                    "17 objetivos, 169 metas y 230 indicadores."
+                ],
+                correctAnswer: "17 objetivos, 169 metas y 230 indicadores."
+            },
+            {
+                question: "No es cierto que el Consejo de desarrollo Sostenible estará integrado, entre otros, por:",
+                options: [
+                    "Cinco vocales del Sistema universitario y Centros de Investigación.",
+                    "Once vocales del sector empresarial y sindical.",
+                    "Catorce vocales de las principales plataformas y redes ciudadanas del Tercer sector.",
+                    "Diez vocales de organizaciones representativas de intereses sociales."
+                ],
+                correctAnswer: "Once vocales del sector empresarial y sindical."
+            },
+            {
+                question: "No constituye una ventaja del Gobierno Abierto:",
+                options: [
+                    "La solución de los problemas de la representación y la participación en las actuales democracias.",
+                    "El posible empoderamiento de los lobbies.",
+                    "La mejora del funcionamiento interno de las instituciones al aumentar su capacidad de conocer donde se necesita su intervención.",
+                    "La mayor legitimidad en las decisiones políticas adoptadas."
+                ],
+                correctAnswer: "El posible empoderamiento de los lobbies."
+            },
+            {
+                question: "Como se denomina el proyecto que impulsa la reutilización de la información y su puesta a disposición de los ciudadanos:",
+                options: [
+                    "APORTA.",
+                    "LEGITIME.",
+                    "REUTILIZA.",
+                    "EXTENDING."
+                ],
+                correctAnswer: "APORTA."
+            },
+            {
+                question: "No constituye una línea de actuación en la Agenda Digital Española:",
+                options: [
+                    "La difusión, sensibilización y formación.",
+                    "La colaboración público-privada (CPP).",
+                    "El Catálogo Nacional de Cooperación Internacional.",
+                    "EL ámbito legislativo y Cooperación Nacional."
+                ],
+                correctAnswer: "El Catálogo Nacional de Cooperación Internacional."
+            },
+            {
+                question: "¿Cuáles son los compromisos agrupados en cuatro ejes del IV Plan de Gobierno Abierto?",
+                options: [
+                    "Transparencia, reutilización, rendición de cuentas y participación empresarial.",
+                    "Reutilización de la información, integridad pública, desarrollo infomediario y datos.",
+                    "Transparencia y rendición de cuentas, participación ciudadana, integridad pública y sensibilización y formación.",
+                    "Reutilización, rendición de cuentas, participación ciudadana y transparencia."
+                ],
+                correctAnswer: "Transparencia y rendición de cuentas, participación ciudadana, integridad pública y sensibilización y formación."
+            },
+            {
+                question: "¿Quién elabora periódicamente un Estudio de Caracterización del Sector Infomediario:",
+                options: [
+                    "El Observatorio Nacional de Reutilización de las Telecomunicaciones.",
+                    "El Observatorio Nacional de las Telecomunicaciones y de la Sociedad de la Información.",
+                    "El Observatorio Nacional de la Entidad Pública Empresarial Red.es.",
+                    "El Observatorio Nacional de la Sociedad de la Información."
+                ],
+                correctAnswer: "El Observatorio Nacional de las Telecomunicaciones y de la Sociedad de la Información."
+            },
+            {
+                question: "El Grupo de Alto Nivel para la Agenda 2030 se reunirá ordinariamente:",
+                options: [
+                    "Dos veces al año.",
+                    "Anualmente.",
+                    "Trimestralmente.",
+                    "Cuando se considere necesario a propuesta de la Comisión Delegada del Gobierno para Asuntos económicos."
+                ],
+                correctAnswer: "Dos veces al año."
+            },
+            {
+                question: "En el marco de Aporta la ley 37/2007, de 16 de noviembre sobre reutilización de la información del sector público contiene la regulación básica del régimen jurídico aplicable a la reutilización de la información elaborada o custodiada por las administraciones y organismos del sector público, habiendo sido desarrollada por:",
+                options: [
+                    "El Real Decreto-Ley 1495/2013, de 24 de octubre, que introduce el derecho a la reutilización de cuanto documento tenga carácter público.",
+                    "El Real Decreto 1495/2011, de 24 de octubre, que introduce el derecho a la reutilización de cuanto documento tenga carácter público.",
+                    "El Reglamento de desarrollo de Aporta.",
+                    "El Real Decreto del Consejo de Ministros 1495/2001, de 24 de octubre, que supone un salto cualitativo en el derecho a la reutilización de cuanto documento tenga carácter público."
+                ],
+                correctAnswer: "El Real Decreto 1495/2011, de 24 de octubre, que introduce el derecho a la reutilización de cuanto documento tenga carácter público."
+            },
+            {
+                question: "¿Cómo se llama el portal a través del cual Aporta, ofrece noticias de actualidad, ejemplos reales, recomendaciones y metodologías sobre la reutilización de la información del sector público?",
+                options: [
+                    "datos.gob.es",
+                    "reutiliza.datos.es",
+                    "datos. reutiliza.es",
+                    "reutiliza.datos.gob.es"
+                ],
+                correctAnswer: "datos.gob.es"
+            },
+            {
+                question: "El IV Plan de Acción del Gobierno Abierto se desarrollará entre los años:",
+                options: [
+                    "2019 a 2023.",
+                    "2020 a 2024.",
+                    "2021 a 2024.",
+                    "2021 A 2023."
+                ],
+                correctAnswer: "2021 a 2024."
+            },
+            {
+                question: "Los Estados miembros garantizarán que pueda disponerse, gratuitamente, a través del sistema de interconexión de registros de las siguientes indicaciones:",
+                options: [
+                    "El nombre y la forma jurídica de la sociedad.",
+                    "Domicilio social de la sociedad y Estado miembros en el que está registrada.",
+                    "Número de registro de la sociedad.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "El Consejo de Transparencia y Buen Gobierno tiene por finalidad, entre otras, promover la transparencia de la actividad pública. ¿A qué Ministerio está adscrito en la actualidad?",
+                options: [
+                    "Ministerio de la Presidencia, Relaciones con las Cortes y Memoria Democrática.",
+                    "Ministerio de Hacienda y Función Pública.",
+                    "Ministerio de Política Social.",
+                    "A ningún Ministerio ya que tiene personalidad jurídica propia."
+                ],
+                correctAnswer: "Ministerio de la Presidencia, Relaciones con las Cortes y Memoria Democrática."
+            },
+            {
+                question: "Es FALSO que la Ley 19/2013, de 9 de diciembre, de Transparencia, Acceso a la información pública y Buen Gobierno, se aplique a:",
+                options: [
+                    "A las mutuas de accidentes de trabajo y enfermedades profesionales colaboradoras de la Seguridad Social.",
+                    "A las entidades públicas empresariales.",
+                    "A la Casa de su Majestad el Rey.",
+                    "A las entidades de Derecho Público en lo relativo a sus actividades sujetas al Derecho Administrativo"
+                ],
+                correctAnswer: "A la Casa de su Majestad el Rey."
+            },
+            {
+                question: "No se considera información de relevancia jurídica que deba ser publicada por las Administraciones Públicas:",
+                options: [
+                    "Los proyectos de Reglamentos cuya iniciativa les corresponda.",
+                    "Los documentos que conforme a la legislación sectorial vigente, deban ser sometidos a un periodo de información pública durante su tramitación.",
+                    "Los proyectos de ley cuya iniciativa les corresponda.",
+                    "Los proyectos de Decretos Legislativos cuya iniciativa les corresponda."
+                ],
+                correctAnswer: "Los proyectos de ley cuya iniciativa les corresponda."
+            },
+            {
+                question: "¿De quién depende el Portal de la Transparencia?",
+                options: [
+                    "De la Presidencia del Gobierno.",
+                    "Del Ministerio de Hacienda y Función Pública",
+                    "Del Ministerio de Transición Ecológica y Reto Demográfico.",
+                    "De quien se determine reglamentariamente."
+                ],
+                correctAnswer: "Del Ministerio de Hacienda y Función Pública"
+            },
+            {
+                question: "El Portal de la Transparencia contendrá información publicada de acuerdo con las prescripciones técnicas que se establezcan reglamentariamente y que deberán ajustarse a los siguientes principios, excepto::",
+                options: [
+                    "La interoperabilidad.",
+                    "La reutilización.",
+                    "La accesibilidad.",
+                    "La seguridad."
+                ],
+                correctAnswer: "La seguridad."
+            },
+            {
+                question: "Es FALSO que: El derecho de acceso podrá ser limitado, según el artículo 14 de la Ley de Transparencia, cuando acceder a la información suponga un perjuicio para:",
+                options: [
+                    "La política económica y financiera.",
+                    "La igualdad de las partes en los procesos judiciales.",
+                    "La deuda pública aprobada.",
+                    "El secreto requerido en procesos de toma de decisión."
+                ],
+                correctAnswer: "La deuda pública aprobada."
+            },
+            {
+                question: "NO constituye una función del Consejo de Transparencia y Buen Gobierno, para la consecución de sus objetivos:",
+                options: [
+                    "Colaborar, en las materias que le son propias, con órganos de naturaleza análoga.",
+                    "Asesorar en materia de transparencia, acceso a la información y buen gobierno.",
+                    "Promover la elaboración de recomendaciones y de directrices y normas de desarrollo de buenas prácticas en materia de transparencia, acceso a la información pública y buen gobierno .",
+                    "Aquellas otras que le sean atribuidas por norma de rango legal o reglamentario."
+                ],
+                correctAnswer: "Aquellas otras que le sean atribuidas por norma de rango legal o reglamentario."
+            },
+            {
+                question: "El nombramiento del Presidente del Consejo de Transparencia y Buen Gobierno se realizará por un periodo de:",
+                options: [
+                    "5 años no renovables, mediante Real Decreto.",
+                    "5 años renovables por otro periodo de igual duración, mediante Real Decreto",
+                    "5 años renovables, en determinadas circunstancias, mediante Ley Ordinaria.",
+                    "5 años no renovables, salvo decisión del Consejo, por mayoría absoluta de sus componentes."
+                ],
+                correctAnswer: "5 años no renovables, mediante Real Decreto."
+            },
+            {
+                question: "El instrumento jurídico por el que se nombra Presidente del Consejo de Transparencia y Buen Gobierno, será:",
+                options: [
+                    "Real Decreto del Presidente del Gobierno.",
+                    "Real Decreto del Consejo de Ministros.",
+                    "Real Decreto del Ministro de la Presidencia, Relaciones con las Cortes y Memoria democrática.",
+                    "Orden Ministerial del Ministro de Hacienda y Función Pública."
+                ],
+                correctAnswer: "Real Decreto del Consejo de Ministros."
+            },
+            {
+                question: "El artículo 11 del Estatuto del Consejo de Transparencia Buen Gobierno establece que el Presidente del Consejo de Transparencia y Buen Gobierno desempeñará su cargo:",
+                options: [
+                    "Con dedicación absoluta, total independencia y objetividad.",
+                    "Con dedicación al cargo, independencia y objetividad.",
+                    "Con dedicación plena, independencia y total objetividad.",
+                    "Con dedicación absoluta, plena independencia y total objetividad."
+                ],
+                correctAnswer: "Con dedicación absoluta, plena independencia y total objetividad."
+            },
+            {
+                question: "Entre los vocales de la Comisión de Transparencia y Buen Gobierno, no se encuentra:",
+                options: [
+                    "Un representante de la Casa Real.",
+                    "Un representante del Tribunal de Cuentas.",
+                    "Un representante de la autoridad independiente de responsabilidad fiscal.",
+                    "Un representante de la Secretaría de Estado de Función Pública."
+                ],
+                correctAnswer: "Un representante de la Casa Real."
+            },
+            {
+                question: "Los Vocales de la Comisión de Transparencia y Buen Gobierno desempeñarán su cargo durante:",
+                options: [
+                    "Cinco años no prorrogables.",
+                    "Cinco años prorrogables por un periodo de igual duración.",
+                    "Cuatro años no prorrogables.",
+                    "Cuatro años prorrogables, en caso de necesidad, por un periodo de igual duración."
+                ],
+                correctAnswer: "Cinco años no prorrogables."
+            },
+            {
+                question: "NO será causa de cese en su mandato de los Vocales de la Comisión de Transparencia y Buen Gobierno, según establece el artículo 15 del Estatuto del Consejo de Transparencia y Buen Gobierno:",
+                options: [
+                    "Expiración del mandato por incumplimiento grave de sus obligaciones.",
+                    "Incapacidad transitoria para el ejercicio de su función.",
+                    "Incompatibilidad sobrevenida.",
+                    "Condena por delito doloso."
+                ],
+                correctAnswer: "Incapacidad transitoria para el ejercicio de su función."
+            },
+            {
+                question: "¿Qué criterios se tomarán en consideración para realizar la ponderación suficientemente razonada del interés público en la divulgación de la información y los derechos de los afectados cuyos datos aparezcan en la información solicitada, cuando dicha información no contuviera datos especialmente protegidos?",
+                options: [
+                    "La justificación por los solicitantes de su petición en el ejercicio de un derecho.",
+                    "La mayor garantía de los derechos de los afectados en caso de que los datos contenidos en el documento no puedan afectar a su intimidad o a su seguridad, o se refieran a menores de edad.",
+                    "El mayor perjuicio de los derechos de los afectados en caso de que los documentos únicamente contuviesen datos de carácter meramente identificativos de aquéllos.",
+                    "Todas las contestaciones son incorrectas."
+                ],
+                correctAnswer: "Todas las contestaciones son incorrectas."
+            },
+            {
+                question: "El plazo máximo para resolver y notificar la resolución de una reclamación, según establece el artículo 24 de la Ley 19/2013, de 9 de diciembre, de Transparencia, acceso a la información pública y buen gobierno, será de:",
+                options: [
+                    "Un mes, en todo caso.",
+                    "Dos meses, en determinadas circunstancias.",
+                    "Tres meses, transcurrido el cual, la reclamación se entenderá estimada.",
+                    "Tres meses, transcurrido el cual, la reclamación se entenderá desestimada."
+                ],
+                correctAnswer: "Un mes, en todo caso."
+            },
+            {
+                question: "Es FALSO que: En el ámbito de la Administración General del Estado, existirán unidades especializadas de información que tendrán las siguientes funciones:",
+                options: [
+                    "Realizar los trámites internos necesarios para dar acceso a la información solicitada.",
+                    "Mantener actualizado un mapa de contenidos en el que quedan identificados los distintos tipos de información que obre en poder del órgano.",
+                    "Asegurar la disponibilidad en la respectiva página web o sede electrónica de la información cuyo acceso se solicita con menor frecuencia.",
+                    "Recibir y dar tramitación a las solicitudes de acceso a la información."
+                ],
+                correctAnswer: "Asegurar la disponibilidad en la respectiva página web o sede electrónica de la información cuyo acceso se solicita con menor frecuencia."
+            },
+            {
+                question: "Frente a toda resolución expresa o presunta en materia de acceso podrá interponerse una reclamación ante el Consejo de Transparencia y Buen Gobierno, con carácter potestativo y previo a su impugnación en vía contencioso-administrativa, en el plazo de:",
+                options: [
+                    "Un mes a contar desde el día de la notificación del acto impugnado.",
+                    "Un mes a contar desde el día en que se produzcan los efectos del silencio administrativo.",
+                    "Un mes a contar desde el día siguiente al de la notificación del acto impugnado.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswer: "Un mes a contar desde el día siguiente al de la notificación del acto impugnado."
+            },
+            {
+                question: "Es un principio general de buen gobierno:",
+                options: [
+                    "Guardar la debida reserva respecto a los hechos o informaciones conocidos con motivo u ocasión del ejercicio de sus competencias.",
+                    "Mantener una conducta digna y tratar a los ciudadanos con esmerada corrección.",
+                    "Poner en conocimiento de los órganos competentes cualquier actuación irregular de la cual tengan conocimiento.",
+                    "Desempeñar sus funciones con transparencia."
+                ],
+                correctAnswer: "Desempeñar sus funciones con transparencia."
+            },
+            {
+                question: "NO constituye una infracción en materia de gestión económico-presupuestaria:",
+                options: [
+                    "La incursión en alcance en la administración de fondos públicos.",
+                    "La omisión del trámite de intervención previa.",
+                    "La realización de operaciones de crédito y emisiones de deuda que cuenten con la preceptiva autorización.",
+                    "El incumplimiento de las obligaciones de publicación o de suministro de información previstas en la normativa presupuestaria."
+                ],
+                correctAnswer: "La realización de operaciones de crédito y emisiones de deuda que cuenten con la preceptiva autorización."
+            },
+            {
+                question: "Constituye una infracción muy grave, según establece el artículo 29 de la Ley de Transparencia, relativo a infracciones disciplinarias:",
+                options: [
+                    "La prevalencia de la condición de alto cargo para obtener un beneficio indebido para sí o para otro.",
+                    "La intervención en un procedimiento administrativo cuando se dé alguna de las causas de abstención legalmente señaladas.",
+                    "El abuso de autoridad en el ejercicio del cargo.",
+                    "El incumplimiento de los plazos u otras disposiciones de procedimiento en materia de incompatibilidades, cuando no supongan el mantenimiento de una situación de incompatibilidad."
+                ],
+                correctAnswer: "La prevalencia de la condición de alto cargo para obtener un beneficio indebido para sí o para otro."
+            },
+            {
+                question: "Es FALSO que:",
+                options: [
+                    "Los sancionados por la comisión de una infracción muy grave serán destituidos del cargo que ocupen, en todo caso.",
+                    "Los sancionados por la comisión de una infracción muy grave no podrán ser nombrados para ocupar ningún puesto de alto cargo o asimilado durante un periodo de entre cinco y diez años.",
+                    "Las ganancias obtenidas, en su caso, como consecuencia de los actos u omisiones constitutivos de infracción será un criterio para determinar las sanciones.",
+                    "Cuando las infracciones pudieran ser constitutivas de delito, la Administración pondrá los hechos en conocimiento del Fiscal General del Estado y se abstendrán de seguir el procedimiento mientras la autoridad judicial no dicte una resolución que ponga fin al proceso penal."
+                ],
+                correctAnswer: "Los sancionados por la comisión de una infracción muy grave serán destituidos del cargo que ocupen, en todo caso."
+            },
+            {
+                question: "Entre los fines del Consejo de Transparencia y Buen Gobierno no se encuentra:",
+                options: [
+                    "Velar por el cumplimiento de las obligaciones de publicidad.",
+                    "Salvaguardar el ejercicio del derecho de acceso a la información pública.",
+                    "Promover la transparencia de la actividad privada.",
+                    "Garantizar la observancia de las disposiciones de buen gobierno."
+                ],
+                correctAnswer: "Promover la transparencia de la actividad privada."
+            },
+            {
+                question: "El Presidente del Consejo de Transparencia y Buen Gobierno en sus relaciones con las Cortes Generales:",
+                options: [
+                    "Comparecerá anualmente ante la Comisión correspondiente para dar cuenta del desarrollo de las actividades del Consejo recogidas en la Memoria anual de la Presidencia del Consejo.",
+                    "La contestación anterior es correcta y además comparecerá cuantas veces sea requerido para ello.",
+                    "Solo comparecerá en caso de requerimiento, manifestado por escrito, enviado a la Secretaría de Estado de Administraciones Públicas.",
+                    "Todas las contestaciones son incorrectas."
+                ],
+                correctAnswer: "La contestación anterior es correcta y además comparecerá cuantas veces sea requerido para ello."
+            },
+            {
+                question: "El plazo de prescripción de las infracciones previstas en el Título II de la Ley de Transparencia será:",
+                options: [
+                    "De cinco a diez años para las infracciones muy graves.",
+                    "De cinco años para infracciones muy graves.",
+                    "De cuatro años para infracciones graves.",
+                    "De dos años para infracciones leves."
+                ],
+                correctAnswer: "De cinco años para infracciones muy graves."
+            },
+            {
+                question: "En la composición del Consejo de Transparencia y Buen Gobierno hay:",
+                options: [
+                    "Un Magistrado del Tribunal Constitucional.",
+                    "Un Ministro del Gobierno.",
+                    "Un Diputado.",
+                    "Un representante de la Agencia Española de Administración Tributaria."
+                ],
+                correctAnswer: "Un representante de la Agencia Española de Administración Tributaria."
+            },
+            {
+                question: "No constituye un Objetivo de Desarrollo Sostenible:",
+                options: [
+                    "El agua y el saneamiento.",
+                    "Hambre cero.",
+                    "Ciudades.",
+                    "Poner fin a la pobreza en el Tercer Mundo y África."
+                ],
+                correctAnswer: "Poner fin a la pobreza en el Tercer Mundo y África."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores selected answers for each question
+        let answeredStatus = []; // true if answered, false if skipped
+        let quizCompleted = false;
+
+        const quizContent = document.getElementById('quiz-content');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Load quiz state from LocalStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedStatus = localStorage.getItem('answeredStatus');
+            const savedCompleted = localStorage.getItem('quizCompleted');
+
+            if (savedIndex) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            if (savedStatus) {
+                answeredStatus = JSON.parse(savedStatus);
+            } else {
+                answeredStatus = new Array(questions.length).fill(false);
+            }
+            if (savedCompleted === 'true') {
+                quizCompleted = true;
+            }
+        }
+
+        // Save quiz state to LocalStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('answeredStatus', JSON.stringify(answeredStatus));
+            localStorage.setItem('quizCompleted', quizCompleted);
+        }
+
+        // Display the current question
+        function displayQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            quizContent.innerHTML = `
+                <div class="question-card" data-question-index="${currentQuestionIndex}">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${q.question}</p>
+                    <div class="options-container">
+                        ${q.options.map((option, index) => `
+                            <div class="answer-option" data-option="${option}">
+                                ${option}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-message" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+
+            const options = quizContent.querySelectorAll('.answer-option');
+            options.forEach(option => {
+                // Only add event listener if the quiz is not completed
+                if (!quizCompleted) {
+                    option.addEventListener('click', handleAnswerClick);
+                }
+            });
+
+            // Restore selected answer and feedback if available
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                const selectedOptionElement = quizContent.querySelector(`[data-option="${savedAnswer}"]`);
+                if (selectedOptionElement) {
+                    selectedOptionElement.classList.add('selected');
+                    checkAnswer(selectedOptionElement, savedAnswer, true); // Pass true to indicate it's a restore operation
+                }
+            }
+
+            updateNavigationButtons();
+            saveQuizState();
+        }
+
+        // Handle answer click
+        function handleAnswerClick(event) {
+            if (quizCompleted) return; // Prevent answering if quiz is completed
+
+            const selectedOption = event.currentTarget;
+            const optionsContainer = selectedOption.closest('.options-container');
+            const allOptions = optionsContainer.querySelectorAll('.answer-option');
+
+            // Remove 'selected' class from all options in this question
+            allOptions.forEach(option => option.classList.remove('selected', 'correct', 'incorrect'));
+
+            // Add 'selected' class to the clicked option
+            selectedOption.classList.add('selected');
+
+            const selectedAnswer = selectedOption.dataset.option;
+            userAnswers[currentQuestionIndex] = selectedAnswer;
+            answeredStatus[currentQuestionIndex] = true;
+
+            checkAnswer(selectedOption, selectedAnswer, false); // Pass false for a new answer
+            saveQuizState();
+        }
+
+        // Check the selected answer against the correct answer
+        function checkAnswer(selectedOptionElement, selectedAnswer, isRestoring) {
+            const q = questions[currentQuestionIndex];
+            const feedbackMessageElement = document.getElementById(`feedback-${currentQuestionIndex}`);
+
+            // Disable all options for the current question after an answer is selected (or restored)
+            const optionsContainer = selectedOptionElement.closest('.options-container');
+            const allOptions = optionsContainer.querySelectorAll('.answer-option');
+            allOptions.forEach(option => option.removeEventListener('click', handleAnswerClick)); // Remove listener to disable further clicks
+
+            if (selectedAnswer === q.correctAnswer) {
+                selectedOptionElement.classList.add('correct');
+                feedbackMessageElement.textContent = '¡Correcto!';
+                feedbackMessageElement.classList.remove('incorrect-feedback');
+                feedbackMessageElement.classList.add('correct-feedback');
+            } else {
+                selectedOptionElement.classList.add('incorrect');
+                // Highlight the correct answer
+                const correctOptionElement = quizContent.querySelector(`[data-option="${q.correctAnswer}"]`);
+                if (correctOptionElement) {
+                    correctOptionElement.classList.add('correct');
+                }
+                feedbackMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${q.correctAnswer}`;
+                feedbackMessageElement.classList.remove('correct-feedback');
+                feedbackMessageElement.classList.add('incorrect-feedback');
+            }
+        }
+
+        // Update navigation button states
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            
+            // If quiz is completed, disable next and submit buttons
+            if (quizCompleted) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.add('hidden');
+            } else if (currentQuestionIndex === questions.length - 1) {
+                // If on the last question and not completed, show submit, hide next
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                // Otherwise, show next, hide submit
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        // Show results screen
+        function showResults() {
+            quizCompleted = true;
+            saveQuizState();
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === q.correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            quizContent.innerHTML = `
+                <div class="results-container">
+                    <h2>Resultados del Test</h2>
+                    <div class="results-summary">
+                        <p>Respuestas correctas: <strong class="correct-count">${correctCount}</strong></p>
+                        <p>Respuestas incorrectas: <strong class="incorrect-count">${incorrectCount}</strong></p>
+                        <p>Preguntas sin contestar: <strong class="unanswered-count">${unansweredCount}</strong></p>
+                    </div>
+                </div>
+            `;
+            prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.add('hidden');
+        }
+
+        // Event listeners for navigation and reset buttons
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else if (currentQuestionIndex === questions.length - 1) {
+                showResults();
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            showResults();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            // No confirmation dialog, just reset directly
+            localStorage.clear();
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            answeredStatus = new Array(questions.length).fill(false);
+            quizCompleted = false;
+            
+            // Ensure buttons are reset to initial state
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden'); // Submit button should be hidden initially
+            
+            displayQuestion(); // Re-render the first question
+        });
+
+        // Initialize the quiz
+        loadQuizState();
+        displayQuestion();
+    </script>
+</body>
+</html>

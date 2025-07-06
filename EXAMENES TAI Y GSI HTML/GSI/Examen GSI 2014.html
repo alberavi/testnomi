@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSI 2014</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Usando fuente Inter */
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alineación superior para contenido extenso */
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px; /* Bordes redondeados */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            max-width: 900px; /* Ancho máximo para mejor legibilidad */
+            width: 100%;
+            margin: 20px 0;
+            box-sizing: border-box; /* Incluir padding en el ancho */
+        }
+        h1 {
+            color: #1a73e8; /* Un azul más vibrante */
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+        .question-container {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .options label {
+            display: flex; /* Para alinear el radio con el texto */
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 14px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px; /* Bordes redondeados */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fcfcfc;
+        }
+        .options label:hover {
+            background-color: #e8f0fe; /* Azul claro al pasar el ratón */
+            border-color: #a0c3ff;
+            transform: translateY(-2px); /* Pequeño efecto de elevación */
+        }
+        .options input[type="radio"] {
+            margin-right: 12px;
+            margin-top: 3px; /* Ajuste vertical para el radio button */
+            flex-shrink: 0; /* Evitar que el radio se encoja */
+        }
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .correct {
+            color: #28a745; /* Verde */
+            background-color: #e6ffe6;
+            border: 1px solid #28a745;
+        }
+        .incorrect {
+            color: #dc3545; /* Rojo */
+            background-color: #ffe6e6;
+            border: 1px solid #dc3545;
+        }
+        .navigation-buttons { /* Ajustado para que el botón de reinicio esté siempre visible */
+            text-align: center;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Espacio entre botones */
+            flex-wrap: wrap; /* Para que los botones se ajusten en pantallas pequeñas */
+        }
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px; /* Bordes redondeados */
+            background-color: #1a73e8;
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #0d47a1;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .results-container {
+            margin-top: 40px;
+            padding: 25px;
+            border: 2px solid #1a73e8;
+            border-radius: 12px;
+            background-color: #e3f2fd; /* Azul muy claro */
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        .results-container h2 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        .results-container p {
+            font-size: 1.2em;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .question-text {
+                font-size: 1em;
+            }
+            .options label {
+                padding: 10px;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+            .navigation-buttons {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GSI 2014 Test</h1>
+        <div id="quiz-container"></div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" disabled>Anterior</button>
+            <button id="next-btn">Siguiente</button>
+            <button id="submit-test-btn" style="display: none;">Finalizar Test</button>
+            <button id="reset-btn">Reiniciar Test</button>
+        </div>
+        <div id="results" class="results-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Respuestas Correctas: <span id="correct-count">0</span></p>
+            <p>Respuestas Incorrectas: <span id="incorrect-count">0</span></p>
+            <p>Preguntas Sin Contestar: <span id="unanswered-count">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos que contiene todas las preguntas del test.
+        // Cada objeto incluye el bloque, número de pregunta, texto de la pregunta,
+        // opciones de respuesta y la respuesta correcta.
+        const questions = [
+            // Bloque I
+            {
+                block: "Bloque I",
+                questionNumber: 1,
+                questionText: "Según el Título II de la Constitución Española relativo a la Corona:",
+                options: [
+                    "La Regencia se ejercerá por mandato constitucional y siempre en nombre del Rey.",
+                    "Las abdicaciones y renuncias en el orden sucesorio se resolverán por ley ordinaria.",
+                    "El Príncipe heredero podrá asumir la Regencia durante su minoría de edad.",
+                    "La Regencia podrá ejercerse por nacionales de cualquier Estado."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 2,
+                questionText: "Según establece la Constitución Española, las asociaciones se inscribirán en un registro a efectos de:",
+                options: [
+                    "Publicidad.",
+                    "Constitución.",
+                    "Legalidad.",
+                    "Creación."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 3,
+                questionText: "Según la Constitución Española de 1978, están legitimados para interponer el recurso de inconstitucionalidad:",
+                options: [
+                    "El Presidente del Gobierno.",
+                    "El Consejo de Ministros.",
+                    "40 Diputados.",
+                    "El Ministerio Fiscal."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 4,
+                questionText: "Tal y como marca la Constitución Española de 1978, en el caso de los referéndums consultivos:",
+                options: [
+                    "Su propuesta parte del Presidente del Gobierno, ha de ser autorizada por el Congreso de los Diputados.",
+                    "Son propuestos por el Consejo de Ministros, siendo autorizados previamente por el Presidente del Gobierno.",
+                    "Son refrendados por el Rey.",
+                    "Son convocados por el Presidente del Gobierno."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 5,
+                questionText: "Según el Título III \"De las Cortes Generales\" de la Constitución Española, las Cámaras podrán:",
+                options: [
+                    "Recibir peticiones individuales y colectivas, siempre por escrito, quedando prohibida la presentación directa por manifestaciones ciudadanas.",
+                    "Delegar en las Comisiones Legislativas Permanentes la aprobación de proyectos o proposiciones de ley relativas a cuestiones internacionales.",
+                    "Reunirse en sesión extraordinaria a petición de la mayoría simple de los miembros de cualquiera de las Cámaras.",
+                    "Nombrar conjuntamente Comisiones de Investigación sobre asuntos de interés público. Sus conclusiones serán vinculantes para los Tribunales."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 6,
+                questionText: "El artículo 37 de la Ley Orgánica 3/2007, para la igualdad efectiva de mujeres y hombres, indica que la Corporación RTVE, en el ejercicio de su función, perseguirá en su programación:",
+                options: [
+                    "Mostrar anuncios para la igualdad de forma habitual.",
+                    "Ofrecer trabajo a mujeres víctimas de violencia de género.",
+                    "Promover la incorporación de mujeres a puestos visibles ante las cámaras.",
+                    "Reflejar adecuadamente la presencia de las mujeres en los diversos ámbitos de la vida social."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 7,
+                questionText: "De acuerdo al artículo 7 de la Ley 59/2003, de 19 de diciembre, de firma electrónica, sobre certificados electrónicos de personas jurídicas, ¿a quién corresponde la responsabilidad de custodiar los datos de firma asociados a un certificado electrónico de persona jurídica?",
+                options: [
+                    "Al consejero de la persona jurídica, cuya identificación se incluye en el certificado electrónico.",
+                    "A la persona física solicitante del certificado, cuya identificación se incluye en el certificado electrónico.",
+                    "Al prestador de servicios de certificación, por ser quien firma el certificado electrónico.",
+                    "Al representante de la persona jurídica de certificación, cuya identificación se incluye en el certificado electrónico."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 8,
+                questionText: "Según establece el artículo 86 de la Constitución Española, los Decretos-Leyes son normas con rango de Ley que aprueba el Gobierno:",
+                options: [
+                    "Previa delegación de las Cortes, para casos de extraordinaria y urgente necesidad y una vez aprobados deben ser sometidos a debate y votación de totalidad al Congreso de los Diputados.",
+                    "Sin mediar delegación de las Cortes, aunque deben ser inmediatamente sometidos a debate y votación de totalidad al Congreso de los Diputados.",
+                    "En casos de extraordinaria y urgente necesidad sin mediar delegación de las Cortes, aunque una vez aprobados deben ser tramitados como proyectos de ley por el procedimiento de urgencia.",
+                    "Previa delegación de las Cortes, para casos de extraordinaria y urgente necesidad, y que una vez aprobados deben ser sometidos a debate y votación de totalidad al Congreso de los Diputados."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 9,
+                questionText: "Señale la respuesta correcta. Según se establece en la Ley de Firma Electrónica 59/2003 en su artículo 32, las multas establecidas al infractor serán de:",
+                options: [
+                    "Por la comisión de infracciones muy graves, multa de 150.001 a 600.000 euros, por la comisión de infracciones graves, se impondrá al infractor multa de 30.001 a 150.000 euros y por la comisión de infracciones leves, se impondrá al infractor una multa por importe de hasta 30.000 euros.",
+                    "Por la comisión de infracciones muy graves, multa de 60.001 a 600.000 euros, por la comisión de infracciones graves, se impondrá al infractor multa de 6.001 a 60.000 euros y por la comisión de infracciones leves, se impondrá al infractor una multa por importe de hasta 6.000 euros.",
+                    "Por la comisión de infracciones muy graves, multa de 120.001 a 600.000 euros, por la comisión de infracciones graves, se impondrá al infractor multa de 12.001 a 120.000 euros y por la comisión de infracciones leves, se impondrá al infractor una multa por importe de hasta 12.000 euros.",
+                    "Por la comisión de infracciones muy graves, multa de 150.001 a 600.000 euros, por la comisión de infracciones graves, se impondrá al infractor multa de 15.001 a 150.000 euros y por la comisión de infracciones leves, se impondrá al infractor una multa por importe de hasta 15.000 euros."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 10,
+                questionText: "Según se establece en la política de certificación de la DGP para el DNI electrónico (DNIe) en lo relativo a las autoridades de certificación (AC) raíz y subordinadas, ¿cuál es el tamaño de esas claves?",
+                options: [
+                    "El tamaño de las claves de la AC Raíz es de 2048 bits y el de claves de las AC subordinadas será de 4096 bits.",
+                    "Las claves de la AC Raíz y de las AC subordinadas serán de 2048 bits.",
+                    "El tamaño de las claves es: 4096 bits para la AC Raíz y 2048 bits para las AC Subordinadas.",
+                    "El tamaño de las claves de la AC Raíz es 8192 bits para la raíz y 4096 bits para las AC subordinadas."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 11,
+                questionText: "Señale qué medida es necesario adoptar en ficheros y tratamientos automatizados para establecer el nivel de seguridad medio según se establece en el Real Decreto 1720/2007:",
+                options: [
+                    "Control de acceso: Los usuarios tendrán acceso únicamente a aquellos recursos que precisen para el desarrollo de sus funciones.",
+                    "Identificación y autenticación: El responsable del fichero o tratamiento establecerá un mecanismo que limite la posibilidad de intentar reiteradamente el acceso no autorizado al sistema de información.",
+                    "Telecomunicaciones: La transmisión de datos de carácter personal a través de redes públicas o redes inalámbricas de comunicaciones electrónicas se realizará cifrando dichos datos o bien utilizando cualquier otro mecanismo que garantice que la información no sea inteligible ni manipulada por terceros.",
+                    "Registro de accesos: De cada intento de acceso se guardarán, como mínimo, la identificación del usuario, la fecha y hora en que se realizó, el fichero accedido, el tipo de acceso y si ha sido autorizado o denegado."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 12,
+                questionText: "Señale la respuesta correcta, según la Ley Orgánica 15/1999, el Director de la Agencia de Protección de Datos es nombrado de entre:",
+                options: [
+                    "Los miembros del Consejo Consultivo, mediante Orden Ministerial, y su mandato es de 4 años.",
+                    "Los miembros del Consejo Consultivo, mediante Real Decreto, y su mandato es de 4 años.",
+                    "Los miembros del Consejo Asesor del Ministerio de Justicia, mediante Orden Ministerial, y su mandato es de 5 años.",
+                    "Los miembros del Consejo de Gobierno, mediante Real Decreto, y su mandato es de 5 años."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 13,
+                questionText: "Según se establece en el artículo 39 de la Ley Orgánica 15/1999, serán objeto de inscripción en el Registro General de Protección de Datos, los datos relativos a los ficheros que sean necesarios para el ejercicio de los derechos de:",
+                options: [
+                    "Información, actualización, cancelación, sustitución y oposición.",
+                    "Eliminación, acceso, rectificación, cancelación y omisión.",
+                    "Eliminación, acceso, rectificación, cancelación y sustitución.",
+                    "Información, acceso, rectificación, cancelación y oposición."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 14,
+                questionText: "Según se establece en la Ley 15/1999, en su artículo 31 acerca del censo promocional, indique cuál es el plazo de vigencia del uso de cada lista del censo promocional tal que concluido dicho plazo la lista perderá su carácter de fuente de acceso público:",
+                options: [
+                    "6 meses.",
+                    "1 año.",
+                    "2 años.",
+                    "5 años."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 15,
+                questionText: "La dirección electrónica habilitada para la práctica de notificaciones regulada en el Real Decreto 1671/2009 por el que se desarrolla parcialmente la Ley 11/2007, tendrá vigencia indefinida excepto cuando no se utilice para la práctica de notificaciones por el transcurso de:",
+                options: [
+                    "36 meses.",
+                    "60 meses.",
+                    "30 meses.",
+                    "24 meses."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 16,
+                questionText: "Según el artículo 18 del Real Decreto 1671/2009, sobre certificados de sede electrónica de la Administración General del Estado y de sus organismos públicos vinculados o dependientes, ¿cuál de los siguientes NO es uno de los contenidos mínimos a incluir en un certificado electrónico de sede electrónica?",
+                options: [
+                    "Nombre descriptivo de la sede electrónica.",
+                    "Número de identificación fiscal de la entidad suscriptora.",
+                    "Descripción del tipo de certificado, con la denominación «sede electrónica».",
+                    "Dirección física de la entidad suscriptora."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 17,
+                questionText: "En el Real Decreto 3/2010, Esquema Nacional de Seguridad, se define como \"la propiedad o característica consistente en que las actuaciones de una entidad pueden ser imputadas exclusivamente a dicha entidad\" a la:",
+                options: [
+                    "Confidencialidad.",
+                    "Integridad.",
+                    "Autenticidad.",
+                    "Trazabilidad."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 18,
+                questionText: "Respecto al sistema de código seguro de verificación, según el Real Decreto 1671/2009, ¿cuál de las siguientes es una afirmación verdadera?",
+                options: [
+                    "Garantiza la confidencialidad de un documento.",
+                    "Garantiza la posibilidad de verificar el documento que tenga asociado por tiempo ilimitado.",
+                    "Su aplicación requerirá una orden ministerial del Director General del organismo público.",
+                    "Garantiza su vinculación con el documento generado y con el firmante."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 19,
+                questionText: "Según el artículo 40 de la Ley 11/2007 de acceso electrónico de los ciudadanos a los Servicios Públicos, sobre el Comité Sectorial de administración electrónica, ¿cuál de las siguientes opciones es una función de dicho órgano?",
+                options: [
+                    "Desarrollar la normativa en materia de administración electrónica a nivel nacional.",
+                    "Asegurar la compatibilidad e interoperabilidad de los sistemas y aplicaciones empleados por las Administraciones Públicas.",
+                    "Elaborar un informe anual sobre el nivel de avance de la administración electrónica a nivel nacional, autonómico y municipal.",
+                    "Estimular el crecimiento en el empleo de la administración electrónica por parte de ciudadanos y empresas."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque I",
+                questionNumber: 20,
+                questionText: "Señale la opción correcta dentro de la siguiente relación de infraestructura/servicio común de la Administración y su definición:",
+                options: [
+                    "ORVE - Solución integral de registro para organismos públicos, que cubre la gestión tanto de sus oficinas de registro como de las unidades tramitadoras destinatarias de la documentación.",
+                    "Sistema de información REINA - proporciona un Inventario unificado y común a toda la Administración de las unidades orgánicas / organismos públicos, sus oficinas asociadas y unidades de gestión económica presupuestaria, facilitando el mantenimiento distribuido y corresponsable de la información.",
+                    "GEISER Permite a las diferentes Administraciones Públicas consultar y gestionar los apoderamientos otorgados por un ciudadano para sus procedimientos.",
+                    "CIRCABC Herramienta de trabajo en grupo basada en tecnologías de Internet y en software de fuentes abiertas desarrollada por el Programa ISA de la Comisión de la Comunidad Europea y dirigido a necesidades de las Administraciones Públicas, Ciudadanos y Empresas."
+                ],
+                correctAnswer: "D"
+            },
+
+            // Bloque II (Questions start from 21)
+            {
+                block: "Bloque II",
+                questionNumber: 21,
+                questionText: "La velocidad del USB 3.0 es:",
+                options: [
+                    "15 veces superior a la del USB 2.0.",
+                    "Similar a la del USB 2.0.",
+                    "10 veces superior a la del USB 2.0.",
+                    "480 Mbps."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 22,
+                questionText: "Globus Toolkit es:",
+                options: [
+                    "Un framework de IBM que proporciona características para desarrollar, hacer debug y testear aplicaciones AJAX.",
+                    "Un conjunto de herramientas open source para construir grids computacionales.",
+                    "Un framework que contiene APIs y widgets para facilitar el desarrollo de aplicaciones Web que utilicen tecnología AJAX y programación paralela.",
+                    "Una librería Python, modular y extensible, que ofrece una API para desarrollar aplicaciones distribuidas."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 23,
+                questionText: "La máquina virtual usada por el sistema operativo Android en versiones anteriores a la 4.4, se denomina:",
+                options: [
+                    "ART.",
+                    "Dalvik.",
+                    "Java VM.",
+                    "APK."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 24,
+                questionText: "En un sistema de memoria paginada, la tabla donde se almacena la correspondencia entre direcciones lógicas y físicas, se denomina:",
+                options: [
+                    "TLB: Translation Lookaside Buffer.",
+                    "TTL: Translation Table Location.",
+                    "ATL: Address Translation Lookup.",
+                    "ATB: Address Table Buffer."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 25,
+                questionText: "¿Cuál de las siguientes opciones NO corresponde a un sistema de ficheros empleado en Sistemas Operativos GNU/Linux?",
+                options: [
+                    "ext3",
+                    "mini fs",
+                    "ReiserFS",
+                    "Reiser4"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 26,
+                questionText: "El algoritmo de Peterson corresponde a:",
+                options: [
+                    "Un algoritmo de ordenación de listas.",
+                    "Un método de ordenación en un sistema distribuido.",
+                    "Una política de sustitución de páginas al producirse un fallo de página.",
+                    "Una solución al problema de la exclusión mutua."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 27,
+                questionText: "¿Cuál de los siguientes comandos Unix impide que el archivo de nombre \"miarchivo\" sea modificado y ejecutado por el grupo al que pertenece dicho archivo?",
+                options: [
+                    "chmod 766 miarchivo",
+                    "chmod a+xw miarchivo",
+                    "chmod 644 miarchivo",
+                    "chmod u=rwx go=wx miarchivo"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 28,
+                questionText: "¿Para qué se utiliza el servicio SMB de Windows?",
+                options: [
+                    "Para configurar un proxy-inverso en la salida a Internet.",
+                    "Para realizar backups remotos y cronificados.",
+                    "Para compartir archivos e impresoras.",
+                    "Para configurar redes wifi."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 29,
+                questionText: "La expresión regular ^[9|6][0-9]8$ corresponde a números de ...",
+                options: [
+                    "Ocho cifras que empiecen por 9 o por 6.",
+                    "Nueve cifras que empiecen por 9 o por 6.",
+                    "Ocho cifras que no empiecen por 9 ni por 6.",
+                    "Nueve cifras que no empiecen por 9 ni por 6."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 30,
+                questionText: "En Android, las aplicaciones se distribuyen en paquetes:",
+                options: [
+                    "yum",
+                    "apk",
+                    "ipa",
+                    "gpm"
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 31,
+                questionText: "Se quiere incluir una base de datos local en una aplicación para móviles Android. ¿Cuál de las siguientes sería la más adecuada?",
+                options: [
+                    "SQLite.",
+                    "Oracle Pocket.",
+                    "SQL Server compact.",
+                    "MySQL micro edition."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 32,
+                questionText: "¿Cuál es la dirección de red de una dirección IP: 192.168.30.200 cuya máscara es 255.255.255.128?",
+                options: [
+                    "192.168.30.0",
+                    "192.168.30.128",
+                    "192.168.30.255",
+                    "192.168.30.200"
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 33,
+                questionText: "El comando utilizado en el lenguaje de programación Objective-C para imprimir mensajes en pantalla es:",
+                options: [
+                    "NSLog",
+                    "WRLog",
+                    "Writeln",
+                    "Printline"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 34,
+                questionText: "¿Cuál de los siguientes lenguajes de programación utiliza las instrucciones begin/rescue/ensure/end para tratar las excepciones?",
+                options: [
+                    "Perl.",
+                    "Python.",
+                    "Ruby.",
+                    "PHP."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 35,
+                questionText: "Apache Cassandra es:",
+                options: [
+                    "Un servidor de comunicaciones.",
+                    "Una base de datos NoSQL distribuida.",
+                    "Un sistema de claves privadas.",
+                    "Un protocolo de comunicaciones."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 36,
+                questionText: "Señale la respuesta INCORRECTA relativa a una arquitectura basada en servicios web:",
+                options: [
+                    "WS-Security permite crear servicios web seguros.",
+                    "SOAP es un protocolo usado para el intercambio de información en un entorno descentralizado y distribuido basado en XML a través de servicios web.",
+                    "AXIS2 es un motor de servicios web desarrollado por Apache. Una de las implementaciones disponible está realizada en lenguaje C.",
+                    "Los lenguajes de desarrollo distintos a Java poseen dificultad para integrarse con los Servicios Web."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 37,
+                questionText: "Señale qué tecnología XML semántica puede ser usada para la interoperabilidad e intercambio de mensajes electrónicos de negocio, mensajes B2B:",
+                options: [
+                    "ecXML",
+                    "ebXML",
+                    "WSDL",
+                    "Xerces"
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 38,
+                questionText: "Una red TCP usa el protocolo de ventana deslizante como mecanismo de control de flujo. Supongamos que se establece el tamaño de la ventana en 4 y los paquetes se numeran del 1 en adelante. Con estas condiciones, el emisor podrá enviar al receptor el paquete número 5:",
+                options: [
+                    "Únicamente cuando reciba el ACK del paquete 4.",
+                    "Cuando haya recibido al menos dos ACK.",
+                    "Cuando reciba cualquier ACK.",
+                    "Cuando se cumpla el timeout de envío del paquete 1."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 39,
+                questionText: "¿Cuál de las siguientes respuestas NO se considera una de las cuatro primitivas de servicio que define el modelo OSI de ISO para la comunicación entre niveles?",
+                options: [
+                    "Request.",
+                    "Invoke.",
+                    "Response.",
+                    "Confirmation."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 40,
+                questionText: "Señale qué número de puerto debería usarse si se quiere configurar un servicio para la autenticación de redes Kerberos:",
+                options: [
+                    "88",
+                    "42",
+                    "74",
+                    "105"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 41,
+                questionText: "¿Cuál de los siguientes conjuntos está integrado en su totalidad por etiquetas que han sido incorporadas como novedad en el lenguaje HTML5?",
+                options: [
+                    "<header>, <article> y <bdi>",
+                    "<head>, <foot> y <nav>",
+                    "<canvas>, <img> y <audio>",
+                    "<video>, <canvas> y <bdo>"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 42,
+                questionText: "En relación a OpenDocument (ODF), señale la respuesta FALSA:",
+                options: [
+                    "Es un formato de archivo abierto y estándar para el almacenamiento de documentos tales como hojas de cálculo, textos, gráficas y presentaciones.",
+                    "El tipo MIME para documentos texto de OpenDocument es: application/vnd.openxmlformats-officedocument.wordprocessingml.document.",
+                    "Está basado en XML.",
+                    "Las extensiones de los archivos incluyen: odt para documentos de texto, ods para hojas de cálculo, odp para presentaciones y odb para bases de datos."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 43,
+                questionText: "Según Magerit v3, ¿qué concepto se correspondería con la definición: \"proceso específico cuyo objetivo es legitimar al sistema para formar parte de sistemas más amplios\"?",
+                options: [
+                    "Auditoría.",
+                    "Acreditación.",
+                    "Certificación.",
+                    "Evaluación."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 44,
+                questionText: "Señale de las siguientes cuál es una técnica específica dentro de un proyecto de análisis y gestión de riesgos, según la guía de Técnicas de MAGERIT v3:",
+                options: [
+                    "Sesiones de trabajo.",
+                    "Valoraciones Delphi.",
+                    "Histogramas.",
+                    "Árboles de ataque."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 45,
+                questionText: "Indique cuál de los siguientes es un documento mínimo reclamado por la ISO 22301 de gestión de la continuidad del negocio:",
+                options: [
+                    "Procedimiento para el control de la información documentada.",
+                    "Estructura de respuesta a incidentes.",
+                    "Los contratos y acuerdos de nivel de servicio con los proveedores.",
+                    "Formación y plan de sensibilización."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 46,
+                questionText: "Indique la afirmación FALSA respecto a VoiceXML:",
+                options: [
+                    "Es un lenguaje basado en XML.",
+                    "VoiceXML tiene como origen el Phone Markup Language (PML) de AT&T.",
+                    "Es una recomendación de la W3C.",
+                    "La última versión es la VoiceXML 2.0."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 47,
+                questionText: "¿Qué tipo de ataque es un \"ataque smurf\"?",
+                options: [
+                    "Denegación de servicio.",
+                    "Hombre intermedio.",
+                    "Fuerza Bruta.",
+                    "Ingeniería social."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 48,
+                questionText: "Señale cuál de las siguientes respuestas NO se considera una de las libertades esenciales que cumple el software libre:",
+                options: [
+                    "Libertad para ejecutar y usar el software con la única restricción que se debe especificar y aprobar su propósito.",
+                    "Libertad para estudiar el programa y modificarlo, adaptándolo a sus necesidades.",
+                    "Libertad de distribuir copias.",
+                    "Libertad de modificar el programa y liberar las modificaciones al público."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 49,
+                questionText: "¿Cuál de las siguientes licencias NO se considera copyleft robusto?",
+                options: [
+                    "EUPL",
+                    "GPL",
+                    "LGPL",
+                    "BSD"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque II",
+                questionNumber: 50,
+                questionText: "Señale cuáles de los siguientes formatos de archivo en la actualidad NO se consideran de formato abierto de texto para documentos:",
+                options: [
+                    "PDF",
+                    "EPUB",
+                    "RTF",
+                    "FLAC"
+                ],
+                correctAnswer: "A"
+            },
+
+            // Bloque III
+            {
+                block: "Bloque III",
+                questionNumber: 1,
+                questionText: "¿Cuál de las siguientes NO es una característica del modelo de ciclo de vida en cascada?",
+                options: [
+                    "Fue un modelo definido por Winston W. Royce.",
+                    "Es un modelo que permite reaccionar a los cambios en los requisitos.",
+                    "Funciona bien en productos maduros y equipos débiles.",
+                    "Hasta las etapas finales del proyecto no ofrece una versión operativa del programa."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 2,
+                questionText: "¿Cuál de las siguientes opciones incluye todas las fases del modelo de ciclo de vida RAD (Rapid Application Development)?",
+                options: [
+                    "Modelado de provisión, Modelado de entidades, Modelado de relaciones, Generación de aplicaciones y Pruebas de entrega.",
+                    "Modelado de gestión, Modelado de entidades, Modelado de relaciones, Generación de aplicaciones y Pruebas de entrega.",
+                    "Modelado de gestión, Modelado de datos, Modelado de procesos, Generación de aplicaciones y Pruebas de entrega.",
+                    "Modelado de gestión, Modelado de datos, Generación de aplicaciones, Pruebas de desarrollo y Pruebas de entrega."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 3,
+                questionText: "Con respecto a la metodología ágil Kanban, ¿cuál de las siguientes afirmaciones es correcta?",
+                options: [
+                    "Las iteraciones deben ser de tiempo fijo siempre.",
+                    "No permite trabajar en múltiples productos simultáneamente.",
+                    "Prescribe los roles siguientes de modo obligatorio: dueño del producto y equipo.",
+                    "Limita el número de elementos al mismo tiempo en un estado del flujo de trabajo."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 4,
+                questionText: "Una práctica frecuente asociada al modelo de Proceso Unificado de Desarrollo es el \"timeboxing\", ¿en qué consiste?.",
+                options: [
+                    "Enfoque para identificar casos de uso y determinar el nivel de granularidad apropiado.",
+                    "Modelo de planificación adaptativa para ganar tiempo.",
+                    "Asignación de un periodo de tiempo fijo para la ejecución de una iteración.",
+                    "Utilizar casos de usos temporales para captar requisitos funcionales."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 5,
+                questionText: "En el modelo de proceso Scrum para desarrollo ágil de sistemas software, ¿qué es el backlog de producto?",
+                options: [
+                    "La lista detallada de requisitos seleccionados para implementación en un Sprint.",
+                    "Un gráfico que muestra el trabajo pendiente en un Sprint.",
+                    "La lista priorizada de requisitos de alto nivel pendientes de implementación.",
+                    "La tabla con los requisitos ya implementados."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 6,
+                questionText: "¿Cuál de las siguientes NO es una metodología de desarrollo?",
+                options: [
+                    "MERISE.",
+                    "SDM (Structured Development Method).",
+                    "RUP (Rational Unified Process).",
+                    "SCRUM."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 7,
+                questionText: "En el PERT, el tiempo last del último suceso:",
+                options: [
+                    "Es siempre cero.",
+                    "Es igual a su tiempo early.",
+                    "Es mayor que su tiempo early.",
+                    "Es menor que su tiempo early."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 8,
+                questionText: "En Métrica 3, el \"técnico de sistemas\" está incluido en el perfil:",
+                options: [
+                    "Consultor.",
+                    "Analista.",
+                    "Programador.",
+                    "Jefe de Proyecto."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 9,
+                questionText: "¿Cuál de las siguientes reglas puede aplicarse para determinar el esfuerzo total de un proyecto en la fase de estimación del mismo?",
+                options: [
+                    "Regla del 80-20.",
+                    "Regla del 30-40-30.",
+                    "Regla del 40-20-40.",
+                    "Regla del 20-60-20."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 10,
+                questionText: "En Métrica v3 las actividades de la Interfaz de Gestión de Proyectos se dividen en los siguientes grupos:",
+                options: [
+                    "Actividades de Comienzo del Proyecto, Actividades de Seguimiento y Control y Actividades de Aceptación.",
+                    "Actividades de Planificación del Proyecto, Actividades de Control de proyectos y Actividades de Aceptación.",
+                    "Actividades de Inicio del Proyecto, Actividades de Seguimiento y Control y Actividades de Finalización.",
+                    "Actividades de Inicio del Proyecto, Actividades de Control de Calidad y Actividades de Cierre."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 11,
+                questionText: "Dentro de la actividad Inicio del Plan de Sistemas de Información (PSI) de Métrica v3, indique los participantes y técnicas/prácticas correctas para la tarea Análisis de la necesidad del PSI (PSI 1.1):",
+                options: [
+                    "Comité de Dirección y Sesiones de trabajo.",
+                    "Jefe de Proyecto del PSI y Sesiones de trabajo.",
+                    "Directores de Usuarios y Catalogación.",
+                    "Comité de Dirección y Factores críticos de éxito."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 12,
+                questionText: "Indicar cuál de los siguientes diagramas se emplea para capturar los requisitos funcionales de un sistema y expresarlos desde el punto de vista del usuario según Métrica v3:",
+                options: [
+                    "Diagrama de secuencia.",
+                    "Diagrama de colaboración.",
+                    "Diagrama de clases.",
+                    "Diagrama de Casos de Uso."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 13,
+                questionText: "Señale en qué nivel de aislamiento, definido en ANSI/ISO SQL, puede ocurrir el problema de lecturas sucias en un sistema gestor de bases de datos relacional (SGDBR):",
+                options: [
+                    "Serializable.",
+                    "Repeatable Read (lecturas repetibles).",
+                    "Read Committed (lecturas comprometidas).",
+                    "Read Uncommitted (lecturas no comprometidas)."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 14,
+                questionText: "¿Cuál de las siguientes afirmaciones sobre los Diagramas de Flujo de Datos (DFD) es correcta?",
+                options: [
+                    "Son elementos propios de este diagrama: entidades externas, procesos, almacenes de datos y flujos de datos.",
+                    "Son elementos propios de este diagrama: entidades, atributos, relaciones y jerarquías.",
+                    "Son elementos propios de este diagrama: diccionarios de datos, módulos, procesos y flujos.",
+                    "Se trata de una técnica que se emplea en la fase de Diseño del Sistema de Información (DSI) de Métrica v3."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 15,
+                questionText: "En la Interfaz de Gestión de Proyectos de MÉTRICA v3, señale entre los siguientes un producto correcto de salida que tiene la tarea \"GPI 1.1, identificación de elementos a desarrollar\" en el caso de desarrollo estructurado:",
+                options: [
+                    "Planificación General del Proyecto: Estrategia de desarrollo estructurado.",
+                    "Catálogo de productos a generar.",
+                    "Catálogo de clases.",
+                    "Catálogo de entidades."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 16,
+                questionText: "Según Métrica v3, los flujos de datos de tipo diálogo, que comunican procesos con almacenes en un DFD (diagrama de flujo de datos) son aquellos que:",
+                options: [
+                    "Representan la utilización de los valores de uno o más campos de un almacén o la comprobación de que los valores de los campos seleccionados cumplen unos criterios determinados.",
+                    "Representan una consulta y una actualización entre el proceso y el almacén.",
+                    "Representan la alteración de los datos de un almacén como consecuencia de la creación de un nuevo elemento, por eliminación o modificación de otros ya existentes.",
+                    "Representan un trigger programado entre el proceso y el almacén."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 17,
+                questionText: "Señale cuál de las siguientes afirmaciones sobre la arquitectura ANSI/SPARC es correcta:",
+                options: [
+                    "El nivel externo también recibe el nombre de nivel físico.",
+                    "El nivel interno también recibe el nombre de nivel lógico.",
+                    "El nivel externo define los datos que se almacenan en la base de datos y las relaciones entre ellos.",
+                    "El nivel externo contiene las vistas externas de la base de datos y permite ver a cada tipo de usuario sólo aquella parte del esquema que es de su interés."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 18,
+                questionText: "Indique cuál de las siguientes afirmaciones sobre el proceso de creación del Modelo Relacional es cierta:",
+                options: [
+                    "El proceso de normalización de bases de datos consiste en aplicar una serie de reglas a las relaciones obtenidas tras el paso del Diccionario de Flujo de Datos (DFD) al Modelo Relacional.",
+                    "Una clave compuesta es aquella columna que siendo clave primaria de una tabla, se incluye como columna dependiente en otra tabla.",
+                    "Una clave ajena es aquella que podría haber sido seleccionada como clave primaria de la tabla por identificar de forma única a la fila a la que pertenece, pero no lo ha sido.",
+                    "Una clave alternativa es aquella que podría haber sido seleccionada como clave primaria de la tabla por identificar de forma única a la fila a la que pertenece, pero no lo ha sido."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 19,
+                questionText: "¿Cuál de las siguientes afirmaciones sobre el proceso de normalización del Modelo Relacional es cierta?",
+                options: [
+                    "Existen sólo un total de 3 Formas Normales: 1FN, 2FN y 3FN.",
+                    "Una tabla está en 2FN cuando se demuestra que existe dependencia funcional del resto de columnas de la tabla con respecto a la clave primaria.",
+                    "Una tabla está en 1FN cuando se demuestra que existe dependencia funcional completa del resto de columnas de la tabla con respecto a la clave primaria.",
+                    "Una tabla que está en 1FN tiene el máximo grado de normalización y, por tanto, cumple también la Segunda y Tercera Forma Normal."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 20,
+                questionText: "En la teoría de bases de datos relacionales, cuanto más alta sea la forma normal aplicable a una tabla:",
+                options: [
+                    "Menor será la cohesión relacional.",
+                    "Menor será el acoplamiento relacional.",
+                    "Menos vulnerable será a inconsistencias y anomalías.",
+                    "Más vulnerable será a inconsistencias y anomalías, pero será más eficiente."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 21,
+                questionText: "¿Cuál de las siguientes afirmaciones sobre los Tipos Abstractos de Datos (TAD) es correcta?",
+                options: [
+                    "Los TAD describen datos simples abstractos en función de las operaciones que pueden efectuar, dejando a un lado su implementación.",
+                    "Las listas son TAD caracterizados por incluir elementos homogéneos relacionados linealmente, con un antecesor y un sucesor, a excepción del primer y último elemento, salvo en el caso de listas circulares.",
+                    "Los árboles son TAD en los que cada nodo se caracteriza por su grado de entrada (número de arcos que llegan al nodo) y su grado de salida (número de arcos que salen del nodo). Existen árboles dirigidos y no dirigidos.",
+                    "Dado un grafo, el orden del mismo es el número mayor de arcos o aristas de sus nodos."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 22,
+                questionText: "Señale la afirmación INCORRECTA en relación a los árboles de búsqueda AVL:",
+                options: [
+                    "Son un tipo de árbol de búsqueda binario.",
+                    "Los árboles AVL menos profundos son los árboles de Fibonacci.",
+                    "Para cada uno de los nodos, la diferencia de altura entre sus dos subárboles no puede ser superior a uno.",
+                    "Un árbol de Fibonacci es el árbol AVL más desbalanceado permitido."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 23,
+                questionText: "¿Cuál de los siguientes algoritmos de ordenación consiste en recorrer la lista comparando y ordenando los elementos adyacentes de dos en dos?",
+                options: [
+                    "Burbuja (BubbleSort).",
+                    "Selección.",
+                    "Inserción.",
+                    "Rápido (QuickSort)."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 24,
+                questionText: "En teoría de colas, el modelo de disciplina de cola denominado RSS se refiere a que:",
+                options: [
+                    "Se atiende primero al cliente que antes haya llegado.",
+                    "Selecciona a los clientes de manera aleatoria, de acuerdo a algún procedimiento de prioridad o a algún otro orden.",
+                    "Sirve a los clientes igualmente, se reparte un espacio de tiempo a cada cliente.",
+                    "Se atiende primero al cliente que ha llegado el último."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 25,
+                questionText: "Empleando el algoritmo más simple de la burbuja (Bubble Sort), en caso de querer ordenar un array de 10 elementos, ¿cuántas pasadas sería necesario realizar?",
+                options: [
+                    "10",
+                    "5",
+                    "11",
+                    "9"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 26,
+                questionText: "De las siguientes herramientas de teleaprendizaje para formación de usuarios y personal técnico, indique cuál es de software propietario:",
+                options: [
+                    "Catedr@.",
+                    "Dokeos.",
+                    "Moodle.",
+                    "Claroline."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 27,
+                questionText: "En relación a las pruebas de integridad de software, si hablamos de integración tipo sandwich nos referimos a que:",
+                options: [
+                    "Los módulos se integran en grupos que constituyen una funcionalidad identificada.",
+                    "Se identifica el nivel de riesgo asociado a cada módulo, los de riesgo alto se integran primero y los de menor riesgo se integran más tarde.",
+                    "A medida que se integran los módulos, se realizan pruebas para capturar y corregir nuevos errores, es decir, empezando por los componentes que llaman a otros componentes.",
+                    "Primero se integran los módulos de alto nivel y de control y, después, los módulos de bajo nivel. Los módulos intermedios se integran al final."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 28,
+                questionText: "¿Cuál de las siguientes normas define un estándar para pruebas de software?",
+                options: [
+                    "ISO 29781",
+                    "ISO 29621",
+                    "ISO 29382",
+                    "ISO 29119"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 29,
+                questionText: "Señale qué software NO está relacionado con las pruebas del software de aplicaciones web:",
+                options: [
+                    "Badboy.",
+                    "Selenium.",
+                    "Jmeter.",
+                    "Cherokee."
+                ],
+                correctAnswer: "A" // Note: Answer key says A, but exam PDF says "ANULADA" for Q29. Using A as per provided answer key.
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 30,
+                questionText: "Para poder realizar pruebas de caja blanca que realicen cobertura de código, la herramienta que NO se debería usar es:",
+                options: [
+                    "EcIEMMA.",
+                    "eCobertura.",
+                    "Jmeter.",
+                    "Java Code Coverage."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 31,
+                questionText: "El tipo de prueba BigBang es de tipo:",
+                options: [
+                    "Prueba de sistema.",
+                    "Prueba de aceptación.",
+                    "Prueba de rendimiento.",
+                    "Prueba de integración."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 32,
+                questionText: "¿Cuál de los siguientes tipos de diagramas NO está incluido en la categoría de diagramas estructurales que define UML 2?",
+                options: [
+                    "Diagrama de clases.",
+                    "Diagrama de objetos.",
+                    "Diagrama de despliegue.",
+                    "Diagrama de actividades."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 33,
+                questionText: "En el diseño orientado a objetos, la ocultación del estado o de los datos miembro de un objeto, de forma que sólo es posible modificar los mismos mediante los métodos definidos para dicho objeto, se conoce como:",
+                options: [
+                    "Abstracción.",
+                    "Polimorfismo.",
+                    "Herencia.",
+                    "Encapsulamiento."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 34,
+                questionText: "La especificación \"Java Platform, Enterprise Edition 7 (Java EE 7)\" se encuentra definida en el JSR (Java Specification Request):",
+                options: [
+                    "JSR 342.",
+                    "JSR 366.",
+                    "JSR 324.",
+                    "JSR 224."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 35,
+                questionText: "Elija la respuesta correcta respecto Java EE 7:",
+                options: [
+                    "Para crear un nuevo servlet se debe invocar al procedimiento init ().",
+                    "Para destruir un servlet se debe invocar al método destroy().",
+                    "La clase ServletConfig sirve para pasarle información al servlet durante su inicialización.",
+                    "La clase ServletSession proporciona a las aplicaciones las herramientas para la gestión de la sesión."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 36,
+                questionText: "Al conjunto de documentos que definen patrones de diseño y prácticas recomendadas en la creación de aplicaciones utilizando Java Enterprise Edition se denomina:",
+                options: [
+                    "Java BluePrints.",
+                    "Java Specification Request.",
+                    "Java Community Process.",
+                    "Java Pattern Spec."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 37,
+                questionText: "Los proveedores de datos .NET Framework incluyen un objeto DbConnection para conectarse al origen de datos. Señale, entre las siguientes clases, cuál NO pertenece a un proveedor de datos incluido en el .NET Framework 4.5:",
+                options: [
+                    "EntityConnection.",
+                    "SqlConnection.",
+                    "SqlCeConnection.",
+                    "OleOdbcConnection."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 38,
+                questionText: "La plataforma informática y de servicios en Internet hospedada en centros de datos administrados o respaldados por Microsoft se llama:",
+                options: [
+                    "Bajoo.",
+                    "Azure.",
+                    "Heroku.",
+                    "Adrive."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 39,
+                questionText: "En .NET, ¿qué es el Managed Extensibility Framework (MEF)?",
+                options: [
+                    "Es una arquitectura que proporciona primitivos asíncronos de paso de aprobación de mensajes sin tipo.",
+                    "Es un modelo extensible de programación, motor y herramientas para generar con rapidez aplicaciones de flujo de trabajo en Windows.",
+                    "Es una biblioteca de clases portable que permite escribir y compilar ensamblados administrados capaces de funcionar en múltiples plataformas de .NET.",
+                    "Es una biblioteca para crear aplicaciones ligeras y extensibles."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 40,
+                questionText: "Señale la respuesta INCORRECTA respecto a la tecnología de Servicios Web REST:",
+                options: [
+                    "JAX-RS es una API Java que proporciona soporte en la creación de servicios web de acuerdo con REST.",
+                    "Jersey es una implementación de referencia de servicios web REST.",
+                    "REST publica recursos que son accesibles a través de métodos http, por ejemplo POST y GET.",
+                    "Los recursos REST permiten sólo 3 operaciones: CREATE, UPDATE y DELETE."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 41,
+                questionText: "WebDAV (RFC 4918) son un conjunto de extensiones para el protocolo HTTP, entre ellos, el método PROPPATCH que sirve para:",
+                options: [
+                    "Crear colecciones.",
+                    "Recuperar propiedades, almacenadas como XML, desde un recurso.",
+                    "Cambiar y borrar múltiples propiedades de un recurso en una simple operación atómica.",
+                    "Desbloquear un recurso."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 42,
+                questionText: "En cuanto a las especificaciones MTOM y XOP, ¿cuál de las siguientes sentencias NO es correcta?",
+                options: [
+                    "XOP es un acrónimo de XML-binary Optimized Packaging.",
+                    "ΜΤΟΜ/ΧΟP son recomendaciones desarrolladas por la IETF.",
+                    "MTOM optimiza la transferencia de datos binarios sobre SOAP.",
+                    "MTOM normalmente usa XOP para serializar el mensaje que contiene datos binarios."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 43,
+                questionText: "La herramienta que incluye JAXB para convertir un XML Schema a representaciones de clases Java se denomina:",
+                options: [
+                    "jconverter",
+                    "schemagen",
+                    "xjc",
+                    "jaxbws"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 44,
+                questionText: "Señale cómo se clasifican los niveles en las organizaciones según se establece en el Modelo de Madurez de la Ingeniería del Software ISO/IEC 15504-SPICE para la evaluación y mejora de las organizaciones, en la representación continua del modelo que mide la capacidad:",
+                options: [
+                    "En 6 niveles, desde el cero al cinco.",
+                    "En 5 niveles, desde el uno al cinco.",
+                    "En 6 niveles, desde el uno al seis.",
+                    "En 5 niveles, desde el cero al cuatro."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 45,
+                questionText: "COCOMO II para estimación de proyectos de software está compuesto de 3 modelos, que son:",
+                options: [
+                    "Modelo de Análisis de la Aplicación, Modelo de Construcción Preliminar y Modelo Post-Arquitectura.",
+                    "Modelo de Planificación, Modelo de Construcción y Modelo de Arquitectura.",
+                    "Modelo de Composición de la Estimación, Modelo de Construcción y Modelo de Arquitectura Preliminar.",
+                    "Modelo de Composición de Aplicación, Modelo de Diseño Preliminar y Modelo Post-Arquitectura."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 46,
+                questionText: "El ciclo de Deming es una estrategia de mejora continua de la calidad en la administración de una organización, los 4 pasos de la estrategia son:",
+                options: [
+                    "Plan, Do, Construct, Approval (Planificar, Hacer, Construir, Aprobar).",
+                    "Plan, Do, Check, Act (Planificar, Hacer, Verificar, Actuar).",
+                    "Plan, Develop, Control, Anticipate (Planificar, Desarrollar, Controlar, Tener previsto).",
+                    "Plan, Deduct, Control, Approval (Planificar, Deducir, Controlar, Aprobar)."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 47,
+                questionText: "Las normas ISO/IEC 2501n pertenecientes a la familia de normas ISO/IEC 25000:",
+                options: [
+                    "Incluyen un modelo de referencia de la medición de la calidad del producto, definiciones de medidas de calidad y guías para su aplicación.",
+                    "Presentan modelos de calidad detallados incluyendo características para calidad interna, externa y en uso del producto software.",
+                    "Definen todos los modelos, términos y definiciones comunes referenciados por todas las otras normas de la familia 25000.",
+                    "Ayudan a especificar requisitos de calidad que pueden ser utilizados en el proceso de elicitación."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 48,
+                questionText: "Indique el principio de la WCAG 2.0 asociado a la pauta \"maximizar la compatibilidad\":",
+                options: [
+                    "Operable.",
+                    "Perceptible.",
+                    "Robustez.",
+                    "Comprensible."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 49,
+                questionText: "Según la definición de DataWarehouse de William Inmon, señale cuál de las siguientes opciones NO es una característica de este tipo de sistemas:",
+                options: [
+                    "Integrado: los datos deben integrarse en una estructura consistente.",
+                    "Temático: los datos se organizan por temas.",
+                    "Histórico: una variable puede tomar distintos valores en el tiempo.",
+                    "Volátil: los datos no son permanentes en el sistema."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III",
+                questionNumber: 50,
+                questionText: "De acuerdo a las operaciones que se requieran desarrollar, los Data Marts pueden adoptar diversas arquitecturas, señale la característica correspondiente a la arquitectura Top-Down:",
+                options: [
+                    "Se definen previamente los Data Marts (DM) y luego se integran en un Data Warehouse (DW) centralizado. Los DM se cargan a través de procesos ETL.",
+                    "Se define previamente un DW y un DM principal que se cargan a través de procesos ETL. EI DW alimentará a otros DW, y el DM principal alimentará a otros DM.",
+                    "Se define una base de datos (BD) principal que se carga mediante procesos ETL desde todas las BD corporativas, esta BD alimenta en exclusiva a todos los DM y DW existentes.",
+                    "Primero se define el DW, el cual es cargado a través de procesos ETL y luego este alimenta a los diferentes DM. Cada DM recibirá los datos que correspondan al tema/departamento que traten."
+                ],
+                correctAnswer: "D"
+            },
+            // Bloque III - Preguntas de reserva
+            {
+                block: "Bloque III (Reserva)",
+                questionNumber: 1,
+                questionText: "¿Cuál de las siguientes respuestas incluye un estándar correcto del proceso de software?",
+                options: [
+                    "IEEE 29148:2011. Ingeniería de Sistemas y Software - Procesos de ciclo de vida - Ingeniería de requisitos.",
+                    "IEEE 930:1998. Prácticas recomendadas para la Especificación de Requisitos del Software (ERS).",
+                    "IEEE 1216:1987. Prácticas recomendadas para la Especificación del Diseño del Software.",
+                    "IEEE 830: 2004. Prácticas recomendadas para la Especificación de Requisitos del Software (ERS)."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque III (Reserva)",
+                questionNumber: 2,
+                questionText: "De las estrategias de diseño propuestas por Métrica v3 para obtener el diagrama de estructura ¿en qué se diferencian el análisis de transformación y el análisis de transacción?",
+                options: [
+                    "No existe ninguna diferencia, ambas son estrategias de diseño que se aplican a los DFD.",
+                    "El análisis de transformación se aplica cuando el DFD realiza modificaciones independientemente de la entrada y la salida, mientras que el análisis de transacción se aplica cuando en un DFD en función del flujo de llegada se realiza la elección de uno o más flujos de información.",
+                    "El análisis de transacción se aplica cuando el DFD realiza modificaciones independientemente de la entrada y la salida, mientras que el análisis de transformación se aplica a los DFD cuando en función del flujo de llegada se realiza la elección de uno o más flujos de información.",
+                    "El análisis de transacción se centra en los resultados del diagrama mientras que el análisis de transformación se centra en cómo se realizan dichos cambios."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque III (Reserva)",
+                questionNumber: 3,
+                questionText: "Señale la respuesta FALSA acerca de la tecnología Java Web Start:",
+                options: [
+                    "El software de Java Web Start permite descargar y ejecutar aplicaciones Java desde la Web.",
+                    "Garantiza que se está ejecutando la última versión de la aplicación.",
+                    "Incluido en el JDK desde la versión 6, permitiendo instalar aplicaciones a través de URLs con JMLP (Java Main Launch Protocol).",
+                    "Permite desplegar fácilmente aplicaciones standalone de escritorio."
+                ],
+                correctAnswer: "C"
+            },
+
+            // Bloque IV
+            {
+                block: "Bloque IV",
+                questionNumber: 1,
+                questionText: "El comando ping es el acrónimo de:",
+                options: [
+                    "Packet Internet Group.",
+                    "Packet Internet Gangway.",
+                    "Packet Internet Gate.",
+                    "Packet Internet Groper."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 2,
+                questionText: "En un sistema operativo (S.O) con memoria virtual, cuando un proceso en ejecución genera un fallo de página:",
+                options: [
+                    "Se cierran todos los procesos en ejecución ya que es un error grave del sistema operativo.",
+                    "El S.O busca la página en memoria secundaria y la carga en memoria principal.",
+                    "El S.O interrumpe la ejecución del proceso y lo pone en la cola de errores.",
+                    "En un sistema con memoria virtual nunca hay fallos de página."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 3,
+                questionText: "En Linux, guardamos en un fichero llamado log.txt todas las incidencias de una máquina con la siguiente estructura fecha#descIncidencia, ¿qué comando deberíamos usar para contar el número de filas que tienen la palabra \"error\"?",
+                options: [
+                    "grep error log.txt | wc -l",
+                    "grep wc -l error log.txt",
+                    "grep error log.txt | Is -1 | cut -r\"#\" -f2",
+                    "grep cut-r\"#\" -f2|ls -1 | error log.txt"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 4,
+                questionText: "En Linux, la primera partición lógica en el disco duro maestro IDE del canal primario se identifica con:",
+                options: [
+                    "/dev/sda1",
+                    "/dev/hda1",
+                    "/dev/hda5",
+                    "/dev/hda2"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 5,
+                questionText: "Señale entre las siguientes herramientas el gestor de copia de seguridad en línea utilizado por productos de base de datos Oracle:",
+                options: [
+                    "RFID",
+                    "RSYNC",
+                    "RMAN",
+                    "RMON"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 6,
+                questionText: "¿Qué es Navicat Premium en el entorno de administración de bases de datos?",
+                options: [
+                    "Es un conjunto de herramientas multiplataforma de software libre creado para ayudar a los administradores y desarrolladores de aplicaciones de bases de datos Oracle. También suministra soporte para MySQL y PostgreSQL.",
+                    "Es una herramienta de IBM que permite realizar administración remota de bases de datos.",
+                    "Es una base de datos NoSQL distribuida y basada en un modelo de almacenamiento de clave-valor, escrita en Java.",
+                    "Es un administrador de bases de datos propietario, de múltiples conexiones, que permite conectarse a diversas bases de datos como MySQL, MariaDB, SQL Server, etc. Simultáneamente en una sola aplicación."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 7,
+                questionText: "Respecto a la tecnología de almacenamiento InnoDB señale la respuesta afirmativa:",
+                options: [
+                    "InnoDB es una tecnología de almacenamiento de datos de código abierto para la base de datos Oracle.",
+                    "Es la tecnología de almacenamiento de datos por defecto por el sistema administrador de bases de datos relacionales MySQL.",
+                    "Se basa en el código ISAM.",
+                    "No permite las búsquedas denominadas full-text, que para conjuntos de datos grandes son mucho más eficientes."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 8,
+                questionText: "Cuál de las siguientes NO es un tipo de declaración válida en un trabajo basado en JCL:",
+                options: [
+                    "JOB",
+                    "COMMENT",
+                    "EXEC",
+                    "DD"
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 9,
+                questionText: "Señale de los siguientes cuál NO es un cliente Subversion para control de versiones:",
+                options: [
+                    "TortoiseCVS",
+                    "Subversive",
+                    "Sventon",
+                    "Subclipse"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 10,
+                questionText: "Entre las configuraciones de almacenamiento en RAID, NO ofrece redundancia de datos:",
+                options: [
+                    "Todas las configuraciones RAID garantizan la redundancia de la información.",
+                    "RAID 0.",
+                    "RAID 1.",
+                    "RAID 5."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 11,
+                questionText: "Cuál de las siguientes relaciones NO es correcta:",
+                options: [
+                    "1024 Petabytes = 1 Zettabyte.",
+                    "1024 Zettabytes = 1 Yottabyte.",
+                    "1024 Yottabytes = 1 Brontobyte.",
+                    "1024 Brontobytes = 1 Geopbyte."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 12,
+                questionText: "¿Cuál de los siguientes NO es un producto de virtualización?",
+                options: [
+                    "Virtual PC.",
+                    "XEN.",
+                    "Atheros.",
+                    "VirtualBox."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 13,
+                questionText: "Señale qué norma del IEEE normaliza la tecnología Power over Ethernet Plus (PoE +):",
+                options: [
+                    "IEEE 802.3ab",
+                    "IEEE 802.3at",
+                    "IEEE 802.3ap",
+                    "No es un estándar del IEEE sino que es una categoría de EIA/TIA 568b."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 14,
+                questionText: "La dirección canónica de un puente o bridge es la dirección:",
+                options: [
+                    "MAC del interface principal del puente.",
+                    "IP del interface principal del puente.",
+                    "MAC del puente.",
+                    "Del interface de rango numérico más alto del puente."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 15,
+                questionText: "En el ámbito de las redes informáticas, el tiempo que tarda un paquete enviado desde un emisor en volver a este mismo emisor habiendo pasado por el receptor de destino es conocido como:",
+                options: [
+                    "Jitter.",
+                    "Delay.",
+                    "Round Trip delay Time.",
+                    "Latencia."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 16,
+                questionText: "Tamaño destinado en una trama básica Ethernet (IEEE 802.3-2012) para el payload:",
+                options: [
+                    "Tiene un mínimo de 64 Bytes hasta un máximo de 1500 Bytes.",
+                    "Tiene un mínimo de 16 Bytes hasta un máximo de 1000 Bytes.",
+                    "Tiene un mínimo de 46 Bytes hasta un máximo de 1500 Bytes.",
+                    "Tiene un mínimo de 32 Bytes hasta un máximo de 1000 Bytes."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 17,
+                questionText: "Señale cuál de las siguientes NO es una Protocol Data Unit (PDU) del protocolo SNMP v3:",
+                options: [
+                    "SetRequest PDU",
+                    "InformRequest PDU",
+                    "Report PDU",
+                    "GetBackRequest PDU"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 18,
+                questionText: "En una red Ethernet 10BASE-T, un paquete de 1000 KBytes se transmite en:",
+                options: [
+                    "0,81 ms",
+                    "8,19 ms",
+                    "819 ms",
+                    "81,9 ms"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 19,
+                questionText: "El protocolo DHCP (Dynamic Host Configuration Protocol) y DHCPv6 (DHCP for IPv6) están definidos en los documentos:",
+                options: [
+                    "RFC 792 y RFC 4361, respectivamente.",
+                    "RFC 826 y RFC 3315, respectivamente.",
+                    "RFC 1034 y RFC 4361, respectivamente.",
+                    "RFC 2131 y RFC 3315, respectivamente."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 20,
+                questionText: "El puerto del protocolo FTP sobre TLS/SSL (FTPS) es:",
+                options: [
+                    "2121",
+                    "2020",
+                    "980",
+                    "990"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 21,
+                questionText: "¿Cuál de los siguientes protocolos permite conocer en tiempo real si un certificado ha sido o no revocado?",
+                options: [
+                    "OCSP",
+                    "CRL",
+                    "PKCS#10",
+                    "HTTPS"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 22,
+                questionText: "ICMP envía mensajes en forma de datagramas que permiten al conjunto del protocolo TCP/IP realizar entre otras las siguientes funciones, señale la FALSA:",
+                options: [
+                    "Control de flujo.",
+                    "Detección de destinos inalcanzables.",
+                    "Encriptación de paquetes.",
+                    "Pruebas de conectividad."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 23,
+                questionText: "Señale cuál de las siguientes direcciones IP puede ser asignada a un host en la siguiente subred 132.26.41.90/26:",
+                options: [
+                    "132.26.41.128",
+                    "132.26.41.127",
+                    "132.26.41.124",
+                    "132.26.41.55"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 24,
+                questionText: "Indique a qué subred pertenece la siguiente dirección de broadcast 95.25.46.159:",
+                options: [
+                    "95.25.30.128/27",
+                    "95.25.30.128/25",
+                    "95.25.46.128/27",
+                    "95.25.46.128/25"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 25,
+                questionText: "Según RFC 2460, señale de las siguientes cabeceras IPv6 cuál es una cabecera de extensión:",
+                options: [
+                    "Cabecera Siguiente.",
+                    "Fragmento.",
+                    "Límite de Saltos.",
+                    "Longitud de la Carga Útil."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 26,
+                questionText: "¿Cuál es el tipo de la dirección IPv6 ::1/128?",
+                options: [
+                    "Loopback.",
+                    "Indefinida (Unspecified).",
+                    "Multicast.",
+                    "No es válida."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 27,
+                questionText: "Señale cuál de las siguientes afirmaciones es correcta en relación a la MTU (Maximum Transfer Unit) en redes IP, la MTU del camino es el valor de la:",
+                options: [
+                    "suma de todas las MTU entre el receptor y el emisor.",
+                    "media aritmética de todas las MTU entre el receptor y el emisor.",
+                    "MTU más baja de todos los enlaces a lo largo del camino entre nodos receptor y emisor.",
+                    "MTU más alta de todos los enlaces a lo largo del camino entre nodos receptor y emisor."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 28,
+                questionText: "En el protocolo RIP Version 2 (Routing Information Protocol), cuyo algoritmo está basado en vector distancia, el límite máximo de saltos a partir del cual se considera una ruta como inalcanzable es:",
+                options: [
+                    "15 saltos.",
+                    "9 saltos.",
+                    "16 saltos.",
+                    "7 saltos."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 29,
+                questionText: "El PUE (Power Usage effectiveness) es una métrica que trata de determinar la eficiencia energética de un Centro de Proceso de Datos, y se define como el resultado de dividir:",
+                options: [
+                    "La potencia total consumida por el CPD por la potencia consumida en el equipamiento TI (servidores, equipos de comunicaciones, almacenamiento y otros).",
+                    "La potencia total consumida por el CPD por la potencia usada en el equipamiento no TI (climatización, distribución eléctrica, iluminación, etc).",
+                    "La potencia consumida por el equipamiento TI entre la consumida por el equipamiento no TI.",
+                    "La potencia total consumida por el CPD por la potencia consumida en el equipamiento de cómputo (servidores), excluyendo equipos de comunicaciones y almacenamiento."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 30,
+                questionText: "Diferencia entre el protocolo RIP v1 y RIP v2:",
+                options: [
+                    "RIP v1 es un protocolo de estado del enlace mientras que el RIP v2 es de vector de distancia.",
+                    "RIP v1 encapsula los mensajes en paquetes UDP y RIP v2 en paquetes TCP.",
+                    "RIP v1 no admite subredes y RIP v2 si las admite.",
+                    "RIP v1 es un protocolo de encaminamiento dinámico de tipo IGP Y RIP v2 es un protocolo de encaminamiento dinámico de tipo BGP."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 31,
+                questionText: "El tamaño de una cabecera MPLS según la RFC 3032, es de:",
+                options: [
+                    "20 bits.",
+                    "32 bits.",
+                    "48 bits.",
+                    "64 bits."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 32,
+                questionText: "¿Quién elaboró la especificación Transport Layer Security (TLS)?",
+                options: [
+                    "UIT (Unión Internacional de Telecomunicaciones).",
+                    "IETF (Internet Engineering Task Force).",
+                    "Netscape Communications.",
+                    "ETSI (European Telecommunications Standards Institute)."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 33,
+                questionText: "¿Cuál de los siguientes modos de funcionamiento NO se corresponde con el algoritmo de cifrado DES?",
+                options: [
+                    "Modo ECB (Electronic CodeBook).",
+                    "Modo CBC (Cipher Block Chaining).",
+                    "Modo OFB (Output FeedBack).",
+                    "Modo UBC (Uncipher Block Chaining)."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 34,
+                questionText: "Atendiendo únicamente a criterios de eficiencia en tiempo, ¿cuál de los siguientes métodos sería el más eficiente para securizar las comunicaciones entre usuarios dentro de una red?",
+                options: [
+                    "Mediante claves simétricas.",
+                    "Mediante claves asimétricas.",
+                    "Mediante claves simétricas compartidas periódicamente con claves asimétricas.",
+                    "Mediante claves asimétricas compartidas periódicamente con claves simétricas."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 35,
+                questionText: "En el contexto de la web semántica, señale la definición correcta de ontología:",
+                options: [
+                    "Es una especificación explícita de una conceptualización.",
+                    "Es un sistema de clasificación abierto y/o colaborativo basado en etiquetas.",
+                    "Es un conjunto de nombres en el cual todos los nombres son únicos.",
+                    "Es un sistema de clasificación que permite agrupar un conjunto de elementos dentro de unas categorías predefinidas que pueden estar contenidas unas en otras, o relacionadas de cualquier otra manera."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 36,
+                questionText: "La arquitectura de cortafuegos que combina un router con un host bastión y donde el principal nivel de seguridad proviene del filtrado de paquetes se denomina:",
+                options: [
+                    "Screened Subnet.",
+                    "Dual-Homed Host.",
+                    "Router-Homed Host.",
+                    "Screened Host."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 37,
+                questionText: "¿Qué es SPDY?",
+                options: [
+                    "Es un protocolo que reduce el tiempo de carga de sitios web.",
+                    "Storage Protocol Data Yield, protocolo para el almacenamiento de datos según la probabilidad de uso de los mismos.",
+                    "Es una medida de rendimiento de CPU utilizada en entornos de altas prestaciones.",
+                    "Es la evolución de HSUPA con una tasa de transferencia de 5 Gbps reales."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 38,
+                questionText: "¿A qué se refiere el término mashup?",
+                options: [
+                    "Plataforma de desarrollo Web que define la base de datos (MySQL), el servidor Web (Apache), el sistema operativo (Solaris), y el lenguaje de programación (Haskell).",
+                    "Pequeña sección de la ventana del navegador que muestra un mensaje de texto que se desplaza a través de la pantalla.",
+                    "Conjunto de técnicas y recomendaciones para conseguir que una página web aparezca en los primeros resultados de los buscadores para unas determinadas palabras clave (keywords).",
+                    "Aplicaciones web que combinan datos y contenido de distintas fuentes para dar una experiencia de usuario integrada."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 39,
+                questionText: "El lenguaje de consulta sobre RDF que permite hacer búsquedas sobre los recursos de la Web Semántica utilizando distintas fuentes de datos es:",
+                options: [
+                    "OWL",
+                    "RQUERY",
+                    "JQUERY",
+                    "SPARQL"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 40,
+                questionText: "Señale la respuesta correcta según lo que dicta el artículo 79 de la Ley 9/2014, General de Telecomunicaciones:",
+                options: [
+                    "Por la comisión de infracciones muy graves se impondrá al infractor multa por importe de hasta 30 millones de euros.",
+                    "Las infracciones muy graves, en función de sus circunstancias, podrán dar lugar a la inhabilitación hasta de 10 años del operador para la explotación de redes o la prestación de servicios de comunicaciones electrónicas.",
+                    "Por la comisión de infracciones graves se impondrá al infractor multa por importe de hasta 5 millones de euros.",
+                    "Por la comisión de infracciones leves se impondrá al infractor una multa por importe de hasta 50 mil euros."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 41,
+                questionText: "Señala la afirmación INCORRECTA:",
+                options: [
+                    "La tecnología VDSL permite transmisión asimétrica o simétrica.",
+                    "VDSL utiliza 2 canales para transmisión de datos, uno para subida y el otro para descarga.",
+                    "La tecnología HFC es una combinación de cable y fibra óptica.",
+                    "La tecnología FTTH permite que la fibra óptica llegue hasta la casa del cliente."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 42,
+                questionText: "Según la norma de la ITU-T asociada a la recomendación G.726, de Modulación por impulsos codificados diferencial adaptativa, indicar la respuesta correcta que se corresponde con su bit rate (kbit/s):",
+                options: [
+                    "16, 24, 32 ó 40",
+                    "6, 12, 24 ó 48",
+                    "4, 8, 16 ó 40",
+                    "8, 16, 32 ó 64"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 43,
+                questionText: "Uno de los problemas en cuanto a la calidad del servicio (QoS) de una red VoIP es la latencia, señale su definición correcta:",
+                options: [
+                    "Variación en el tiempo de llegada de los paquetes, causada por congestión de red, pérdida de sincronización o por las diferentes rutas seguidas.",
+                    "Es una reflexión retardada de la señal acústica original.",
+                    "El tiempo que tarda un paquete en llegar desde la fuente al destino.",
+                    "Pérdida que se produce al usar protocolos no orientados a conexión que no reenvían paquetes perdidos. Además también se produce por descartes de paquetes que no llegan a tiempo al receptor."
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 44,
+                questionText: "La tecnología de telefonía móvil GSM utiliza, entre otras, la siguiente base de datos de usuarios:",
+                options: [
+                    "MSC",
+                    "BSC",
+                    "NSS",
+                    "VLR"
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 45,
+                questionText: "Señalar de las siguientes tecnologías de comunicaciones móviles cuál utiliza W-CDMA:",
+                options: [
+                    "GSM",
+                    "EDGE",
+                    "UMTS",
+                    "LTE"
+                ],
+                correctAnswer: "C"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 46,
+                questionText: "La red de acceso especificada para la tecnología de comunicaciones móviles LTE (Long Term Evolution) y que utiliza la tecnología OFDMA para la comunicación con los equipos de los usuarios se llama:",
+                options: [
+                    "E-UTRAN",
+                    "FFTN",
+                    "LMDS",
+                    "WIMAX"
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 47,
+                questionText: "Señale la afirmación correcta respecto al estándar IEEE 802.11ac-2013:",
+                options: [
+                    "Amplía ancho de banda de canal a 160 MHz y opera en la banda de 2,4 GHz.",
+                    "Amplía ancho de banda de canal a 40 MHz y opera en la banda de 2,4 GHz.",
+                    "Amplía ancho de banda de canal a 80 MHz y opera en la banda de 60 GHz.",
+                    "Amplía ancho de banda de canal a 160 MHz y opera en la banda de 5 GHz."
+                ],
+                correctAnswer: "D"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 48,
+                questionText: "En un escenario de movilidad IP ¿de qué se encarga el Agente Base (Home Agent)?",
+                options: [
+                    "Es el nodo que cambia su punto de conexión a la red sin cambiar su dirección IP o perder las conexiones establecidas.",
+                    "Es el router situado en la red origen del nodo móvil que intercepta el tráfico destinado al nodo móvil y se lo reenvía mediante túneles IP, realizando además tareas de localización de los nodos móviles.",
+                    "Es el router situado en la red visitada que proporciona servicios de encaminamiento a los nodos móviles registrados.",
+                    "Es el router situado en la red visitada que facilita una nueva dirección IP al nodo móvil."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 49,
+                questionText: "Un proyecto europeo cuyo objetivo estratégico fue mejorar y potenciar el uso de la tecnología PLC se denominó proyecto:",
+                options: [
+                    "CORDIS",
+                    "OPERA",
+                    "Dublin Core",
+                    "POIROT"
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV",
+                questionNumber: 50,
+                questionText: "¿En qué consiste la liberación del dividendo digital?",
+                options: [
+                    "Es el proceso por el que se volvieron a repartir las frecuencias del espectro radioeléctrico de los 900 MHz, anteriormente asignadas a Movistar, Vodafone y Orange, a aquellos operadores que lo solicitaron, de forma que pudieran ser utilizadas para ofrecer servicios móviles LTE/4G.",
+                    "Se denomina así al espectro asignado a la emisión de televisión analógica, que va a pasar a ser utilizado por tecnologías LTE/4G.",
+                    "Se denomina así al espectro recuperado al hacerse efectiva la transición a la televisión digital terrestre.",
+                    "Es el proceso de reordenación de algunos canales TDT, para liberar las frecuencias radioeléctricas de la banda de 800 MHz que será utilizada por tecnologías móviles LTE/4G."
+                ],
+                correctAnswer: "D"
+            },
+            // Bloque IV - Preguntas de reserva
+            {
+                block: "Bloque IV (Reserva)",
+                questionNumber: 1,
+                questionText: "La tasa de transferencia máxima que soporta el Serial Advanced Technology Attachment Express (SATA Express) es de hasta:",
+                options: [
+                    "6 Gbps.",
+                    "16 Gbps.",
+                    "8 Gbps.",
+                    "3 Gbps."
+                ],
+                correctAnswer: "B"
+            },
+            {
+                block: "Bloque IV (Reserva)",
+                questionNumber: 2,
+                questionText: "¿Qué características de seguridad presenta SNMPv3, tal y como se mencionan en la RFC 3418 (MIB for the SNMP Protocol)?",
+                options: [
+                    "Se recomienda que los implementadores usen el modelo de seguridad basado en usuario y el control de acceso basado en vistas.",
+                    "Se obliga a que los implementadores usen el modelo basado en usuario y el control de acceso basado en vistas.",
+                    "En dicha RFC no se menciona ningún elemento de seguridad.",
+                    "En temas de seguridad, sólo hace mención al uso obligatorio del algoritmo de encriptación CBC (Cipher Block Chaining) de DES, conocido también por DES-56."
+                ],
+                correctAnswer: "A"
+            },
+            {
+                block: "Bloque IV (Reserva)",
+                questionNumber: 3,
+                questionText: "Si se quiere interconectar mediante fibra óptica dos dispositivos separados a menos de 100 metros en un CPD a una velocidad de 40Gb/s, la categoría mínima de fibra óptica a usar debería ser:",
+                options: [
+                    "OM2",
+                    "OM3",
+                    "OM4",
+                    "OM5"
+                ],
+                correctAnswer: "C"
+            }
+        ];
+
+        // Variables de estado del test
+        let currentQuestionIndex = 0; // Índice de la pregunta actual
+        let userAnswers = []; // Array para almacenar las respuestas del usuario
+
+        // Referencias a elementos del DOM
+        const quizContainer = document.getElementById('quiz-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitTestBtn = document.getElementById('submit-test-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const resultsContainer = document.getElementById('results');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+
+        /**
+         * Carga el progreso del test desde LocalStorage.
+         * Si hay progreso guardado, actualiza el índice de la pregunta actual y las respuestas del usuario.
+         * Si no hay progreso, inicializa las respuestas del usuario con null.
+         */
+        function loadProgress() {
+            const savedProgress = localStorage.getItem('quizProgress');
+            if (savedProgress) {
+                try {
+                    const progress = JSON.parse(savedProgress);
+                    currentQuestionIndex = progress.currentQuestionIndex;
+                    userAnswers = progress.userAnswers;
+                    // Asegurarse de que userAnswers tenga el tamaño correcto si se añaden/quitan preguntas
+                    if (userAnswers.length !== questions.length) {
+                        const newAnswers = new Array(questions.length).fill(null);
+                        for (let i = 0; i < Math.min(userAnswers.length, questions.length); i++) {
+                            newAnswers[i] = userAnswers[i];
+                        }
+                        userAnswers = newAnswers;
+                    }
+                } catch (e) {
+                    console.error("Error al parsear el progreso guardado:", e);
+                    userAnswers = new Array(questions.length).fill(null);
+                }
+            } else {
+                userAnswers = new Array(questions.length).fill(null);
+            }
+        }
+
+        /**
+         * Guarda el progreso actual del test en LocalStorage.
+         */
+        function saveProgress() {
+            const progress = {
+                currentQuestionIndex: currentQuestionIndex,
+                userAnswers: userAnswers
+            };
+            localStorage.setItem('quizProgress', JSON.stringify(progress));
+        }
+
+        /**
+         * Renderiza la pregunta actual en el contenedor del quiz.
+         * Genera el HTML para la pregunta, sus opciones y el feedback.
+         */
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-container">
+                    <p class="question-text">${q.block} - Pregunta ${q.questionNumber}: ${q.questionText}</p>
+                    <div class="options">
+                        ${q.options.map((option, index) => {
+                            const optionLetter = String.fromCharCode(65 + index); // Convierte 0,1,2,3 a A,B,C,D
+                            const isChecked = userAnswers[currentQuestionIndex] === optionLetter;
+                            // Si ya se ha respondido, deshabilitar los radios
+                            const isDisabled = userAnswers[currentQuestionIndex] !== null;
+                            return `
+                                <label>
+                                    <input type="radio" name="question${currentQuestionIndex}" value="${optionLetter}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''} onclick="checkAnswer(this.value)">
+                                    ${optionLetter}) ${option}
+                                </label>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="feedback" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+            updateNavigationButtons(); // Actualiza el estado de los botones de navegación
+            displayFeedbackForCurrentQuestion(); // Muestra el feedback si la pregunta ya fue respondida
+        }
+
+        /**
+         * Verifica la respuesta seleccionada por el usuario.
+         * Almacena la respuesta, guarda el progreso y muestra el feedback.
+         * @param {string} selectedOption - La letra de la opción seleccionada (A, B, C, D).
+         */
+        function checkAnswer(selectedOption) {
+            userAnswers[currentQuestionIndex] = selectedOption;
+            saveProgress();
+            displayFeedbackForCurrentQuestion();
+            // Deshabilitar todos los botones de radio una vez que se selecciona una respuesta
+            document.querySelectorAll(`input[name="question${currentQuestionIndex}"]`).forEach(radio => {
+                radio.disabled = true;
+            });
+        }
+
+        /**
+         * Muestra el feedback (correcto/incorrecto) para la pregunta actual.
+         * Se activa después de que el usuario selecciona una respuesta o al cargar una pregunta ya respondida.
+         */
+        function displayFeedbackForCurrentQuestion() {
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+            if (!feedbackDiv) return;
+
+            const q = questions[currentQuestionIndex];
+            const userAnswer = userAnswers[currentQuestionIndex];
+
+            feedbackDiv.innerHTML = ''; // Limpia cualquier feedback anterior
+            feedbackDiv.classList.remove('correct', 'incorrect');
+
+            if (userAnswer) {
+                if (userAnswer === q.correctAnswer) {
+                    feedbackDiv.textContent = '¡Correcto!';
+                    feedbackDiv.classList.add('correct');
+                } else {
+                    feedbackDiv.textContent = `Incorrecto. La respuesta correcta es la ${q.correctAnswer}.`;
+                    feedbackDiv.classList.add('incorrect');
+                }
+            }
+        }
+
+        /**
+         * Actualiza el estado de los botones de navegación (anterior, siguiente, finalizar, reiniciar).
+         * Habilita/deshabilita según la posición en el test y si los resultados están visibles.
+         */
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1) {
+                submitTestBtn.style.display = 'inline-block'; // Mostrar botón de finalizar en la última pregunta
+            } else {
+                submitTestBtn.style.display = 'none';
+            }
+
+            if (resultsContainer.style.display === 'block') {
+                // Si los resultados están mostrándose, ocultar botones de navegación y mostrar solo Reiniciar
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitTestBtn.style.display = 'none';
+                resetBtn.style.display = 'inline-block'; // Asegurar que Reiniciar sea visible
+            } else {
+                // Si el quiz está activo, mostrar botones de navegación y Reiniciar
+                prevBtn.style.display = 'inline-block';
+                nextBtn.style.display = 'inline-block';
+                resetBtn.style.display = 'inline-block'; // Hacer que Reiniciar sea siempre visible durante el quiz
+            }
+        }
+
+        // Event Listeners para los botones de navegación
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+                saveProgress();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+                saveProgress();
+            }
+        });
+
+        // Event Listener para el botón de finalizar test
+        submitTestBtn.addEventListener('click', () => {
+            calculateResults(); // Calcula y muestra los resultados
+            quizContainer.style.display = 'none'; // Oculta el contenedor del quiz
+            document.querySelector('.navigation-buttons').style.display = 'none'; // Oculta los botones de navegación
+            resultsContainer.style.display = 'block'; // Muestra el contenedor de resultados
+            resetBtn.style.display = 'inline-block'; // Asegura que el botón de reinicio esté visible
+            localStorage.removeItem('quizProgress'); // Borra el progreso guardado al finalizar el test
+        });
+
+        // Event Listener para el botón de reiniciar test
+        resetBtn.addEventListener('click', () => {
+            localStorage.removeItem('quizProgress'); // Borra el progreso guardado
+            currentQuestionIndex = 0; // Reinicia el índice de la pregunta
+            userAnswers = new Array(questions.length).fill(null); // Reinicia las respuestas del usuario
+            resultsContainer.style.display = 'none'; // Oculta los resultados
+            quizContainer.style.display = 'block'; // Muestra el contenedor del quiz
+            document.querySelector('.navigation-buttons').style.display = 'flex'; // Muestra los botones de navegación
+            renderQuestion(); // Renderiza la primera pregunta
+        });
+
+        /**
+         * Calcula y muestra el número de respuestas correctas, incorrectas y sin contestar.
+         */
+        function calculateResults() {
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unanswered++;
+                } else if (userAnswer === q.correctAnswer) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
+            });
+
+            correctCountSpan.textContent = correct;
+            incorrectCountSpan.textContent = incorrect;
+            unansweredCountSpan.textContent = unanswered;
+        }
+
+        // Carga inicial del test al cargar la página
+        loadProgress();
+        renderQuestion();
+    </script>
+</body>
+</html>

@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMA 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+        .question-card {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background-color: #f9fafb;
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+        .answer-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+        .answer-option:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #eff6ff;
+            border-color: #93c5fd;
+        }
+        .answer-option.selected {
+            background-color: #e0f2fe;
+            border-color: #38b2ac; /* Tailwind teal-500 */
+        }
+        .answer-option.correct {
+            background-color: #d1fae5; /* Tailwind green-100 */
+            border-color: #34d399; /* Tailwind green-400 */
+            font-weight: 500;
+        }
+        .answer-option.incorrect {
+            background-color: #fee2e2; /* Tailwind red-100 */
+            border-color: #ef4444; /* Tailwind red-500 */
+            font-weight: 500;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 500;
+            padding-left: 15px;
+        }
+        .feedback.correct-text {
+            color: #10b981; /* Tailwind green-500 */
+        }
+        .feedback.incorrect-text {
+            color: #ef4444; /* Tailwind red-500 */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:active {
+            transform: translateY(1px);
+        }
+        .prev-button {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+        .prev-button:hover {
+            background-color: #d1d5db;
+        }
+        .next-button {
+            background-color: #3b82f6; /* Tailwind blue-500 */
+            color: #fff;
+        }
+        .next-button:hover {
+            background-color: #2563eb; /* Tailwind blue-600 */
+        }
+        .submit-button {
+            background-color: #10b981; /* Tailwind green-500 */
+            color: #fff;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .submit-button:hover {
+            background-color: #059669; /* Tailwind green-600 */
+        }
+        .restart-button {
+            background-color: #f59e0b; /* Tailwind amber-500 */
+            color: #fff;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .restart-button:hover {
+            background-color: #d97706; /* Tailwind amber-600 */
+        }
+        .results-section {
+            margin-top: 30px;
+            padding: 25px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background-color: #f9fafb;
+            text-align: center;
+        }
+        .results-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .result-item {
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+        }
+        .result-item.correct {
+            background-color: #10b981; /* Tailwind green-500 */
+        }
+        .result-item.incorrect {
+            background-color: #ef4444; /* Tailwind red-500 */
+        }
+        .result-item.unanswered {
+            background-color: #6b7280; /* Tailwind gray-500 */
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">TEMA 3</h1>
+        <div id="quiz-container">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div id="results-container" class="results-section hidden">
+            <h2>Resultados del Test</h2>
+            <div class="results-grid">
+                <div class="result-item correct">
+                    <span id="correct-count">0</span> Correctas
+                </div>
+                <div class="result-item incorrect">
+                    <span id="incorrect-count">0</span> Incorrectas
+                </div>
+                <div class="result-item unanswered">
+                    <span id="unanswered-count">0</span> Sin Contestar
+                </div>
+            </div>
+            <button id="restart-quiz-button-results" class="restart-button nav-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Define the quiz questions and their correct answers
+        const questions = [
+            {
+                question: "¿Cuál de los siguientes Ministerios no existe en la actualidad (diciembre de 2021)?",
+                options: [
+                    "Ministerio de Cultura y Deporte.",
+                    "Ministerio de Política Territorial .",
+                    "Ministerio de   Hacienda y Función Pública.",
+                    "Ministerio de Economía y Empresa."
+                ],
+                correctAnswer: "Ministerio de Economía y Empresa."
+            },
+            {
+                question: "¿Quién nombra a los Ministros del Gobierno?",
+                options: [
+                    "El Congreso de los Diputados.",
+                    "El Senado.",
+                    "El Presidente del Gobierno.",
+                    "El Rey."
+                ],
+                correctAnswer: "El Rey."
+            },
+            {
+                question: "El artículo 99 de la Constitución Española de 1978 dispone que el Rey propondrá un candidato a la Presidencia del Gobierno, ¿cuál será el plazo que debe transcurrir desde la primera votación de investidura, si ningún candidato hubiera obtenido la confianza, para disolver las Cámaras y convocar nuevas elecciones?",
+                options: [
+                    "Dos meses desde la tercera votación.",
+                    "Dos meses desde la segunda votación.",
+                    "Dos meses desde la primera votación.",
+                    "Un mes desde la primera votación."
+                ],
+                correctAnswer: "Dos meses desde la primera votación."
+            },
+            {
+                question: "¿Quién separa a los Ministros?",
+                options: [
+                    "El Presidente del Gobierno.",
+                    "El Rey a propuesta del Presidente del Congreso.",
+                    "El Rey a propuesta del Presidente del Gobierno.",
+                    "El Rey a propuesta del Presidente de las Cortes."
+                ],
+                correctAnswer: "El Rey a propuesta del Presidente del Gobierno."
+            },
+            {
+                question: "¿Quién puede proponer la disolución del Congreso?",
+                options: [
+                    "El Presidente del Gobierno siempre que la propuesta sea de disolución de las dos Cámaras.",
+                    "El Presidente del Gobierno siempre que la disolución propuesta sea la del Senado y el Presidente del Congreso cuando la propuesta de disolución sea sobre el Congreso de los Diputados.",
+                    "El Presidente de las Cortes, en todo caso.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswer: "El Presidente del Gobierno siempre que la propuesta sea de disolución de las dos Cámaras."
+            },
+            {
+                question: "¿De qué órgano se necesita una previa deliberación para poder proponer la disolución del Congreso?",
+                options: [
+                    "Del Consejo de Estado.",
+                    "De la Comisión Delegada del Gobierno para Asuntos Constitucionales.",
+                    "Del Consejo de Ministros.",
+                    "De la Comisión Mixta de las Cortes Generales."
+                ],
+                correctAnswer: "Del Consejo de Ministros."
+            },
+            {
+                question: "Según el artículo 102.2 de la Constitución Española de 1978 la acusación por traición contra el Presidente del Gobierno requerirá:",
+                options: [
+                    "La iniciativa de un Grupo parlamentario o veinticinco Diputados.",
+                    "La iniciativa de la cuarta parte de los miembros del Congreso.",
+                    "La iniciativa de la mayoría absoluta de las Cámaras.",
+                    "La iniciativa de dos grupos parlamentarios del Congreso y del Senado."
+                ],
+                correctAnswer: "La iniciativa de la cuarta parte de los miembros del Congreso."
+            },
+            {
+                question: "El Gobierno dirige.",
+                options: [
+                    "La política interior y exterior, la Administración Civil y militar y la defensa del Estado.",
+                    "La política del partido mayoritario por mandato imperativo del mismo.",
+                    "La política legislativa y reglamentaria de la Administración",
+                    "Solo la política interior y exterior y la Administración Civil"
+                ],
+                correctAnswer: "La política interior y exterior, la Administración Civil y militar y la defensa del Estado."
+            },
+            {
+                question: "El Presidente del Gobierno en funciones podrá ejercer las siguientes facultades:",
+                options: [
+                    "Proponer al Rey la disolución de alguna de las Cámaras.",
+                    "Aprobar el proyecto de Ley de Presupuestos Generales del Estado.",
+                    "Proponer al Rey la convocatoria de un referéndum consultivo.",
+                    "Aprobar decretos-leyes en caso de urgencia debidamente acreditada."
+                ],
+                correctAnswer: "Aprobar decretos-leyes en caso de urgencia debidamente acreditada."
+            },
+            {
+                question: "¿Qué requisitos se requieren para ser miembro del Gobierno?",
+                options: [
+                    "Ser español de nacimiento.",
+                    "Disfrutar de los derechos de sufragio activo y pasivo.",
+                    "Ser mayor de 16 años al ser empleados públicos.",
+                    "Estar inhabilitado para ejercer empleo o cargo público por sentencia judicial firme."
+                ],
+                correctAnswer: "Disfrutar de los derechos de sufragio activo y pasivo."
+            },
+            {
+                question: "Le corresponde al Presidente del Gobierno:",
+                options: [
+                    "Interponer el recurso de inconstitucionalidad.",
+                    "Crear, modificar y suprimir, por Real Decreto, los Departamentos Ministeriales, así como las Secretarías de Estado.",
+                    "Impartir instrucciones a los demás miembros del Gobierno.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "No constituyen competencias del Consejo de Ministros:",
+                options: [
+                    "Acordar la negociación y firma de Tratados internacionales, así como su aplicación provisional.",
+                    "Disponer la emisión de Deuda Pública o contraer crédito, cuando haya sido autorizado por el Ministro de Hacienda.",
+                    "Aprobar el Proyecto de Ley de Presupuestos Generales del Estado.",
+                    "Aprobar los Reales Decretos-leyes y los Reales Decretos Legislativos."
+                ],
+                correctAnswer: "Disponer la emisión de Deuda Pública o contraer crédito, cuando haya sido autorizado por el Ministro de Hacienda."
+            },
+            {
+                question: "El Presidente del Gobierno puede:",
+                options: [
+                    "Plantear ante el Congreso de los Diputados la resolución de confianza.",
+                    "Plantear ante el Senado la cuestión de confianza.",
+                    "Plantear ante el Congreso de los Diputados la cuestión de confianza.",
+                    "Plantear a las Cámaras cuestiones de confianza."
+                ],
+                correctAnswer: "Plantear ante el Congreso de los Diputados la cuestión de confianza."
+            },
+            {
+                question: "Los Secretarios de Estado son:",
+                options: [
+                    "Órganos superiores de la Administración General del Estado.",
+                    "Órganos directivos de la Administración General del Estado.",
+                    "Órganos superiores pero no altos cargos de la Administración General del Estado.",
+                    "Órganos directivos pero no altos cargos de la Administración General del Estado."
+                ],
+                correctAnswer: "Órganos superiores de la Administración General del Estado."
+            },
+            {
+                question: "El Secretariado del Gobierno ejercerá las siguientes funciones:",
+                options: [
+                    "Velar por la correcta y fiel publicación de las disposiciones y normas emanadas del Gobierno y de las Comunidades Autónomas que deban ser insertadas en el “Boletín Oficial del Estado”.",
+                    "La tramitación de los actos y disposiciones del Rey cuyo refrendo corresponde al Consejo de Ministros.",
+                    "La asistencia al Ministro-Secretario del Consejo de Ministros.",
+                    "Convertir las actas de las reuniones de los Ministros del Gobierno."
+                ],
+                correctAnswer: "La tramitación de los actos y disposiciones del Rey cuyo refrendo corresponde al Consejo de Ministros."
+            },
+            {
+                question: "La Ley 50/1997 del Gobierno, en su artículo 18 dispone que:",
+                options: [
+                    "Las reuniones del Consejo de Ministros podrán tener carácter decisorio o deliberante.",
+                    "De las sesiones del Consejo de Ministros se levantará acta en la que figurarán, exclusivamente, las circunstancias relativas al tiempo y lugar de su celebración, la relación de asistentes, los acuerdos adoptados y los informes presentados.",
+                    "El Presidente del Gobierno convoca y preside las reuniones del Consejo de Ministros, actuando como Secretario el Ministro de la Presidencia, Relaciones con las Cortes e Igualdad.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "La moción de censura consiste en que:",
+                options: [
+                    "Las Cortes Generales censuran la actuación del Presidente.",
+                    "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno.",
+                    "Las Cortes Generales censuran la acción del Gobierno.",
+                    "El Senado puede por mayoría simple censurar al Presidente del Gobierno."
+                ],
+                correctAnswer: "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno."
+            },
+            {
+                question: "Según la Constitución Española de 1978, el Gobierno cesa:",
+                options: [
+                    "En los casos de pérdida de la confianza parlamentaria previstos en la Constitución.",
+                    "Por dimisión de su Presidente.",
+                    "Por fallecimiento de su Presidente.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Es cierto que:",
+                options: [
+                    "El Gobierno no responde solidariamente en su gestión política ante el Congreso de los Diputados.",
+                    "Los discrepantes pueden salvar su voto.",
+                    "El Gobierno responde solidariamente en su gestión política ante el Senado.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswer: "Los discrepantes pueden salvar su voto."
+            },
+            {
+                question: "¿Cómo se denomina el órgano que tiene atribuida directamente la responsabilidad de la ejecución de la acción del Gobierno en un sector de actividad específica de un Ministerio?",
+                options: [
+                    "Secretaría General Técnica.",
+                    "Secretaría de Estado.",
+                    "Subsecretaría.",
+                    "Dirección General."
+                ],
+                correctAnswer: "Secretaría de Estado."
+            },
+            {
+                question: "¿De cuántos Departamentos ministeriales se compone el Gobierno en la actualidad (febrero 2020)?:",
+                options: [
+                    "20.",
+                    "22.",
+                    "16.",
+                    "18."
+                ],
+                correctAnswer: "22."
+            },
+            {
+                question: "En relación con los Directores de los Gabinetes, es cierto que:",
+                options: [
+                    "El Director del Gabinete del Presidente del Gobierno será nombrado por Real Decreto del Presidente del Gobierno.",
+                    "El Director del Gabinete el Vicepresidente del Gobierno será nombrado por Real Decreto del Presidente del Gobierno.",
+                    "Los Directores de los Gabinetes de los Ministros serán nombrados por Real Decreto del Consejo de Ministros.",
+                    "Los Directores de los Gabinetes de los Secretarios de Estado serán nombrados por Real Decreto del Consejo de Ministros."
+                ],
+                correctAnswer: "El Director del Gabinete del Presidente del Gobierno será nombrado por Real Decreto del Presidente del Gobierno."
+            },
+            {
+                question: "¿En qué situación administrativa quedarán los funcionarios que se incorporen a los Gabinetes del Presidente, Vicepresidentes, Ministros y Secretarios de Estado?",
+                options: [
+                    "Servicios especiales, en todo caso.",
+                    "Servicios en otras Administraciones Públicas.",
+                    "Servicio activo en su Administración de origen si optan por permanecer en dicha situación.",
+                    "Excedencia voluntaria por interés particular."
+                ],
+                correctAnswer: "Servicios especiales, en todo caso."
+            },
+            {
+                question: "No son en ningún caso delegables las siguientes competencias:",
+                options: [
+                    "Las atribuidas directamente por la Constitución.",
+                    "Las atribuidas por una ley que prohíba expresamente la delegación.",
+                    "Las relativas al nombramiento y separación de altos cargos atribuidas al Consejo de Ministros.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Las sesiones del Consejo de Ministros tienen carácter secreto y a ellas podrán asistir:",
+                options: [
+                    "Los Secretarios de Estado con voz y con voto.",
+                    "Los Directores de Gabinete con voz y con voto.",
+                    "Los Subsecretarios con voz y con voto.",
+                    "Los Secretarios Generales con voz y sin voto, cuando sean convocados en casos excepcionales."
+                ],
+                correctAnswer: "Los Secretarios Generales con voz y sin voto, cuando sean convocados en casos excepcionales."
+            },
+            {
+                question: "¿Cómo se titula el Título V de la Constitución Española de 1978?",
+                options: [
+                    "Relaciones entre el Consejo de Ministros y las Cortes Generales.",
+                    "Relaciones entre el Gobierno y el Congreso de los Diputados.",
+                    "Relaciones entre el Consejo de Ministros y el Congreso de los Diputados.",
+                    "Relaciones entre el Gobierno y las Cortes Generales."
+                ],
+                correctAnswer: "Relaciones entre el Gobierno y las Cortes Generales."
+            },
+            {
+                question: "Según establece el artículo 111.2 de la Constitución Española de 1978, toda interpelación al Gobierno ¿podrá dar lugar a una moción en la que la Cámara manifieste su posición?",
+                options: [
+                    "Sólo cuando se dirige al Presidente del Gobierno.",
+                    "Sólo cuando la interpelación la haya formulado el Congreso",
+                    "No.",
+                    "Sí."
+                ],
+                correctAnswer: "Sí."
+            },
+            {
+                question: "¿A través de quién podrá recabar el Senado la información y ayuda que precisen del Gobierno y de sus Departamentos?",
+                options: [
+                    "A través del Ministro de la Presidencia, Relaciones con las Cortes y Memoria Democrática..",
+                    "A través del Presidente de las Cortes Generales.",
+                    "A través del Presidente del Congreso de los Diputados.",
+                    "A través del Presidente del Senado."
+                ],
+                correctAnswer: "A través del Ministro de la Presidencia, Relaciones con las Cortes y Memoria Democrática.."
+            },
+            {
+                question: "¿Las Cámaras y sus Comisiones pueden recabar de las autoridades de las Comunidades Autónomas la ayuda que precisen?",
+                options: [
+                    "No.",
+                    "No, salvo que una ley así lo determine.",
+                    "No, salvo que así lo permita el Estatuto de la propia Comunidad Autónoma.",
+                    "Sí."
+                ],
+                correctAnswer: "Sí."
+            },
+            {
+                question: "El Presidente del Gobierno puede plantear la cuestión de confianza ante el Congreso de los Diputados, y se entenderá otorgada:",
+                options: [
+                    "Cuando vote a favor de la misma la mayoría simple del Congreso.",
+                    "Cuando vote a favor de la misma la mayoría absoluta del Congreso y del Senado.",
+                    "Cuando vote a favor de la misma la mayoría absoluta del Congreso.",
+                    "Cuando vote a favor de la misma la mitad más uno de los Diputados electos."
+                ],
+                correctAnswer: "Cuando vote a favor de la misma la mayoría simple del Congreso."
+            },
+            {
+                question: "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno mediante adopción de una moción de censura:",
+                options: [
+                    "La moción deberá proponer un candidato para nuevo Presidente del Gobierno.",
+                    "El Presidente del Gobierno deberá presentar la dimisión al Rey.",
+                    "Presentará la dimisión solo si la votación de aprobación alcanza la mayoría simple.",
+                    "La moción de censura deberá ser propuesta al menos por veinte Diputados de dos grupos parlamentarios."
+                ],
+                correctAnswer: "La moción deberá proponer un candidato para nuevo Presidente del Gobierno."
+            },
+            {
+                question: "¿Cuántos días deben transcurrir desde que se presente una moción de censura hasta que pueda ser votada?",
+                options: [
+                    "Dos días.",
+                    "Tres días.",
+                    "Cinco días.",
+                    "Siete días."
+                ],
+                correctAnswer: "Cinco días."
+            },
+            {
+                question: "¿Qué artículo de la Constitución Española dispone que el Gobierno y cada uno de sus miembros están sometidos a las interpelaciones y preguntas que se le formulen en las Cámaras?",
+                options: [
+                    "El artículo 99",
+                    "El artículo 111",
+                    "El artículo 121",
+                    "El artículo 163"
+                ],
+                correctAnswer: "El artículo 111"
+            },
+            {
+                question: "¿De qué plazo dispone el Gobierno para remitir la respuesta a una pregunta escrita, a contar desde el día siguiente a su publicación en el Boletín Oficial de las Cortes Generales?",
+                options: [
+                    "Diez días",
+                    "Quince días",
+                    "Veinte días.",
+                    "Treinta días."
+                ],
+                correctAnswer: "Veinte días."
+            },
+            {
+                question: "¿Qué número de Diputados es preciso para interponer una moción de confianza?",
+                options: [
+                    "Ninguno.",
+                    "Mayoría simple de la Cámara.",
+                    "Una décima parte de la Cámara.",
+                    "Dos terceras partes de la Cámara."
+                ],
+                correctAnswer: "Ninguno."
+            },
+            {
+                question: "¿De qué plazo dispone el Gobierno para responder a una pregunta escrita de las Cámaras a contar de su publicación en el Boletín Oficial de las Cortes Generales?",
+                options: [
+                    "Diez días. mes.",
+                    "Quince días.",
+                    "Veinte días.",
+                    "Veinticinco días."
+                ],
+                correctAnswer: "Veinte días."
+            },
+            {
+                question: "Según establece el artículo 107 de la Constitución Española de 1978, ¿cuál es el supremo órgano consultivo del Gobierno?",
+                options: [
+                    "El Consejo del Reino.",
+                    "El Consejo de Estado legislativo.",
+                    "El Consejo de Estado.",
+                    "El Consejo Consultivo."
+                ],
+                correctAnswer: "El Consejo de Estado."
+            },
+            {
+                question: "En relación con las comparecencias del Gobierno ante el Pleno del Congreso de los Diputados:",
+                options: [
+                    "Podrán presentar preguntas orales, a iniciativa de los Diputados.",
+                    "Podrán presentar interpelaciones, a iniciativa de los Diputados y de los Grupos parlamentarios.",
+                    "Podrán presentar proposiciones no de ley y mociones, a iniciativa de los Grupos parlamentarios.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Un procedimiento especial se aplica a las preguntas dirigidas al Ente Radiotelevisión Española. ¿en qué consiste este procedimiento especial?",
+                options: [
+                    "En que solo pueden ser contestadas por su Director General.",
+                    "En que puede contestarlas cualquier Jefe de Unidad del Ente.",
+                    "En que puede contestarlas su Director General o un representante de su Consejo de Administración.",
+                    "La c) es correcta y además deberán contestarlas en el marco de la Comisión de control de RTVE."
+                ],
+                correctAnswer: "La c) es correcta y además deberán contestarlas en el marco de la Comisión de control de RTVE."
+            },
+            {
+                question: "El artículo 115 de la Constitución Española determina que el Presidente del Gobierno:",
+                options: [
+                    "Previa declaración del Consejo de Ministros podrá proponer la disolución del Congreso, del Senado o de las Cortes Generales.",
+                    "Bajo su exclusiva responsabilidad, podrá proponer la disolución del Congreso, del Senado o de las Cortes Generales.",
+                    "Previa deliberación del Consejo de Ministros y bajo su exclusiva responsabilidad podrá proponer la disolución del Congreso, del Senado o de las Cortes Generales.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Previa deliberación del Consejo de Ministros y bajo su exclusiva responsabilidad podrá proponer la disolución del Congreso, del Senado o de las Cortes Generales."
+            },
+            {
+                question: "¿Cuál de los siguientes derechos reconocidos en la Constitución Española de 1978 puede ser suspendido cuando se acuerde la declaración del estado de excepción o de sitio en los términos previstos en la Constitución?",
+                options: [
+                    "El derecho a la libertad y a la seguridad.",
+                    "El derecho a la vida.",
+                    "El derecho a la integridad física.",
+                    "El derecho a la integridad moral."
+                ],
+                correctAnswer: "El derecho a la libertad y a la seguridad."
+            },
+            {
+                question: "La declaración del estado de alarma se llevará a cabo mediante:",
+                options: [
+                    "Decreto acordado en Consejo de Ministros.",
+                    "Orden Ministerial del Ministro del Interior.",
+                    "Orden Ministerial del Ministro de Justicia.",
+                    "Decreto-Ley acordado en Consejo de Ministros."
+                ],
+                correctAnswer: "Decreto acordado en Consejo de Ministros."
+            },
+            {
+                question: "El estado de sitio lo declara:",
+                options: [
+                    "El Congreso a propuesta exclusiva del Gobierno por mayoría absoluta.",
+                    "El Gobierno por petición popular por mayoría simple.",
+                    "El Gobierno a propuesta del Congreso.",
+                    "El Gobierno previa autorización del Congreso."
+                ],
+                correctAnswer: "El Congreso a propuesta exclusiva del Gobierno por mayoría absoluta."
+            },
+            {
+                question: "¿Quién determina el ámbito territorial, duración y condiciones de un estado de sitio?",
+                options: [
+                    "Las Cortes Generales.",
+                    "EL Congreso de los Diputados.",
+                    "El Consejo de Ministros.",
+                    "El Senado."
+                ],
+                correctAnswer: "Las Cortes Generales."
+            },
+            {
+                question: "¿Qué tiempo máximo puede durar un estado de alarma según el decreto de declaración?",
+                options: [
+                    "15 días.",
+                    "30 días.",
+                    "7 días.",
+                    "10 días."
+                ],
+                correctAnswer: "15 días."
+            },
+            {
+                question: "Respecto al Congreso de los Diputados, ¿podrá ser interrumpido su funcionamiento durante el estado de alarma?",
+                options: [
+                    "Sí, pero no disuelto.",
+                    "No, pero sí disuelto.",
+                    "No.",
+                    "Sí, previa autorización de las Cortes Generales."
+                ],
+                correctAnswer: "No."
+            },
+            {
+                question: "A los efectos del estado de alarma, ¿quién será la Autoridad competente?",
+                options: [
+                    "El Consejo de Ministros.",
+                    "El Gobierno.",
+                    "La Diputación Permanente del Congreso de los Diputados.",
+                    "El Ministro de Defensa."
+                ],
+                correctAnswer: "El Gobierno."
+            },
+            {
+                question: "¿Cuál será duración máxima del estado de excepción?",
+                options: [
+                    "Treinta días, sin posibilidad de prórroga.",
+                    "Cuarenta días, prorrogables por otros quince días.",
+                    "Cincuenta días, sin posibilidad de prórroga.",
+                    "Treinta días prorrogables por otros treinta."
+                ],
+                correctAnswer: "Treinta días, sin posibilidad de prórroga."
+            },
+            {
+                question: "Durante el estado de excepción la Autoridad gubernativa podrá detener a cualquier persona si lo considera necesario para la conservación del orden, siempre que, cuando menos, existan fundadas sospechas de que dicha persona vaya a provocar alteraciones del orden Público.",
+                options: [
+                    "La detención no podrá exceder de diez días y habrá de ser comunicada al Juez competente en el plazo de veinticuatro horas.",
+                    "La detención no podrá exceder de 72 horas.",
+                    "La detención no podrá exceder de veinte días.",
+                    "La detención no podrá exceder de 72 horas y habrá de ser comunicada al Juez competente en el plazo de veinte días."
+                ],
+                correctAnswer: "La detención no podrá exceder de 72 horas."
+            },
+            {
+                question: "Los estados de alarma, de excepción y de sitio:",
+                options: [
+                    "Serán regulados por una Ley Orgánica.",
+                    "Serán regulados por una Ley de Bases que regulará, igualmente, las competencias y limitaciones correspondientes.",
+                    "Serán regulados por Ley Ordinaria.",
+                    "Los de excepción y de sitio y mediante Ley Ordinaria-"
+                ],
+                correctAnswer: "Serán regulados por una Ley Orgánica."
+            }
+        ];
+
+        let userAnswers = []; // Stores user's selected answer for each question
+        let currentQuestionIndex = 0; // Current question being displayed
+
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+        const restartQuizButtonResults = document.getElementById('restart-quiz-button-results');
+
+        /**
+         * Loads the quiz state from localStorage.
+         * If no state is found, initializes userAnswers array.
+         */
+        function loadQuizState() {
+            const savedState = localStorage.getItem('quizState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                userAnswers = state.userAnswers;
+                currentQuestionIndex = state.currentQuestionIndex;
+            } else {
+                // Initialize userAnswers with null for each question
+                userAnswers = new Array(questions.length).fill(null);
+                currentQuestionIndex = 0;
+            }
+        }
+
+        /**
+         * Saves the current quiz state to localStorage.
+         */
+        function saveQuizState() {
+            const state = {
+                userAnswers: userAnswers,
+                currentQuestionIndex: currentQuestionIndex
+            };
+            localStorage.setItem('quizState', JSON.stringify(state));
+        }
+
+        /**
+         * Renders the current question and its options.
+         */
+        function renderQuestion() {
+            quizContainer.innerHTML = ''; // Clear previous question
+
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            const questionData = questions[currentQuestionIndex];
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.textContent = `${currentQuestionIndex + 1}. ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            questionData.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'answer-option';
+                optionDiv.textContent = option;
+                optionDiv.dataset.index = index; // Store original index for selection
+
+                // Check if this option was previously selected by the user
+                if (userAnswers[currentQuestionIndex] === option) {
+                    optionDiv.classList.add('selected');
+                }
+
+                // Add click listener to handle answer selection
+                optionDiv.addEventListener('click', () => selectAnswer(option, optionDiv));
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            questionCard.appendChild(optionsContainer);
+
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback';
+            questionCard.appendChild(feedbackDiv); // Add feedback div
+
+            quizContainer.appendChild(questionCard);
+
+            // Add navigation buttons
+            const navButtonsDiv = document.createElement('div');
+            navButtonsDiv.className = 'navigation-buttons';
+
+            // Previous button
+            if (currentQuestionIndex > 0) {
+                const prevButton = document.createElement('button');
+                prevButton.className = 'nav-button prev-button';
+                prevButton.textContent = 'Anterior';
+                prevButton.addEventListener('click', showPreviousQuestion);
+                navButtonsDiv.appendChild(prevButton);
+            } else {
+                // Placeholder to maintain layout if no previous button
+                const placeholder = document.createElement('div');
+                placeholder.style.width = '100px'; // Adjust as needed
+                navButtonsDiv.appendChild(placeholder);
+            }
+
+            // Next or Submit button
+            if (currentQuestionIndex < questions.length - 1) {
+                const nextButton = document.createElement('button');
+                nextButton.className = 'nav-button next-button';
+                nextButton.textContent = 'Siguiente';
+                nextButton.addEventListener('click', showNextQuestion);
+                navButtonsDiv.appendChild(nextButton);
+            } else {
+                const submitButton = document.createElement('button');
+                submitButton.className = 'nav-button submit-button';
+                submitButton.textContent = 'Finalizar Test';
+                submitButton.addEventListener('click', showResults);
+                navButtonsDiv.appendChild(submitButton);
+            }
+
+            quizContainer.appendChild(navButtonsDiv);
+
+            // Add the restart button below the navigation buttons
+            const restartButtonMain = document.createElement('button');
+            restartButtonMain.id = 'restart-quiz-button-main';
+            restartButtonMain.className = 'restart-button nav-button';
+            restartButtonMain.textContent = 'Reiniciar Test';
+            restartButtonMain.addEventListener('click', restartQuiz);
+            quizContainer.appendChild(restartButtonMain);
+
+
+            // Immediately check and display feedback if an answer was already selected
+            if (userAnswers[currentQuestionIndex] !== null) {
+                const selectedOptionDiv = Array.from(optionsContainer.children).find(
+                    opt => opt.textContent === userAnswers[currentQuestionIndex]
+                );
+                if (selectedOptionDiv) {
+                    displayFeedback(selectedOptionDiv, questionData.correctAnswer, feedbackDiv);
+                    disableOptions(optionsContainer); // Disable options after selection
+                }
+            }
+        }
+
+        /**
+         * Handles the selection of an answer option.
+         * @param {string} selectedOption - The text of the selected option.
+         * @param {HTMLElement} selectedOptionDiv - The HTML element of the selected option.
+         */
+        function selectAnswer(selectedOption, selectedOptionDiv) {
+            // If an answer is already selected for this question, do nothing
+            if (userAnswers[currentQuestionIndex] !== null) {
+                return;
+            }
+
+            // Remove 'selected' class from all options for the current question
+            const options = selectedOptionDiv.parentNode.children;
+            for (let i = 0; i < options.length; i++) {
+                options[i].classList.remove('selected');
+            }
+
+            // Mark the clicked option as selected
+            selectedOptionDiv.classList.add('selected');
+
+            // Store the user's answer
+            userAnswers[currentQuestionIndex] = selectedOption;
+            saveQuizState(); // Save state after each answer
+
+            const questionData = questions[currentQuestionIndex];
+            const feedbackDiv = selectedOptionDiv.parentNode.nextElementSibling; // Get the feedback div
+
+            displayFeedback(selectedOptionDiv, questionData.correctAnswer, feedbackDiv);
+            disableOptions(selectedOptionDiv.parentNode); // Disable options after selection
+        }
+
+        /**
+         * Displays feedback (correct/incorrect) for the selected answer.
+         * @param {HTMLElement} selectedOptionDiv - The HTML element of the selected option.
+         * @param {string} correctAnswer - The correct answer for the current question.
+         * @param {HTMLElement} feedbackDiv - The HTML element to display feedback.
+         */
+        function displayFeedback(selectedOptionDiv, correctAnswer, feedbackDiv) {
+            const selectedText = selectedOptionDiv.textContent;
+
+            // Remove previous feedback classes
+            selectedOptionDiv.classList.remove('correct', 'incorrect');
+            feedbackDiv.classList.remove('correct-text', 'incorrect-text');
+            feedbackDiv.textContent = '';
+
+            // Apply correct/incorrect styling and feedback text
+            if (selectedText === correctAnswer) {
+                selectedOptionDiv.classList.add('correct');
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.classList.add('correct-text');
+            } else {
+                selectedOptionDiv.classList.add('incorrect');
+                feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
+                feedbackDiv.classList.add('incorrect-text');
+
+                // Highlight the correct answer if the user selected incorrectly
+                const options = selectedOptionDiv.parentNode.children;
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].textContent === correctAnswer) {
+                        options[i].classList.add('correct');
+                    }
+                }
+            }
+        }
+
+        /**
+         * Disables all options for a given question.
+         * @param {HTMLElement} optionsContainer - The container holding all answer options.
+         */
+        function disableOptions(optionsContainer) {
+            Array.from(optionsContainer.children).forEach(option => {
+                option.style.pointerEvents = 'none'; // Disable further clicks
+                option.style.cursor = 'default';
+            });
+        }
+
+        /**
+         * Shows the next question in the quiz.
+         */
+        function showNextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                saveQuizState();
+                renderQuestion();
+            }
+        }
+
+        /**
+         * Shows the previous question in the quiz.
+         */
+        function showPreviousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveQuizState();
+                renderQuestion();
+            }
+        }
+
+        /**
+         * Calculates and displays the quiz results.
+         */
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === question.correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            correctCountSpan.textContent = correctCount;
+            incorrectCountSpan.textContent = incorrectCount;
+            unansweredCountSpan.textContent = unansweredCount;
+
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+        }
+
+        /**
+         * Resets the quiz to its initial state.
+         */
+        function restartQuiz() {
+            localStorage.removeItem('quizState'); // Clear saved state
+            userAnswers = new Array(questions.length).fill(null);
+            currentQuestionIndex = 0;
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            renderQuestion();
+        }
+
+        // Event listener for the restart button in the results section
+        restartQuizButtonResults.addEventListener('click', restartQuiz);
+
+        // Initialize the quiz when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizState();
+            renderQuestion();
+        });
+    </script>
+</body>
+</html>

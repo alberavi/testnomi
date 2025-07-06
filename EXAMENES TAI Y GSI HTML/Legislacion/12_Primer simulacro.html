@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the start to prevent vertical centering issues on smaller content */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+            padding: 2.5rem; /* p-10 */
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* gap-6 */
+        }
+        .question-card {
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+            border-radius: 0.75rem; /* rounded-lg */
+            padding: 1.5rem; /* p-6 */
+            background-color: #f9fafb; /* bg-gray-50 */
+        }
+        .option-button {
+            width: 100%;
+            text-align: left;
+            padding: 1rem 1.5rem; /* py-4 px-6 */
+            border-radius: 0.75rem; /* rounded-lg */
+            background-color: #e0e7ff; /* bg-indigo-100 */
+            color: #312e81; /* text-indigo-900 */
+            font-weight: 500; /* font-medium */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            margin-bottom: 0.75rem; /* mb-3 */
+            border: none;
+            cursor: pointer;
+        }
+        .option-button:hover {
+            background-color: #c7d2fe; /* bg-indigo-200 */
+            transform: translateY(-2px);
+        }
+        .option-button:active {
+            transform: translateY(0);
+        }
+        .option-button.selected {
+            background-color: #a5b4fc; /* bg-indigo-300 */
+            border: 2px solid #4f46e5; /* border-indigo-600 */
+        }
+        .option-button.correct {
+            background-color: #d1fae5; /* bg-green-100 */
+            color: #065f46; /* text-green-800 */
+            border: 2px solid #10b981; /* border-green-500 */
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #991b1b; /* text-red-800 */
+            border: 2px solid #ef4444; /* border-red-500 */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .nav-button {
+            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            border-radius: 0.75rem; /* rounded-lg */
+            background-color: #4f46e5; /* bg-indigo-600 */
+            color: #ffffff; /* text-white */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.2s ease-in-out;
+            border: none;
+            cursor: pointer;
+            flex-grow: 1;
+        }
+        .nav-button:hover {
+            background-color: #4338ca; /* bg-indigo-700 */
+        }
+        .nav-button:disabled {
+            background-color: #9ca3af; /* bg-gray-400 */
+            cursor: not-allowed;
+        }
+        .restart-button {
+            background-color: #ef4444; /* bg-red-500 */
+            margin-top: 1.5rem; /* mt-6 */
+        }
+        .restart-button:hover {
+            background-color: #dc2626; /* bg-red-600 */
+        }
+        .results-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.75rem; /* rounded-lg */
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        .results-section h2 {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* text-gray-900 */
+            margin-bottom: 1rem;
+        }
+        .results-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .results-item:last-child {
+            border-bottom: none;
+        }
+        .results-item span:first-child {
+            font-weight: 500;
+        }
+        .feedback-message {
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        .feedback-correct {
+            background-color: #d1fae5; /* bg-green-100 */
+            color: #065f46; /* text-green-800 */
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #991b1b; /* text-red-800 */
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-container" class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-900 mb-6">Test de Conocimientos</h1>
+        <div id="question-display" class="question-card">
+            <p class="text-lg font-semibold text-gray-800 mb-4" id="question-text"></p>
+            <div id="options-container" class="flex flex-col">
+                <!-- Options will be loaded here -->
+            </div>
+            <div id="feedback" class="feedback-message hidden"></div>
+        </div>
+
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button">Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+        <button id="restart-button" class="nav-button restart-button">Reiniciar Test</button>
+
+        <div id="results-section" class="results-section hidden">
+            <h2>Resultados del Test</h2>
+            <div class="results-item">
+                <span>Respuestas Correctas:</span>
+                <span id="correct-count">0</span>
+            </div>
+            <div class="results-item">
+                <span>Respuestas Incorrectas:</span>
+                <span id="incorrect-count">0</span>
+            </div>
+            <div class="results-item">
+                <span>Preguntas Sin Contestar:</span>
+                <span id="unanswered-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Define the questions and their options
+        // IMPORTANT: The 'correctAnswerIndex' needs to be filled in by the user!
+        const questions = [
+            {
+                question: '1. ¿Cuál de los siguientes derechos NO está incluido en la Sección 1.ª, "De los derechos fundamentales y de las libertades públicas", del Capítulo Segundo, "Derechos y libertades", del Título I de la Constitución Española?:',
+                options: [
+                    'El derecho a la propiedad privada y a la herencia.',
+                    'El derecho a participar en los asuntos públicos, directamente o por medio de representantes, libremente elegidos en elecciones periódicas por sufragio universal.',
+                    'El derecho de asociación.',
+                    'El derecho a la producción y creación literaria, artística, científica y técnica.'
+                ],
+                correctAnswerIndex: null // Placeholder: Please provide the correct index (0, 1, 2, or 3)
+            },
+            {
+                question: '2. A tenor del art.88.3 de la LO de Protección de Datos, se definirán las modalidades de ejercicio del derecho a la desconexión y las acciones de formación y de sensibilización del personal sobre un uso razonable de las herramientas tecnológicas que evite el riesgo de fatiga informática en una política interna dirigida a trabajadores:',
+                options: [
+                    'Incluidos los que ocupen puestos directivos que será elaborada por el empleador, previa audiencia de los representantes de los trabajadores',
+                    'Salvo los que ocupen puestos directivos que será elaborada por el empleador, previa audiencia de los representantes de los trabajadores',
+                    'Salvo los que ocupen puestos directivos que será elaborada por el empleador, sin audiencia de los representantes de los trabajadores',
+                    'Incluidos los que ocupen puestos directivos que será elaborada por el empleador, sin audiencia de los representantes de los trabajadores'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '3. Según el artículo 4 del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos, "la persona física o jurídica, autoridad pública, servicio u otro organismo que, solo o junto con otros, determine los fines y medios del tratamiento", se denomina:',
+                options: [
+                    'Responsable del tratamiento.',
+                    'Encargado del tratamiento.',
+                    'Representante.',
+                    'Autoridad de control'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '4. En relación con los órganos de selección, el artículo 60 del texto refundido de la Ley del Estatuto Básico del Empleado Público, aprobado por Real Decreto Legislativo 5/2015, establece que:',
+                options: [
+                    'La pertenencia a los órganos de selección será siempre a título individual, pudiendo ostentarse esta en representación del miembro titular siempre que se acredite dicha representación.',
+                    'Los órganos de selección serán colegiados y su composición deberá ajustarse a los principios de imparcialidad y profesionalidad de sus miembros, y se tenderá, asimismo, a la paridad entre mujer y hombre.',
+                    'El personal de elección o de designación política, los funcionarios interinos y el personal laboral no podrán formar parte de los órganos de selección.',
+                    'Los órganos de selección no podrán proponer en ningún caso el acceso a la condición de funcionario de un número superior de aprobados al de plazas convocadas'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '5. Según el artículo 89 del texto refundido de la Ley del Estatuto Básico del Empleado Público, aprobado por Real Decreto Legislativo 5/2015, y en relación al derecho de las funcionarias víctimas de violencia de género a solicitar la situación de excedencia, señala la afirmación CORRECTA:',
+                options: [
+                    'Durante los dos primeros meses de esta excedencia tendrán derecho a percibir exclusivamente las retribuciones básicas, y en su caso, las prestaciones familiares por hijo a cargo.',
+                    'Durante los tres primeros meses tendrán derecho a la reserva del puesto de trabajo que desempeñaran, siendo computable dicho período únicamente a efectos de antigüedad y derechos del régimen de Seguridad Social que sea de aplicación.',
+                    'Cuando las actuaciones judiciales lo exigieran se podrá prorrogar por tres meses, con un máximo de doce, el periodo del derecho a la reserva del puesto de trabajo que desempeñaran, a fin de garantizar la efectividad del derecho de protección de la víctima.',
+                    'Tendrán derecho a solicitar la situación de excedencia sin tener que haber prestado un tiempo mínimo de servicios previos y sin que sea exigible plazo de permanencia en la misma.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '6. Según el artículo 12 de la Ley Orgánica del Igualdad 3/2007, cualquier persona podrá recabar de los tribunales la tutela del derecho a la igualdad entre mujeres y hombres, de acuerdo con lo establecido en:',
+                options: [
+                    'El artículo 14 de la Constitución, antes de la terminación de la relación en la que supuestamente se ha producido la discriminación',
+                    'El artículo 14 de la Constitución, incluso tras la terminación de la relación en la que supuestamente se ha producido la discriminación',
+                    'El artículo 53.2 de la Constitución, antes de la terminación de la relación en la que supuestamente se ha producido la discriminación',
+                    'El artículo 53.2 de la Constitución, incluso tras la terminación de la relación en la que supuestamente se ha producido la discriminación'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '7. ¿En qué año finalizó el Tercer Plan estatal de Gobierno Abierto?',
+                options: [
+                    'En 2016',
+                    'En 2018',
+                    'En 2020',
+                    'En 2019'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '8. A tenor del art.2 de la Ley Orgánica del Defensor del Pueblo, una vez propuesto el candidato o candidatos, se convocará al Pleno del Congreso para que proceda a su elección en término',
+                options: [
+                    'No superior a quince días',
+                    'No inferior a diez días',
+                    'No inferior a quince días',
+                    'Máximo de un mes'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '9. Según la Ley de Gobierno 50/97, indica de las siguientes funciones cuál pertenece al Presidente del Gobierno-art.2-',
+                options: [
+                    'Proponer al Rey la convocatoria de un referéndum consultivo, previa autorización de las Cortes Generales',
+                    'Crear, modificar y suprimir, por Real Decreto, los Departamentos Ministeriales, así como las Secretarías de Estado, Asimismo, le corresponde la aprobación de la estructura orgánica de la Presidencia del Gobierno',
+                    'Declarar los estados de alarma y de excepción y proponer al Congreso de los Diputados la declaración del estado de sitio',
+                    'Acordar la negociación y firma de Tratados internacionales, así como su aplicación provisional'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '10. Según la Ley de Gobierno 50/97, si hablamos del Consejo de Ministros, indica la respuesta que no procede-art.18-',
+                options: [
+                    'Las reuniones del Consejo de Ministros podrán tener carácter decisorio o deliberante.',
+                    'El Ministro de la Presidencia actúa como Secretario del Consejo de Ministros',
+                    'Adopta programas, planes y directrices vinculantes para todos los órganos de la Administración General del Estado',
+                    'Resuelve los conflictos de atribuciones que puedan surgir entre los diferentes Ministerios'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '11. Uno de los siguientes derechos fundamentales es susceptible de recurso de amparo ante el Tribunal Constitucional. Indica cuál es',
+                options: [
+                    'El régimen jurídico de la Seguridad Social',
+                    'El servicio civil para el cumplimiento de fines de interés',
+                    'La asignación equitativa del gasto público para los recursos públicos y su programación y ejecución según criterios de eficiencia y economía',
+                    'Derecho a acceder en condiciones de igualdad a las funciones y cargos públicos'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '12. A tenor del art 71 de la Constitución, durante el período de su mandato, los Diputados y Senadores gozarán asimismo de inmunidad',
+                options: [
+                    'Por las opiniones manifestadas en el ejercicio de sus funciones.',
+                    'Y no podrán ser inculpados ni procesados sin la previa autorización de la Cámara respectiva.',
+                    'Por lo que percibirán una asignación que será fijada por las respectivas Cámaras.',
+                    'Y de facultades de policía en el interior de sus respectivas sedes'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '13. ¿Cuántos magistrados tiene cada sala del Tribunal Constitucional?',
+                options: [
+                    '12',
+                    'Un mínimo de cuatro',
+                    '6',
+                    '8'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '14. Según el art.9 de la Ley 4/2023, de 28 de febrero, para la igualdad real y efectiva de las personas trans y para la garantía de los derechos de las personas LGTBI, ¿cuál es el órgano de participación ciudadana en materia de derechos y libertades de las personas LGTBI?',
+                options: [
+                    'La Secretaría de Estado de Igualdad',
+                    'Las Comisiones de Participación de Igualdad en las Cortes',
+                    'El Instituto de la Juventud O.A.',
+                    'El Consejo de Participación'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '15. De acuerdo con la Constitución Española de 1978, señala la respuesta CORRECTA:',
+                options: [
+                    'Las Cámaras se reunirán anualmente en dos periodos ordinarios de sesiones: el primero, de septiembre a diciembre, y el segundo, de enero a junio.',
+                    'Las Cámaras podrán delegar en la Diputación Permanente la aprobación de proyectos o proposiciones de Ley.',
+                    'El cargo de diputado o senador es incompatible con los altos cargos de la Administración del Estado que determine la Ley, con la excepción de los miembros del Gobierno y del Consejo de Estado',
+                    'Ninguna es correcta'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '16. Indica cuál de las siguientes afirmaciones es INCORRECTA. Según lo establecido en el artículo 26 de la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas, para ser considerados válidos, los documentos electrónicos administrativos deberán:',
+                options: [
+                    'Disponer de los datos de identificación que permitan su individualización, sin perjuicio de su posible incorporación a un expediente electrónico.',
+                    'Incorporar los metadatos mínimos exigidos.',
+                    'Incorporar las firmas electrónicas que correspondan de acuerdo con lo previsto en la normativa aplicable.',
+                    'Incorporar una referencia del lugar en el que han sido emitidos.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '17. A tenor del art. 5 de la LO 3/2007, no constituirá discriminación en el acceso al empleo, incluida la formación necesaria, una diferencia de trato basada en una característica relacionada con el ... cuando, debido a la naturaleza de las actividades profesionales concretas o al contexto en el que se lleven a cabo, dicha característica constituya un requisito profesional..., siempre y cuando el objetivo sea legítimo y el requisito',
+                options: [
+                    'Género // esencial y determinante // adecuado',
+                    'Sexo // exigible y determinante // adecuado',
+                    'Sexo // esencial y determinante // proporcionado',
+                    'Género // esencial y determinante // proporcionado'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '18. La declaración de los estados de alarma, excepción y sitio-art 116.6-',
+                options: [
+                    'No modificará el principio de responsabilidad del Gobierno, pero sí el de sus agentes reconocidos en la Constitución y en las Leyes.',
+                    'No modificará el principio de responsabilidad del Gobierno y de sus agentes reconocidos en la Constitución y en las leyes.',
+                    'Modificará el principio de responsabilidad del Gobierno, pero no el de sus agentes reconocidos en la Constitución y en las Leyes.',
+                    'Modificará el principio de responsabilidad del Gobierno y de sus agentes reconocidos en la Constitución y en las Leyes.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '19. Indica la RESPUESTA CORRECTA de entre las formuladas, si hablamos de la Ley de Igualdad',
+                options: [
+                    'Los actos y las cláusulas de los negocios jurídicos que constituyan o causen discriminación por razón de sexo se considerarán nulos y sin efecto, y darán lugar a responsabilidad a través de un sistema de reparaciones o indemnizaciones que sean reales y en consecuencia con el perjuicio causado, así como, en su caso, a través de un sistema decisorio de sanciones que prevengan la no realización de conductas discriminatorias-art.10-',
+                    'La persona acosada es una de las legitimada en los litigios sobre acoso sexual y acoso por razón de sexo-art.12-',
+                    'La capacidad y legitimación para intervenir en los procesos civiles, sociales y contencioso-administrativos que versen sobre la defensa de la tutela judicial efectiva corresponden a las personas físicas y jurídicas con interés legítimo, determinadas en las Leyes reguladoras de estos procesos-art.12-',
+                    'Constituye discriminación indirecta por razón de sexo todo trato desfavorable a las mujeres relacionado con el embarazo o la maternidad-art.8-'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '20. A tenor del art.11 de la Ley de Igualdad, ¿cuál de las siguientes definiciones está más acorde al concepto de acciones positivas?',
+                options: [
+                    'Medidas destinadas a eliminar y corregir, en los sectores público y privado, toda forma de discriminación por razón de sexo',
+                    'La exigencias del cumplimiento efectivo del principio de igualdad de trato entre mujeres y hombres.',
+                    'Un sistema de reparaciones o indemnizaciones que sean reales, efectivas y proporcionadas',
+                    'Medidas específicas en favor de las mujeres para corregir situaciones patentes de desigualdad de hecho respecto de los hombres'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '21. Si hablamos del encargado del tratamiento, indica la RESPUESTA CORRECTA-art.12.3-LOPD-',
+                options: [
+                    'No podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos',
+                    'Podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos solo si así se estableciere en el contrato que les vincule',
+                    'Podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos solo si así se estableciere en el acto jurídico que les vincule',
+                    'Podrá tramitar, por cuenta del responsable, las solicitudes de ejercicio formuladas por los afectados de sus derechos si así se estableciere en el contrato o acto jurídico que les vincule'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '22. El bloqueo de los datos consiste en-art.32-LOPD',
+                options: [
+                    'La identificación y reserva de los mismos, adoptando medidas técnicas y organizativas, para impedir su tratamiento, incluyendo su visualización, para la exigencia de posibles responsabilidades derivadas del tratamiento y solo por el plazo de prescripción de las mismas',
+                    'La destrucción de los mismos, adoptando medidas técnicas y organizativas, para impedir su tratamiento, salvo su visualización, para la exigencia de posibles responsabilidades derivadas del tratamiento y solo por el plazo de prescripción de las mismas',
+                    'La destrucción de los mismos, adoptando medidas técnicas y organizativas, para impedir su tratamiento, salvo su visualización, para la exigencia de posibles responsabilidades derivadas del tratamiento y más allá del plazo de prescripción de las mismas',
+                    'La identificación y reserva de los mismos, adoptando medidas técnicas y organizativas, para impedir su tratamiento, incluyendo su visualización, para la exigencia de posibles responsabilidades derivadas del tratamiento y más allá del plazo de prescripción de las mismas'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '23. La Agencia Española de Protección de Datos y las autoridades autonómicas de protección de datos, dentro del ámbito de sus respectivas competencias, podrán fijar excepciones a la obligación de bloqueo, en los supuestos en que (SEÑALA LA INCORRECTA)-art.32.5-LOPD-',
+                options: [
+                    'Atendida la naturaleza de los datos, su mera conservación, incluso bloqueados pudiera generar un riesgo elevado para los derechos de los afectados',
+                    'Atendido el hecho de que se refieran a un número particularmente elevado de afectados, su mera conservación, incluso bloqueados pudiera generar un riesgo elevado para los derechos de los afectados',
+                    'La conservación de los datos bloqueados pudiera implicar un coste desproporcionado para el responsable del tratamiento',
+                    'La conservación de los datos bloqueados pudiera implicar un coste desproporcionado para los afectados'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '24. Adoptarán protocolos adecuados para posibilitar el ejercicio del derecho de rectificación ante los usuarios que difundan contenidos que atenten contra el derecho al honor, la intimidad personal y familiar en Internet y el derecho a comunicar o recibir libremente información veraz-art.85-LOPD-',
+                options: [
+                    'Los proveedores de servicios de Internet',
+                    'Los responsables de redes sociales y servicios equivalentes',
+                    'Las Administraciones Públicas',
+                    'La Agencia Española de Protección de Datos y el Comité Europeo de Protección de Datos'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '25. A tenor del artículo 7 de la Ley de Violencia de género 1/2004, las Administraciones educativas adoptarán las medidas necesarias para que en los planes de formación inicial y permanente del profesorado se incluya una formación específica en materia de igualdad, con el fin de asegurar que adquieren los conocimientos y las técnicas necesarias que les habiliten para (SEÑALA LA INCORRECTA):',
+                options: [
+                    'La educación en el respeto de los derechos y libertades fundamentales y de la igualdad entre hombres y mujeres',
+                    'La educación en la prevención de conflictos y en la resolución pacífica de los mismos, en los ámbitos de la vida personal, familiar y social que tengan relación con las Administraciones Públicas',
+                    'La detección precoz de la violencia en el ámbito familiar, especialmente sobre la mujer y los hijos e hijas',
+                    'El fomento de actitudes encaminadas al ejercicio de iguales derechos y obligaciones por parte de mujeres y hombres, tanto en el ámbito público como privado, y la corresponsabilidad entre los mismos en el ámbito doméstico'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '26. A tenor de la normativa de Violencia de género 1/2004, en el caso de que la víctima tenga responsabilidades familiares, el importe de la ayuda a las víctimas de violencia de género podrá alcanzar el de un período equivalente al de-art.27-',
+                options: [
+                    '12 meses de subsidio, o de 18 meses si la víctima o alguno de los familiares que conviven con ella tiene reconocida oficialmente una minusvalía en grado igual o superior al 33 por 100',
+                    '18 meses de subsidio, o de 20 meses si la víctima o alguno de los familiares que conviven con ella tiene reconocida oficialmente una minusvalía en grado igual o superior al 33 por 100',
+                    '12 meses de subsidio, o de 24 meses si la víctima o alguno de los familiares que conviven con ella tiene reconocida oficialmente una minusvalía en grado igual o superior al 33 por 100',
+                    '18 meses de subsidio, o de 24 meses si la víctima o alguno de los familiares que conviven con ella tiene reconocida oficialmente una minusvalía en grado igual o superior al 33 por 100'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '27. A tenor del art.22 de la Ley de Transparencia, Respecto al acceso a la información, si ha existido oposición de tercero, el acceso sólo tendrá lugar cuando, habiéndose concedido dicho acceso:',
+                options: [
+                    'Haya transcurrido el plazo para interponer recurso contencioso administrativo habiéndose formalizado o haya sido resuelto denegando el derecho a recibir la información',
+                    'Haya transcurrido el plazo para interponer recurso contencioso administrativo sin que se haya formalizado o haya sido resuelto confirmando el derecho a recibir la información',
+                    'No haya transcurrido el plazo para interponer recurso contencioso administrativo sin que se haya formalizado o haya sido resuelto confirmando el derecho a recibir la información',
+                    'No haya transcurrido el plazo para interponer recurso contencioso administrativo habiéndose formalizado o haya sido resuelto confirmando el derecho a recibir la información'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '28. A tenor del art.31 de la Ley de Transparencia, la competencia para la imposición de sanciones corresponderá:',
+                options: [
+                    'Al Consejo de Ministros cuando el responsable sea un alto cargo de la Administración General del Estado',
+                    'Al Ministro de Hacienda y Administraciones Públicas cuando el alto cargo tenga la condición de miembro del Gobierno o Secretario de Estado',
+                    'Cuando el procedimiento se dirija contra altos cargos de las Comunidades Autónomas o Entidades Locales, los órganos que tengan atribuidas estas funciones en aplicación del régimen disciplinario propio de Administraciones en las que presten servicios los cargos contra los que se dirige el procedimiento o, en su caso, el Consejo de Gobierno de la Comunidad Autónoma o el Pleno de la Junta de Gobierno de la Entidad Local de que se trate',
+                    'Ninguna es correcta'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '29. Según el artículo 10 de la Ley de Servicios de la Sociedad de la Información, un sitio web deberá incluir necesariamente por medios electrónicos información que permita su identificación de forma permanente, fácil, directa, gratuita:',
+                options: [
+                    'Entre otros, su nombre/denominación social, su residencia/domicilio; el e-mail de contacto, los datos de inscripción en el registro mercantil, o si la actividad está sujeta a régimen de autorización previa.',
+                    'La simple omisión de cualquiera de las informaciones indicadas en el artículo 10 comportará en cualquier caso una infracción muy grave.',
+                    'La publicación de esta información en el llamado aviso legal es, en todo caso, potestativa para los prestadores de servicios, siendo sólo obligatoria la publicación de la política de cookies por disposición de la normativa',
+                    'Todas son correctas'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '30. Según el art.8 de la Ley de Servicios de la Sociedad de la Información, los órganos competentes podrán ordenar a los prestadores de servicios que:',
+                options: [
+                    'Adopten las medidas necesarias para que se interrumpa la prestación del servicio o se retiren los datos que atenten o puedan atentar contra el orden público, investigación penal, seguridad y defensa; la protección salud, y de consumidores y usuarios; la protección dignidad y principio no discriminación; y la salvaguarda derechos propiedad intelectual.',
+                    'La actividad de los prestadores de servicios no puede ser interrumpida en el caso de infracciones en materia de propiedad intelectual.',
+                    'La actividad de los prestadores de servicios no está sujeta, en ningún caso, a algún tipo de autorización previa.',
+                    'La interrupción de la prestación del servicio consistente en el cierre de un sitio o una página web es una forma de censura previa.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '31. ¿Cuál es el último objetivo que plantea el Plan de Gobierno Abierto 2020-2024?',
+                options: [
+                    'La participación ciudadana',
+                    'Los sistemas de integridad pública',
+                    'La sensibilización sobre los valores',
+                    'Las iniciativas con los entes locales y las CC.AA'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '32. Indica, de las siguientes metas, ¿cuál no corresponde al objetivo Hambre Cero de la Agenda 2030?',
+                options: [
+                    'Prácticas agrícolas sostenibles y resilientes',
+                    'Estabilidad de mercados agropecuarios mundiales',
+                    'Desperdicios de alimentos',
+                    'Diversidad genética'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '33. En 2012 en la Conferencia sobre Desarrollo Sostenible de Río se creó un grupo de trabajo para desarrollar',
+                options: [
+                    'Un proceso de negociación que involucró a 193 Estados Miembros de la ONU y también la participación de la sociedad civil y otras partes interesadas',
+                    'Un conjunto de objetivos de desarrollo sostenible',
+                    'Una amplia gama de intereses y perspectivas',
+                    'Todas son correctas'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '34. A tenor de la Ley 19/2013, de Transparencia, la solicitud de acceso a la información, según el art.17, podrá presentarse por cualquier medio que permita tener constancia de (indica la RESPUESTA QUE NO PROCEDE)',
+                options: [
+                    'Una dirección de contacto',
+                    'Motivación de la solicitud',
+                    'Modalidad que se prefiera para acceder a la información solicitada',
+                    'Información que se solicita'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '35. A tenor de la Ley 19/2013, de Transparencia, indica, de entre las siguientes, cuál NO es una infracción disciplinaria muy grave, en materia de Buen Gobierno-art.29-',
+                options: [
+                    'La publicación o utilización indebida de la documentación o información a que tengan o hayan tenido acceso por razón de su cargo o función',
+                    'No guardar el debido sigilo respecto a los asuntos que se conozcan por razón del cargo, cuando causen perjuicio a la Administración o se utilice en provecho propio',
+                    'La comisión de una infracción grave cuando el autor hubiera sido sancionado por dos infracciones graves a lo largo del año anterior',
+                    'La prevalencia de la condición de alto cargo para obtener un beneficio indebido para sí o para otro.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '36. Según la Agenda Digital España Digital 2026, ¿qué característica se relaciona con el impulso a la Tecnología 5G?',
+                options: [
+                    'Promover la desaparición de la brecha digital entre zonas rurales y urbanas',
+                    'Impulsar el proceso de transformación digital del sector público, tanto en la Administración General del Estado como en las Comunidades Autónomas y Entidades Locales, con proyectos enfocados a su modernización.',
+                    'Consolidar transformaciones estructurales, sostenibles y perdurables sobre el conjunto de la economía y la sociedad.',
+                    'Preparar el 100 % del espectro radioeléctrico'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '37. Según la Agenda Digital España Digital 2026, ¿qué es el PERTE de economía circular?',
+                options: [
+                    'La consolidación de la cadena de valor nacional en transición energética para otorgar una autonomía estratégica a España y facilitar así la búsqueda de soluciones',
+                    'Un proceso clínico que incorpora datos genómicos de las personas y los combina con otros relevantes como los clínicos, los socioeconómicos o los ambientales',
+                    'La transición hacia un sistema productivo más eficiente, descarbonizado y sostenible en el uso de recursos',
+                    'Ninguna es correcta'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '38. A tenor del Real Decreto 1553/2005, si hablamos de los requisitos de validez del documento nacional de identidad, indica la RESPUESTA QUE NO PROCEDE-art.6-',
+                options: [
+                    'Si el titular ha cumplido los 65 años, será permanente',
+                    'Si el titular es un adulto de 35 años con una gran invalidez, será permanente',
+                    'Si el titular tiene 45 años, diez años',
+                    'De manera excepcional, un DNI expedido sin los requisitos necesarios, pero acreditando datos que sean suficientes a juicio del responsable del órgano encargado para la expedición, un año'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '39. ¿Qué es un Modo relleno PKCS#1?',
+                options: [
+                    'Un modo de firma electrónica',
+                    'Un hash calculado externamente',
+                    'Un modo de intercambio de claves',
+                    'Un cifrado de operaciones por algoritmo RSA'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '40. Según el Reglamento eIDAS, ¿en qué consiste el atributo identificador de unicidad?',
+                options: [
+                    'Un identificador vinculado de manera única a una persona determinada.',
+                    'Un sistema de notificación que garantiza la identidad del titular',
+                    'Un atributo por encima del nivel de seguridad exigido por un procedimiento o servicio',
+                    'Un certificado de autenticación no cualificado'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '41. Si hablamos de la renovación de certificados, indica la RESPUESTA CORRECTA',
+                options: [
+                    'La renovación de la clave es voluntaria, gratuita y por iniciativa del ciudadano',
+                    'La renovación de los certificados requiere la presencia física del titular del DNI en la Oficina de expedición',
+                    'Los Puntos de Actualización del DNI están habilitados para personas con movilidad reducida, discapacidades auditivas o discapacidades visuales.',
+                    'Todas son correctas'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '42. Según el RD 203/2021, ¿qué es un sello de tiempo?',
+                options: [
+                    'Infraestructura básica que permite el intercambio de asientos electrónicos de registro entre las Administraciones Públicas',
+                    'Asignación por medios electrónicos de una fecha y hora a un documento electrónico con la intervención de un prestador de servicios de certificación que asegure la exactitud e integridad de la marca de tiempo del documento',
+                    'La asignación por medios electrónicos de la fecha y, en su caso, la hora a un documento electrónico.',
+                    'Posibilidad de identificar el origen de un documento en las distintas fases de su producción'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '43. Según la Ley de Incompatibilidades, será requisito necesario para autorizar la compatibilidad de actividades públicas para los funcionarios del grupo C2 el que la cantidad total percibida por ambos puestos o actividades no supere la remuneración prevista en los Presupuestos Generales del Estado para el cargo de Director General, ni supere la correspondiente al principal, estimada en régimen de dedicación ordinaria, incrementada en-art.7-',
+                options: [
+                    '50%',
+                    '35%',
+                    '40%',
+                    '45%'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '44. A tenor de la Ley de Incompatibilidades, quedan exceptuadas del régimen de incompatibilidades las actividades siguientes (indica la RESPUESTA INCORRECTA)-art.19-',
+                options: [
+                    'La participación del personal docente en exámenes, pruebas o evaluaciones distintas de las que habitualmente les corresponda, en la forma reglamentariamente establecida',
+                    'La participación ocasional en coloquios y programas en cualquier medio de comunicación social',
+                    'La colaboración y la asistencia ocasional a congresos, seminarios, conferencias o cursos de carácter profesional',
+                    'La producción y creación literaria, artística, científica y técnica, así como las publicaciones derivadas de aquellas siempre que se originen como consecuencia de una relación de empleo o de prestación de servicios'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '45. A tenor de la Ley 6/2020, de los servicios electrónicos de confianza, no es una infracción grave-art.18-',
+                options: [
+                    'El incumplimiento del deber de comunicación',
+                    'El incumplimiento de la obligación de notificación de incidentes',
+                    'La ausencia de adopción de medidas, o la adopción de medidas insuficientes, para la resolución de los incidentes de seguridad en los productos, redes y sistemas de información, en el plazo de diez días desde que aquellos se hubieren producido',
+                    'No cumplir con las obligaciones de constatar la verdadera identidad del titular de un certificado electrónico y de conservar la documentación que la acredite, en caso de consignación de un pseudónimo'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '46. A tenor de la Ley 6/2020, de los servicios electrónicos de confianza, no se extinguirá por revocación la vigencia de un certificado electrónico por el siguiente motivo-art.5-',
+                options: [
+                    'Resolución judicial o administrativa que lo ordene',
+                    'Cese en la actividad del prestador de servicios de confianza cuando la gestión de los certificados electrónicos expedidos es transferida a otro prestador de servicios de confianza',
+                    'Capacidad modificada judicialmente sobrevenida, total o parcial, del firmante',
+                    'Cambio o pérdida de control sobre el nombre de dominio en el supuesto de un certificado de autenticación de sitio web'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '47. ¿Cuál de los siguientes datos no está en el anverso de un DNI?',
+                options: [
+                    'La ventana transparente con grabado láser del número de soporte físico',
+                    'La fecha de expedición',
+                    'El número de soporte físico',
+                    'El código del equipo de expedición del DNIe'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '48. A tenor del RD 1/2014, de las personas con discapacidad, ¿cuál de las siguientes definiciones se corresponde con el concepto de medida de acción positiva?-art.2-',
+                options: [
+                    'El hecho de evitar o compensar las desventajas derivadas de la discapacidad y destinadas a acelerar o lograr la igualdad de hecho de las personas con discapacidad y su participación plena en los ámbitos de la vida política, económica, social, educativa, laboral y cultural, atendiendo a los diferentes tipos y grados de discapacidad',
+                    'La situación en que se encuentra una persona con discapacidad cuando es tratada de manera menos favorable que otra en situación análoga por motivo de o por razón de su discapacidad',
+                    'La situación en la que la persona con discapacidad ejerce el poder de decisión sobre su propia existencia y participa activamente en la vida de su comunidad, conforme al derecho al libre desarrollo de la personalidad',
+                    'La condición que deben cumplir los entornos, procesos, bienes, productos y servicios, así como los objetos, instrumentos, herramientas y dispositivos para ser comprensibles, utilizables y practicables por todas las personas en condiciones de seguridad y comodidad y de la forma más autónoma y natural posible. En la accesibilidad universal está incluida la accesibilidad cognitiva para permitir la fácil comprensión, la comunicación e interacción a todas las personas'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '49. A tenor de la Ley 39/2015, según el art.6, los registros electrónicos generales y particulares de apoderamientos pertenecientes a todas y cada una de las Administraciones, deberán ser plenamente interoperables entre sí, de modo que se garantice su interconexión, compatibilidad informática, así como',
+                options: [
+                    'La representación de quienes actúen ante las Administraciones Públicas en nombre de un tercero, mediante la consulta a otros registros administrativos similares, al registro mercantil, de la propiedad, y a los protocolos notariales.',
+                    'La transmisión telemática de las solicitudes, escritos y comunicaciones que se incorporen a los mismos',
+                    'La comparecencia electrónica en la correspondiente sede electrónica haciendo uso de los sistemas de firma electrónica previstos en la ley, o bien mediante comparecencia personal en las oficinas de asistencia en materia de registros.',
+                    'El mantenimiento actualizado de un registro, u otro sistema equivalente, donde constarán los funcionarios habilitados para la identificación o firma'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '50. Si hablamos del derecho de acceso a los datos personales, a tenor del art 13 de la LO 3/2018, indica la RESPUESTA INCORRECTA',
+                options: [
+                    'Cuando el afectado ejercite su derecho de acceso sin especificar los datos objeto de la solicitud y el responsable del tratamiento trate una gran cantidad de datos relativos a aquel, el responsable del tratamiento podrá solicitar al afectado que especifique, antes del facilitar la información, los dato so actividades de tratamiento a los que se refiere la solicitud',
+                    'Las actuaciones llevadas a cabo por el responsable del tratamiento para atender la solicitud de ejercicio del derecho de acceso a los datos personales serán siempre gratuitas',
+                    'El responsable del tratamiento podrá considerar repetitivo el ejercicio del derecho de acceso en más de una ocasión durante el plazo de seis meses, a menos que exista causa legítima para ello',
+                    'El derecho de acceso se entenderá otorgado si el responsable del tratamiento facilitar al afectado un sistema de acceso remoto, directo y seguro a los datos personales que garantice, de modo permanente, el acceso a su totalidad'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '51. A tenor del art.2 del RD 203/2021, se encuentra el principio de facilidad de uso, que determina',
+                options: [
+                    'Que el diseño de los servicios electrónicos no esté centrado en las personas usuarias, de forma que se aproveche el grado de conocimiento necesario para el uso del servicio',
+                    'Que el diseño de los servicios electrónicos esté centrado en la personas usuarias, de forma que se minimice el grado de conocimiento necesario para el uso del servicio',
+                    'Que en el diseño de los servicios electrónicos se esté centrado en el factor que las personas usurarias sean capaces de intuir el funcionamiento de los servicios, de tal manera que se vayan aprendiendo progresivamente',
+                    'Que el diseño y desarrollo de los servicios electrónicos esté centrado en el progreso tecnológico. De forma que se maximice el grado de inversión y de progreso electrónico'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '52. Con relación a los estados de alarma, excepción y sitio, el artículo 116 de la CE establece que:',
+                options: [
+                    'El estado de sitio será declarado por el Gobierno mediante decreto acordado en Consejo de Ministros, previa consulta a las Cortes Generales.',
+                    'El estado de alarma será declarado por la mayoría absoluta del Congreso de los Diputados.',
+                    'El estado de excepción será declarado por el Gobierno mediante decreto acordado en Consejo de Ministros, previa autorización del Congreso de los Diputados.',
+                    'El estado de alarma y el estado de sitio serán declarados, dando cuenta al Congreso de los Diputados.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '53. De acuerdo con el artículo 6 de la Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres, se considera discriminación directa por razón de sexo:',
+                options: [
+                    'Todo trato igual o desigual, favorable o desfavorable a las personas relacionado con la edad.',
+                    'La situación en la que se encuentra una persona que sea, haya sido o pudiera ser tratada, en atención a su sexo, de manera menos favorable que otra en situación comparable.',
+                    'Todo acto administrativo que da lugar a una diferencia de trato basado en un conjunto de características relacionadas con el sexo, la etnia y la edad de las personas.',
+                    'Toda medida específica en favor de las mujeres para corregir situaciones patentes de desigualdad respecto de los hombres.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '54. El artículo 10 del TREBEP define que "son funcionarios interinos los que, por razones expresamente justificadas de necesidad y urgencia, son nombrados como tales con carácter temporal para el desempeño de funciones propias de funcionarios de carrera, cuando se dé alguna de las siguientes circunstancias":',
+                options: [
+                    'La sustitución transitoria de los titulares, durante el tiempo estrictamente necesario.',
+                    'El exceso o acumulación de tareas por plazo máximo de seis meses, dentro de un periodo de dieciocho meses.',
+                    'La sustitución transitoria de los titulares, durante el tiempo favorable al personal interino.',
+                    'El exceso o acumulación de tareas por un plazo hasta tres años'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '55. El artículo 22 del TREBEP determina que las pagas extraordinarias de los funcionarios públicos serán dos al año:',
+                options: [
+                    'Cada una por el importe de la totalidad de las retribuciones básicas y de la totalidad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo.',
+                    'Cada una por el importe de una mensualidad de las retribuciones básicas y de la totalidad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo.',
+                    'Cada una por el importe de dos mensualidades de las retribuciones básicas y de la totalidad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo.',
+                    'Cada una por el importe de una mensualidad de las retribuciones básicas y de la mitad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '56. De acuerdo con el artículo 10 del Real Decreto 203/2021, de 30 de marzo, el acto o resolución de creación o supresión de una sede electrónica o sede electrónica asociada determinará, al menos:',
+                options: [
+                    'La identificación del órgano u órganos encargados de la gestión y de los servicios puestos a disposición en la misma.',
+                    'La identificación del órgano u órganos encargados de retroalimentación y de la disposición de la misma.',
+                    'La identificación del órgano u órganos encargados de la relación nominal de hardware.',
+                    'La identificación del órgano u órganos encargados de la gestión y de los servicios que se cobrarán en los accesos.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '57. De acuerdo con el artículo 6 de la Ley 39/2015, de 1 de octubre, los poderes inscritos en el registro electrónico de apoderamientos pueden ser prorrogados. A tal efecto se establece que:',
+                options: [
+                    'Las prórrogas otorgadas por el poderdante al registro tendrán una validez determinada máxima de tres años a contar desde la fecha de inscripción.',
+                    'Las prórrogas otorgadas por el representante al registro tendrán una validez determinada máxima de cinco años a contar desde la fecha de inscripción.',
+                    'Las prórrogas otorgadas por el poderdante al registro tendrán una validez determinada mínima de cinco años a contar desde la fecha de inscripción.',
+                    'Las prórrogas otorgadas por el poderdante al registro tendrán una validez determinada máxima de cinco años a contar desde la fecha de inscripción'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '58. La información en el chip de la tarjeta electrónica de un DNI está distribuida en tres zonas con diferentes niveles y condiciones de acceso. Las claves Diffie-Hellman',
+                options: [
+                    'Son usadas en Zona privada para monitorizar series criptográficas',
+                    'Son patrones de impresión dactilar',
+                    'Son usadas en Zona pública, de forma segura, para protegernos de un canal inseguro',
+                    'Indican el número de serie de un soporte'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '59. A tenor del artículo 14 de la Ley 39/2006, de Dependencia, si hablamos de las prestaciones de atención a la dependencia, indica la RESPUESTA CORRECTA',
+                options: [
+                    'El beneficiario podrá, excepcionalmente, recibir una prestación económica para ser atendido por cuidadores no profesionales, siempre que se den condiciones adecuadas de convivencia y de habitabilidad de la vivienda y así lo establezca su Programa Individual de Atención',
+                    'La prioridad en el acceso a los servicios vendrá determinada por la capacidad económica del solicitante y, en su defecto, por el grado de dependencia',
+                    'A los efectos de esta Ley, la capacidad económica se determinará, en la forma que reglamentariamente se establezca, a propuesta de la Red de Servicios Sociales de las respectivas Comunidades Autónomas en atención a la renta y el patrimonio del solicitante.',
+                    'Los servicios del Catálogo tendrán carácter supletorio y se prestarán a través de la oferta pública de la Red de Servicios Sociales por las respectivas Comunidades Autónomas y Entes Locales mediante centros y servicios públicos o privados concertados debidamente acreditados'
+                ],
+                correctAnswerIndex: null // Placeholder
+            },
+            {
+                question: '60. Tal y como se recoge en el artículo 62 de la CE, corresponde al Rey:',
+                options: [
+                    'Representar al Gobierno de la nación.',
+                    'Dirigir la política de defensa y ejercer respecto de las Fuerzas Armadas las funciones previstas en la legislación reguladora de la defensa nacional y de la organización militar.',
+                    'Ser informado de los asuntos de Estado y presidir, a estos efectos, las sesiones del Consejo de Ministros, cuando lo estime oportuno, a petición del Presidente del Gobierno.',
+                    'Crear, modificar y suprimir los Departamentos Ministeriales y las Secretarías de Estado.'
+                ],
+                correctAnswerIndex: null // Placeholder
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores the index of the selected option for each question
+
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button');
+        const resultsSection = document.getElementById('results-section');
+        const feedbackDiv = document.getElementById('feedback');
+
+        // Function to load state from LocalStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Initialize userAnswers array with nulls if no saved data
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            // Ensure userAnswers has the correct length if questions array changes
+            if (userAnswers.length !== questions.length) {
+                const newAnswers = new Array(questions.length).fill(null);
+                for (let i = 0; i < Math.min(userAnswers.length, questions.length); i++) {
+                    newAnswers[i] = userAnswers[i];
+                }
+                userAnswers = newAnswers;
+            }
+        }
+
+        // Function to save state to LocalStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Function to display the current question
+        function displayQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            resultsSection.classList.add('hidden'); // Hide results if navigating back to questions
+            feedbackDiv.classList.add('hidden'); // Hide feedback when new question loads
+
+            const question = questions[currentQuestionIndex];
+            questionText.textContent = question.question;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.index = index; // Store the option index
+
+                // Mark the selected option if it exists for this question
+                if (userAnswers[currentQuestionIndex] === index) {
+                    button.classList.add('selected');
+                }
+
+                // If an answer has been selected for this question, disable options and show feedback
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    button.disabled = true;
+                    if (index === question.correctAnswerIndex) {
+                        button.classList.add('correct');
+                    } else if (index === userAnswers[currentQuestionIndex]) {
+                        button.classList.add('incorrect');
+                    }
+                    showFeedback(userAnswers[currentQuestionIndex] === question.correctAnswerIndex);
+                } else {
+                    button.addEventListener('click', handleOptionClick);
+                }
+                optionsContainer.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            saveState(); // Save state after displaying
+        }
+
+        // Handle option click
+        function handleOptionClick(event) {
+            const selectedOptionIndex = parseInt(event.target.dataset.index, 10);
+            userAnswers[currentQuestionIndex] = selectedOptionIndex; // Store user's answer
+
+            // Disable all options for the current question
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+                button.removeEventListener('click', handleOptionClick); // Remove listener to prevent re-answering
+            });
+
+            const question = questions[currentQuestionIndex];
+            const isCorrect = selectedOptionIndex === question.correctAnswerIndex;
+
+            // Apply styling based on correctness
+            Array.from(optionsContainer.children).forEach(button => {
+                const optionIndex = parseInt(button.dataset.index, 10);
+                if (optionIndex === question.correctAnswerIndex) {
+                    button.classList.add('correct');
+                } else if (optionIndex === selectedOptionIndex) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            showFeedback(isCorrect);
+            saveState(); // Save state after answering
+        }
+
+        // Show feedback message
+        function showFeedback(isCorrect) {
+            feedbackDiv.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
+            if (isCorrect) {
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.classList.add('feedback-correct');
+            } else {
+                feedbackDiv.textContent = 'Incorrecto. La respuesta correcta es la ' + (questions[currentQuestionIndex].correctAnswerIndex + 1) + '.';
+                feedbackDiv.classList.add('feedback-incorrect');
+            }
+        }
+
+        // Update navigation button states
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length; // Disable next if on last question or results screen
+        }
+
+        // Navigate to the next question
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                currentQuestionIndex++;
+                displayQuestion();
+            }
+        }
+
+        // Navigate to the previous question
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        // Show final results
+        function showResults() {
+            questionText.textContent = 'Test Completado';
+            optionsContainer.innerHTML = '';
+            feedbackDiv.classList.add('hidden');
+            prevButton.disabled = true;
+            nextButton.disabled = true;
+            resultsSection.classList.remove('hidden');
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === q.correctAnswerIndex) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('incorrect-count').textContent = incorrectCount;
+            document.getElementById('unanswered-count').textContent = unansweredCount;
+        }
+
+        // Restart the test
+        function restartTest() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el test? Se perderá tu progreso actual.')) {
+                currentQuestionIndex = 0;
+                userAnswers = new Array(questions.length).fill(null); // Reset all answers
+                localStorage.clear(); // Clear LocalStorage
+                displayQuestion();
+            }
+        }
+
+        // Event Listeners
+        prevButton.addEventListener('click', prevQuestion);
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartTest);
+
+        // Initial load
+        window.onload = () => {
+            loadState();
+            displayQuestion();
+        };
+    </script>
+</body>
+</html>

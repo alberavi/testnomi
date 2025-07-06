@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo</title>
+    <!-- Carga de Tailwind CSS para estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Fondo gris claro */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alineación superior para permitir el scroll */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* Bordes más redondeados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Ancho máximo para el contenedor */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Fondo ligeramente diferente para la tarjeta de pregunta */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Borde sutil */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Azul claro para la opción seleccionada */
+            border-color: #3b82f6; /* Borde azul */
+        }
+        input[type="radio"] {
+            display: none; /* Oculta el radio button nativo */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Verde claro */
+            border-color: #10b981; /* Borde verde */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Rojo claro */
+            border-color: #ef4444; /* Borde rojo */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Azul */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Azul más oscuro al pasar el ratón */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gris */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Fondo verde muy claro */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #047857;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test de Auxiliar de Informática</h1>
+        <div id="quiz-questions">
+            <!-- Las preguntas se cargarán aquí -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary" style="display: none;">Anterior</button>
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Has obtenido <span id="score-display" class="text-green-700"></span> preguntas correctas de <span id="total-questions-display"></span>.</p>
+            <button id="restart-btn" class="button-primary mt-6">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "1) El Congreso de los Diputados tiene la competencia exclusiva de:",
+                options: {
+                    A: "La aprobación de las leyes",
+                    B: "El control al Gobierno",
+                    C: "La convalidación o derogación de los reales decretos-leyes",
+                    D: "La aprobación del presupuesto general del Estado"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "2) ¿Cuál es el órgano rector del Congreso de los Diputados y ostenta la representación colegiada de éste en los actos a que asista?",
+                options: {
+                    A: "El Pleno",
+                    B: "La Mesa",
+                    C: "La Junta de Portavoces",
+                    D: "La Diputación Permanente"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "3) ¿Quién puede pedir la celebración de una sesión de Pleno extraordinaria?",
+                options: {
+                    A: "Un Grupo Parlamentario",
+                    B: "Dos Grupos Parlamentarios",
+                    C: "La Junta de Portavoces",
+                    D: "La mayoría absoluta de los miembros del Congreso"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "4) El orden del día del Pleno será fijado por:",
+                options: {
+                    A: "El Presidente, de acuerdo con la Junta de Portavoces",
+                    B: "El Presidente, de acuerdo con la Mesa",
+                    C: "El Presidente, de acuerdo con el Gobierno",
+                    D: "El Presidente, de acuerdo con el grupo parlamentario al que pertenezca"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "5) ¿Quién adopta sus decisiones en función del criterio de voto ponderado?",
+                options: {
+                    A: "La Mesa",
+                    B: "La Diputación Permanente",
+                    C: "El Pleno",
+                    D: "La Junta de Portavoces"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "6) ¿Qué órgano garantiza la aplicación del Plan de Igualdad en las Cortes Generales?",
+                options: {
+                    A: "La Junta Electoral Central",
+                    B: "La Comisión de Igualdad del Congreso",
+                    C: "La Comisión de Seguimiento del Plan de Igualdad",
+                    D: "La Diputación Permanente"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "7) ¿Cuál es la composición de la Mesa del Congreso de los Diputados según el Reglamento?",
+                options: {
+                    A: "Un Presidente, dos Vicepresidentes y tres Secretarios",
+                    B: "Un Presidente, tres Vicepresidentes y tres Secretarios",
+                    C: "Un Presidente, cuatro Vicepresidentes y cuatro Secretarios",
+                    D: "Un Presidente, un Vicepresidente y dos Secretarios"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "8) ¿Cuál es el sistema electoral utilizado para elegir a los miembros del Congreso de los Diputados?",
+                options: {
+                    A: "Representación proporcional con listas abiertas y circunscripción nacional",
+                    B: "Representación mayoritaria con listas cerradas y circunscripción provincial",
+                    C: "Representación proporcional con listas cerradas y circunscripción provincial",
+                    D: "Representación proporcional mixta con doble vuelta y circunscripción autonómica"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "9) ¿Quién convoca a la Junta de Portavoces?",
+                options: {
+                    A: "La Presidencia del Congreso",
+                    B: "La Mesa del Congreso",
+                    C: "El Presidente del Gobierno",
+                    D: "Los Grupos Parlamentarios"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "10) Según el Estatuto del Personal de las Cortes Generales, el ingreso del personal funcionario se basa en:",
+                options: {
+                    A: "Experiencia profesional",
+                    B: "Designación política",
+                    C: "Oposición pública basada en mérito y capacidad",
+                    D: "Elección directa por la Presidencia"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "11) Los cifrados ofrecidos por WPA3 son:",
+                options: {
+                    A: "WPA3-Personal y WPA3-Enterprise",
+                    B: "WPA3-Home y WPA3-Business",
+                    C: "WEP y Open Network",
+                    D: "Mesh y WDS"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "12) ¿Qué tipo de conexión de almacenamiento tiene mayor velocidad?",
+                options: {
+                    A: "NVME",
+                    B: "SATA",
+                    C: "SCSI",
+                    D: "USB3"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "13) La característica de seguridad de Windows que cifra unidades completas para proteger los datos contra accesos no autorizados se denomina:",
+                options: {
+                    A: "TPM",
+                    B: "BitLocker",
+                    C: "Aurora",
+                    D: "Cryptodisk"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "14) Para que el Firmware de un dispositivo pueda ser fácilmente actualizable, es recomendable que esté en una memoria de tipo:",
+                options: {
+                    A: "Flash",
+                    B: "RAM",
+                    C: "ROM",
+                    D: "Óptica"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "15) ¿Qué se entiende por arquitectura de un computador?",
+                options: {
+                    A: "El diseño de las redes que lo conectan a internet",
+                    B: "El conjunto de herramientas ofimáticas que utiliza",
+                    C: "La estructura y organización de sus componentes internos",
+                    D: "El tipo de software instalado en el sistema"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "16) El DNI electrónico es un dispositivo de tipo:",
+                options: {
+                    A: "Biométrico",
+                    B: "Criptográfico",
+                    C: "Flash",
+                    D: "USB"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "17) En un rack, la medida de una unidad U se refiere a:",
+                options: {
+                    A: "Altura del dispositivo.",
+                    B: "Ancho del dispositivo.",
+                    C: "Profundidad del dispositivo.",
+                    D: "Peso del dispositivo."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "18) En Linux, el fichero que mantiene la información relativa a los puntos de montaje de las particiones de disco se denomina:",
+                options: {
+                    A: "/etc/filesystems",
+                    B: "/etc/disks",
+                    C: "/var/adm/disks",
+                    D: "/etc/fstab"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "19) Para poder instalar un sistema operativo antiguo en una placa base UEFI, esta debe contar con soporte para:",
+                options: {
+                    A: "CSM (Compatibility Support Module)",
+                    B: "Memoria SIMM",
+                    C: "Tarjeta VGA con VESA",
+                    D: "SCSI"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "20) ¿Qué información NO está contenida en el fichero /etc/passwd en un sistema Linux?",
+                options: {
+                    A: "El Shell asignado al usuario",
+                    B: "EI UID del usuario",
+                    C: "El conjunto de grupos secundarios del usuario",
+                    D: "El directorio home del usuario"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "21) En un sistema Linux, para limitar los permisos por omisión de los ficheros de nueva creación en un proceso, se utiliza el comando:",
+                options: {
+                    A: "umask",
+                    B: "chgrp",
+                    C: "fdisk",
+                    D: "limits"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "22) Microsoft Outlook soporta, de forma nativa, la firma digital de mensajes mediante:",
+                options: {
+                    A: "PGP",
+                    B: "GPG",
+                    C: "S/MIME",
+                    D: "Blockchain"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "23) ¿Qué tecnología de disco SSD tiene la mayor durabilidad frente al uso continuado de escritura/lectura?",
+                options: {
+                    A: "QLC",
+                    B: "SLC",
+                    C: "TLC",
+                    D: "MLC"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "24) ¿Cuál de los siguientes no es un tipo de cable UTP Ethernet?",
+                options: {
+                    A: "Cat 5",
+                    B: "Cat 5a",
+                    C: "Cat 6",
+                    D: "Cat 6a"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "25) La autenticación mediante imagen facial en el sistema operativo IOS se denomina:",
+                options: {
+                    A: "Face Scan",
+                    B: "IOS Hello",
+                    C: "Face ID",
+                    D: "Facial Ident"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "26) En el sistema operativo Windows, cuando un dispositivo no está correctamente instalado, en el Administrador de Dispositivos se muestra con:",
+                options: {
+                    A: "Un símbolo de admiración en color amarillo",
+                    B: "Un símbolo de interrogación en color amarillo",
+                    C: "Un símbolo en forma de aspa de color rojo",
+                    D: "Un símbolo en forma de aspa de color amarillo"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "27) Una tecnología que sincroniza la frecuencia de actualización del monitor con la velocidad de fotogramas de la tarjeta gráfica se denomina:",
+                options: {
+                    A: "OLED",
+                    B: "FreeSync",
+                    C: "SyncScan",
+                    D: "HDMI"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "28) Si un ordenador personal necesitara realizar tareas de inferencia de IA y de aceleración de gráficos en 3D, sería necesario que dispusiera de:",
+                options: {
+                    A: "TPU",
+                    B: "GPU",
+                    C: "NPU",
+                    D: "QPU"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "29) ¿Cuál de los siguientes interfaces no permite la conexión de una tarjeta gráfica externa de forma nativa?",
+                options: {
+                    A: "Oculink",
+                    B: "Thunderbolt 3/4",
+                    C: "USB 4",
+                    D: "USB 3"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "30) ¿Qué puerto TCP utiliza SSH por omisión?",
+                options: {
+                    A: "21",
+                    B: "22",
+                    C: "23",
+                    D: "24"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "31) Los ordenadores MAC de Apple de la última generación están basado en procesadores con arquitectura:",
+                options: {
+                    A: "Intel",
+                    B: "PowerPC",
+                    C: "ARM",
+                    D: "RISC-V"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "32) En las tabletas Apple de última generación, el único dispositivo que no dispone de Touch-ID es:",
+                options: {
+                    A: "Ipad",
+                    B: "Ipad Air",
+                    C: "Ipad Pro",
+                    D: "Ipad Mini"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "33) En Microsoft Windows, el comando sfc /scannow:",
+                options: {
+                    A: "Hace un examen de la superficie del disco.",
+                    B: "Examina todos los archivos protegidos del sistema y los reemplaza por una copia correcta en caché.",
+                    C: "Muestra todos los nodos de red presentes en el dominio de broadcast.",
+                    D: "Sirve para escanear documentos mediante la línea de comando."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "34) La versión más reciente del sistema operativo MacOS es",
+                options: {
+                    A: "Sierra",
+                    B: "High Sierra",
+                    C: "Sonoma",
+                    D: "Sequoia"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "35) El servicio por omisión para la distribución de actualizaciones a ordenadores con sistema operativo Windows se denomina:",
+                options: {
+                    A: "SNAP",
+                    B: "Windows Update",
+                    C: "Microsoft Patch",
+                    D: "Microsoft Store"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "36) En Microsoft Windows 11, respecto del panel de control, se puede decir que:",
+                options: {
+                    A: "Ya no se encuentra disponible.",
+                    B: "Sólo está disponible si se actualizó Windows 11 desde versiones anteriores.",
+                    C: "Está disponible y agrupa funciones que no han sido migradas a la aplicación de Configuración.",
+                    D: "Puede instalarse desde versiones antiguas de Windows, para acceder a funciones avanzadas de optimización."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "37) ¿Cuál de las siguientes utilidades de línea de comando se utilizaría para cerrar una aplicación colgada o bloqueada en Microsoft Windows?",
+                options: {
+                    A: "ACSLS",
+                    B: "TASKKILL",
+                    C: "PROCKILL",
+                    D: "CHKTASK"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "38) En un dispositivo con sistema operativo Chrome OS, la función que elimina todos los datos de usuario y devuelve al dispositivo al estado de fábrica se denomina:",
+                options: {
+                    A: "Carpet Bombing",
+                    B: "Annihilation",
+                    C: "Powerwash",
+                    D: "Rolling Thunder"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "39) La funcionalidad de IOS que activa la función de protección extrema en caso de sospecha de estar bajo un ciberataque se denomina:",
+                options: {
+                    A: "Knox",
+                    B: "Modo Avión (Airplane Mode)",
+                    C: "XCode (Separation Mode)",
+                    D: "Modo de aislamiento (Lockdown Mode)"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "40) ¿Cuál de los siguientes lenguajes de programación no puede utilizarse en Excel de forma integrada?",
+                options: {
+                    A: "Python",
+                    B: "Go",
+                    C: "VBA",
+                    D: "Office Scripts"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "41) El mecanismo de Wake On LAN funciona:",
+                options: {
+                    A: "Mediante el envío de una señal eléctrica por uno de los pines de la conexión Ethernet del equipo a arrancar",
+                    B: "Mediante la activación del puerto del conmutador correspondiente al equipo a arrancar",
+                    C: "Mediante el envío de un paquete que contiene la MAC del equipo a arrancar",
+                    D: "Ninguna de las anteriores"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "42) ¿Qué es una crimpadora?",
+                options: {
+                    A: "Una herramienta para poner conectores y terminales en los extremos de los cables de red.",
+                    B: "Una herramienta para eliminar la electricidad estática.",
+                    C: "Una herramienta para la instalación de servidores en bastidores.",
+                    D: "Una herramienta multifactorial de medición."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "43) El sistema de gestión de bases de datos integrado en la suite LibreOffice se denomina:",
+                options: {
+                    A: "Oracle",
+                    B: "Base",
+                    C: "Access",
+                    D: "Lotus"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "44) El atajo en el sistema operativo Windows para bloquear la pantalla es:",
+                options: {
+                    A: "Tecla Windows + Tecla A",
+                    B: "Tecla Windows + Tecla C",
+                    C: "Tecla Windows + Tecla D",
+                    D: "Tecla Windows + Tecla L"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "45) En el estándar 802.11 ¿Qué es el SSID?",
+                options: {
+                    A: "El tipo de modulación de la señal",
+                    B: "El protocolo de seguridad de la red",
+                    C: "La dirección MAC del punto de acceso",
+                    D: "El nombre que se asocia a la red Wi-Fi"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "46) ¿Cuál es el propósito del TTL (Time to live) en un datagrama IP?",
+                options: {
+                    A: "Determinar si un paquete es TCP o UDP",
+                    B: "Incrementar la prioridad del tráfico",
+                    C: "Controlar el tiempo de viaje de un paquete",
+                    D: "Evitar que los paquetes circulen indefinidamente por la red"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "47) ¿Cuál es la dirección de broadcast para la red 192.168.20.32/27 (en notación CIDR)?",
+                options: {
+                    A: "192.168.20.63",
+                    B: "192.168.20.33",
+                    C: "192.168.20.62",
+                    D: "192.168.20.255"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "48) En WiFi 6, la anchura máxima del canal es de:",
+                options: {
+                    A: "20 Mhz",
+                    B: "40 Mhz",
+                    C: "80 Mhz",
+                    D: "160 Mhz"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "49) ¿Cuál de los siguientes no es un protocolo de VPN?",
+                options: {
+                    A: "SCSI",
+                    B: "OpenVPN",
+                    C: "IPSec",
+                    D: "L2TP"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "50) El componente de Microsoft Windows que permite la ejecución del sistema operativo Linux sin necesidad de una máquina virtual se denomina:",
+                options: {
+                    A: "Windows Subsystem for Linux",
+                    B: "Linux System for Windows",
+                    C: "Microsoft Services for Unix",
+                    D: "Hercules"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "51) El sistema de inicio de sesión de Microsoft que permite conectarse mediante reconocimiento facial, huella dactilar o pin se denomina:",
+                options: {
+                    A: "Windows Enhanced Authentication",
+                    B: "Windows Hello",
+                    C: "Face ID",
+                    D: "Virtual Windows ID"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "52) El protocolo de escritorio remoto nativo en el sistema operativo Windows es:",
+                options: {
+                    A: "PcolP",
+                    B: "VNC",
+                    C: "RDP",
+                    D: "ICA"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "53) La función de Microsoft Word que permite crear lotes de documentos personalizados a partir de orígenes de datos tales como listas u hojas de cálculo se denomina:",
+                options: {
+                    A: "Combinación de correspondencia",
+                    B: "Fusión serializada",
+                    C: "Plantillado estructurado",
+                    D: "Formateado algorítmico"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "54) Para equipos de usuario en los que hay limitaciones de espacio físico, el formato usual de las memorias DDR4 suele ser:",
+                options: {
+                    A: "RIMM",
+                    B: "SO-DIMM",
+                    C: "SDR",
+                    D: "SIMM"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "55) Según ANSI/TIA/EIA-942 ¿Qué tipo de cableado se recomienda utilizar para la conectividad de alta velocidad en el centro de datos?",
+                options: {
+                    A: "Cableado coaxial",
+                    B: "Cableado par trenzado 5e",
+                    C: "Cableado par trenzado 6e",
+                    D: "Cableado de fibra óptica"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "56) El conjunto de infraestructuras de comunicaciones y servicios básicos que conecta las redes de las Administraciones Públicas Españolas e Instituciones Europeas facilitando el intercambio de información y el acceso a los servicios se denomina:",
+                options: {
+                    A: "SARNET",
+                    B: "Red SARA",
+                    C: "GEANT",
+                    D: "Red RICO"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "57) El formato recomendado para la conservación a largo plazo de documentos PDF es:",
+                options: {
+                    A: "PDF/A",
+                    B: "PDF/LTV",
+                    C: "PDF/X",
+                    D: "PDF Rosetta"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "58) ¿Cuál de las siguientes afirmaciones es correcta respecto a las diferencias entre IPv4 e IPv6?",
+                options: {
+                    A: "IPv6 utiliza direcciones de 64 bits, mientras que IPv4 utiliza direcciones de 128 bits",
+                    B: "IPv6 proporciona más direcciones posibles que IPv4 gracias al uso de direcciones de 128 bits",
+                    C: "IPv4 permite una mayor seguridad incorporada que IPv6",
+                    D: "IPv6 proporciona menos direcciones posibles que IPv4"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "59) ¿Cuál de las siguientes opciones describe mejor la diferencia entre USB 2.0 y USB 3.0?",
+                options: {
+                    A: "USB 2.0 permite velocidades de hasta 10 Gbps, mientras que USB 3.0 alcanza solo 480 Mbps",
+                    B: "USB 3.0 permite una mayor velocidad de transferencia de datos que USB 2.0, y sus conectores suelen ser de color azul",
+                    C: "USB 2.0 y USB 3.0 tienen la misma velocidad, pero usan diferentes voltajes",
+                    D: "USB 3.0 solo es compatible con dispositivos de almacenamiento masivo"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "60) ¿Cuál de las siguientes afirmaciones sobre USB-C es correcta?",
+                options: {
+                    A: "USB-C solo se utiliza para cargar dispositivos móviles y no sirve para transferencia de datos",
+                    B: "USB-C es exclusivo de dispositivos Apple y no se utiliza en otros equipos",
+                    C: "USB-C es un tipo de conector que puede transmitir datos, energía y video",
+                    D: "USB-C es simplemente una versión más lenta de USB 3.0"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "61) ¿Para qué sirve la memoria RAM en un ordenador?",
+                options: {
+                    A: "Para almacenar datos de forma permanente",
+                    B: "Para guardar los archivos del sistema operativo",
+                    C: "Para ejecutar programas y procesar datos de forma temporal",
+                    D: "Para enfriar el procesador"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "62) ¿Qué función cumple la placa base (motherboard)?",
+                options: {
+                    A: "Es el circuito principal que conecta todos los componentes del ordenador",
+                    B: "Es el ventilador que enfría el procesador",
+                    C: "Es la tarjeta que proporciona sonido al sistema",
+                    D: "Es el dispositivo que almacena copias de seguridad"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "63) La aplicación de Google WorkSpace para la edición de presentaciones se denomina:",
+                options: {
+                    A: "Presentations",
+                    B: "Slides",
+                    C: "Keynotes",
+                    D: "Impress"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "64) El patrón de diapositivas en PowerPoint:",
+                options: {
+                    A: "Permite que todas las diapositivas contengan las mismas fuentes e imágenes",
+                    B: "Es único para cada presentación PowerPoint",
+                    C: "Permite limitar el número de diapositivas en una presentación PowerPoint",
+                    D: "No existe ese concepto en PowerPoint"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "65) La función principal de Microsoft Authenticator es:",
+                options: {
+                    A: "Almacenar contraseñas web de forma segura",
+                    B: "Proporcionar códigos de verificación para la autenticación en dos pasos",
+                    C: "Verificar la caducidad de la licencia de Microsoft",
+                    D: "Ninguna de las anteriores"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "66) ¿Cuál de los siguientes nombres de ficheros sería válido en OneDrive?",
+                options: {
+                    A: "Informe*.xlsx",
+                    B: "Proyecto>2024.doc",
+                    C: "\\Notas Finales\\",
+                    D: "Documentos_Empresa.xlsx"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "67) ¿Cuál de los siguientes caracteres no está permitido en los nombres de archivos y carpetas en OneDrive?",
+                options: {
+                    A: "_ (guion bajo)",
+                    B: "- (guion medio)",
+                    C: "* (asterisco)",
+                    D: ". (punto)"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "68) En Microsoft Teams:",
+                options: {
+                    A: "Los canales son un tipo de equipos.",
+                    B: "Los equipos se componen de canales.",
+                    C: "Los canales se componen de equipos.",
+                    D: "Los equipos y los canales no están relacionados."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "69) Un tema en PowerPoint es:",
+                options: {
+                    A: "Únicamente una paleta de colores.",
+                    B: "Únicamente una paleta de colores y fuentes.",
+                    C: "Únicamente una paleta de colores, fuentes, y efectos especiales.",
+                    D: "Únicamente una paleta de fuentes y efectos especiales."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "70) Un libro en Excel es:",
+                options: {
+                    A: "Un conjunto de celdas agrupadas en una sola hoja.",
+                    B: "Una función para organizar fórmulas en una hoja de cálculo.",
+                    C: "Un formato especial para aplicar estilos a celdas específicas.",
+                    D: "Un archivo que contiene una o más hojas de cálculo."
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "71) La capacidad de edición de metadatos en un gestor de PDF:",
+                options: {
+                    A: "Permite agregar marcas de agua personalizadas en el documento.",
+                    B: "Facilita la búsqueda y organización de documentos.",
+                    C: "Mejora la calidad visual del archivo optimizando las imágenes y los gráficos.",
+                    D: "Ayuda a convertir el documento a otros formatos, como ePub o Word."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "72) ¿Cuál de las siguientes características hace que un archivo PDF sea vulnerable a acciones malintencionadas?",
+                options: {
+                    A: "La posibilidad de incluir contenido multimedia.",
+                    B: "La seguridad mejorada.",
+                    C: "La capacidad de ser impreso.",
+                    D: "La función de compresión de datos."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "73) ¿Qué componente es necesario para crear una firma basada en certificado en Acrobat o Acrobat Reader?",
+                options: {
+                    A: "Una clave pública sin un certificado.",
+                    B: "Una imagen de firma solamente.",
+                    C: "Un ID digital que incluya una clave privada y un certificado.",
+                    D: "Un documento protegido con contraseña."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "74) ¿Qué sucede cuando compartes una carpeta en OneDrive con permisos de edición?",
+                options: {
+                    A: "La carpeta permanece privada y no se puede modificar.",
+                    B: "Los destinatarios pueden agregar la carpeta a su propio OneDrive y trabajar en ella sin conexión.",
+                    C: "Los destinatarios solo pueden ver la carpeta sin hacer cambios.",
+                    D: "La carpeta se elimina automáticamente después de 30 días."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "75) ¿Cuál de las siguientes acciones ayuda a proteger tu cuenta de OneDrive en caso de que olvides tu contraseña?",
+                options: {
+                    A: "Usar una contraseña corta y fácil de recordar.",
+                    B: "Agregar información de seguridad como un número de teléfono o correo electrónico alternativo.",
+                    C: "Habilitar el cifrado solo en dispositivos de escritorio.",
+                    D: "Desactivar la verificación de dos factores para simplificar el inicio de sesión."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "76) ¿Qué medida de seguridad se recomienda para proteger los archivos de OneDrive en caso de pérdida o robo de un dispositivo móvil?",
+                options: {
+                    A: "Utilizar una contraseña básica.",
+                    B: "Activar el cifrado en el dispositivo móvil.",
+                    C: "Desinstalar la aplicación de OneDrive después de cada uso.",
+                    D: "Desactivar el acceso a la cuenta en dispositivos iOS y Android."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "77) ¿Por qué es importante agregar información de seguridad (como un número de teléfono o correo electrónico alternativo) a tu cuenta de Microsoft para proteger tus archivos en OneDrive?",
+                options: {
+                    A: "Permite recuperar archivos eliminados permanentemente de OneDrive.",
+                    B: "Facilita el restablecimiento de la cuenta si se olvida la contraseña o es comprometida.",
+                    C: "Reduce la necesidad de utilizar contraseñas fuertes.",
+                    D: "Garantiza que solo dispositivos de confianza puedan sincronizar archivos automáticamente."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "78) ¿Cuál es la principal diferencia entre el cifrado extremo a extremo y el cifrado TLS en un sistema de videoconferencia?",
+                options: {
+                    A: "El cifrado TLS no cifra los mensajes que contienen imágenes o vídeos.",
+                    B: "Con el cifrado extremo a extremo, la empresa dueña de la aplicación no puede acceder a los mensajes.",
+                    C: "El cifrado extremo a extremo requiere siempre una conexión a internet estable.",
+                    D: "El cifrado TLS asegura que solo el receptor pueda ver el mensaje, sin intervención del servidor."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "79) ¿Cuál es una de las ventajas de utilizar VDI en una empresa?",
+                options: {
+                    A: "Permite a los usuarios almacenar datos personales junto a los datos corporativos.",
+                    B: "Facilita el acceso remoto a aplicaciones y datos corporativos sin comprometer su seguridad.",
+                    C: "Requiere que todos los dispositivos estén conectados físicamente a la red de la empresa.",
+                    D: "Elimina la necesidad de utilizar un cliente de escritorio seguro."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "80) ¿De los siguientes servicios cuál permite entregar escritorios y aplicaciones virtuales a los usuarios?",
+                options: {
+                    A: "Infraestructura como servicio (IaaS).",
+                    B: "Escritorio como servicio (DaaS).",
+                    C: "Redes privadas virtuales (VPN).",
+                    D: "Aplicaciones móviles empresariales (EMA)."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "81) ¿Qué caracteriza a un escritorio virtual persistente en un entorno VDI?",
+                options: {
+                    A: "Ofrece una experiencia personalizada que se elimina al cerrar sesión.",
+                    B: "Proporciona un entorno que permanece constante para usuarios que requieren permisos elevados.",
+                    C: "Está diseñado principalmente para uso en quioscos comerciales.",
+                    D: "Tiene el menor coste por usuario debido a su alto grado de personalización."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "82) ¿Cuál es uno de los beneficios de VDI para organizaciones con políticas BYOD?",
+                options: {
+                    A: "Permite que los usuarios almacenen sus datos localmente en sus dispositivos.",
+                    B: "Facilita el uso de una gama más amplia de dispositivos al centralizar el procesamiento en un servidor.",
+                    C: "Requiere dispositivos de alta gama para procesar aplicaciones complejas.",
+                    D: "Obliga a los usuarios a trabajar solo en dispositivos aprobados por la empresa."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "83) ¿Cuál es una de las características principales del acceso delegado en Microsoft Outlook?",
+                options: {
+                    A: "Permite al delegado tener control completo sobre las configuraciones del buzón.",
+                    B: "Da al delegado acceso al buzón completo sin restricciones.",
+                    C: "Otorga al delegado la posibilidad de enviar y responder correos en nombre del propietario del buzón.",
+                    D: "Permite al delegado solo visualizar correos sin realizar ninguna acción adicional."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "84) ¿Cuál de los siguientes niveles de permiso permite únicamente la lectura de elementos en una carpeta delegada de Outlook?",
+                options: {
+                    A: "Editor.",
+                    B: "Autor.",
+                    C: "Revisor.",
+                    D: "Administrador."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "85) ¿Cuál es una característica clave que distingue el permiso de \"Editor\" del de \"Autor\" en Microsoft Outlook al delegar una carpeta?",
+                options: {
+                    A: "Solo el permiso de \"Autor\" permite leer y eliminar todos los elementos en la carpeta.",
+                    B: "\"Editor\" permite modificar y eliminar elementos creados por el propietario de la cuenta, mientras que \"Autor\" solo permite modificar y eliminar los elementos creados por el delegado.",
+                    C: "Ambos permiten la creación de elementos, pero solo \"Editor\" permite eliminarlos.",
+                    D: "\"Autor\" y \"Editor\" tienen el mismo nivel de acceso, excepto para tareas y notas."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "86) ¿Cuál es una característica de Google Workspace que no está incluida en las aplicaciones gratuitas de Google?",
+                options: {
+                    A: "Espacio de almacenamiento en la nube ilimitado en Gmail.",
+                    B: "Correo electrónico empresarial personalizado con dominio propio (@suempresa).",
+                    C: "Almacenamiento de archivos solo en dispositivos locales.",
+                    D: "Asistencia únicamente a través de foros comunitarios."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "87) ¿Cuál de las siguientes opciones de seguridad es una ventaja de Google Workspace en comparación con las aplicaciones gratuitas de Google?",
+                options: {
+                    A: "Solo permite el uso de contraseñas simples.",
+                    B: "Incluye autenticación en dos pasos y Single Sign-On (SSO).",
+                    C: "Garantiza que todos los archivos sean públicos por defecto.",
+                    D: "Permite únicamente el acceso desde dispositivos móviles."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "88) ¿Cuál es una característica clave que diferencia a una reunión de un seminario web en un sistema de videoconferencia?",
+                options: {
+                    A: "Solo las reuniones permiten compartir pantalla.",
+                    B: "En los seminarios web, el anfitrión tiene mayor control sobre la participación de los asistentes.",
+                    C: "Solo en las reuniones los asistentes pueden participar a través de votaciones.",
+                    D: "En los seminarios web, todos los asistentes pueden activar su audio en cualquier momento."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "89) ¿Qué indica un icono de nube azul junto a un archivo en OneDrive en el Explorador de archivos?",
+                options: {
+                    A: "Que el archivo está disponible localmente y ocupa espacio en el equipo.",
+                    B: "Que el archivo solo está disponible en línea y no ocupa espacio en el equipo.",
+                    C: "Que el archivo está disponible localmente solo durante una conexión a Internet.",
+                    D: "Que el archivo está bloqueado y no se puede abrir."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "90) ¿Cuál de los siguientes es un archivo que puedes abrir sin conexión de red en OneDrive?",
+                options: {
+                    A: "Un archivo marcado con un icono de nube azul.",
+                    B: "Un archivo marcado con un círculo verde y verificación blanca.",
+                    C: "Un archivo solo en línea que se accedió por última vez hace 30 días.",
+                    D: "Un archivo con un icono de nube que no se ha descargado previamente."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "91) ¿Qué sucede cuando eliminas un archivo solo en línea desde tu dispositivo?",
+                options: {
+                    A: "El archivo solo se elimina del dispositivo, pero sigue estando en OneDrive en la nube.",
+                    B: "El archivo se elimina de OneDrive en todos los dispositivos y en línea.",
+                    C: "El archivo se elimina del dispositivo y se guarda automáticamente en una carpeta oculta.",
+                    D: "El archivo se guarda en el dispositivo como archivo temporal."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "92) ¿Cuál es la extensión de archivo predeterminada para un libro de Excel en la versiones más recientes?",
+                options: {
+                    A: ".xls",
+                    B: ".xlsx",
+                    C: ".docx",
+                    D: ".pptx"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "93) ¿Cuál es la función adecuada para contar solo las celdas que cumplen una condición específica en las versiones más recientes de Excel?",
+                options: {
+                    A: "CONTAR",
+                    B: "CONTARA",
+                    C: "CONTAR.SI",
+                    D: "SUMAR.SI"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "94) ¿Qué herramienta permite combinar varias celdas en una sola sin perder los datos en las versiones más recientes de Excel?",
+                options: {
+                    A: "Combinar y centrar",
+                    B: "Dividir celdas",
+                    C: "Filtro avanzado",
+                    D: "Validación de datos"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "95) ¿Qué opción permite crear un índice automático en un documento de Word?",
+                options: {
+                    A: "Tabla de contenidos",
+                    B: "Referencias cruzadas",
+                    C: "Marcadores",
+                    D: "Hipervínculos"
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "96) ¿Qué herramienta de Word se utiliza para revisar los cambios realizados en un documento?",
+                options: {
+                    A: "Comentarios",
+                    B: "Control de cambios",
+                    C: "Corrección ortográfica",
+                    D: "Insertar tabla"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "97) ¿Cuál es una ventaja clave de Microsoft 365 frente a versiones clásicas como Office 2016?",
+                options: {
+                    A: "No requiere conexión a Internet para ninguna función",
+                    B: "Se instala solo en un equipo",
+                    C: "Incluye actualizaciones continuas y almacenamiento en la nube",
+                    D: "Solo se paga una vez y no tiene suscripciones"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "98) ¿Qué función de Windows 11 permite ejecutar aplicaciones en un entorno virtual aislado para evitar que afecten al sistema principal?",
+                options: {
+                    A: "SmartScreen",
+                    B: "BitLocker",
+                    C: "Windows Sandbox",
+                    D: "Defender ATP"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "99) ¿Qué edición de Windows 11 permite implementar control de acceso basado en roles, cifrado de datos y administración mediante Intune en entornos corporativos?",
+                options: {
+                    A: "Home",
+                    B: "Pro",
+                    C: "Education",
+                    D: "Enterprise"
+                },
+                correctAnswer: "D"
+            },
+            {
+                question: "100) Según el marco ITIL, ¿cuál es el propósito principal del equipo de Service Desk (Help Desk)?",
+                options: {
+                    A: "Gestionar el desarrollo de nuevos servicios TI",
+                    B: "Proveer un punto único de contacto para la resolución de incidentes y solicitudes de servicio",
+                    C: "Realizar auditorías de seguridad en la infraestructura TI",
+                    D: "Configurar y mantener la infraestructura de red"
+                },
+                correctAnswer: "B"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Para almacenar las respuestas del usuario
+        let quizSubmitted = false;
+        let answeredQuestions = new Set(); // Para llevar un registro de las preguntas respondidas
+
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const scoreDisplay = document.getElementById('score-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const restartBtn = document.getElementById('restart-btn');
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizQuestionsContainer.innerHTML = ''; // Limpia el contenedor
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-lg font-semibold text-gray-700 mb-4';
+            questionText.textContent = q.question;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = `options-q${currentQuestionIndex}`; // ID para el contenedor de opciones
+            
+            for (const key in q.options) {
+                const optionId = `q${currentQuestionIndex}-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = key;
+                input.className = 'hidden'; // Oculta el radio button nativo
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.textContent = `${key}) ${q.options[key]}`;
+
+                // Si ya hay una respuesta guardada, márcala
+                if (userAnswers[currentQuestionIndex] === key) {
+                    input.checked = true;
+                }
+
+                // Si la pregunta ya fue respondida (y no estamos en el modo de revisión final),
+                // o si el test ya fue enviado, deshabilitar opciones y mostrar feedback.
+                if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                    input.disabled = true;
+                    if (key === q.correctAnswer) {
+                        label.classList.add('correct-answer');
+                    } else if (userAnswers[currentQuestionIndex] === key && userAnswers[currentQuestionIndex] !== q.correctAnswer) {
+                        label.classList.add('incorrect-answer');
+                    }
+                }
+
+                // Manejar el cambio de selección
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !answeredQuestions.has(currentQuestionIndex)) {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        answeredQuestions.add(currentQuestionIndex); // Marcar como respondida
+                        checkAnswerAndProvideFeedback(currentQuestionIndex, event.target.value, optionsDiv);
+                    }
+                });
+
+                optionsDiv.appendChild(input);
+                optionsDiv.appendChild(label);
+            }
+            questionCard.appendChild(optionsDiv);
+
+            // Si la pregunta ya fue respondida o el test fue enviado, muestra el resultado individual
+            if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                const resultMessage = document.createElement('div');
+                resultMessage.className = 'result-message';
+                if (userAnswers[currentQuestionIndex] === q.correctAnswer) {
+                    resultMessage.classList.add('correct');
+                    resultMessage.textContent = '¡Correcto!';
+                } else {
+                    resultMessage.classList.add('incorrect');
+                    resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+                }
+                questionCard.appendChild(resultMessage);
+            }
+
+            quizQuestionsContainer.appendChild(questionCard);
+            updateNavigationButtons();
+        }
+
+        function checkAnswerAndProvideFeedback(qIndex, selectedAnswer, optionsContainer) {
+            const q = questions[qIndex];
+            const radios = optionsContainer.querySelectorAll(`input[name="question-${qIndex}"]`);
+            const labels = optionsContainer.querySelectorAll('.option-label');
+            
+            // Deshabilitar todas las opciones para esta pregunta
+            radios.forEach(radio => radio.disabled = true);
+
+            // Resaltar la respuesta seleccionada y la correcta
+            labels.forEach(label => {
+                const input = document.getElementById(label.htmlFor);
+                if (input.value === q.correctAnswer) {
+                    label.classList.add('correct-answer');
+                } else if (input.value === selectedAnswer && selectedAnswer !== q.correctAnswer) {
+                    label.classList.add('incorrect-answer');
+                }
+            });
+
+            // Mostrar mensaje de feedback
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (selectedAnswer === q.correctAnswer) {
+                resultMessage.classList.add('correct');
+                resultMessage.textContent = '¡Correcto!';
+            } else {
+                resultMessage.classList.add('incorrect');
+                resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+            }
+            optionsContainer.parentNode.appendChild(resultMessage); // Añadirlo a la tarjeta de pregunta
+        }
+
+
+        function updateNavigationButtons() {
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+            submitBtn.style.display = currentQuestionIndex === questions.length - 1 && !quizSubmitted ? 'inline-block' : 'none';
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function showResults() {
+            let score = 0;
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] === questions[i].correctAnswer) {
+                    score++;
+                }
+            }
+            scoreDisplay.textContent = score;
+            totalQuestionsDisplay.textContent = questions.length;
+            document.getElementById('quiz-app').style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            // Recargar todas las preguntas para mostrar los resultados individuales
+            currentQuestionIndex = 0; // Volver a la primera pregunta para revisar
+            loadQuestion(); // Carga la primera pregunta con feedback
+            document.getElementById('quiz-app').style.display = 'block'; // Asegura que el quiz esté visible
+            quizResultsDiv.style.display = 'none'; // Oculta los resultados finales temporalmente
+            showResults(); // Muestra el resumen final
+        });
+
+        restartBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            answeredQuestions.clear(); // Limpiar el registro de preguntas respondidas
+            quizResultsDiv.style.display = 'none';
+            document.getElementById('quiz-app').style.display = 'block';
+            loadQuestion();
+        });
+
+        // Inicializar el test
+        loadQuestion();
+    </script>
+</body>
+</html>

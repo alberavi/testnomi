@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMA 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #374151;
+            font-size: 1.125rem; /* text-lg */
+        }
+        .answer-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+            color: #4b5563;
+        }
+        .answer-option:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #eef2ff; /* indigo-50 */
+            border-color: #a5b4fc; /* indigo-300 */
+        }
+        .answer-option input[type="radio"] {
+            margin-right: 12px;
+            accent-color: #4f46e5; /* indigo-600 */
+        }
+        .answer-option.selected {
+            background-color: #e0e7ff; /* indigo-100 */
+            border-color: #818cf8; /* indigo-400 */
+        }
+        .answer-option.correct {
+            background-color: #d1fae5; /* green-100 */
+            border-color: #34d399; /* green-400 */
+            color: #065f46; /* green-800 */
+        }
+        .answer-option.incorrect {
+            background-color: #fee2e2; /* red-100 */
+            border-color: #f87171; /* red-400 */
+            color: #991b1b; /* red-800 */
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: none; /* Hidden by default */
+        }
+        .feedback.correct-feedback {
+            background-color: #d1fae5; /* green-100 */
+            color: #065f46; /* green-800 */
+        }
+        .feedback.incorrect-feedback {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .nav-button.primary {
+            background-color: #4f46e5; /* indigo-600 */
+            color: #ffffff;
+        }
+        .nav-button.primary:hover {
+            background-color: #4338ca; /* indigo-700 */
+            transform: translateY(-1px);
+        }
+        .nav-button.secondary {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #374151;
+        }
+        .nav-button.secondary:hover {
+            background-color: #d1d5db; /* gray-300 */
+            transform: translateY(-1px);
+        }
+        .restart-button {
+            background-color: #ef4444; /* red-500 */
+            color: #ffffff;
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .restart-button:hover {
+            background-color: #dc2626; /* red-600 */
+            transform: translateY(-1px);
+        }
+        .results-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e0f2fe; /* light blue for results */
+            border-radius: 8px;
+            border: 1px solid #90cdf4;
+            color: #1e40af; /* dark blue text */
+            font-weight: 600;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .results-summary p {
+            margin: 0;
+        }
+        .hidden {
+            display: none;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.95);
+            transition: transform 0.2s ease-out;
+        }
+        .modal-content.show {
+            transform: scale(1);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .modal-button.confirm {
+            background-color: #ef4444; /* red-500 */
+            color: #ffffff;
+        }
+        .modal-button.confirm:hover {
+            background-color: #dc2626; /* red-600 */
+            transform: translateY(-1px);
+        }
+        .modal-button.cancel {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #374151;
+        }
+        .modal-button.cancel:hover {
+            background-color: #d1d5db; /* gray-300 */
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">TEMA 2</h1>
+        <div id="quiz-container">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button secondary hidden">Anterior</button>
+            <button id="next-button" class="nav-button primary">Siguiente</button>
+        </div>
+        <button id="restart-button" class="restart-button">Reiniciar Test</button>
+        <div id="results-summary" class="results-summary">
+            <h2 class="text-xl font-bold mb-2">Resultados del Test</h2>
+            <p>Correctas: <span id="correct-count">0</span></p>
+            <p>Incorrectas: <span id="incorrect-count">0</span></p>
+            <p>Sin contestar: <span id="unanswered-count">0</span></p>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="restart-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <p class="text-lg font-semibold text-gray-700">¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.</p>
+            <div class="modal-buttons">
+                <button id="confirm-restart" class="modal-button confirm">Sí, Reiniciar</button>
+                <button id="cancel-restart" class="modal-button cancel">No, Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos para las preguntas y respuestas
+        const questions = [
+            {
+                question: "Las Cámaras actúan de forma conjunta en casos constitucionalmente establecidos, siendo presididas en estas ocasiones:",
+                options: [
+                    "Por el Presidente de las Cortes Generales.",
+                    "Por el Presidente del Congreso de los Diputados.",
+                    "Por el Presidente del Senado.",
+                    "Por el Presidente del Gobierno."
+                ],
+                correctAnswer: "Por el Presidente de las Cortes Generales."
+            },
+            {
+                question: "NO constituye una función genérica de las Cortes Generales, según establece el artículo 66.2 de la Constitución Española de 1978:",
+                options: [
+                    "Controlar la acción del Gobierno.",
+                    "Ejercer la potestad legislativa y la potestad ejecutiva en relación con las funciones del Rey.",
+                    "Representar al pueblo español.",
+                    "Aprobar los Presupuestos Generales del Estado."
+                ],
+                correctAnswer: "Ejercer la potestad legislativa y la potestad ejecutiva en relación con las funciones del Rey."
+            },
+            {
+                question: "En orden a garantizar la independencia y la soberanía de las Cámaras, ejercen las siguientes potestades de funcionamiento interno, establecidas en el artículo 72 de la Constitución Española de 1978:",
+                options: [
+                    "Establecen sus propios Reglamentos.",
+                    "Aprueban autónomamente sus presupuestos.",
+                    "De común acuerdo, regulan el Estatuto del Personal de las Cortes Generales.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "El artículo 68 de la Constitución Española de 1978 recoge la composición del Congreso de los Diputados que es de:",
+                options: [
+                    "Un mínimo de 250 y un máximo de 400 Diputados.",
+                    "Un mínimo de 300 y un máximo de 350 Diputados.",
+                    "Un mínimo de 300 y un máximo de 400 Diputados.",
+                    "Un mínimo de 350 y un máximo de 450 Diputados."
+                ],
+                correctAnswer: "Un mínimo de 300 y un máximo de 350 Diputados."
+            },
+            {
+                question: "La circunscripción electoral es:",
+                options: [
+                    "La provincia.",
+                    "La provincia y los Ayuntamientos.",
+                    "La Comunidad Autónoma",
+                    "La Diputación Provincial."
+                ],
+                correctAnswer: "La provincia."
+            },
+            {
+                question: "La ley electoral determinará las causas de inelegibilidad e incompatibilidad de los Diputados y Senadores, que comprenderán en todo caso:",
+                options: [
+                    "A los miembros de las Juntas Electorales.",
+                    "Al Defensor del Pueblo.",
+                    "A los militares profesionales y miembros de las Fuerzas y Cuerpos de Seguridad y Policía en activo.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Las proposiciones de Ley que se deban a la iniciativa de los Senadores deberán ser formuladas en texto articulado, acompañado de una exposición justificativa y, en su caso, de una Memoria en la que se evalúe su coste económico. Deberán ir suscritas por:",
+                options: [
+                    "Dos Grupos parlamentarios ó 15 senadores.",
+                    "Un Grupo parlamentario ó 25 senadores.",
+                    "Un Grupo parlamentario exclusivamente.",
+                    "Un Grupo parlamentario ó 20 senadores."
+                ],
+                correctAnswer: "Un Grupo parlamentario ó 25 senadores."
+            },
+            {
+                question: "La Mesa del Congreso podrá acordar que un asunte se tramite por procedimiento de urgencia a petición:",
+                options: [
+                    "Del Gobierno.",
+                    "De un Grupo parlamentario del Senado.",
+                    "De un Grupo parlamentario del congreso de los Diputados.",
+                    "De una cuarta parte de los Diputados-"
+                ],
+                correctAnswer: "Del Gobierno."
+            },
+            {
+                question: "Las proposiciones de ley del Congreso de los Diputados podrán ser adoptadas a iniciativa de:",
+                options: [
+                    "Un Diputado con la firma de otros quince miembros de la Cámara.",
+                    "Dos grupos parlamentarios con la sola firma de su portavoz.",
+                    "Un Grupo parlamentario con la sola firma del Presidente de la Mesa.",
+                    "Un Diputado con la sola firma de otros catorce miembros de la Cámara."
+                ],
+                correctAnswer: "Un Diputado con la firma de otros quince miembros de la Cámara."
+            },
+            {
+                question: "Las elecciones generales tendrán lugar entre:",
+                options: [
+                    "Los veinte días y cincuenta días desde la terminación del mandato.",
+                    "Los veinte días y sesenta días desde la terminación del mandato.",
+                    "Los treinta días y cincuenta días desde la terminación del mandato.",
+                    "Los treinta días y los sesenta días desde la terminación del mandato."
+                ],
+                correctAnswer: "Los treinta días y cincuenta días desde la terminación del mandato."
+            },
+            {
+                question: "Una vez celebradas las elecciones generales el Congreso electo deberá ser convocado dentro de los:",
+                options: [
+                    "Quince días siguientes a la celebración de las elecciones.",
+                    "Veinte días siguientes a la celebración de las elecciones.",
+                    "Veinticinco días siguientes a la celebración de las elecciones.",
+                    "Treinta días siguientes a la celebración de las elecciones."
+                ],
+                correctAnswer: "Veinticinco días siguientes a la celebración de las elecciones."
+            },
+            {
+                question: "¿Cuántos senadores son elegidos en la isla de Tenerife?",
+                options: [
+                    "4.",
+                    "3.",
+                    "2.",
+                    "1."
+                ],
+                correctAnswer: "3."
+            },
+            {
+                question: "El artículo 71 de la Constitución Española de 1978 determina que:",
+                options: [
+                    "Los Diputados, exclusivamente, gozarán de inviolabilidad por las opiniones manifestadas en el ejercicio de sus funciones:",
+                    "Los senadores gozarán de inmunidad pero no de inviolabilidad en el ejercicio de sus funciones.",
+                    "En las causas contra Diputados y senadores será competente la Sala de lo Penal de la Audiencia Nacional.",
+                    "Los Diputados y Senadores percibirán una asignación que será fijada por las respectivas Cámaras."
+                ],
+                correctAnswer: "Los Diputados y Senadores percibirán una asignación que será fijada por las respectivas Cámaras."
+            },
+            {
+                question: "Según establece el artículo 73.1 de la Constitución Española de 1978, las Cámaras se reunirán anualmente en:",
+                options: [
+                    "Dos períodos de sesiones ordinarios.",
+                    "Cuatro periodos de sesiones ordinarios.",
+                    "Un periodo de sesiones ordinarios en cada uno de los cuatro años de su mandato.",
+                    "Ninguna contestación es correcta."
+                ],
+                correctAnswer: "Dos períodos de sesiones ordinarios."
+            },
+            {
+                question: "¿Cómo son las sesiones plenarias de las Cámaras, según establece el artículo 80 de la Constitución Española de 1978?",
+                options: [
+                    "Públicas, en todo caso.",
+                    "Públicas, por acuerdo de cada Cámara adoptado por mayoría de los presentes.",
+                    "Públicas, salvo acuerdo en contrario de cada Cámara con arreglo al Reglamento.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Públicas, salvo acuerdo en contrario de cada Cámara con arreglo al Reglamento."
+            },
+            {
+                question: "¿Cuántos juristas de reconocida competencia elige el Senado para el Consejo General del Poder Judicial?",
+                options: [
+                    "Diez.",
+                    "Ocho.",
+                    "Seis.",
+                    "Cuatro."
+                ],
+                correctAnswer: "Cuatro."
+            },
+            {
+                question: "¿Cómo es el voto de los Diputados y Senadores?",
+                options: [
+                    "Secreto.",
+                    "Delegable en caso de enfermedad.",
+                    "Personal e indelegable.",
+                    "Secreto y personal."
+                ],
+                correctAnswer: "Personal e indelegable."
+            },
+            {
+                question: "El Congreso y el Senado, y, en su caso, ambas Cámaras conjuntamente, podrán nombrar Comisiones de investigación sobre cualquier asunto de interés público:",
+                options: [
+                    "Sus conclusiones no serán vinculantes para los Tribunales.",
+                    "Podrán afectar a las resoluciones judiciales en trámite.",
+                    "Sin perjuicio de que el resultado de la investigación sea comunicado al Gobierno para el ejercicio de las acciones oportunas.",
+                    "No se comunicará al Gobierno el resultado de la investigación salvo que se hayan manifestado delitos de prevaricación."
+                ],
+                correctAnswer: "Sus conclusiones no serán vinculantes para los Tribunales."
+            },
+            {
+                question: "¿Cuál será la composición de las Diputaciones Permanentes del Congreso y del Senado?",
+                options: [
+                    "En el Congreso habrá un máximo de 40 parlamentarios.",
+                    "En el Congreso habrá un mínimo de veintiún miembros y en el Senado un mínimo de quince miembros.",
+                    "En cada Cámara habrá un mínimo de veinte miembros.",
+                    "En cada Cámara habrá un mínimo de veintiún miembros que representarán a los grupos parlamentarios, en proporción a su importancia numérica."
+                ],
+                correctAnswer: "En cada Cámara habrá un mínimo de veintiún miembros que representarán a los grupos parlamentarios, en proporción a su importancia numérica."
+            },
+            {
+                question: "¿Cuántos Diputados representarán a la Ciudad Autónoma de Melilla?",
+                options: [
+                    "1.",
+                    "2",
+                    "3.",
+                    "4."
+                ],
+                correctAnswer: "1."
+            },
+            {
+                question: "¿De qué plazo dispone el Senado para introducir enmiendas a un texto remitido por el Congreso?",
+                options: [
+                    "De dos meses si son proyectos de ley.",
+                    "De un mes si son proposiciones de ley.",
+                    "De tres meses si son proposiciones de ley presentadas por las Asambleas Legislativas de las Comunidades Autónomas.",
+                    "De tres meses si son proyectos de ley presentados por los Gobiernos de las Comunidades Autónoma."
+                ],
+                correctAnswer: "De dos meses si son proyectos de ley."
+            },
+            {
+                question: "¿Cuál es el número mínimo de Senadores necesario para constituir Grupo Parlamentario?",
+                options: [
+                    "5 Senadores.",
+                    "8 Senadores.",
+                    "10 Senadores.",
+                    "12 Senadores."
+                ],
+                correctAnswer: "10 Senadores."
+            },
+            {
+                question: "Los derechos y prerrogativas de los Diputados serán efectivos desde el momento mismo en que el Diputado sea proclamado electo. Sin embargo quedarán en suspenso sus derechos y deberes parlamentarios:",
+                options: [
+                    "Cuando sea declarada su incapacitación por decisión judicial.",
+                    "Cuando se extinga el mandato por disolverse la Cámara.",
+                    "Cuando se hallare en situación de prisión preventiva.",
+                    "Cuando renuncie a sus derechos ante la Mesa del Congreso."
+                ],
+                correctAnswer: "Cuando se hallare en situación de prisión preventiva."
+            },
+            {
+                question: "¿Cuántos Vicepresidentes se eligen simultáneamente para la Mesa del Congreso de los Diputados?",
+                options: [
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4."
+                ],
+                correctAnswer: "4."
+            },
+            {
+                question: "¿Cuál es el número mínimo de miembros de un partido político necesario para constituir Grupo parlamentario en el Congreso de los Diputados?",
+                options: [
+                    "30 Diputados.",
+                    "25 Diputados.",
+                    "20 Diputados.",
+                    "15 Diputados."
+                ],
+                correctAnswer: "15 Diputados."
+            },
+            {
+                question: "De conformidad con la Constitución Española de 1978, la Ley Orgánica 3/1981, de 6 de abril, del Defensor del Pueblo y el Protocolo facultativo de la Convención contra la tortura u otros tratos o penas crueles, inhumanos o degradantes, el Defensor del Pueblo ejercerá las funciones de:",
+                options: [
+                    "Mecanismo Nacional de Prevención de la Tortura.",
+                    "Presidente Defensor de los Derechos Humanos.",
+                    "Defensor contra la Tortura dentro de la Nación española.",
+                    "Presidente del Consejo Asesor contra la Tortura."
+                ],
+                correctAnswer: "Mecanismo Nacional de Prevención de la Tortura."
+            },
+            {
+                question: "El cargo de Magistrado del Tribunal Constitucional es compatible:",
+                options: [
+                    "Con el de Defensor del Pueblo.",
+                    "Con el desempeño de funciones directivas en un sindicato.",
+                    "Con cualquier cargo político o administrativo del Estado.",
+                    "Con el desempeño de funciones en un partido político."
+                ],
+                correctAnswer: "Con el desempeño de funciones en un partido político."
+            },
+            {
+                question: "El Tribunal Constitucional es competente para conocer:",
+                options: [
+                    "Los conflictos de competencias o atribuciones entre el Gobierno y el Congreso de los Diputados.",
+                    "De las violaciones de principios recogidos en el Código Penal.",
+                    "De la protección de los derechos civiles.",
+                    "De cualquier asunto que reclame para sí."
+                ],
+                correctAnswer: "Los conflictos de competencias o atribuciones entre el Gobierno y el Congreso de los Diputados."
+            },
+            {
+                question: "La Comisión Mixta Congreso-Senado de Relaciones con el Defensor del Pueblo propondrá a las Cámaras el candidato a Defensor del Pueblo:",
+                options: [
+                    "Por mayoría simple.",
+                    "Por mayoría de 3/5.",
+                    "Por mayoría de 2/3.",
+                    "Por mayoría absoluta."
+                ],
+                correctAnswer: "Por mayoría de 3/5."
+            },
+            {
+                question: "El Tribunal Constitucional está formado por:",
+                options: [
+                    "Un Presidente y 12 miembros.",
+                    "Un Presidente y 11 miembros.",
+                    "Un Presidente y 10 miembros.",
+                    "Un Presidente y 13 miembros."
+                ],
+                correctAnswer: "Un Presidente y 11 miembros."
+            },
+            {
+                question: "Cualquier ciudadano podrá recabar la tutela del Tribunal Constitucional mediante:",
+                options: [
+                    "El recurso de súplica ante el Tribunal sancionador.",
+                    "El recurso de amparo.",
+                    "El recurso de alzada ante el Tribunal Superior de Justicia.",
+                    "El recurso potestativo de reposición."
+                ],
+                correctAnswer: "El recurso de amparo."
+            },
+            {
+                question: "El Tribunal Constitucional tiene encomendadas competencias en relación con:",
+                options: [
+                    "El recurso de inconstitucionalidad contra cualquier reglamento.",
+                    "El recurso de amparo contra delitos penales.",
+                    "Los conflictos en defensa de la autonomía local.",
+                    "Conflictos de competencias entre Tribunales Superiores de Justicia."
+                ],
+                correctAnswer: "Los conflictos en defensa de la autonomía local."
+            },
+            {
+                question: "¿Quién nombra al Defensor del Pueblo?",
+                options: [
+                    "Las Cortes Generales.",
+                    "La Comisión Mixta Congreso-Senado para las relaciones con el Defensor del Pueblo.",
+                    "El Presidente del Gobierno.",
+                    "El Rey"
+                ],
+                correctAnswer: "Las Cortes Generales."
+            },
+            {
+                question: "Según establece la Ley Orgánica 3/1981, de 6 de abril, del Defensor del Pueblo:",
+                options: [
+                    "El Defensor del Pueblo podrá solicitar a los poderes públicos todos los documentos que considere necesarios para el desarrollo de su función, excluidos aquéllos clasificados con el carácter de secretos de acuerdo con la ley.",
+                    "Cuando el Defensor del Pueblo entienda que un documento declarado secreto y no remitido por la Administración pudiera afectar de forma decisiva la buena marcha de su investigación, lo pondrá en conocimiento de la Comisión Mixta Congreso-Senado de Relaciones con el Defensor del Pueblo.",
+                    "Las investigaciones que realice el Defensor del Pueblo se verificarán dentro de la más absoluta reserva, tanto con respecto a los particulares como a las dependencias y demás Organismos públicos.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Las sentencias del Tribunal Constitucional, según el artículo 164 de la Constitución Española",
+                options: [
+                    "Deben publicarse en el Diario Oficial de la Unión Europea, en el plazo de un mes.",
+                    "Tienen el valor de cosa juzgada a partir del día siguiente de su publicación en el BOE.",
+                    "Deben publicarse en el Tablón de Edictos de los Ayuntamientos, en el plazo de un mes.",
+                    "Contra ellas caben los recursos contencioso-administrativos."
+                ],
+                correctAnswer: "Tienen el valor de cosa juzgada a partir del día siguiente de su publicación en el BOE."
+            },
+            {
+                question: "No está legitimado para presentar el recurso de inconstitucionalidad:",
+                options: [
+                    "El Defensor del Pueblo.",
+                    "50 diputados de diferentes grupos políticos.",
+                    "El Presidente del Gobierno.",
+                    "El Fiscal General del Reino."
+                ],
+                correctAnswer: "El Fiscal General del Reino."
+            },
+            {
+                question: "¿Cuántos miembros del Tribunal Constitucional son nombrados a propuesta del Pleno del Consejo General del Poder Judicial?",
+                options: [
+                    "Cinco.",
+                    "Cuatro.",
+                    "Tres.",
+                    "Dos."
+                ],
+                correctAnswer: "Cuatro."
+            },
+            {
+                question: "En que artículo de la Constitución de 1978 se hace referencia a la regulación de la institución del Defensor del Pueblo, como alto comisionado de las Cortes Generales.",
+                options: [
+                    "Artículo 159.",
+                    "Artículo 107.",
+                    "Artículo 54 .",
+                    "Artículo 14."
+                ],
+                correctAnswer: "Artículo 54 ."
+            },
+            {
+                question: "¿Ante quién se presenta el recurso de amparo?",
+                options: [
+                    "Ante cualquier juzgado o tribunal en primera instancia.",
+                    "Ante el Tribunal Constitucional.",
+                    "Ante el Consejo General del Poder Judicial reunido en Pleno.",
+                    "Ante el Tribunal Supremo en primera instancia."
+                ],
+                correctAnswer: "Ante el Tribunal Constitucional."
+            },
+            {
+                question: "El recurso de amparo podrá ser empleado para recabar la tutela de los derechos regulados constitucionalmente:",
+                options: [
+                    "En la Sección Primera del Capítulo Segundo del Título Primero.",
+                    "En las Secciones Primera y Segunda del Capítulo Segundo del Título Primero.",
+                    "En la Sección Segunda del Capítulo Segundo del Título Primero y, además, en los artículos 14 y 30.",
+                    "En la Sección Primera del Capítulo Segundo del Título Primero y, además, en los artículos 14 y 30."
+                ],
+                correctAnswer: "En la Sección Segunda del Capítulo Segundo del Título Primero y, además, en los artículos 14 y 30."
+            },
+            {
+                question: "El Gobierno propone como magistrados miembros del Tribunal Constitucional a:",
+                options: [
+                    "1 miembro.",
+                    "2 miembros.",
+                    "3 miembros.",
+                    "4 miembros."
+                ],
+                correctAnswer: "2 miembros."
+            },
+            {
+                question: "El Defensor del Pueblo:",
+                options: [
+                    "No puede iniciar investigaciones de oficio que siempre serán a instancia de parte.",
+                    "Cuando tenga conocimiento de un hecho delictivo debe ponerlo en conocimiento del Consejo General del Poder Judicial.",
+                    "Trasladará al Ministerio Fiscal las quejas sobre el funcionamiento de la Administración de Justicia.",
+                    "No rechazará las quejas anónimas."
+                ],
+                correctAnswer: "Trasladará al Ministerio Fiscal las quejas sobre el funcionamiento de la Administración de Justicia."
+            },
+            {
+                question: "El Tribunal Constitucional se establece en:",
+                options: [
+                    "La Constitución Española.",
+                    "La Ley Orgánica del Tribunal Constitucional.",
+                    "La Ley Orgánica del Tribunal del Jurado.",
+                    "La Ley Orgánica del Poder Judicial"
+                ],
+                correctAnswer: "La Ley Orgánica del Tribunal Constitucional."
+            },
+            {
+                question: "¿Cuántos miembros componen el Tribunal Constitucional?",
+                options: [
+                    "12 y el presidente",
+                    "12",
+                    "13",
+                    "10 y el presidente"
+                ],
+                correctAnswer: "12 y el presidente"
+            },
+            {
+                question: "El Defensor del Pueblo será elegido por:",
+                options: [
+                    "Mayoría simple del Congreso y del Senado.",
+                    "Mayoría de 3/5 de las Cámaras.",
+                    "Mayoría absoluta del Congreso de los Diputados.",
+                    "Mayoría absoluta del Congreso de los Diputados y mayoría simple del Senado."
+                ],
+                correctAnswer: "Mayoría de 3/5 de las Cámaras."
+            },
+            {
+                question: "En relación con la elección del Presidente del Tribunal Constitucional es cierto:",
+                options: [
+                    "Que en primera votación se requerirá la mayoría simple de los Magistrados.",
+                    "Que en primera votación se requerirá mayoría absoluta de los Magistrados.",
+                    "Que el nombre del elegido se elevará al Rey para su nombramiento por un periodo de tres años.",
+                    "Que expirado el periodo inicial no podrá ser reelegido de nuevo."
+                ],
+                correctAnswer: "Que el nombre del elegido se elevará al Rey para su nombramiento por un periodo de tres años."
+            },
+            {
+                question: "La vacante de Defensor del Pueblo se produce por:",
+                options: [
+                    "Disolución de las Cámaras.",
+                    "Por muerte del Presidente de las Cortes",
+                    "Por notoria negligencia en el cumplimiento de sus obligaciones.",
+                    "Por indignidad sobrevenida."
+                ],
+                correctAnswer: "Por notoria negligencia en el cumplimiento de sus obligaciones."
+            },
+            {
+                question: "Son susceptibles de declaración de inconstitucionalidad:",
+                options: [
+                    "Los Reglamentos de las Cámaras y de las Cortes Generales.",
+                    "Los Reglamentos de las Asambleas legislativas de las Comunidades Autónomas.",
+                    "Los Tratados Internacionales.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            },
+            {
+                question: "Los miembros de la carrera judicial y fiscal y, en general, los funcionarios públicos nombrados Magistrados y letrados del Tribunal Constitucional pasarán, en su carrera de origen a la situación de:",
+                options: [
+                    "Servicio activo.",
+                    "Servicios especiales.",
+                    "Servicios en otras Administraciones Públicas.",
+                    "Excedencia voluntaria por interés particular."
+                ],
+                correctAnswer: "Servicios especiales."
+            },
+            {
+                question: "Es incompatible la condición de Defensor del Pueblo:",
+                options: [
+                    "Con todo mandato representativo.",
+                    "Con el ejercicio de cualquier actividad profesional, mercantil, liberal o laboral",
+                    "Con el desempeño de funciones directivas en una asociación o fundación.",
+                    "Todas las contestaciones son correctas."
+                ],
+                correctAnswer: "Todas las contestaciones son correctas."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Para almacenar las respuestas del usuario
+        let quizContainer = document.getElementById('quiz-container');
+        let prevButton = document.getElementById('prev-button');
+        let nextButton = document.getElementById('next-button');
+        let restartButton = document.getElementById('restart-button');
+        let resultsSummary = document.getElementById('results-summary');
+        let correctCountSpan = document.getElementById('correct-count');
+        let incorrectCountSpan = document.getElementById('incorrect-count');
+        let unansweredCountSpan = document.getElementById('unanswered-count');
+
+        // Modal elements
+        const restartModal = document.getElementById('restart-modal');
+        const confirmRestartButton = document.getElementById('confirm-restart');
+        const cancelRestartButton = document.getElementById('cancel-restart');
+
+        // Función para cargar el estado del test desde LocalStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem('quizState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                userAnswers = state.userAnswers;
+            } else {
+                // Inicializar userAnswers si no hay estado guardado
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            renderQuestion();
+        }
+
+        // Función para guardar el estado del test en LocalStorage
+        function saveQuizState() {
+            const state = {
+                currentQuestionIndex: currentQuestionIndex,
+                userAnswers: userAnswers
+            };
+            localStorage.setItem('quizState', JSON.stringify(state));
+        }
+
+        // Función para renderizar la pregunta actual
+        function renderQuestion() {
+            // Limpiar el contenedor de preguntas
+            quizContainer.innerHTML = '';
+            resultsSummary.style.display = 'none'; // Ocultar resumen si se está mostrando una pregunta
+
+            if (currentQuestionIndex >= questions.length) {
+                // Si hemos llegado al final, mostrar resultados
+                showResults();
+                return;
+            }
+
+            const questionData = questions[currentQuestionIndex];
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.textContent = `${currentQuestionIndex + 1}. ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            questionData.options.forEach((option, index) => {
+                const answerOption = document.createElement('label');
+                answerOption.className = 'answer-option';
+
+                const radioInput = document.createElement('input');
+                radioInput.type = 'radio';
+                radioInput.name = `question-${currentQuestionIndex}`;
+                radioInput.value = option;
+                radioInput.dataset.index = index; // Guardar el índice de la opción
+
+                const optionText = document.createElement('span');
+                optionText.textContent = option;
+
+                answerOption.appendChild(radioInput);
+                answerOption.appendChild(optionText);
+                optionsContainer.appendChild(answerOption);
+
+                // Marcar la opción si ya fue seleccionada
+                if (userAnswers[currentQuestionIndex] === option) {
+                    radioInput.checked = true;
+                    answerOption.classList.add('selected');
+                    // Si ya está contestada, mostrar si es correcta o incorrecta
+                    if (option === questionData.correctAnswer) {
+                        answerOption.classList.add('correct');
+                    } else {
+                        answerOption.classList.add('incorrect');
+                    }
+                }
+
+                // Deshabilitar opciones si ya se contestó la pregunta
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    radioInput.disabled = true;
+                }
+
+                // Añadir evento click para manejar la selección
+                answerOption.addEventListener('click', () => {
+                    if (userAnswers[currentQuestionIndex] === null) { // Solo permitir seleccionar si no ha sido respondida
+                        userAnswers[currentQuestionIndex] = option;
+                        saveQuizState(); // Guardar el estado inmediatamente
+                        checkAnswer(answerOption, option, questionData.correctAnswer);
+                        // Deshabilitar todas las opciones para esta pregunta una vez respondida
+                        optionsContainer.querySelectorAll('input[type="radio"]').forEach(input => {
+                            input.disabled = true;
+                        });
+                    }
+                });
+            });
+
+            questionCard.appendChild(optionsContainer);
+            quizContainer.appendChild(questionCard);
+
+            updateNavigationButtons();
+        }
+
+        // Función para verificar la respuesta seleccionada
+        function checkAnswer(selectedOptionElement, selectedAnswer, correctAnswer) {
+            // Remover clases de selección anteriores
+            selectedOptionElement.parentNode.querySelectorAll('.answer-option').forEach(option => {
+                option.classList.remove('selected', 'correct', 'incorrect');
+            });
+
+            selectedOptionElement.classList.add('selected');
+
+            const feedbackElement = document.createElement('div');
+            feedbackElement.className = 'feedback';
+
+            if (selectedAnswer === correctAnswer) {
+                selectedOptionElement.classList.add('correct');
+                feedbackElement.classList.add('correct-feedback');
+                feedbackElement.textContent = '¡Correcto!';
+            } else {
+                selectedOptionElement.classList.add('incorrect');
+                feedbackElement.classList.add('incorrect-feedback');
+                feedbackElement.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
+                // Resaltar la respuesta correcta si no es la seleccionada
+                selectedOptionElement.parentNode.querySelectorAll('.answer-option').forEach(option => {
+                    if (option.querySelector('span').textContent === correctAnswer) {
+                        option.classList.add('correct');
+                    }
+                });
+            }
+            // Mostrar feedback
+            selectedOptionElement.parentNode.appendChild(feedbackElement);
+            feedbackElement.style.display = 'block';
+        }
+
+
+        // Función para actualizar la visibilidad de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.classList.toggle('hidden', currentQuestionIndex === 0);
+            nextButton.textContent = currentQuestionIndex === questions.length - 1 ? 'Finalizar Test' : 'Siguiente';
+        }
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            quizContainer.innerHTML = ''; // Limpiar el contenedor de preguntas
+            nextButton.classList.add('hidden'); // Ocultar botón Siguiente
+            prevButton.classList.add('hidden'); // Ocultar botón Anterior
+            resultsSummary.style.display = 'flex'; // Mostrar resumen de resultados
+
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                const userAnswer = userAnswers[i];
+                const correctAnswer = questions[i].correctAnswer;
+
+                if (userAnswer === null) {
+                    unanswered++;
+                } else if (userAnswer === correctAnswer) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
+            }
+
+            correctCountSpan.textContent = correct;
+            incorrectCountSpan.textContent = incorrect;
+            unansweredCountSpan.textContent = unanswered;
+        }
+
+        // Event Listeners para los botones
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        // Modificación para usar el modal de confirmación
+        restartButton.addEventListener('click', () => {
+            restartModal.classList.remove('hidden');
+            restartModal.querySelector('.modal-content').classList.add('show');
+        });
+
+        confirmRestartButton.addEventListener('click', () => {
+            localStorage.removeItem('quizState'); // Borrar el estado guardado
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            renderQuestion();
+            nextButton.classList.remove('hidden'); // Asegurarse de que el botón Siguiente esté visible
+            restartModal.classList.add('hidden'); // Ocultar el modal
+            restartModal.querySelector('.modal-content').classList.remove('show');
+        });
+
+        cancelRestartButton.addEventListener('click', () => {
+            restartModal.classList.add('hidden'); // Ocultar el modal
+            restartModal.querySelector('.modal-content').classList.remove('show');
+        });
+
+        // Cargar el estado del quiz al iniciar
+        loadQuizState();
+    </script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST LGTBI</title>
+    <!-- Carga de Tailwind CSS para estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para la fuente Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un color de fondo suave */
+        }
+        /* Estilos para los botones de respuesta */
+        .option-button {
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .option-button:hover {
+            transform: translateY(-2px); /* Pequeño efecto de elevación al pasar el ratón */
+        }
+        .option-button.correct {
+            background-color: #4CAF50; /* Verde para respuestas correctas */
+            color: white;
+            border-color: #4CAF50;
+        }
+        .option-button.incorrect {
+            background-color: #f44336; /* Rojo para respuestas incorrectas */
+            color: white;
+            border-color: #f44336;
+        }
+        .option-button.selected {
+            border-width: 2px;
+            border-color: #3b82f6; /* Borde azul para la opción seleccionada */
+        }
+        /* Estilos para el mensaje de feedback */
+        .feedback-message {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .feedback-message.show {
+            opacity: 1;
+        }
+        /* Estilos para el botón de reinicio */
+        .reset-button {
+            transition: background-color 0.3s ease;
+        }
+        .reset-button:hover {
+            background-color: #dc2626; /* Rojo oscuro al pasar el ratón */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div id="quiz-container" class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">TEST LGTBI</h1>
+
+        <!-- Contenedor de la pregunta y opciones -->
+        <div id="question-area">
+            <p id="question-text" class="text-xl font-semibold mb-6 text-gray-700"></p>
+            <div id="options-container" class="grid grid-cols-1 gap-4 mb-6">
+                <!-- Las opciones se inyectarán aquí con JavaScript -->
+            </div>
+            <div id="feedback-message" class="feedback-message text-center text-lg font-medium mb-4"></div>
+        </div>
+
+        <!-- Contenedor de los botones de navegación y reinicio -->
+        <div class="flex justify-between items-center mt-6">
+            <button id="prev-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                Anterior
+            </button>
+            <button id="next-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Siguiente
+            </button>
+        </div>
+
+        <!-- Botón de Reiniciar Test -->
+        <div class="text-center mt-8">
+            <button id="reset-button" class="bg-red-500 reset-button text-white font-bold py-2 px-6 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                Reiniciar Test
+            </button>
+        </div>
+
+        <!-- Contenedor de resultados (inicialmente oculto) -->
+        <div id="results-area" class="hidden mt-8 p-6 bg-gray-100 rounded-lg">
+            <h2 class="text-2xl font-bold text-center mb-4 text-gray-800">Resultados del Test</h2>
+            <p class="text-lg mb-2"><span class="font-semibold text-green-600">Correctas:</span> <span id="correct-count">0</span></p>
+            <p class="text-lg mb-2"><span class="font-semibold text-red-600">Incorrectas:</span> <span id="incorrect-count">0</span></p>
+            <p class="text-lg mb-2"><span class="font-semibold text-gray-600">Sin contestar:</span> <span id="unanswered-count">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos con las preguntas, opciones y la respuesta correcta
+        const questions = [
+            {
+                question: "1. LEY 4/2023, Igualdad real y efectiva de las personas trans. La condición de aquellas personas nacidas con unas características biológicas, anatómicas o fisiológicas, una anatomía sexual, unos órganos reproductivos o un patrón cromosómico que no se corresponden con las nociones socialmente establecidas de los cuerpos masculinos o femeninos, se denomina-art.3-",
+                options: ["Orientación sexual", "Intersexualidad", "Expresión de género", "Bifobia"],
+                correct: "Intersexualidad"
+            },
+            {
+                question: "2. LEY 4/2023, Igualdad real y efectiva de las personas trans. ¿Cuál de las siguientes definiciones se corresponde con el concepto de Identidad sexual?-art.3-",
+                options: ["Atracción física, sexual o afectiva hacia una persona", "Manifestación que cada persona hace de sí misma para autodeterminarse sexualmente", "Vivencia interna e individual del sexo tal y como cada persona la siente y autodefine, pudiendo o no corresponder con el sexo asignado al nacer.", "Ninguna es correcta"],
+                correct: "Vivencia interna e individual del sexo tal y como cada persona la siente y autodefine, pudiendo o no corresponder con el sexo asignado al nacer."
+            },
+            {
+                question: "3. LEY 4/2023, Igualdad real y efectiva de las personas trans. ¿Cómo ha de ser la inducción, orden o instrucción de discriminar, además de concreta y directa?- art.3-",
+                options: ["Eficaz", "De rechazo", "Intolerante", "Discriminatoria"],
+                correct: "Discriminatoria"
+            },
+            {
+                question: "4. LEY 4/2023, Igualdad real y efectiva de las personas trans-¿Quién elabora la Estrategia estatal para la igualdad de trato y no discriminación de las personas LGTBI?-art.10-",
+                options: ["El Consejo de Ministros", "El Presidente del Gobierno", "El Ministerio de Igualdad", "La Conferencia Sectorial de Igualdad"],
+                correct: "El Ministerio de Igualdad"
+            },
+            {
+                question: "5. LEY 4/2023, Igualdad real y efectiva de las personas trans-¿Cuál de las siguientes medidas está destinada al ámbito sanitario?- art.16-",
+                options: ["Aprobar y desarrollar protocolos que faciliten la detección y comunicación a las autoridades competentes de las situaciones de violencia discriminatoria ejercida contra una persona por razón de orientación sexual, identidad sexual, expresión de género y características sexuales", "Apoyar la realización de campañas divulgativas sobre la igualdad de trato y de oportunidades y la no discriminación de las personas LGTBI por parte de los agentes sociales.", "Impulsar la elaboración de códigos éticos y protocolos en las Administraciones públicas y en las empresas que contemplen medidas de protección frente a toda discriminación", "Todas son correctas"],
+                correct: "Aprobar y desarrollar protocolos que faciliten la detección y comunicación a las autoridades competentes de las situaciones de violencia discriminatoria ejercida contra una persona por razón de orientación sexual, identidad sexual, expresión de género y características sexuales"
+            },
+            {
+                question: "6. LEY 4/2023, Igualdad real y efectiva de las personas trans. Las Administraciones públicas competentes en materia de protección de personas menores de edad garantizarán la ausencia de discriminación por orientación sexual, identidad sexual, expresión de género y características sexuales, teniendo en cuenta- art.31-",
+                options: ["La sensibilización y visibilización de la orientación sexual", "La heterogeneidad y diversidad familiar", "Las necesidades específicas y la vulnerabilidad", "Ninguna es correcta"],
+                correct: "Las necesidades específicas y la vulnerabilidad"
+            },
+            {
+                question: "7. LEY 4/2023, Igualdad real y efectiva de las personas trans. La creación, en colaboración con la Federación Española de Municipios y Provincias, de una Red de Municipios por la Igualdad y la Diversidad para generar sinergias es una medida en el ámbito de-art 40-",
+                options: ["Promoción del turismo", "Protección internacional", "Cooperación entre administraciones", "Familia, infancia y juventud"],
+                correct: "Cooperación entre administraciones"
+            },
+            {
+                question: "8. LEY 4/2023, Igualdad real y efectiva de las personas trans. El alumnado menor de edad que haya obtenido el cambio de nombre en el registro tiene derecho a obtener-art 60-",
+                options: ["Trato conforme a su identidad", "Defensa de sus derechos trans", "Educación inclusiva", "Todas son correctas"],
+                correct: "Trato conforme a su identidad"
+            },
+            {
+                question: "9. LEY 4/2023, Igualdad real y efectiva de las personas trans. La atención sanitaria a las personas trans se realizará conforme a los principios de (indica el que no procede)- art.56-",
+                options: ["Consentimiento informado", "No segregación", "Patologización", "Objetivo diagnóstico"],
+                correct: "Patologización"
+            },
+            {
+                question: "10.LEY 4/2023, Igualdad real y efectiva de las personas trans. Si hablamos de la legitimación para la rectificación registral del sexo de las personas, las personas menores de dieciséis años y mayores de catorce podrán presentar la solicitud-art.43-",
+                options: ["Mediante autorización judicial", "Mediante el nombramiento de un defensor judicial", "Mediante autorización de sus representantes legales", "Ninguna es correcta"],
+                correct: "Mediante autorización de sus representantes legales"
+            },
+            {
+                question: "11.LEY 4/2023, Igualdad real y efectiva de las personas trans. La resolución del procedimiento para la rectificación registral de la mención relativa al sexo será recurrible mediante un recurso de alzada ante- art.44-",
+                options: ["El encargado del Registro Civil", "Dirección General de Seguridad jurídica y fe pública", "Autoridad independiente para la Igualdad de trato y no discriminación", "Conferencia sectorial de Igualdad"],
+                correct: "Dirección General de Seguridad jurídica y fe pública"
+            },
+            {
+                question: "12.LEY 4/2023, Igualdad real y efectiva de las personas trans. Si hablamos del Consejo de Participación de las Personas LGTBI, indica la respuesta correcta- art.9-",
+                options: ["Depende del Ministerio de la Presidencia", "Presenta una memoria de su actividad de carácter trimestral", "Se remite dicha memoria a las Cortes Generales", "Todas son correctas"],
+                correct: "Todas son correctas"
+            },
+            {
+                question: "13. LEY 4/2023, Igualdad real y efectiva de las personas trans. Una terapia de conversión- art.17-",
+                options: ["Necesita el consentimiento de la persona interesada o de su representante legal", "Necesita de una campaña de desestigmatización para una educación sexual y reproductiva", "Está prohibida por ser una terapia de contracondicionamiento", "Se supedita a una rectificación registral"],
+                correct: "Está prohibida por ser una terapia de contracondicionamiento"
+            },
+            {
+                question: "14. LEY 4/2023, Igualdad real y efectiva de las personas trans. Si hablamos de los efectos de la rectificación registral, indica la respuesta que no procede- art.-46-",
+                options: ["Permite a la persona ejercer todos los derechos inherentes a su nueva condición", "Podrá ser beneficiaria de medidas de acción positiva en favor de las mujeres si el cambio es a sexo femenino", "Respecto a las situaciones jurídicas que traigan causa del sexo registral en el momento del nacimiento, la persona no perderá, en su caso, los derechos inherentes al mismo", "La persona que rectifique la mención registral pasando del sexo femenino al masculino conservará los derechos patrimoniales consolidados que se hayan derivado de estas medidas de acción positiva, dando lugar a su reintegro o devolución."],
+                correct: "La persona que rectifique la mención registral pasando del sexo femenino al masculino conservará los derechos patrimoniales consolidados que se hayan derivado de estas medidas de acción positiva, dando lugar a su reintegro o devolución."
+            },
+            {
+                question: "15.LEY 4/2023, Igualdad real y efectiva de las personas trans. Tras la rectificación o anotación registral, las autoridades procederán-art 49-",
+                options: ["A la reversibilidad de la mención registral", "A la reexpedición del documento de una autoridad o institución pública", "Al cobro de las tasas, siempre que se adecuen al principio de capacidad económica", "Expedición de un nuevo DNI"],
+                correct: "A la reexpedición del documento de una autoridad o institución pública"
+            },
+            {
+                question: "16.LEY 4/2023, Igualdad real y efectiva de las personas trans. La Estrategia estatal para la inclusión social de las personas trans incorporará de forma prioritaria-art.52-",
+                options: ["Un informe de evaluación intermedia", "Medidas de acción positiva", "Un estudio necesario para conocer la situación socioeconómica", "Una adecuada evaluación y seguimiento para evaluar la eficacia y el grado de cumplimiento"],
+                correct: "Medidas de acción positiva"
+            },
+            {
+                question: "17.LEY 4/2023, Igualdad real y efectiva de las personas trans. Si hablamos del procedimiento para la rectificación registral del sexo, tras la información facilitada por la persona interesada del Registro Civil- art.44-",
+                options: ["Se solicitará un informe médico o psicológico", "Se dará audiencia a la persona legitimada para que ratifique su solicitud", "Se aseverará la persistencia de su decisión", "Se suscribirá, con su conformidad, la comparecencia inicial reiterando su petición de rectificación registral"],
+                correct: "Se suscribirá, con su conformidad, la comparecencia inicial reiterando su petición de rectificación registral"
+            },
+            {
+                question: "18. LEY 4/2023, Igualdad real y efectiva de las personas trans. En la comparecencia para la rectificación registral se debe incluir la elección de un nuevo nombre propio- art.44-",
+                options: ["Siempre que se decida la previa rectificación", "En cualquier caso", "Siempre que se traslade por folio registral", "Salvo que se decida conservar el anterior a tenor de los previsto en la normativa del Registro Civil"],
+                correct: "Salvo que se decida conservar el anterior a tenor de los previsto en la normativa del Registro Civil"
+            },
+            {
+                question: "19.LEY 4/2023, Igualdad real y efectiva de las personas trans. ¿Se permite una práctica de modificación genital en personas menores entre doce y dieciséis años?-ar.19-",
+                options: ["Siempre que se haga a solicitud de la persona menor de edad", "Solo en los casos en que indicaciones médicas lo exijan", "Siempre que por la madurez del menor se pueda consentir de manera informada", "Siempre que no se comprometa su capacidad reproductora"],
+                correct: "Solo en los casos en que indicaciones médicas lo exijan"
+            },
+            {
+                question: "20. LEY 4/2023, Igualdad real y efectiva de las personas trans. El derecho a una atención integral y especializada frente a la LGTBIfobia no comprenderá-art.68-",
+                options: ["Orientación jurídica", "Servicios de mediación comunicativa", "Movilidad geográfica y cambio de centro de trabajo", "Servicios de traducción"],
+                correct: "Movilidad geográfica y cambio de centro de trabajo"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = Array(questions.length).fill(null); // Almacena la respuesta del usuario para cada pregunta
+        let isAnswered = false; // Controla si la pregunta actual ya ha sido contestada
+        let feedbackTimeout; // Para el temporizador del mensaje de feedback
+
+        // Referencias a los elementos del DOM
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const resultsArea = document.getElementById('results-area');
+        const quizContainer = document.getElementById('quiz-container');
+
+        // Función para cargar el estado del test desde LocalStorage
+        function loadQuizState() {
+            try {
+                const savedIndex = localStorage.getItem('currentQuestionIndex');
+                const savedAnswers = localStorage.getItem('userAnswers');
+
+                if (savedIndex !== null) {
+                    currentQuestionIndex = parseInt(savedIndex, 10);
+                }
+                if (savedAnswers !== null) {
+                    userAnswers = JSON.parse(savedAnswers);
+                }
+            } catch (e) {
+                console.error("Error al cargar el estado del quiz desde LocalStorage:", e);
+                // Si hay un error, inicializa el estado para evitar problemas
+                currentQuestionIndex = 0;
+                userAnswers = Array(questions.length).fill(null);
+            }
+        }
+
+        // Función para guardar el estado del test en LocalStorage
+        function saveQuizState() {
+            try {
+                localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+                localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            } catch (e) {
+                console.error("Error al guardar el estado del quiz en LocalStorage:", e);
+            }
+        }
+
+        // Función para mostrar la pregunta actual
+        function displayQuestion() {
+            clearTimeout(feedbackTimeout); // Limpia cualquier temporizador anterior
+            feedbackMessage.classList.remove('show', 'text-green-600', 'text-red-600');
+            feedbackMessage.textContent = '';
+
+            if (currentQuestionIndex < questions.length) {
+                // Muestra el área del quiz y oculta los resultados
+                quizContainer.classList.remove('hidden');
+                resultsArea.classList.add('hidden');
+                questionText.parentElement.classList.remove('hidden'); // Muestra la pregunta y opciones
+
+                const question = questions[currentQuestionIndex];
+                questionText.textContent = `${currentQuestionIndex + 1}. ${question.question}`;
+                optionsContainer.innerHTML = ''; // Limpia las opciones anteriores
+
+                // Crea los botones para cada opción
+                question.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add(
+                        'option-button',
+                        'w-full', 'py-3', 'px-4', 'rounded-lg', 'border-2', 'border-gray-300',
+                        'text-left', 'text-gray-700', 'font-medium', 'hover:bg-blue-100', 'focus:outline-none'
+                    );
+                    button.addEventListener('click', () => selectAnswer(option, button));
+                    optionsContainer.appendChild(button);
+
+                    // Si ya ha sido contestada, marca la opción seleccionada y muestra el feedback
+                    if (userAnswers[currentQuestionIndex] !== null) {
+                        isAnswered = true;
+                        disableOptions();
+                        const selectedOption = userAnswers[currentQuestionIndex];
+                        if (option === selectedOption) {
+                            button.classList.add('selected');
+                        }
+                        showFeedback(selectedOption === question.correct);
+                        highlightCorrectAnswer(question.correct);
+                    } else {
+                        isAnswered = false;
+                    }
+                });
+
+                // Actualiza la visibilidad de los botones de navegación
+                prevButton.classList.toggle('hidden', currentQuestionIndex === 0);
+                nextButton.textContent = currentQuestionIndex === questions.length - 1 ? 'Ver Resultados' : 'Siguiente';
+            } else {
+                // Si todas las preguntas han sido respondidas, muestra los resultados
+                showResults();
+            }
+        }
+
+        // Función para manejar la selección de una respuesta
+        function selectAnswer(selectedOption, clickedButton) {
+            if (isAnswered) return; // Evita responder de nuevo si ya se contestó
+
+            userAnswers[currentQuestionIndex] = selectedOption;
+            saveQuizState(); // Guarda la respuesta del usuario
+
+            const question = questions[currentQuestionIndex];
+            const isCorrect = (selectedOption === question.correct);
+
+            // Añade clases para feedback visual
+            clickedButton.classList.add(isCorrect ? 'correct' : 'incorrect');
+            clickedButton.classList.add('selected'); // Marca la opción seleccionada
+
+            showFeedback(isCorrect);
+            highlightCorrectAnswer(question.correct);
+            disableOptions(); // Deshabilita las opciones después de responder
+            isAnswered = true;
+        }
+
+        // Función para mostrar el mensaje de feedback
+        function showFeedback(isCorrect) {
+            feedbackMessage.textContent = isCorrect ? '¡Correcto!' : 'Incorrecto.';
+            feedbackMessage.classList.remove('text-green-600', 'text-red-600');
+            feedbackMessage.classList.add(isCorrect ? 'text-green-600' : 'text-red-600', 'show');
+
+            // Oculta el mensaje después de un tiempo
+            feedbackTimeout = setTimeout(() => {
+                feedbackMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // Función para resaltar la respuesta correcta
+        function highlightCorrectAnswer(correctAnswer) {
+            Array.from(optionsContainer.children).forEach(button => {
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('correct');
+                }
+            });
+        }
+
+        // Función para deshabilitar todas las opciones
+        function disableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+            });
+        }
+
+        // Función para habilitar todas las opciones
+        function enableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = false;
+                button.classList.remove('correct', 'incorrect', 'selected');
+            });
+        }
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach((answer, index) => {
+                if (answer === null) {
+                    unansweredCount++;
+                } else if (answer === questions[index].correct) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('incorrect-count').textContent = incorrectCount;
+            document.getElementById('unanswered-count').textContent = unansweredCount;
+
+            // Oculta el área de la pregunta y muestra el área de resultados
+            questionText.parentElement.classList.add('hidden');
+            resultsArea.classList.remove('hidden');
+            prevButton.classList.add('hidden'); // Oculta los botones de navegación
+            nextButton.classList.add('hidden');
+        }
+
+        // Event Listeners para los botones de navegación
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                saveQuizState();
+                displayQuestion();
+                enableOptions(); // Habilita opciones para la nueva pregunta
+            } else if (currentQuestionIndex === questions.length - 1) {
+                showResults();
+            }
+        });
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveQuizState();
+                displayQuestion();
+                enableOptions(); // Habilita opciones para la nueva pregunta
+            }
+        });
+
+        // Event Listener para el botón de Reiniciar Test
+        resetButton.addEventListener('click', () => {
+            localStorage.clear(); // Limpia todo el LocalStorage del quiz
+            currentQuestionIndex = 0;
+            userAnswers = Array(questions.length).fill(null);
+            isAnswered = false;
+            enableOptions(); // Asegura que las opciones estén habilitadas al reiniciar
+            displayQuestion(); // Muestra la primera pregunta
+            // Asegura que los botones de navegación se muestren correctamente
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            nextButton.textContent = 'Siguiente';
+        });
+
+        // Inicializa el quiz al cargar la página
+        window.onload = () => {
+            loadQuizState();
+            displayQuestion();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,2479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerShell Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h1 {
+            color: #1a202c;
+            text-align: center;
+            font-size: 2.5rem; /* Título restaurado al tamaño original */
+            font-weight: 700; /* Negrita */
+            margin-bottom: 20px;
+        }
+        .question-section {
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .question-number {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background-color: #edf2f7;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 1.1rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect):not(.selected) {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+        }
+        .options-container button.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+            color: #2b6cb0;
+        }
+        .options-container button.correct {
+            background-color: #c6f6d5;
+            border-color: #38a169;
+            color: #2f855a;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #fed7d7;
+            border-color: #e53e3e;
+            color: #c53030;
+            font-weight: 600;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .navigation-buttons button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .nav-button-primary {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+        }
+        .nav-button-primary:hover:not(:disabled) {
+            background-color: #3182ce;
+        }
+        .nav-button-secondary {
+            background-color: #a0aec0;
+            color: white;
+            border: none;
+        }
+        .nav-button-secondary:hover:not(:disabled) {
+            background-color: #718096;
+        }
+        .reset-button {
+            background-color: #f56565;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            align-self: flex-end; /* Align to the right */
+        }
+        .reset-button:hover {
+            background-color: #e53e3e;
+        }
+        .result-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 30px;
+            background-color: #e6fffa;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .result-section h2 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .result-section p {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .result-section p strong {
+            color: #2b6cb0;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+        .message-box p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+        .message-box button {
+            background-color: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        .message-box button:hover {
+            background-color: #3182ce;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>PowerShell Test</h1>
+
+        <button id="resetQuizButton" class="reset-button">Reiniciar Test</button>
+
+        <div id="quizContent">
+            <!-- Questions will be loaded here -->
+        </div>
+
+        <div id="resultSection" class="result-section hidden">
+            <h2>Resultados del Test</h2>
+            <p>Preguntas Correctas: <strong id="correctAnswers">0</strong></p>
+            <p>Preguntas Incorrectas: <strong id="incorrectAnswers">0</strong></p>
+            <p>Preguntas No Contestadas: <strong id="unansweredQuestions">0</strong></p>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">
+        <p id="messageText"></p>
+        <button id="messageBoxOkButton">OK</button>
+    </div>
+
+    <script>
+        // Array de preguntas y respuestas
+        // Se han incluido 200 preguntas.
+        const questions = [
+            {
+                question: "¿Qué cmdlet se utiliza para listar los roles y características del servidor?",
+                options: ["Get-Service", "Get-WindowsFeature", "Get-Command", "Get-Process"],
+                answer: "Get-WindowsFeature"
+            },
+            {
+                question: "¿Cuál es el alias para 'Add-Content'?",
+                options: ["ac", "addc", "apc", "adc"],
+                answer: "ac"
+            },
+            {
+                question: "¿Qué cmdlet se usa para crear un punto de restauración?",
+                options: ["Restore-Computer", "New-RestorePoint", "Checkpoint-Computer", "Save-System"],
+                answer: "Checkpoint-Computer"
+            },
+            {
+                question: "¿Qué cmdlet borra el contenido de un objeto?",
+                options: ["Remove-Item", "Clear-Content", "Clear-Item", "Delete-Object"],
+                answer: "Clear-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para comparar dos conjuntos de objetos?",
+                options: ["Compare-Object", "Diff-Object", "Match-Object", "Test-Object"],
+                answer: "Compare-Object"
+            },
+            {
+                question: "¿Qué cmdlet convierte objetos a formato CSV?",
+                options: ["Export-Csv", "Convert-ToCsv", "ConvertTo-CSV", "Format-Csv"],
+                answer: "ConvertTo-CSV"
+            },
+            {
+                question: "¿Cuál es el cmdlet para copiar un objeto de un lugar a otro?",
+                options: ["Move-Item", "Copy-Object", "Copy-Item", "Transfer-Item"],
+                answer: "Copy-Item"
+            },
+            {
+                question: "¿Qué cmdlet se usa para depurar un proceso?",
+                options: ["Debug-Process", "Trace-Process", "Monitor-Process", "Inspect-Process"],
+                answer: "Debug-Process"
+            },
+            {
+                question: "¿Qué cmdlet desactiva la restauración del sistema en una unidad?",
+                options: ["Disable-ComputerRestore", "Stop-Restore", "Remove-RestorePoint", "Block-SystemRestore"],
+                answer: "Disable-ComputerRestore"
+            },
+            {
+                question: "¿Qué cmdlet muestra la lista de paquetes .appx instalados?",
+                options: ["Get-Package", "Get-AppxPackage", "List-Appx", "Show-Appx"],
+                answer: "Get-AppxPackage"
+            },
+            {
+                question: "¿Qué comando se utiliza para listar los usuarios de Active Directory?",
+                options: ["Get-ADUser", "Find-User", "Search-User", "List-User"],
+                answer: "Get-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se usa para crear un nuevo usuario en Active Directory?",
+                options: ["New-User", "Add-ADUser", "New-ADUser", "Create-User"],
+                answer: "New-ADUser"
+            },
+            {
+                question: "¿Cómo se borra un usuario de Active Directory?",
+                options: ["Delete-ADUser", "Remove-ADUser", "Clear-ADUser", "Erase-ADUser"],
+                answer: "Remove-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para modificar un usuario existente en Active Directory?",
+                options: ["Set-ADUser", "Modify-ADUser", "Update-ADUser", "Change-ADUser"],
+                answer: "Set-ADUser"
+            },
+            {
+                question: "¿Qué parámetro se usa con `Get-ADUser` para mostrar todas las propiedades de un usuario?",
+                options: ["-All", "-Full", "-Properties *", "-Everything"],
+                answer: "-Properties *"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para habilitar una cuenta de usuario en Active Directory?",
+                options: ["Enable-ADAccount", "Activate-ADUser", "Unlock-ADAccount", "Set-ADUser -Enabled \$true"],
+                answer: "Enable-ADAccount"
+            },
+            {
+                question: "¿Qué cmdlet se usa para crear un nuevo grupo en Active Directory?",
+                options: ["New-Group", "Add-ADGroup", "New-ADGroup", "Create-Group"],
+                answer: "New-ADGroup"
+            },
+            {
+                question: "¿Cómo se añade un miembro a un grupo de Active Directory?",
+                options: ["Add-Member", "Add-ADGroupMember", "Join-Group", "Set-ADGroupMember"],
+                answer: "Add-ADGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se usa para eliminar un miembro de un grupo de Active Directory?",
+                options: ["Remove-Member", "Remove-ADGroupMember", "Leave-Group", "Delete-ADGroupMember"],
+                answer: "Remove-ADGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar los miembros de un grupo de Active Directory?",
+                options: ["Get-GroupMembers", "List-ADGroupMember", "Get-ADGroupMember", "Show-GroupMembers"],
+                answer: "Get-ADGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva Unidad Organizativa (OU) en Active Directory?",
+                options: ["New-OU", "Add-ADOrganizationalUnit", "New-ADOrganizationalUnit", "Create-OU"],
+                answer: "New-ADOrganizationalUnit"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en Active Directory, como cuentas deshabilitadas o expiradas?",
+                options: ["Find-ADObject", "Search-ADAccount", "Get-ADObject", "Query-AD"],
+                answer: "Search-ADAccount"
+            },
+            {
+                question: "¿Qué parámetro se usa con `Search-ADAccount` para buscar solo cuentas de usuario deshabilitadas?",
+                options: ["-DisabledUsers", "-AccountDisabled -UsersOnly", "-UsersDisabled", "-Filter {Enabled -eq \$false}"],
+                answer: "-AccountDisabled -usersOnly"
+            },
+            {
+                question: "¿Qué cmdlet se usa para comprobar el nivel funcional de un bosque de Active Directory?",
+                options: ["Get-ADForestMode", "Get-ADForest", "Check-ADForest", "Show-ForestLevel"],
+                answer: "Get-ADForest"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para habilitar la Papelera de Reciclaje de Active Directory?",
+                options: ["Enable-ADRecycleBin", "Activate-ADOptionalFeature", "Enable-ADOptionalFeature", "Install-ADRecycleBin"],
+                answer: "Enable-ADOptionalFeature"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar usuarios borrados de Active Directory (si la papelera de reciclaje está activada)?",
+                options: ["Get-ADDeletedUser", "Get-ADObject -IncludeDeletedObjects", "Search-ADDeleted", "Restore-ADObject -List"],
+                answer: "get-adobject -filter 'objectclass -eq \"user\" -AND IsDeleted -eq \$True' -IncludeDeletedObjects"
+            },
+            {
+                question: "¿Qué cmdlet se usa para recuperar un objeto borrado de Active Directory?",
+                options: ["Restore-ADObject", "Recover-ADObject", "Undelete-ADObject", "Revert-ADObject"],
+                answer: "Restore-ADObject"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para encontrar usuarios inactivos en Active Directory?",
+                options: ["Get-ADInactiveUser", "Search-ADAccount -AccountInactive", "Find-InactiveUser", "Get-ADUser -Inactive"],
+                answer: "Search-ADAccount -AccountInactive"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para deshabilitar usuarios inactivos en Active Directory?",
+                options: ["Disable-ADUser", "Set-ADAccount -Disabled", "Disable-ADAccount", "Update-ADUser -Status Inactive"],
+                answer: "Disable-ADAccount"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar usuarios inactivos de Active Directory?",
+                options: ["Remove-ADUser -Inactive", "Delete-ADUser", "Remove-ADUser", "Clear-ADUser -Inactive"],
+                answer: "Remove-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se usa para encontrar grupos vacíos en Active Directory?",
+                options: ["Get-ADEmptyGroup", "Search-ADGroup -Empty", "Get-ADGroup -Filter {Members -notlike '*'}", "Find-EmptyGroup"],
+                answer: "Get-ADGroup -Filter { Members -notlike \"*\" }"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar grupos vacíos de Active Directory?",
+                options: ["Remove-ADGroup -Empty", "Delete-ADGroup", "Remove-ADGroup", "Clear-ADGroup"],
+                answer: "Remove-ADGroup"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para encontrar OUs vacías en Active Directory?",
+                options: ["Get-ADEmptyOU", "Search-ADOrganizationalUnit -Empty", "Get-ADOrganizationalUnit -Filter {!(Get-ADObject -Filter -SearchBase \$_.DistinguishedName -SearchScope OneLevel)}", "Find-EmptyOU"],
+                answer: "Get-ADOrganizationalUnit -Filter { !(Get-ADObject -Filter -SearchBase \$_.DistinguishedName -SearchScope OneLevel) }"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar OUs vacías de Active Directory?",
+                options: ["Remove-ADOrganizationalUnit -Empty", "Delete-ADOrganizationalUnit", "Remove-ADOrganizationalUnit", "Clear-ADOrganizationalUnit"],
+                answer: "Remove-ADorganizationalUnit"
+            },
+            {
+                question: "¿Qué comando se utiliza para apagar el ordenador en PowerShell?",
+                options: ["Stop-Computer", "Shutdown-Computer", "C:\\Windows\\System32\\shutdown.exe /s", "TurnOff-PC"],
+                answer: "C:\\Windows\\System32\\shutdown.exe /s"
+            },
+            {
+                question: "¿Qué variable de PowerShell muestra la versión de PowerShell?",
+                options: ["\$PSVersion", "\$Host.Version", "\$PSVersionTable.PSVersion", "Todas las anteriores"],
+                answer: "Todas las anteriores"
+            },
+            {
+                question: "¿Qué cmdlet se usa para crear un usuario local?",
+                options: ["New-UserLocal", "Add-LocalUser", "New-LocalUser", "Create-LocalUser"],
+                answer: "New-LocalUser"
+            },
+            {
+                question: "¿Cómo se añade un usuario a un grupo local?",
+                options: ["Add-LocalGroupMember", "Add-GroupMember", "Set-LocalGroup", "Join-LocalGroup"],
+                answer: "Add-LocalGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar usuarios locales de forma masiva desde un archivo CSV?",
+                options: ["Remove-LocalUser -Bulk", "Delete-LocalUser -Csv", "Remove-LocalUser", "Clear-LocalUser"],
+                answer: "Remove-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un disco virtual (VHD)?",
+                options: ["New-VirtualDisk", "Create-VHD", "New-VHD", "Add-VHD"],
+                answer: "New-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para montar un disco virtual?",
+                options: ["Mount-VirtualDisk", "Attach-VHD", "Mount-VHD", "Connect-VHD"],
+                answer: "Mount-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco?",
+                options: ["Initialize-Disk", "Format-Disk", "New-Disk", "Prepare-Disk"],
+                answer: "Initialize-Disk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición en un disco?",
+                options: ["New-Partition", "Create-Partition", "Add-Partition", "Make-Partition"],
+                answer: "New-Partition"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen con un sistema de archivos específico?",
+                options: ["Format-Volume", "Format-Disk", "Set-Volume", "Initialize-Volume"],
+                answer: "Format-Volume"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una dirección IP fija en una interfaz de red?",
+                options: ["Set-NetIPAddress", "New-NetIPAddress", "Configure-IP", "Add-NetIP"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar las direcciones DNS en una interfaz de red?",
+                options: ["Set-DnsClientServerAddress", "Set-NetDns", "Configure-Dns", "Add-DnsServer"],
+                answer: "Set-DnsClientServerAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red?",
+                options: ["Restart-NetworkAdapter", "Restart-NetAdapter", "Reset-NetAdapter", "Reload-NetAdapter"],
+                answer: "Restart-NetAdapter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una interfaz de red para obtener una dirección IP por DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-Dhcp", "Set-DhcpClient", "Get-NetIPInterface -Dhcp"],
+                answer: "Set-NetIPInterface -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS en una interfaz de red?",
+                options: ["Reset-Dns", "Clear-DnsClientServerAddress", "Set-DnsClientServerAddress -ResetServerAddresses", "Remove-Dns"],
+                answer: "Set-DnsClientServerAddress -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad a un host remoto (similar a ping)?",
+                options: ["Test-Connection", "Ping-Host", "Check-Network", "Invoke-Ping"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para importar datos desde un archivo CSV?",
+                options: ["Import-Csv", "Read-Csv", "Get-Csv", "Load-Csv"],
+                answer: "Import-Csv"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para enviar comandos a un ordenador remoto?",
+                options: ["Invoke-RemoteCommand", "Send-Command", "Invoke-Command", "Execute-Remote"],
+                answer: "Invoke-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de configuración a través de WMI?",
+                options: ["Get-WmiObject", "Get-CimInstance", "Get-Config", "Query-WMI"],
+                answer: "Get-CimInstance"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar el directorio actual (similar a pwd en Linux)?",
+                options: ["Get-CurrentLocation", "Get-Location", "Pwd", "Show-Path"],
+                answer: "Get-Location"
+            },
+            {
+                question: "¿Qué cmdlet muestra todas las unidades, incluidas las virtuales?",
+                options: ["Get-Disk", "Get-Drive", "Get-PSDrive", "List-Drives"],
+                answer: "Get-PSDrive"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar las propiedades y métodos que devuelve un cmdlet?",
+                options: ["Get-Properties", "Get-Member", "Show-Members", "Inspect-Object"],
+                answer: "Get-Member"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar la salida de otro cmdlet?",
+                options: ["Filter-Object", "Select-Where", "Where-Object", "Filter-Content"],
+                answer: "Where-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar algunas propiedades de un objeto?",
+                options: ["Select-Properties", "Get-Property", "Select-Object", "Choose-Properties"],
+                answer: "Select-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para recorrer una serie de objetos y ejecutar un script?",
+                options: ["ForEach-Object", "Loop-Object", "Iterate-Object", "Process-Object"],
+                answer: "ForEach-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener ayuda sobre comandos?",
+                options: ["Help", "Get-Help", "Man", "Info-Command"],
+                answer: "Get-Help"
+            },
+            {
+                question: "¿Qué cmdlet muestra el histórico de comandos usados en la sesión?",
+                options: ["Get-History", "Show-History", "History", "List-Commands"],
+                answer: "Get-History"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar un objeto?",
+                options: ["Get-Object", "Select-Item", "Get-Item", "Find-Object"],
+                answer: "Get-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar la propiedad de un objeto o del registro?",
+                options: ["Get-Property", "Get-ItemProperty", "Select-Property", "Read-Property"],
+                answer: "Get-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar procesos ejecutándose en el sistema?",
+                options: ["Get-RunningProcess", "Get-Process", "List-Processes", "Show-Processes"],
+                answer: "Get-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar los servicios del sistema?",
+                options: ["Get-SystemServices", "Get-Service", "List-Services", "Show-Services"],
+                answer: "Get-Service"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una Zona Horaria?",
+                options: ["Set-TimeZone", "Set-Time", "Configure-TimeZone", "Change-TimeZone"],
+                answer: "Set-TimeZone"
+            },
+            {
+                question: "¿Qué cmdlet muestra el contenido de un directorio?",
+                options: ["Get-Directory", "List-Directory", "Get-ChildItem", "Show-Directory"],
+                answer: "Get-ChildItem"
+            },
+            {
+                question: "¿Qué cmdlet crea un nuevo objeto?",
+                options: ["New-Object", "Create-Item", "New-Item", "Add-Object"],
+                answer: "New-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar el contenido de un archivo (similar a cat en Linux)?",
+                options: ["Get-FileContent", "Read-File", "Get-Content", "Show-File"],
+                answer: "Get-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar patrones en archivos (similar a grep en Linux)?",
+                options: ["Find-String", "Search-File", "Select-String", "Grep-File"],
+                answer: "Select-String"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un ordenador a un dominio o grupo de trabajo?",
+                options: ["Join-Computer", "Add-Computer", "New-Computer", "Register-Computer"],
+                answer: "Add-Computer"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para exportar los aliases definidos?",
+                options: ["Export-Alias", "Save-Alias", "Write-Alias", "Get-Alias -Export"],
+                answer: "Export-Alias"
+            },
+            {
+                question: "¿Qué cmdlet muestra los aliases disponibles?",
+                options: ["Get-Alias", "List-Alias", "Show-Alias", "Display-Alias"],
+                answer: "Get-Alias"
+            },
+            {
+                question: "¿Qué cmdlet muestra un listado de comandos instalados de todo tipo (cmdlet, alias, function, applitcation, filter, etc)?",
+                options: ["Get-AllCommands", "Get-Command", "List-Commands", "Show-All"],
+                answer: "Get-Command"
+            },
+            {
+                question: "¿Qué cmdlet muestra los puntos de restauración?",
+                options: ["Get-RestorePoints", "Get-ComputerRestorePoint", "List-RestorePoints", "Show-RestorePoints"],
+                answer: "Get-ComputerRestorePoint"
+            },
+            {
+                question: "¿Qué cmdlet muestra la fecha y hora?",
+                options: ["Get-Date", "Show-Date", "Display-Date", "Read-Date"],
+                answer: "Get-Date"
+            },
+            {
+                question: "¿Qué cmdlet muestra la cola de eventos?",
+                options: ["Get-Events", "Show-Events", "Get-Event", "List-Events"],
+                answer: "Get-Event"
+            },
+            {
+                question: "¿Qué cmdlet borra el valor de una propiedad?",
+                options: ["Clear-Property", "Remove-ItemProperty", "Clear-ItemProperty", "Delete-Property"],
+                answer: "Clear-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet borra el valor de una variable?",
+                options: ["Clear-Variable", "Remove-Variable", "Delete-Variable", "Reset-Variable"],
+                answer: "Clear-Variable"
+            },
+            {
+                question: "¿Qué cmdlet convierte objetos a formato HTML?",
+                options: ["Export-Html", "Convert-ToHtml", "ConvertTo-Html", "Format-Html"],
+                answer: "ConvertTo-Html"
+            },
+            {
+                question: "¿Qué cmdlet convierte objetos a formato XML?",
+                options: ["Export-Xml", "Convert-ToXml", "ConvertTo-XML", "Format-Xml"],
+                answer: "ConvertTo-XML"
+            },
+            {
+                question: "¿Qué cmdlet copia una propiedad y su valor de un lugar a otro?",
+                options: ["Copy-Property", "Copy-ItemProperty", "Duplicate-Property", "Transfer-Property"],
+                answer: "Copy-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet activa la restauración del sistema en una unidad?",
+                options: ["Enable-ComputerRestore", "Activate-Restore", "Start-Restore", "TurnOn-SystemRestore"],
+                answer: "Enable-ComputerRestore"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar los roles y características del servidor?",
+                options: ["Get-Service", "Get-WindowsFeature", "Get-Command", "Get-Process"],
+                answer: "Get-WindowsFeature"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para instalar el rol de DNS y AD DS?",
+                options: ["Install-Role", "Add-WindowsFeature", "Install-WindowsFeature", "Enable-Feature"],
+                answer: "Install-WindowsFeature"
+            },
+            {
+                question: "¿Qué módulo se debe importar para promocionar un servidor a controlador de dominio e instalar el dominio?",
+                options: ["ActiveDirectory", "ADDSDeployment", "ServerManager", "DomainServices"],
+                answer: "ADDSDeployment"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para instalar un nuevo bosque de Active Directory?",
+                options: ["New-ADForest", "Install-ADForest", "Create-ADForest", "Setup-ADForest"],
+                answer: "Install-ADDSForest"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar un usuario de Active Directory con todas sus propiedades?",
+                options: ["Get-ADUser -All", "Get-ADUser -Properties *", "Show-ADUser -Full", "Display-ADUser -All"],
+                answer: "Get-ADUser -Properties *"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un usuario con propiedades y contraseña segura?",
+                options: ["New-ADUser -SecurePassword", "New-ADUser -AccountPassword", "Add-ADUser -Password", "Create-ADUser -Secure"],
+                answer: "New-ADUser -AccountPassword"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para importar usuarios en masa desde un archivo CSV?",
+                options: ["Import-Csv | New-ADUser", "Read-Csv | Add-ADUser", "Get-Csv | Create-ADUser", "Load-Csv | New-ADUser"],
+                answer: "Import-Csv | New-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para borrar usuarios en masa desde un archivo CSV?",
+                options: ["Import-Csv | Remove-ADUser", "Read-Csv | Delete-ADUser", "Get-Csv | Erase-ADUser", "Load-Csv | Remove-ADUser"],
+                answer: "Import-Csv | ForEach-Object {Remove-ADUser -Identity \$_.SamAccountname -Confirm: \$false}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para modificar usuarios en masa basándose en un filtro?",
+                options: ["Get-ADUser | Set-ADUser", "Search-ADUser | Modify-ADUser", "Filter-ADUser | Update-ADUser", "Find-ADUser | Change-ADUser"],
+                answer: "Get-ADUser -Filter 'description -eq \"Sabio\"' | Set-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un grupo nuevo en un contenedor específico?",
+                options: ["New-ADGroup -Path", "Add-ADGroup -Location", "Create-ADGroup -Container", "Set-ADGroup -Path"],
+                answer: "New-ADGroup -Path"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir en masa usuarios a un grupo en base a un atributo?",
+                options: ["Add-ADGroupMember -Filter", "Add-ADGroupMember -Members (Get-ADUser -Filter)", "Set-ADGroupMember -Bulk", "Update-ADGroup -AddUsers"],
+                answer: "Add-ADGroupMember -members (Get-ADUser -Filter 'office -eq \"Edificio1\"')"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para borrar en masa usuarios de un grupo en base a un atributo?",
+                options: ["Remove-ADGroupMember -Filter", "Remove-ADGroupMember -Members (Get-ADUser -Filter)", "Delete-ADGroupMember -Bulk", "Update-ADGroup -RemoveUsers"],
+                answer: "remove-ADGroupMember -members (Get-ADUser -Filter 'office -eq \"Edificio1\"')"
+            },
+            {
+                question: "¿Qué variable se puede utilizar para definir el dominio en scripts de Active Directory?",
+                options: ["\$Domain", "\$ADDomain", "\$Dominio", "\$CurrentDomain"],
+                answer: "\$Dominio"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de OUs?",
+                options: ["Get-OUInfo", "Get-ADOrganizationalUnit", "Show-OU", "Display-OU"],
+                answer: "Get-ADOrganizationalUnit"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar OUs?",
+                options: ["Remove-OU", "Delete-ADOrganizationalUnit", "Remove-ADOrganizationalUnit", "Clear-OU"],
+                answer: "Remove-ADOrganizationalUnit"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en AD que estén deshabilitados?",
+                options: ["Search-ADAccount -AccountDisabled", "Get-ADObject -Disabled", "Find-DisabledObjects", "Query-AD -Disabled"],
+                answer: "Search-ADAccount -AccountDisabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en AD que hayan expirado?",
+                options: ["Search-ADAccount -AccountExpired", "Get-ADObject -Expired", "Find-ExpiredObjects", "Query-AD -Expired"],
+                answer: "Search-ADAccount -AccountExpired"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en AD que van a expirar en un número específico de días?",
+                options: ["Search-ADAccount -AccountExpiring -TimeSpan", "Get-ADObject -Expiring", "Find-ExpiringObjects", "Query-AD -Expiring"],
+                answer: "Search-ADAccount -AccountExpiring -TimeSpan"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en AD que han estado inactivos por un período de tiempo?",
+                options: ["Search-ADAccount -AccountInactive -TimeSpan", "Get-ADObject -Inactive", "Find-InactiveObjects", "Query-AD -Inactive"],
+                answer: "Search-ADAccount -AccountInactive -TimeSpan"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en AD que tienen la contraseña expirada?",
+                options: ["Search-ADAccount -PasswordExpired", "Get-ADObject -PasswordExpired", "Find-ExpiredPasswords", "Query-AD -PasswordExpired"],
+                answer: "Search-ADAccount -PasswordExpired"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar objetos en AD que su cuenta esté bloqueada?",
+                options: ["Search-ADAccount -LockedOut", "Get-ADObject -Locked", "Find-LockedAccounts", "Query-AD -Locked"],
+                answer: "Search-ADAccount -LockedOut"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para comprobar si un usuario pertenece a ciertos grupos de Active Directory?",
+                options: ["Get-ADUser -MemberOf", "Get-ADUser -Properties memberof", "Check-ADGroupMembership", "Test-ADGroupMember"],
+                answer: "Get-ADUser -Properties memberof"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el controlador de dominio que tiene el rol FSMO de 'domain naming master'?",
+                options: ["Get-ADDomainController -FSMO", "(Get-ADForest).domainnamingmaster", "Get-ADFSMORoleOwner", "Find-DomainNamingMaster"],
+                answer: "(Get-ADForest).domainnamingmaster"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la raíz del dominio de Active Directory?",
+                options: ["Get-ADDomainRoot", "(Get-ADForest).rootdomain", "Get-ADRoot", "Find-DomainRoot"],
+                answer: "(Get-ADForest).rootdomain"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar equipos borrados de Active Directory (si la papelera de reciclaje está activada)?",
+                options: ["Get-ADDeletedComputer", "get-adobject -filter 'objectclass -eq \"computer\" -AND IsDeleted -eq \$True' -IncludeDeletedObjects", "Search-ADDeletedComputer", "Restore-ADObject -ComputerList"],
+                answer: "get-adobject -filter 'objectclass -eq \"computer\" -AND IsDeleted -eq \$True' -IncludeDeletedObjects"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para deshabilitar PCs inactivos en Active Directory?",
+                options: ["Disable-ADComputer", "Set-ADComputer -Enabled \$false", "Disable-ADAccount -Computer", "Update-ADComputer -Status Inactive"],
+                answer: "Set-ADComputer -Enabled \$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para borrar PCs inactivos de Active Directory?",
+                options: ["Remove-ADComputer -Inactive", "Delete-ADComputer", "Remove-ADComputer", "Clear-ADComputer -Inactive"],
+                answer: "Remove-ADComputer"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los usuarios que no se han logueado en los últimos XXXX días y no son cuentas de servicios?",
+                options: ["Get-ADUser -Filter {LastLogonDate -lt \$InactiveDate and Enabled -eq \$true and SamAccountName -notlike \"*svc*\"}", "Search-ADAccount -Inactive -NoService", "Find-InactiveUsers -ExcludeService", "Get-ADUser -LastLogonDate -ExcludeService"],
+                answer: "Get-ADUser -Filter { LastLogonDate -lt \$InactiveDate and Enabled -eq \$true and SamAccountName -notlike \"*svc*\" }"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los usuarios que no se han logueado nunca?",
+                options: ["Get-ADUser -Filter {LastLogonDate -notlike \"*\"}", "Search-ADAccount -NeverLoggedOn", "Find-NeverLoggedOnUsers", "Get-ADUser -NoLogon"],
+                answer: "Get-ADUser -Filter { LastLogonDate -notlike \"*\" -and Enabled -eq \$true }"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para exportar los resultados a un archivo CSV?",
+                options: ["Export-Csv", "Save-Csv", "Write-Csv", "Output-Csv"],
+                answer: "Export-Csv"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Export-Csv` para evitar que se incluya la información de tipo?",
+                options: ["-NoType", "-NoInfo", "-NoTypeInformation", "-NoHeader"],
+                answer: "-NoTypeInformation"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para leer una entrada del host (ej. para pedir un nombre de usuario)?",
+                options: ["Read-Host", "Get-Input", "Prompt-Host", "Request-Input"],
+                answer: "Read-Host"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Read-Host` para leer una contraseña de forma segura?",
+                options: ["-Secure", "-AsSecureString", "-Hidden", "-Password"],
+                answer: "-AsSecureString"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para convertir una cadena de texto a una cadena segura (SecureString)?",
+                options: ["Convert-ToSecureString", "Secure-String", "ConvertTo-SecureString", "Encrypt-String"],
+                answer: "ConvertTo-SecureString"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una dirección IP para una interfaz de red?",
+                options: ["Set-NetIP", "New-NetIPAddress", "Configure-IPAddress", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `New-NetIPAddress` para especificar la longitud del prefijo de subred?",
+                options: ["-SubnetLength", "-PrefixLength", "-MaskLength", "-Netmask"],
+                answer: "-PrefixLength"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer la puerta de enlace predeterminada?",
+                options: ["Set-DefaultGateway", "-DefaultGateway", "Set-NetGateway", "Add-Gateway"],
+                answer: "-DefaultGateway"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar un menú interactivo en un script de PowerShell?",
+                options: ["Show-Menu", "Get-Menu", "Display-Menu", "Write-Menu"],
+                answer: "Get-Menu" // As seen in the provided script, although not a standard cmdlet, it's used as a function.
+            },
+            {
+                question: "¿Qué estructura de control se utiliza para manejar diferentes opciones en un menú?",
+                options: ["If-Else", "Loop", "Switch", "Select"],
+                answer: "Switch"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para borrar la pantalla de la consola?",
+                options: ["Clear-Screen", "Clear-Host", "Cls", "Reset-Console"],
+                answer: "Clear-Host"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para escribir un mensaje en la consola?",
+                options: ["Write-Message", "Write-Host", "Print-Text", "Echo"],
+                answer: "Write-Host"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de la CPU?",
+                options: ["Get-Processor", "Get-CimInstance -ClassName Win32_Processor", "Get-CPU", "Show-Processor"],
+                answer: "Get-CimInstance -ClassName Win32_Processor"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener todas las revisiones instaladas?",
+                options: ["Get-HotFix", "Get-CimInstance -ClassName Win32_QuickFixEngineering", "Get-Updates", "Show-Fixes"],
+                answer: "Get-CimInstance -ClassName Win32_QuickFixEngineering"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información del sistema operativo (similar a uname -a en Linux)?",
+                options: ["Get-OSInfo", "Get-CimInstance Win32_OperatingSystem", "Get-OperatingSystem", "Show-OS"],
+                answer: "Get-CimInstance Win32_OperatingSystem"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para enviar una petición REST con el método POST?",
+                options: ["Send-RestRequest", "Invoke-RestMethod -Method Post", "Post-Rest", "Call-Rest"],
+                answer: "Invoke-RestMethod -Method Post"
+            },
+            {
+                question: "¿Qué comando se debe ejecutar primero para poder ejecutar scripts con extensión .ps1?",
+                options: ["Enable-ScriptExecution", "Set-ExecutionPolicy Unrestricted", "Allow-Scripts", "Unblock-Execution"],
+                answer: "set-executionpolicy unrestricted"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los procesos que ocupan en memoria más de 100MB?",
+                options: ["Get-Process -MemoryGreaterThan 100MB", "Get-Process | Where-Object {\$_.WorkingSet -gt 104857600}", "Filter-Process -Memory 100MB", "Search-Process -Memory"],
+                answer: "Get-Process | Where-Object { \$_. WorkingSet -gt 104857600}"
+            },
+            {
+                question: "¿Qué método se puede invocar en el objeto .NET que devuelve `Get-Process` para terminar un proceso?",
+                options: ["Stop()", "Terminate()", "Kill()", "End()"],
+                answer: "Kill()"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para copiar un archivo de un lugar a otro?",
+                options: ["Move-File", "Copy-File", "Copy-Item", "Transfer-File"],
+                answer: "Copy-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva carpeta?",
+                options: ["New-Folder", "Make-Directory", "New-Item -ItemType Directory", "Create-Directory"],
+                answer: "New-Item -ItemType Directory"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear múltiples archivos con un patrón (similar a touch en Linux)?",
+                options: ["New-File -Pattern", "New-Item -ItemType File", "Create-Files", "Touch-Files"],
+                answer: "New-Item -ItemType File"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar las últimas N líneas de un archivo (similar a tail en Linux)?",
+                options: ["Get-Content -Tail", "Read-File -Last", "Show-File -Tail", "Tail-File"],
+                answer: "Get-Content -Tail"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de las unidades lógicas, como el espacio libre?",
+                options: ["Get-DiskSpace", "Get-CimInstance -Class Win32_LogicalDisk", "Get-LogicalDisk", "Show-Drives"],
+                answer: "Get-CimInstance -Class Win32_LogicalDisk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar drivers en ejecución y configurados con inicio manual?",
+                options: ["Get-CimInstance -Class Win32_SystemDriver | Where-Object {\$_.State -eq \"Running\"} | Where-Object {\$_.StartMode -eq \"Manual\"}", "Get-Driver -Running -Manual", "Find-SystemDriver -Active -Manual", "Select-Drivers -State Running -StartMode Manual"],
+                answer: "Get-CimInstance -Class Win32_SystemDriver | Where-Object { \$_.State -eq \"Running\"} | Where-Object { \$_.StartMode -eq \"Manual\"}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la versión de PowerShell del host?",
+                options: ["Get-HostVersion", "(Get-Host).Version", "\$Host.Version", "Ambas B y C"],
+                answer: "Ambas B y C"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir contenido a un archivo?",
+                options: ["Add-FileContent", "Append-Content", "Add-Content", "Write-Append"],
+                answer: "Add-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para borrar el contenido de una variable?",
+                options: ["Remove-Variable", "Clear-Variable", "Delete-Variable", "Reset-Variable"],
+                answer: "Clear-Variable"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para comparar dos objetos y encontrar las diferencias?",
+                options: ["Compare-Object", "Diff-Object", "Match-Object", "Test-Comparison"],
+                answer: "Compare-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para exportar objetos a formato CSV?",
+                options: ["Export-Csv", "Save-Csv", "Write-Csv", "ConvertTo-Csv"],
+                answer: "Export-Csv"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para exportar objetos a formato HTML?",
+                options: ["Export-Html", "Save-Html", "Write-Html", "ConvertTo-Html"],
+                answer: "ConvertTo-Html"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para exportar objetos a formato XML?",
+                options: ["Export-Xml", "Save-Xml", "Write-Xml", "ConvertTo-XML"],
+                answer: "ConvertTo-XML"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para depurar un proceso?",
+                options: ["Debug-Process", "Trace-Process", "Monitor-Process", "Inspect-Process"],
+                answer: "Debug-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para deshabilitar la restauración del sistema?",
+                options: ["Disable-ComputerRestore", "Stop-Restore", "Remove-RestorePoint", "Block-SystemRestore"],
+                answer: "Disable-ComputerRestore"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para habilitar la restauración del sistema?",
+                options: ["Enable-ComputerRestore", "Activate-Restore", "Start-Restore", "TurnOn-SystemRestore"],
+                answer: "Enable-ComputerRestore"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los puntos de restauración del ordenador?",
+                options: ["Get-RestorePoints", "Get-ComputerRestorePoint", "List-RestorePoints", "Show-RestorePoints"],
+                answer: "Get-ComputerRestorePoint"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el contenido de un archivo?",
+                options: ["Get-FileContent", "Read-File", "Get-Content", "Show-File"],
+                answer: "Get-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la fecha y hora actuales?",
+                options: ["Get-Date", "Show-Date", "Display-Date", "Read-Date"],
+                answer: "Get-Date"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener eventos del registro?",
+                options: ["Get-Events", "Show-Events", "Get-Event", "List-Events"],
+                answer: "Get-Event"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener ayuda sobre un comando específico?",
+                options: ["Help", "Get-Help", "Man", "Info-Command"],
+                answer: "Get-Help"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el historial de comandos de la sesión actual?",
+                options: ["Get-History", "Show-History", "History", "List-Commands"],
+                answer: "Get-History"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener un elemento (archivo, carpeta, clave de registro, etc.)?",
+                options: ["Get-Object", "Select-Item", "Get-Item", "Find-Object"],
+                answer: "Get-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener una propiedad de un elemento o del registro?",
+                options: ["Get-Property", "Get-ItemProperty", "Select-Property", "Read-Property"],
+                answer: "Get-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener procesos en ejecución?",
+                options: ["Get-RunningProcess", "Get-Process", "List-Processes", "Show-Processes"],
+                answer: "Get-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener servicios del sistema?",
+                options: ["Get-SystemServices", "Get-Service", "List-Services", "Show-Services"],
+                answer: "Get-Service"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer la zona horaria del sistema?",
+                options: ["Set-TimeZone", "Set-Time", "Configure-TimeZone", "Change-TimeZone"],
+                answer: "Set-TimeZone"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar el contenido de un directorio (similar a `ls` o `dir`)?",
+                options: ["Get-DirectoryContent", "List-Directory", "Get-ChildItem", "Show-Directory"],
+                answer: "Get-ChildItem"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo elemento (archivo, directorio, etc.)?",
+                options: ["New-Object", "Create-Item", "New-Item", "Add-Object"],
+                answer: "New-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener las propiedades y métodos de un objeto?",
+                options: ["Get-Properties", "Get-Member", "Show-Members", "Inspect-Object"],
+                answer: "Get-Member"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar objetos de una canalización?",
+                options: ["Filter-Object", "Select-Where", "Where-Object", "Filter-Content"],
+                answer: "Where-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar propiedades específicas de objetos?",
+                options: ["Select-Properties", "Get-Property", "Select-Object", "Choose-Properties"],
+                answer: "Select-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para procesar cada objeto en una colección?",
+                options: ["ForEach-Object", "Loop-Object", "Iterate-Object", "Process-Object"],
+                answer: "ForEach-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener instancias de clases WMI/CIM?",
+                options: ["Get-WmiObject", "Get-CimInstance", "Get-Config", "Query-WMI"],
+                answer: "Get-CimInstance"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la ubicación actual del sistema de archivos?",
+                options: ["Get-CurrentLocation", "Get-Location", "Pwd", "Show-Path"],
+                answer: "Get-Location"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener una lista de todas las unidades de PowerShell (PSDrive)?",
+                options: ["Get-Disk", "Get-Drive", "Get-PSDrive", "List-Drives"],
+                answer: "Get-PSDrive"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para invocar un comando en un ordenador remoto?",
+                options: ["Invoke-RemoteCommand", "Send-Command", "Invoke-Command", "Execute-Remote"],
+                answer: "Invoke-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para realizar peticiones web (GET, POST, etc.)?",
+                options: ["Invoke-WebRequest", "Invoke-RestMethod", "Send-HttpRequest", "Get-Web"],
+                answer: "Invoke-RestMethod"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una dirección IP para una interfaz de red?",
+                options: ["Set-NetIP", "New-NetIPAddress", "Configure-IPAddress", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar los servidores DNS para una interfaz de red?",
+                options: ["Set-DnsClientServerAddress", "Set-NetDns", "Configure-Dns", "Add-DnsServer"],
+                answer: "Set-DnsClientServerAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red?",
+                options: ["Restart-NetworkAdapter", "Restart-NetAdapter", "Reset-NetAdapter", "Reload-NetAdapter"],
+                answer: "Restart-NetAdapter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una interfaz de red en DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-Dhcp", "Set-DhcpClient", "Get-NetIPInterface -Dhcp"],
+                answer: "Set-NetIPInterface -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS a las predeterminadas?",
+                options: ["Reset-Dns", "Clear-DnsClientServerAddress", "Set-DnsClientServerAddress -ResetServerAddresses", "Remove-Dns"],
+                answer: "Set-DnsClientServerAddress -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad de red?",
+                options: ["Test-Network", "Test-Connection", "Ping", "Check-Connectivity"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo usuario local?",
+                options: ["New-UserLocal", "Add-LocalUser", "New-LocalUser", "Create-LocalUser"],
+                answer: "New-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un miembro a un grupo local?",
+                options: ["Add-LocalGroupMember", "Add-GroupMember", "Set-LocalGroup", "Join-LocalGroup"],
+                answer: "Add-LocalGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un usuario local?",
+                options: ["Remove-LocalUser", "Delete-LocalUser", "Clear-LocalUser", "Erase-LocalUser"],
+                answer: "Remove-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo disco virtual (VHD)?",
+                options: ["New-VirtualDisk", "Create-VHD", "New-VHD", "Add-VHD"],
+                answer: "New-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para montar un disco virtual?",
+                options: ["Mount-VirtualDisk", "Attach-VHD", "Mount-VHD", "Connect-VHD"],
+                answer: "Mount-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco nuevo?",
+                options: ["Initialize-Disk", "Format-Disk", "New-Disk", "Prepare-Disk"],
+                answer: "Initialize-Disk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición en un disco?",
+                options: ["New-Partition", "Create-Partition", "Add-Partition", "Make-Partition"],
+                answer: "New-Partition"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen?",
+                options: ["Format-Volume", "Format-Disk", "Set-Volume", "Initialize-Volume"],
+                answer: "Format-Volume"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-Help` para mostrar la ayuda completa de un cmdlet?",
+                options: ["-Full", "-Detailed", "-All", "-Complete"],
+                answer: "-Full"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar las zonas horarias disponibles?",
+                options: ["Get-Timezone -List", "Get-TimeZone -ListAvailable", "List-TimeZones", "Show-Timezones"],
+                answer: "Get-TimeZone -ListAvailable"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-Member` para mostrar solo las propiedades de un objeto?",
+                options: ["-PropertiesOnly", "-Type Properties", "-MemberType Properties", "-ShowProperties"],
+                answer: "-MemberType Properties"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Copy-Item` para copiar directorios y su contenido de forma recursiva?",
+                options: ["-Recursive", "-Recurse", "-Deep", "-AllChildren"],
+                answer: "-Recurse"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el contenido de una clave del registro?",
+                options: ["Get-RegistryKey", "Get-ItemProperty -Path", "Read-Registry", "Get-RegItem"],
+                answer: "Get-ItemProperty -Path"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar elementos por un patrón específico en su nombre?",
+                options: ["Where-Name", "Select-String -Pattern", "Get-ChildItem -Filter", "Find-Item"],
+                answer: "Get-ChildItem -Filter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para detener un proceso en un ordenador remoto?",
+                options: ["Stop-RemoteProcess", "Invoke-Command -ScriptBlock {Stop-Process}", "Terminate-RemoteProcess", "Kill-RemoteProcess"],
+                answer: "Invoke-Command -ComputerName Server01 {Stop-Process Powershell}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de los discos lógicos, incluyendo el espacio libre?",
+                options: ["Get-DiskInfo", "Get-CimInstance -Class Win32_LogicalDisk", "Get-LogicalDiskInfo", "Show-DiskSpace"],
+                answer: "Get-CimInstance -Class Win32_LogicalDisk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar propiedades específicas de la salida de un cmdlet?",
+                options: ["Select-Properties", "Format-Table -Property", "Choose-Object", "Get-Property"],
+                answer: "Select-Object -Property"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de los drivers del sistema?",
+                options: ["Get-SystemDrivers", "Get-CimInstance -Class Win32_SystemDriver", "Get-Drivers", "Show-Drivers"],
+                answer: "Get-CimInstance -Class Win32_SystemDriver"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear la salida de un cmdlet en una tabla con autoajuste de columnas?",
+                options: ["Format-Table -AutoSize", "Format-List", "Out-GridView", "Format-Wide"],
+                answer: "Format-Table -AutoSize"
+            },
+            {
+                question: "¿Qué variable de PowerShell contiene información sobre la versión de PowerShell?",
+                options: ["\$PSVersion", "\$Host.Version", "\$PSVersionTable", "Todas las anteriores"],
+                answer: "Todas las anteriores"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo usuario de Active Directory con propiedades específicas?",
+                options: ["New-ADUser -Properties", "New-ADUser -Name -City -Company", "Add-ADUser -WithProperties", "Set-ADUser -New"],
+                answer: "New-ADUser -Name Sole -City Madrid -Company cefes"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar un usuario de Active Directory con propiedades seleccionadas?",
+                options: ["Get-ADUser -Select", "Get-ADUser -Identity -Properties", "Show-ADUser -Custom", "Display-ADUser -Selected"],
+                answer: "Get-ADUser -Identity sole -Properties description, city, department"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para habilitar una cuenta de usuario de Active Directory?",
+                options: ["Enable-ADUser", "Set-ADAccount -Enabled", "Enable-ADAccount", "Unlock-ADUser"],
+                answer: "Enable-ADAccount"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para modificar propiedades de un usuario de Active Directory?",
+                options: ["Update-ADUser", "Set-ADUser", "Change-ADUser", "Modify-ADUser"],
+                answer: "Set-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un grupo de seguridad en Active Directory?",
+                options: ["New-ADGroup -GroupCategory Security", "Add-ADSecurityGroup", "Create-SecurityGroup", "New-Group -Type Security"],
+                answer: "New-ADGroup -GroupCategory Security"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un grupo de Active Directory?",
+                options: ["Delete-ADGroup", "Remove-ADGroup", "Clear-ADGroup", "Erase-ADGroup"],
+                answer: "Remove-ADGroup"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un miembro a un grupo de Active Directory sin confirmación?",
+                options: ["Add-ADGroupMember -Confirm:\$false", "Add-ADGroupMember -Force", "Add-ADGroupMember -NoConfirm", "Add-ADGroupMember -Silent"],
+                answer: "Add-ADGroupMember -Identity \"Genios\" -Members (Get-ADUser carlos) -WhatIf" // Note: The provided document uses -WhatIf for example, but -Confirm:$false is for no confirmation.
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un miembro de un grupo de Active Directory sin confirmación?",
+                options: ["Remove-ADGroupMember -Confirm:\$false", "Remove-ADGroupMember -Force", "Remove-ADGroupMember -NoConfirm", "Remove-ADGroupMember -Silent"],
+                answer: "remove-ADGroupMember -Identity \"Genios\" -Members (Get-ADUser carlos) -Confirm:\$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una Unidad Organizativa (OU) en una ruta específica?",
+                options: ["New-ADOrganizationalUnit -Path", "Add-ADOU -Location", "Create-OU -Path", "Set-ADOU -Path"],
+                answer: "New-ADOrganizationalUnit -Path"
+            },
+            {
+                question: "¿Qué propiedad se utiliza en `New-ADOrganizationalUnit` para evitar la eliminación accidental?",
+                options: ["-Protected", "-ProtectedFromAccidentalDeletion", "-NoDelete", "-SecureDeletion"],
+                answer: "-ProtectedFromAccidentalDeletion"
+            },
+            {
+                question: "¿Qué función se utiliza en el script para comprobar si una OU existe y crearla si no?",
+                options: ["CheckOU", "ExisteOU", "Verify-OU", "Test-OU"],
+                answer: "ExisteOU"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar cuentas de ordenador deshabilitadas?",
+                options: ["Search-ADAccount -ComputersDisabled", "Search-ADAccount -AccountDisabled -computersOnly", "Get-ADComputer -Disabled", "Find-DisabledComputers"],
+                answer: "Search-ADAccount -AccountDisabled -computersOnly"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar cuentas de usuario con contraseña que nunca expira?",
+                options: ["Search-ADAccount -PasswordNeverExpires", "Get-ADUser -PasswordNeverExpires", "Find-PermanentPasswords", "Query-AD -NoPasswordExpiry"],
+                answer: "Search-ADAccount -PasswordNeverExpires"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el nivel funcional del bosque de Active Directory?",
+                options: ["Get-ADForestMode", "Get-ADForest", "Check-ForestLevel", "Show-ForestMode"],
+                answer: "Get-ADForest"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para cambiar el nivel funcional del bosque de Active Directory?",
+                options: ["Set-ADForestMode", "Change-ADForestLevel", "Update-ADForest", "Modify-ForestMode"],
+                answer: "set-adforestmode"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restaurar un objeto borrado de Active Directory a una OU diferente?",
+                options: ["Restore-ADObject -TargetPath", "Recover-ADObject -ToOU", "Undelete-ADObject -NewPath", "Move-ADObject -Restore"],
+                answer: "Restore-ADObject -TargetPath"
+            },
+            {
+                question: "¿Qué propiedad de un usuario de Active Directory indica la última vez que inició sesión?",
+                options: ["LastLogon", "LastLogonDate", "LastSignIn", "LoginTime"],
+                answer: "LastLogonDate"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-ADUser` para filtrar usuarios por su estado 'Enabled'?",
+                options: ["-Enabled", "-Status Enabled", "-Filter {Enabled -eq \$true}", "-IsActive"],
+                answer: "-Filter {Enabled -eq \$true}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para deshabilitar una cuenta de ordenador en Active Directory?",
+                options: ["Disable-ADComputer", "Set-ADComputer -Enabled \$false", "Disable-ADAccount -Computer", "Update-ADComputer -Status Inactive"],
+                answer: "Set-ADComputer -Identity \$DistName -Enabled \$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar una cuenta de ordenador de Active Directory?",
+                options: ["Remove-ADComputer", "Delete-ADComputer", "Clear-ADComputer", "Erase-ADComputer"],
+                answer: "Remove-ADComputer"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para importar un archivo CSV que contiene datos de usuarios para creación masiva?",
+                options: ["Import-Csv -Path C:\\material\\usuarios.csv", "Read-Csv -Users", "Get-Csv -Users", "Load-Csv -UserFile"],
+                answer: "Import-Csv -Path C:\\material\\usuarios.csv"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para convertir una cadena de texto a un objeto SecureString para contraseñas?",
+                options: ["ConvertTo-SecureString", "Encrypt-String", "Secure-Password", "Convert-To-Secure"],
+                answer: "ConvertTo-SecureString"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `New-LocalUser` para que la cuenta nunca expire?",
+                options: ["-NeverExpires", "-AccountNeverExpires", "-NoExpiry", "-PermanentAccount"],
+                answer: "-AccountNeverExpires"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una nueva dirección IP en una interfaz de red?",
+                options: ["Set-NetIPAddress", "New-NetIPAddress", "Configure-IP", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red por su nombre?",
+                options: ["Restart-NetworkAdapter -Name", "Restart-NetAdapter -Name", "Reset-Adapter -Name", "Reload-NetAdapter -Name"],
+                answer: "Restart-NetAdapter -Name"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una interfaz de red para obtener IP por DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-DhcpInterface", "Set-Dhcp -Interface", "Configure-NetDhcp"],
+                answer: "Set-NetIPInterface -InterfaceIndex \$interfaz -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS de una interfaz de red?",
+                options: ["Reset-DnsServers", "Set-DnsClientServerAddress -ResetServerAddresses", "Clear-DnsAddresses", "Remove-DnsServers"],
+                answer: "Set-DnsClientServerAddress -InterfaceIndex \$interfaz -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad a una dirección IP?",
+                options: ["Ping-IP", "Test-Connection", "Check-IP", "Verify-Connection"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Test-Connection` para suprimir la salida detallada?",
+                options: ["-Quiet", "-Silent", "-NoOutput", "-Hide"],
+                answer: "-quiet"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un disco virtual de tipo dinámico?",
+                options: ["New-VHD -Dynamic", "Create-VHD -Dynamic", "Add-VHD -Dynamic", "Make-VHD -Dynamic"],
+                answer: "New-VHD -Path \$disco -SizeBytes \$tamano -Dynamic"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco y pasarlo a la siguiente operación en la canalización?",
+                options: ["Initialize-Disk |", "Initialize-Disk -Passthru |", "Format-Disk |", "New-Disk |"],
+                answer: "Initialize-Disk -PassThru"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición asignando una letra de unidad y usando el tamaño máximo?",
+                options: ["New-Partition -AssignDriveLetter -UseMaximumSize", "Create-Partition -AutoLetter -MaxSize", "Add-Partition -DriveLetter -FullSize", "Make-Partition -Letter -Max"],
+                answer: "New-Partition -AssignDriveLetter -UseMaximumSize"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen con el sistema de archivos NTFS sin confirmación?",
+                options: ["Format-Volume -FileSystem NTFS -Confirm:\$false", "Format-Volume -NTFS -Force", "Format-Disk -NTFS -NoPrompt", "Set-Volume -Format NTFS -NoConfirm"],
+                answer: "Format-Volume -FileSystem NTFS -Confirm:\$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de los procesos en ejecución?",
+                options: ["Get-RunningProcess", "Get-Process", "List-Processes", "Show-Processes"],
+                answer: "Get-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar procesos que ocupan más de una cantidad específica de memoria (WorkingSet)?",
+                options: ["Get-Process | Where-Object {\$_.WorkingSet -gt X}", "Filter-Process -Memory X", "Search-Process -WorkingSet X", "Get-Process -MemoryGreaterThan X"],
+                answer: "Get-Process | Where-Object { \$_. WorkingSet -gt 104857600}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar una cadena de texto dentro de un archivo?",
+                options: ["Find-String", "Select-String", "Search-File", "Grep-File"],
+                answer: "Select-String"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para invocar un método REST con un cuerpo de petición?",
+                options: ["Invoke-RestMethod -Body", "Send-RestRequest -Body", "Call-Rest -Body", "Invoke-WebRequest -Body"],
+                answer: "Invoke-RestMethod -Method Post -Body"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los aliases disponibles en la sesión de PowerShell?",
+                options: ["Get-Alias", "List-Aliases", "Show-Aliases", "Display-Aliases"],
+                answer: "Get-Alias"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener todos los comandos disponibles (cmdlets, funciones, alias, etc.)?",
+                options: ["Get-AllCommands", "Get-Command", "List-Commands", "Show-Commands"],
+                answer: "Get-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los puntos de restauración del sistema?",
+                options: ["Get-RestorePoints", "Get-ComputerRestorePoint", "List-RestorePoints", "Show-RestorePoints"],
+                answer: "Get-ComputerRestorePoint"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el contenido de un archivo o elemento?",
+                options: ["Get-FileContent", "Read-Content", "Get-Content", "Show-Content"],
+                answer: "Get-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la fecha y hora actuales del sistema?",
+                options: ["Get-CurrentDate", "Get-Date", "Show-Date", "Display-Date"],
+                answer: "Get-Date"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener eventos de la cola de eventos?",
+                options: ["Get-Events", "Show-Events", "Get-Event", "List-Events"],
+                answer: "Get-Event"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener ayuda sobre un cmdlet o función?",
+                options: ["Help", "Get-Help", "Man", "Info-Cmdlet"],
+                answer: "Get-Help"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el historial de comandos ejecutados en la sesión actual?",
+                options: ["Get-History", "Show-History", "History", "List-Commands"],
+                answer: "Get-History"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener un elemento del sistema de archivos o del registro?",
+                options: ["Get-Object", "Get-Item", "Select-Item", "Find-Item"],
+                answer: "Get-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener una propiedad específica de un elemento?",
+                options: ["Get-Property", "Get-ItemProperty", "Select-Property", "Read-Property"],
+                answer: "Get-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los servicios del sistema operativo?",
+                options: ["Get-SystemServices", "Get-Service", "List-Services", "Show-Services"],
+                answer: "Get-Service"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer la zona horaria del sistema?",
+                options: ["Set-SystemTimeZone", "Set-TimeZone", "Configure-TimeZone", "Change-TimeZone"],
+                answer: "Set-TimeZone"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar el contenido de un directorio (archivos y subdirectorios)?",
+                options: ["Get-DirectoryContent", "List-Directory", "Get-ChildItem", "Show-Directory"],
+                answer: "Get-ChildItem"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo archivo o directorio?",
+                options: ["New-Object", "Create-Item", "New-Item", "Add-Item"],
+                answer: "New-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los miembros (propiedades y métodos) de un objeto PowerShell?",
+                options: ["Get-Properties", "Get-Member", "Show-Members", "Inspect-Object"],
+                answer: "Get-Member"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar objetos de una colección basándose en una condición?",
+                options: ["Filter-Object", "Select-Where", "Where-Object", "Filter-Collection"],
+                answer: "Where-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar un subconjunto de propiedades de objetos?",
+                options: ["Select-Properties", "Get-Property", "Select-Object", "Choose-Properties"],
+                answer: "Select-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para iterar sobre una colección de objetos y ejecutar un bloque de script para cada uno?",
+                options: ["ForEach-Object", "Loop-Object", "Iterate-Collection", "Process-Object"],
+                answer: "ForEach-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de configuración del sistema a través de WMI/CIM?",
+                options: ["Get-WmiInfo", "Get-CimInstance", "Get-SystemConfig", "Query-CIM"],
+                answer: "Get-CimInstance"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la ruta del directorio de trabajo actual?",
+                options: ["Get-CurrentPath", "Get-Location", "Pwd", "Show-Path"],
+                answer: "Get-Location"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar todas las unidades de PowerShell (PSDrive), incluyendo unidades de registro y certificados?",
+                options: ["Get-DiskDrive", "Get-PSDrive", "List-Drives", "Show-Drives"],
+                answer: "Get-PSDrive"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para ejecutar un script o comando en un equipo remoto?",
+                options: ["Invoke-Remote", "Invoke-Command", "Run-Remote", "Execute-Remote"],
+                answer: "Invoke-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para realizar solicitudes web HTTP/HTTPS?",
+                options: ["Invoke-WebRequest", "Invoke-RestMethod", "Send-HttpRequest", "Get-WebPage"],
+                answer: "Invoke-RestMethod"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una nueva dirección IP en una interfaz de red?",
+                options: ["Set-NetIP", "New-NetIPAddress", "Configure-IPAddress", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar los servidores DNS para una interfaz de red específica?",
+                options: ["Set-DnsServers", "Set-DnsClientServerAddress", "Configure-Dns", "Add-DnsServers"],
+                answer: "Set-DnsClientServerAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red?",
+                options: ["Restart-Network", "Restart-NetAdapter", "Reset-NetworkAdapter", "Reload-NetAdapter"],
+                answer: "Restart-NetAdapter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una interfaz de red para usar DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-Dhcp", "Set-DhcpClient", "Configure-Dhcp"],
+                answer: "Set-NetIPInterface -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS de una interfaz de red a las predeterminadas?",
+                options: ["Reset-Dns", "Clear-DnsClientServerAddress", "Set-DnsClientServerAddress -ResetServerAddresses", "Remove-Dns"],
+                answer: "Set-DnsClientServerAddress -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad de red a un destino?",
+                options: ["Test-Network", "Test-Connection", "Ping-Host", "Check-Connectivity"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo usuario local en el sistema?",
+                options: ["New-UserLocal", "Add-LocalUser", "New-LocalUser", "Create-LocalUser"],
+                answer: "New-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un usuario a un grupo local?",
+                options: ["Add-LocalGroupMember", "Add-GroupMember", "Set-LocalGroup", "Join-LocalGroup"],
+                answer: "Add-LocalGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un usuario local del sistema?",
+                options: ["Remove-LocalUser", "Delete-LocalUser", "Clear-LocalUser", "Erase-LocalUser"],
+                answer: "Remove-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo disco duro virtual (VHD)?",
+                options: ["New-VirtualDisk", "Create-VHD", "New-VHD", "Add-VHD"],
+                answer: "New-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para montar un disco duro virtual (VHD)?",
+                options: ["Mount-VirtualDisk", "Attach-VHD", "Mount-VHD", "Connect-VHD"],
+                answer: "Mount-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco nuevo para su uso?",
+                options: ["Initialize-Disk", "Format-Disk", "New-Disk", "Prepare-Disk"],
+                answer: "Initialize-Disk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición en un disco?",
+                options: ["New-Partition", "Create-Partition", "Add-Partition", "Make-Partition"],
+                answer: "New-Partition"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen con un sistema de archivos específico?",
+                options: ["Format-Volume", "Format-Disk", "Set-Volume", "Initialize-Volume"],
+                answer: "Format-Volume"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de la versión de PowerShell del host?",
+                options: ["Get-HostVersion", "(Get-Host).Version", "\$Host.Version", "Ambas B y C"],
+                answer: "Ambas B y C"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir contenido a un archivo existente?",
+                options: ["Add-FileContent", "Append-Content", "Add-Content", "Write-Append"],
+                answer: "Add-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para borrar el contenido de una variable?",
+                options: ["Remove-Variable", "Clear-Variable", "Delete-Variable", "Reset-Variable"],
+                answer: "Clear-Variable"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para comparar dos objetos y mostrar sus diferencias?",
+                options: ["Compare-Object", "Diff-Object", "Match-Object", "Test-Comparison"],
+                answer: "Compare-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para convertir objetos a formato CSV?",
+                options: ["Export-Csv", "Save-Csv", "Write-Csv", "ConvertTo-Csv"],
+                answer: "ConvertTo-Csv"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para convertir objetos a formato HTML?",
+                options: ["Export-Html", "Save-Html", "Write-Html", "ConvertTo-Html"],
+                answer: "ConvertTo-Html"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para convertir objetos a formato XML?",
+                options: ["Export-Xml", "Save-Xml", "Write-Xml", "ConvertTo-XML"],
+                answer: "ConvertTo-XML"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para depurar un proceso en ejecución?",
+                options: ["Debug-Process", "Trace-Process", "Monitor-Process", "Inspect-Process"],
+                answer: "Debug-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para deshabilitar la restauración del sistema en una unidad?",
+                options: ["Disable-ComputerRestore", "Stop-Restore", "Remove-RestorePoint", "Block-SystemRestore"],
+                answer: "Disable-ComputerRestore"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para habilitar la restauración del sistema en una unidad?",
+                options: ["Enable-ComputerRestore", "Activate-Restore", "Start-Restore", "TurnOn-SystemRestore"],
+                answer: "Enable-ComputerRestore"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los puntos de restauración del ordenador?",
+                options: ["Get-RestorePoints", "Get-ComputerRestorePoint", "List-RestorePoints", "Show-RestorePoints"],
+                answer: "Get-ComputerRestorePoint"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el contenido de un archivo?",
+                options: ["Get-FileContent", "Read-File", "Get-Content", "Show-File"],
+                answer: "Get-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la fecha y hora actuales?",
+                options: ["Get-Date", "Show-Date", "Display-Date", "Read-Date"],
+                answer: "Get-Date"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener eventos de la cola de eventos de PowerShell?",
+                options: ["Get-Events", "Show-Events", "Get-Event", "List-Events"],
+                answer: "Get-Event"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener ayuda sobre un comando de PowerShell?",
+                options: ["Help", "Get-Help", "Man", "Info-Command"],
+                answer: "Get-Help"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el historial de comandos de la sesión actual de PowerShell?",
+                options: ["Get-History", "Show-History", "History", "List-Commands"],
+                answer: "Get-History"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener un elemento del sistema de archivos o del registro?",
+                options: ["Get-Object", "Get-Item", "Select-Item", "Find-Item"],
+                answer: "Get-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener una propiedad de un elemento o del registro?",
+                options: ["Get-Property", "Get-ItemProperty", "Select-Property", "Read-Property"],
+                answer: "Get-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los procesos en ejecución en el sistema?",
+                options: ["Get-RunningProcess", "Get-Process", "List-Processes", "Show-Processes"],
+                answer: "Get-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los servicios del sistema operativo?",
+                options: ["Get-SystemServices", "Get-Service", "List-Services", "Show-Services"],
+                answer: "Get-Service"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer la zona horaria del sistema operativo?",
+                options: ["Set-SystemTimeZone", "Set-TimeZone", "Configure-TimeZone", "Change-TimeZone"],
+                answer: "Set-TimeZone"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar el contenido de un directorio?",
+                options: ["Get-DirectoryContent", "List-Directory", "Get-ChildItem", "Show-Directory"],
+                answer: "Get-ChildItem"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo elemento (archivo, directorio, etc.)?",
+                options: ["New-Object", "Create-Item", "New-Item", "Add-Item"],
+                answer: "New-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener las propiedades y métodos de un objeto PowerShell?",
+                options: ["Get-Properties", "Get-Member", "Show-Members", "Inspect-Object"],
+                answer: "Get-Member"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar objetos de una canalización basándose en una condición?",
+                options: ["Filter-Object", "Select-Where", "Where-Object", "Filter-Collection"],
+                answer: "Where-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar un subconjunto de propiedades de objetos?",
+                options: ["Select-Properties", "Get-Property", "Select-Object", "Choose-Properties"],
+                answer: "Select-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para iterar sobre una colección de objetos y ejecutar un bloque de script para cada uno?",
+                options: ["ForEach-Object", "Loop-Object", "Iterate-Collection", "Process-Object"],
+                answer: "ForEach-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener instancias de clases WMI/CIM?",
+                options: ["Get-WmiInfo", "Get-CimInstance", "Get-SystemConfig", "Query-CIM"],
+                answer: "Get-CimInstance"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la ruta del directorio de trabajo actual?",
+                options: ["Get-CurrentPath", "Get-Location", "Pwd", "Show-Path"],
+                answer: "Get-Location"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar todas las unidades de PowerShell (PSDrive), incluyendo unidades de registro y certificados?",
+                options: ["Get-DiskDrive", "Get-PSDrive", "List-Drives", "Show-Drives"],
+                answer: "Get-PSDrive"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para ejecutar un script o comando en un equipo remoto?",
+                options: ["Invoke-Remote", "Invoke-Command", "Run-Remote", "Execute-Remote"],
+                answer: "Invoke-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para realizar solicitudes web HTTP/HTTPS?",
+                options: ["Invoke-WebRequest", "Invoke-RestMethod", "Send-HttpRequest", "Get-WebPage"],
+                answer: "Invoke-RestMethod"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una nueva dirección IP en una interfaz de red?",
+                options: ["Set-NetIP", "New-NetIPAddress", "Configure-IPAddress", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar los servidores DNS para una interfaz de red específica?",
+                options: ["Set-DnsServers", "Set-DnsClientServerAddress", "Configure-Dns", "Add-DnsServers"],
+                answer: "Set-DnsClientServerAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red?",
+                options: ["Restart-Network", "Restart-NetAdapter", "Reset-NetworkAdapter", "Reload-NetAdapter"],
+                answer: "Restart-NetAdapter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una interfaz de red para usar DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-Dhcp", "Set-DhcpClient", "Configure-Dhcp"],
+                answer: "Set-NetIPInterface -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS de una interfaz de red a las predeterminadas?",
+                options: ["Reset-Dns", "Clear-DnsClientServerAddress", "Set-DnsClientServerAddress -ResetServerAddresses", "Remove-Dns"],
+                answer: "Set-DnsClientServerAddress -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad de red a un destino?",
+                options: ["Test-Network", "Test-Connection", "Ping-Host", "Check-Connectivity"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo usuario local en el sistema?",
+                options: ["New-UserLocal", "Add-LocalUser", "New-LocalUser", "Create-LocalUser"],
+                answer: "New-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un usuario a un grupo local?",
+                options: ["Add-LocalGroupMember", "Add-GroupMember", "Set-LocalGroup", "Join-LocalGroup"],
+                answer: "Add-LocalGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un usuario local del sistema?",
+                options: ["Remove-LocalUser", "Delete-LocalUser", "Clear-LocalUser", "Erase-LocalUser"],
+                answer: "Remove-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo disco duro virtual (VHD)?",
+                options: ["New-VirtualDisk", "Create-VHD", "New-VHD", "Add-VHD"],
+                answer: "New-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para montar un disco duro virtual (VHD)?",
+                options: ["Mount-VirtualDisk", "Attach-VHD", "Mount-VHD", "Connect-VHD"],
+                answer: "Mount-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco nuevo para su uso?",
+                options: ["Initialize-Disk", "Format-Disk", "New-Disk", "Prepare-Disk"],
+                answer: "Initialize-Disk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición en un disco?",
+                options: ["New-Partition", "Create-Partition", "Add-Partition", "Make-Partition"],
+                answer: "New-Partition"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen con un sistema de archivos específico?",
+                options: ["Format-Volume", "Format-Disk", "Set-Volume", "Initialize-Volume"],
+                answer: "Format-Volume"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-Help` para mostrar la ayuda completa de un cmdlet?",
+                options: ["-Full", "-Detailed", "-All", "-Complete"],
+                answer: "-Full"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar las zonas horarias disponibles?",
+                options: ["Get-Timezone -List", "Get-TimeZone -ListAvailable", "List-TimeZones", "Show-Timezones"],
+                answer: "Get-TimeZone -ListAvailable"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-Member` para mostrar solo las propiedades de un objeto?",
+                options: ["-PropertiesOnly", "-Type Properties", "-MemberType Properties", "-ShowProperties"],
+                answer: "-MemberType Properties"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Copy-Item` para copiar directorios y su contenido de forma recursiva?",
+                options: ["-Recursive", "-Recurse", "-Deep", "-AllChildren"],
+                answer: "-Recurse"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el contenido de una clave del registro?",
+                options: ["Get-RegistryKey", "Get-ItemProperty -Path", "Read-Registry", "Get-RegItem"],
+                answer: "Get-ItemProperty -Path"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar elementos por un patrón específico en su nombre?",
+                options: ["Where-Name", "Select-String -Pattern", "Get-ChildItem -Filter", "Find-Item"],
+                answer: "Get-ChildItem -Filter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para detener un proceso en un ordenador remoto?",
+                options: ["Stop-RemoteProcess", "Invoke-Command -ScriptBlock {Stop-Process}", "Terminate-RemoteProcess", "Kill-RemoteProcess"],
+                answer: "Invoke-Command -ComputerName Server01 {Stop-Process Powershell}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de los discos lógicos, incluyendo el espacio libre?",
+                options: ["Get-DiskInfo", "Get-CimInstance -Class Win32_LogicalDisk", "Get-LogicalDiskInfo", "Show-DiskSpace"],
+                answer: "Get-CimInstance -Class Win32_LogicalDisk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar propiedades específicas de la salida de un cmdlet?",
+                options: ["Select-Properties", "Format-Table -Property", "Choose-Object", "Get-Property"],
+                answer: "Select-Object -Property"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de los drivers del sistema?",
+                options: ["Get-SystemDrivers", "Get-CimInstance -Class Win32_SystemDriver", "Get-Drivers", "Show-Drivers"],
+                answer: "Get-CimInstance -Class Win32_SystemDriver"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear la salida de un cmdlet en una tabla con autoajuste de columnas?",
+                options: ["Format-Table -AutoSize", "Format-List", "Out-GridView", "Format-Wide"],
+                answer: "Format-Table -AutoSize"
+            },
+            {
+                question: "¿Qué variable de PowerShell contiene información sobre la versión de PowerShell?",
+                options: ["\$PSVersion", "\$Host.Version", "\$PSVersionTable", "Todas las anteriores"],
+                answer: "Todas las anteriores"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo usuario de Active Directory con propiedades específicas?",
+                options: ["New-ADUser -Properties", "New-ADUser -Name -City -Company", "Add-ADUser -WithProperties", "Set-ADUser -New"],
+                answer: "New-ADUser -Name Sole -City Madrid -Company cefes"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para mostrar un usuario de Active Directory con propiedades seleccionadas?",
+                options: ["Get-ADUser -Select", "Get-ADUser -Identity -Properties", "Show-ADUser -Custom", "Display-ADUser -Selected"],
+                answer: "Get-ADUser -Identity sole -Properties description, city, department"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para habilitar una cuenta de usuario de Active Directory?",
+                options: ["Enable-ADUser", "Set-ADAccount -Enabled", "Enable-ADAccount", "Unlock-ADUser"],
+                answer: "Enable-ADAccount"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para modificar propiedades de un usuario de Active Directory?",
+                options: ["Update-ADUser", "Set-ADUser", "Change-ADUser", "Modify-ADUser"],
+                answer: "Set-ADUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un grupo de seguridad en Active Directory?",
+                options: ["New-ADGroup -GroupCategory Security", "Add-ADSecurityGroup", "Create-SecurityGroup", "New-Group -Type Security"],
+                answer: "New-ADGroup -GroupCategory Security"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un grupo de Active Directory?",
+                options: ["Delete-ADGroup", "Remove-ADGroup", "Clear-ADGroup", "Erase-ADGroup"],
+                answer: "Remove-ADGroup"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un miembro a un grupo de Active Directory sin confirmación?",
+                options: ["Add-ADGroupMember -Confirm:\$false", "Add-ADGroupMember -Force", "Add-ADGroupMember -NoConfirm", "Add-ADGroupMember -Silent"],
+                answer: "Add-ADGroupMember -Identity \"Genios\" -Members (Get-ADUser carlos) -WhatIf" // Note: The provided document uses -WhatIf for example, but -Confirm:$false is for no confirmation.
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un miembro de un grupo de Active Directory sin confirmación?",
+                options: ["Remove-ADGroupMember -Confirm:\$false", "Remove-ADGroupMember -Force", "Remove-ADGroupMember -NoConfirm", "Remove-ADGroupMember -Silent"],
+                answer: "remove-ADGroupMember -Identity \"Genios\" -Members (Get-ADUser carlos) -Confirm:\$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una Unidad Organizativa (OU) en una ruta específica?",
+                options: ["New-ADOrganizationalUnit -Path", "Add-ADOU -Location", "Create-OU -Path", "Set-ADOU -Path"],
+                answer: "New-ADOrganizationalUnit -Path"
+            },
+            {
+                question: "¿Qué propiedad se utiliza en `New-ADOrganizationalUnit` para evitar la eliminación accidental?",
+                options: ["-Protected", "-ProtectedFromAccidentalDeletion", "-NoDelete", "-SecureDeletion"],
+                answer: "-ProtectedFromAccidentalDeletion"
+            },
+            {
+                question: "¿Qué función se utiliza en el script para comprobar si una OU existe y crearla si no?",
+                options: ["CheckOU", "ExisteOU", "Verify-OU", "Test-OU"],
+                answer: "ExisteOU"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar cuentas de ordenador deshabilitadas?",
+                options: ["Search-ADAccount -ComputersDisabled", "Search-ADAccount -AccountDisabled -computersOnly", "Get-ADComputer -Disabled", "Find-DisabledComputers"],
+                answer: "Search-ADAccount -AccountDisabled -computersOnly"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para buscar cuentas de usuario con contraseña que nunca expira?",
+                options: ["Search-ADAccount -PasswordNeverExpires", "Get-ADUser -PasswordNeverExpires", "Find-PermanentPasswords", "Query-AD -NoPasswordExpiry"],
+                answer: "Search-ADAccount -PasswordNeverExpires"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el nivel funcional del bosque de Active Directory?",
+                options: ["Get-ADForestMode", "Get-ADForest", "Check-ForestLevel", "Show-ForestMode"],
+                answer: "Get-ADForest"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para cambiar el nivel funcional del bosque de Active Directory?",
+                options: ["Set-ADForestMode", "Change-ADForestLevel", "Update-ADForest", "Modify-ForestMode"],
+                answer: "set-adforestmode"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restaurar un objeto borrado de Active Directory a una OU diferente?",
+                options: ["Restore-ADObject -TargetPath", "Recover-ADObject -ToOU", "Undelete-ADObject -NewPath", "Move-ADObject -Restore"],
+                answer: "Restore-ADObject -TargetPath"
+            },
+            {
+                question: "¿Qué propiedad de un usuario de Active Directory indica la última vez que inició sesión?",
+                options: ["LastLogon", "LastLogonDate", "LastSignIn", "LoginTime"],
+                answer: "LastLogonDate"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-ADUser` para filtrar usuarios por su estado 'Enabled'?",
+                options: ["-Enabled", "-Status Enabled", "-Filter {Enabled -eq \$true}", "-IsActive"],
+                answer: "-Filter {Enabled -eq \$true}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para deshabilitar una cuenta de ordenador en Active Directory?",
+                options: ["Disable-ADComputer", "Set-ADComputer -Enabled \$false", "Disable-ADAccount -Computer", "Update-ADComputer -Status Inactive"],
+                answer: "Set-ADComputer -Identity \$DistName -Enabled \$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar una cuenta de ordenador de Active Directory?",
+                options: ["Remove-ADComputer", "Delete-ADComputer", "Remove-ADComputer", "Erase-ADComputer"],
+                answer: "Remove-ADComputer"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para importar un archivo CSV que contiene datos de usuarios para creación masiva?",
+                options: ["Import-Csv -Path C:\\material\\usuarios.csv", "Read-Csv -Users", "Get-Csv -Users", "Load-Csv -UserFile"],
+                answer: "Import-Csv -Path C:\\material\\usuarios.csv"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para convertir una cadena de texto a un objeto SecureString para contraseñas?",
+                options: ["ConvertTo-SecureString", "Encrypt-String", "Secure-Password", "Convert-To-Secure"],
+                answer: "ConvertTo-SecureString"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `New-LocalUser` para que la cuenta nunca expire?",
+                options: ["-NeverExpires", "-AccountNeverExpires", "-NoExpiry", "-PermanentAccount"],
+                answer: "-AccountNeverExpires"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una nueva dirección IP en una interfaz de red?",
+                options: ["Set-NetIPAddress", "New-NetIPAddress", "Configure-IP", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red por su nombre?",
+                options: ["Restart-NetworkAdapter -Name", "Restart-NetAdapter -Name", "Reset-Adapter -Name", "Reload-NetAdapter -Name"],
+                answer: "Restart-NetAdapter -Name"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer una interfaz de red para obtener IP por DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-DhcpInterface", "Set-Dhcp -Interface", "Configure-NetDhcp"],
+                answer: "Set-NetIPInterface -InterfaceIndex \$interfaz -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS de una interfaz de red?",
+                options: ["Reset-DnsServers", "Set-DnsClientServerAddress -ResetServerAddresses", "Clear-DnsAddresses", "Remove-DnsServers"],
+                answer: "Set-DnsClientServerAddress -InterfaceIndex \$interfaz -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad a una dirección IP?",
+                options: ["Ping-IP", "Test-Connection", "Check-IP", "Verify-Connection"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Test-Connection` para suprimir la salida detallada?",
+                options: ["-Quiet", "-Silent", "-NoOutput", "-Hide"],
+                answer: "-quiet"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un disco virtual de tipo dinámico?",
+                options: ["New-VHD -Dynamic", "Create-VHD -Dynamic", "Add-VHD -Dynamic", "Make-VHD -Dynamic"],
+                answer: "New-VHD -Path \$disco -SizeBytes \$tamano -Dynamic"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco y pasarlo a la siguiente operación en la canalización?",
+                options: ["Initialize-Disk |", "Initialize-Disk -Passthru |", "Format-Disk |", "New-Disk |"],
+                answer: "Initialize-Disk -PassThru"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición asignando una letra de unidad y usando el tamaño máximo?",
+                options: ["New-Partition -AssignDriveLetter -UseMaximumSize", "Create-Partition -AutoLetter -MaxSize", "Add-Partition -DriveLetter -FullSize", "Make-Partition -Letter -Max"],
+                answer: "New-Partition -AssignDriveLetter -UseMaximumSize"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen con el sistema de archivos NTFS sin confirmación?",
+                options: ["Format-Volume -FileSystem NTFS -Confirm:\$false", "Format-Volume -NTFS -Force", "Format-Disk -NTFS -NoPrompt", "Set-Volume -Format NTFS -NoConfirm"],
+                answer: "Format-Volume -FileSystem NTFS -Confirm:\$false"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener información de los procesos en ejecución?",
+                options: ["Get-RunningProcess", "Get-Process", "List-Processes", "Show-Processes"],
+                answer: "Get-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar procesos que ocupan más de una cantidad específica de memoria (WorkingSet)?",
+                options: ["Get-Process | Where-Object {\$_.WorkingSet -gt X}", "Filter-Process -Memory X", "Search-Process -WorkingSet X", "Get-Process -MemoryGreaterThan X"],
+                answer: "Get-Process | Where-Object { \$_. WorkingSet -gt 104857600}"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar una cadena de texto dentro de un archivo?",
+                options: ["Find-String", "Select-String", "Search-File", "Grep-File"],
+                answer: "Select-String"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para invocar un método REST con un cuerpo de petición?",
+                options: ["Invoke-RestMethod -Body", "Send-RestRequest -Body", "Call-Rest -Body", "Invoke-WebRequest -Body"],
+                answer: "Invoke-RestMethod -Method Post -Body"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los aliases disponibles en la sesión de PowerShell?",
+                options: ["Get-Alias", "List-Aliases", "Show-Aliases", "Display-Aliases"],
+                answer: "Get-Alias"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener todos los comandos disponibles (cmdlets, funciones, alias, etc.)?",
+                options: ["Get-AllCommands", "Get-Command", "List-Commands", "Show-Commands"],
+                answer: "Get-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los puntos de restauración del sistema?",
+                options: ["Get-RestorePoints", "Get-ComputerRestorePoint", "List-RestorePoints", "Show-RestorePoints"],
+                answer: "Get-ComputerRestorePoint"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el contenido de un archivo o elemento?",
+                options: ["Get-FileContent", "Read-Content", "Get-Content", "Show-Content"],
+                answer: "Get-Content"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la fecha y hora actuales del sistema?",
+                options: ["Get-CurrentDate", "Get-Date", "Show-Date", "Display-Date"],
+                answer: "Get-Date"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener eventos de la cola de eventos de PowerShell?",
+                options: ["Get-Events", "Show-Events", "Get-Event", "List-Events"],
+                answer: "Get-Event"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener ayuda sobre un cmdlet o función?",
+                options: ["Help", "Get-Help", "Man", "Info-Cmdlet"],
+                answer: "Get-Help"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener el historial de comandos ejecutados en la sesión actual de PowerShell?",
+                options: ["Get-History", "Show-History", "History", "List-Commands"],
+                answer: "Get-History"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener un elemento del sistema de archivos o del registro?",
+                options: ["Get-Object", "Get-Item", "Select-Item", "Find-Item"],
+                answer: "Get-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener una propiedad específica de un elemento?",
+                options: ["Get-Property", "Get-ItemProperty", "Select-Property", "Read-Property"],
+                answer: "Get-ItemProperty"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los procesos en ejecución en el sistema?",
+                options: ["Get-RunningProcess", "Get-Process", "List-Processes", "Show-Processes"],
+                answer: "Get-Process"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener los servicios del sistema operativo?",
+                options: ["Get-SystemServices", "Get-Service", "List-Services", "Show-Services"],
+                answer: "Get-Service"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para establecer la zona horaria del sistema operativo?",
+                options: ["Set-SystemTimeZone", "Set-TimeZone", "Configure-TimeZone", "Change-TimeZone"],
+                answer: "Set-TimeZone"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar el contenido de un directorio?",
+                options: ["Get-DirectoryContent", "List-Directory", "Get-ChildItem", "Show-Directory"],
+                answer: "Get-ChildItem"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo elemento (archivo, directorio, etc.)?",
+                options: ["New-Object", "Create-Item", "New-Item", "Add-Item"],
+                answer: "New-Item"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener las propiedades y métodos de un objeto PowerShell?",
+                options: ["Get-Properties", "Get-Member", "Show-Members", "Inspect-Object"],
+                answer: "Get-Member"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para filtrar objetos de una canalización basándose en una condición?",
+                options: ["Filter-Object", "Select-Where", "Where-Object", "Filter-Collection"],
+                answer: "Where-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para seleccionar un subconjunto de propiedades de objetos?",
+                options: ["Select-Properties", "Get-Property", "Select-Object", "Choose-Properties"],
+                answer: "Select-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para iterar sobre una colección de objetos y ejecutar un bloque de script para cada uno?",
+                options: ["ForEach-Object", "Loop-Object", "Iterate-Collection", "Process-Object"],
+                answer: "ForEach-Object"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener instancias de clases WMI/CIM?",
+                options: ["Get-WmiInfo", "Get-CimInstance", "Get-SystemConfig", "Query-CIM"],
+                answer: "Get-CimInstance"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para obtener la ruta del directorio de trabajo actual?",
+                options: ["Get-CurrentPath", "Get-Location", "Pwd", "Show-Path"],
+                answer: "Get-Location"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar todas las unidades de PowerShell (PSDrive), incluyendo unidades de registro y certificados?",
+                options: ["Get-DiskDrive", "Get-PSDrive", "List-Drives", "Show-Drives"],
+                answer: "Get-PSDrive"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para ejecutar un script o comando en un equipo remoto?",
+                options: ["Invoke-Remote", "Invoke-Command", "Run-Remote", "Execute-Remote"],
+                answer: "Invoke-Command"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para realizar solicitudes web HTTP/HTTPS?",
+                options: ["Invoke-WebRequest", "Invoke-RestMethod", "Send-HttpRequest", "Get-WebPage"],
+                answer: "Invoke-RestMethod"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una nueva dirección IP en una interfaz de red?",
+                options: ["Set-NetIP", "New-NetIPAddress", "Configure-IPAddress", "Add-IPAddress"],
+                answer: "New-NetIPAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar los servidores DNS para una interfaz de red específica?",
+                options: ["Set-DnsServers", "Set-DnsClientServerAddress", "Configure-Dns", "Add-DnsServers"],
+                answer: "Set-DnsClientServerAddress"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para reiniciar un adaptador de red?",
+                options: ["Restart-Network", "Restart-NetAdapter", "Reset-NetworkAdapter", "Reload-NetAdapter"],
+                answer: "Restart-NetAdapter"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para configurar una interfaz de red para usar DHCP?",
+                options: ["Set-NetIPInterface -Dhcp enabled", "Enable-Dhcp", "Set-DhcpClient", "Configure-Dhcp"],
+                answer: "Set-NetIPInterface -Dhcp enabled"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para restablecer las direcciones de servidor DNS de una interfaz de red a las predeterminadas?",
+                options: ["Reset-Dns", "Clear-DnsClientServerAddress", "Set-DnsClientServerAddress -ResetServerAddresses", "Remove-Dns"],
+                answer: "Set-DnsClientServerAddress -ResetServerAddresses"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para probar la conectividad de red a un destino?",
+                options: ["Test-Network", "Test-Connection", "Ping-Host", "Check-Connectivity"],
+                answer: "Test-Connection"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo usuario local en el sistema?",
+                options: ["New-UserLocal", "Add-LocalUser", "New-LocalUser", "Create-LocalUser"],
+                answer: "New-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para añadir un usuario a un grupo local?",
+                options: ["Add-LocalGroupMember", "Add-GroupMember", "Set-LocalGroup", "Join-LocalGroup"],
+                answer: "Add-LocalGroupMember"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para eliminar un usuario local del sistema?",
+                options: ["Remove-LocalUser", "Delete-LocalUser", "Clear-LocalUser", "Erase-LocalUser"],
+                answer: "Remove-LocalUser"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear un nuevo disco duro virtual (VHD)?",
+                options: ["New-VirtualDisk", "Create-VHD", "New-VHD", "Add-VHD"],
+                answer: "New-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para montar un disco duro virtual (VHD)?",
+                options: ["Mount-VirtualDisk", "Attach-VHD", "Mount-VHD", "Connect-VHD"],
+                answer: "Mount-VHD"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para inicializar un disco nuevo para su uso?",
+                options: ["Initialize-Disk", "Format-Disk", "New-Disk", "Prepare-Disk"],
+                answer: "Initialize-Disk"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para crear una nueva partición en un disco?",
+                options: ["New-Partition", "Create-Partition", "Add-Partition", "Make-Partition"],
+                answer: "New-Partition"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para formatear un volumen con un sistema de archivos específico?",
+                options: ["Format-Volume", "Format-Disk", "Set-Volume", "Initialize-Volume"],
+                answer: "Format-Volume"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-Help` para mostrar la ayuda completa de un cmdlet?",
+                options: ["-Full", "-Detailed", "-All", "-Complete"],
+                answer: "-Full"
+            },
+            {
+                question: "¿Qué cmdlet se utiliza para listar las zonas horarias disponibles?",
+                options: ["Get-Timezone -List", "Get-TimeZone -ListAvailable", "List-TimeZones", "Show-Timezones"],
+                answer: "Get-TimeZone -ListAvailable"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Get-Member` para mostrar solo las propiedades de un objeto?",
+                options: ["-PropertiesOnly", "-Type Properties", "-MemberType Properties", "-ShowProperties"],
+                answer: "-MemberType Properties"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con `Copy-Item` para copiar directorios y su contenido de forma recursiva?",
+                options: ["-Recursive", "-Recurse", "-Deep", "-AllChildren"],
+                answer: "-Recurse"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores selected option index for each question
+        let quizState = {}; // Stores current question index and user answers
+        let score = { correct: 0, incorrect: 0, unanswered: 0 };
+
+        const quizContent = document.getElementById('quizContent');
+        const resultSection = document.getElementById('resultSection');
+        const correctAnswersSpan = document.getElementById('correctAnswers');
+        const incorrectAnswersSpan = document.getElementById('incorrectAnswers');
+        const unansweredQuestionsSpan = document.getElementById('unansweredQuestions');
+        const resetQuizButton = document.getElementById('resetQuizButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const messageBoxOkButton = document.getElementById('messageBoxOkButton');
+
+        // Función para mostrar un mensaje personalizado
+        function showMessage(message) {
+            messageText.textContent = message;
+            messageBox.style.display = 'block';
+        }
+
+        // Event listener para cerrar el mensaje
+        messageBoxOkButton.addEventListener('click', () => {
+            messageBox.style.display = 'none';
+        });
+
+        // Cargar el estado del quiz desde LocalStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem('powershellQuizState');
+            if (savedState) {
+                quizState = JSON.parse(savedState);
+                currentQuestionIndex = quizState.currentQuestionIndex;
+                userAnswers = quizState.userAnswers;
+            } else {
+                // Initialize userAnswers array with nulls if no saved state
+                userAnswers = Array(questions.length).fill(null);
+            }
+        }
+
+        // Guardar el estado del quiz en LocalStorage
+        function saveQuizState() {
+            quizState = {
+                currentQuestionIndex: currentQuestionIndex,
+                userAnswers: userAnswers
+            };
+            localStorage.setItem('powershellQuizState', JSON.stringify(quizState));
+        }
+
+        // Reiniciar el quiz
+        function resetQuiz() {
+            showMessage('¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.');
+            messageBoxOkButton.onclick = () => {
+                localStorage.removeItem('powershellQuizState');
+                currentQuestionIndex = 0;
+                userAnswers = Array(questions.length).fill(null);
+                score = { correct: 0, incorrect: 0, unanswered: 0 };
+                resultSection.classList.add('hidden');
+                messageBox.style.display = 'none';
+                displayQuestion();
+            };
+        }
+
+        // Mostrar la pregunta actual
+        function displayQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            resultSection.classList.add('hidden'); // Ocultar resultados si estamos mostrando preguntas
+
+            const questionData = questions[currentQuestionIndex];
+            const optionsHtml = questionData.options.map((option, index) => {
+                const isSelected = userAnswers[currentQuestionIndex] === index;
+                let buttonClass = '';
+                if (isSelected) {
+                    buttonClass = 'selected';
+                }
+
+                return `<button class="option-button ${buttonClass}" data-index="${index}">${option}</button>`;
+            }).join('');
+
+            quizContent.innerHTML = `
+                <div class="question-section">
+                    <div class="question-number">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</div>
+                    <div class="question-text">${questionData.question}</div>
+                    <div class="options-container">
+                        ${optionsHtml}
+                    </div>
+                </div>
+                <div class="navigation-buttons">
+                    <button id="prevButton" class="nav-button-secondary" ${currentQuestionIndex === 0 ? 'disabled' : ''}>Anterior</button>
+                    <button id="nextButton" class="nav-button-primary">Siguiente</button>
+                </div>
+            `;
+
+            attachEventListeners();
+            highlightSelectedAnswer();
+            disableOptionsIfAnswered();
+        }
+
+        // Adjuntar event listeners a los botones
+        function attachEventListeners() {
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.addEventListener('click', handleOptionClick);
+            });
+
+            document.getElementById('prevButton').addEventListener('click', () => {
+                currentQuestionIndex--;
+                displayQuestion();
+                saveQuizState();
+            });
+
+            document.getElementById('nextButton').addEventListener('click', () => {
+                currentQuestionIndex++;
+                displayQuestion();
+                saveQuizState();
+            });
+        }
+
+        // Manejar clic en una opción
+        function handleOptionClick(event) {
+            const selectedButton = event.target;
+            const selectedOptionIndex = parseInt(selectedButton.dataset.index);
+
+            // Si ya se ha respondido a esta pregunta, no hacer nada
+            if (userAnswers[currentQuestionIndex] !== null) {
+                return;
+            }
+
+            userAnswers[currentQuestionIndex] = selectedOptionIndex;
+            saveQuizState(); // Guardar la respuesta inmediatamente
+
+            checkAnswer(selectedButton, selectedOptionIndex);
+            disableOptionsIfAnswered();
+        }
+
+        // Comprobar la respuesta seleccionada
+        function checkAnswer(selectedButton, selectedOptionIndex) {
+            const questionData = questions[currentQuestionIndex];
+            const correctOptionIndex = questionData.options.indexOf(questionData.answer);
+
+            // Eliminar clases de selección previa de todos los botones
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.classList.remove('selected', 'correct', 'incorrect');
+            });
+
+            // Marcar la opción seleccionada
+            selectedButton.classList.add('selected');
+
+            // Marcar la respuesta correcta e incorrecta
+            if (selectedOptionIndex === correctOptionIndex) {
+                selectedButton.classList.add('correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+                // Si la respuesta es incorrecta, también resalta la correcta
+                document.querySelector(`.option-button[data-index="${correctOptionIndex}"]`).classList.add('correct');
+            }
+        }
+
+        // Resaltar la respuesta seleccionada al cargar la pregunta
+        function highlightSelectedAnswer() {
+            const selectedOptionIndex = userAnswers[currentQuestionIndex];
+            if (selectedOptionIndex !== null) {
+                const selectedButton = document.querySelector(`.option-button[data-index="${selectedOptionIndex}"]`);
+                if (selectedButton) {
+                    checkAnswer(selectedButton, selectedOptionIndex);
+                }
+            }
+        }
+
+        // Deshabilitar opciones una vez que la pregunta ha sido respondida
+        function disableOptionsIfAnswered() {
+            if (userAnswers[currentQuestionIndex] !== null) {
+                document.querySelectorAll('.option-button').forEach(button => {
+                    button.disabled = true;
+                });
+            } else {
+                document.querySelectorAll('.option-button').forEach(button => {
+                    button.disabled = false;
+                });
+            }
+        }
+
+        // Mostrar resultados finales
+        function showResults() {
+            calculateScore();
+            quizContent.innerHTML = ''; // Limpiar el contenido del quiz
+            resultSection.classList.remove('hidden');
+            correctAnswersSpan.textContent = score.correct;
+            incorrectAnswersSpan.textContent = score.incorrect;
+            unansweredQuestionsSpan.textContent = score.unanswered;
+        }
+
+        // Calcular la puntuación final
+        function calculateScore() {
+            score.correct = 0;
+            score.incorrect = 0;
+            score.unanswered = 0;
+
+            questions.forEach((questionData, index) => {
+                const userAnswerIndex = userAnswers[index];
+                if (userAnswerIndex === null) {
+                    score.unanswered++;
+                } else {
+                    const correctOptionIndex = questionData.options.indexOf(questionData.answer);
+                    if (userAnswerIndex === correctOptionIndex) {
+                        score.correct++;
+                    } else {
+                        score.incorrect++;
+                    }
+                }
+            });
+        }
+
+        // Inicializar el quiz
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizState();
+            displayQuestion();
+        });
+
+        // Event listener para el botón de reiniciar quiz
+        resetQuizButton.addEventListener('click', resetQuiz);
+    </script>
+</body>
+</html>

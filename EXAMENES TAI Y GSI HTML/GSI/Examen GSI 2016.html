@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSI 2016 - Test</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para el test */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinea al inicio para que el contenido fluya hacia abajo */
+            min-height: 100vh; /* Asegura que ocupe al menos toda la altura del viewport */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px; /* Espacio superior para el contenedor principal */
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        .option-label input[type="radio"] {
+            margin-right: 15px;
+            transform: scale(1.2);
+        }
+        .option-label.correct {
+            background-color: #d1fae5; /* Green for correct */
+            border-color: #34d399;
+        }
+        .option-label.incorrect {
+            background-color: #fee2e2; /* Red for incorrect */
+            border-color: #ef4444;
+        }
+        .message-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .message-box.success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .message-box.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .navigation-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .navigation-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .reset-button {
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .reset-button:hover {
+            background-color: #dc2626;
+        }
+        .results-summary {
+            background-color: #f0f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border: 1px solid #bfdbfe;
+        }
+        .results-summary h3 {
+            color: #1e40af;
+            margin-bottom: 15px;
+        }
+        .results-summary p {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        .results-summary .correct-count {
+            color: #16a34a;
+        }
+        .results-summary .incorrect-count {
+            color: #dc2626;
+        }
+        .results-summary .unanswered-count {
+            color: #f59e0b;
+        }
+
+        /* Estilos para la ventana modal personalizada */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            transform: translateY(-20px);
+            animation: slideIn 0.3s forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .modal-buttons button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .modal-buttons .confirm-btn {
+            background-color: #ef4444;
+            color: white;
+        }
+        .modal-buttons .confirm-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-2px);
+        }
+        .modal-buttons .cancel-btn {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .modal-buttons .cancel-btn:hover {
+            background-color: #d1d5db;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center p-4 min-h-screen">
+    <div class="quiz-container bg-white p-8 rounded-xl shadow-lg w-full max-w-3xl">
+        <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-6 border-b-2 pb-4 border-blue-200">GSI 2016 - Test</h1>
+
+        <div id="quiz-content">
+            <!-- Las preguntas se cargarán aquí dinámicamente -->
+        </div>
+
+        <div id="message-area" class="message-box hidden"></div>
+
+        <div class="navigation-buttons flex justify-between items-center mt-6">
+            <button id="prev-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md transition-colors duration-200">
+                Anterior
+            </button>
+            <button id="next-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md transition-colors duration-200">
+                Siguiente
+            </button>
+        </div>
+
+        <div class="flex justify-center mt-8">
+            <button id="reset-btn" class="reset-button px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+                Reiniciar Test
+            </button>
+        </div>
+
+        <div id="results-summary" class="results-summary hidden">
+            <h3 class="text-2xl font-bold text-center mb-4">Resultados del Test</h3>
+            <p class="text-gray-700"><strong class="correct-count">Aciertos:</strong> <span id="correct-count">0</span></p>
+            <p class="text-gray-700"><strong class="incorrect-count">Errores:</strong> <span id="incorrect-count">0</span></p>
+            <p class="text-gray-700"><strong class="unanswered-count">Sin contestar:</strong> <span id="unanswered-count">0</span></p>
+            <p class="text-gray-700 mt-4">¡Gracias por completar el test!</p>
+        </div>
+    </div>
+
+    <!-- Ventana Modal de Confirmación -->
+    <div id="reset-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <p class="text-xl font-semibold text-gray-800 mb-4">¿Estás seguro de que quieres reiniciar el test?</p>
+            <p class="text-gray-600">Se perderá todo tu progreso actual.</p>
+            <div class="modal-buttons">
+                <button id="confirm-reset-btn" class="confirm-btn">Sí, Reiniciar</button>
+                <button id="cancel-reset-btn" class="cancel-btn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos del test: Preguntas, opciones y respuestas correctas.
+        // Se han extraído cuidadosamente de los documentos PDF proporcionados.
+        const quizData = [
+            // Bloque I
+            {
+                question: "1. Según la Constitución española de 1978, el estado de excepción será declarado por:",
+                options: {
+                    a: "el Gobierno mediante decreto acordado en Consejo de Ministros, previa autorización del Presidente del Gobierno.",
+                    b: "el Presidente del Gobierno mediante decreto acordado en Consejo de Ministros, previa autorización del Rey.",
+                    c: "el Gobierno mediante decreto acordado en Consejo de Ministros, previa autorización del Congreso de los Diputados.",
+                    d: "el Congreso de los Diputados mediante decreto acordado en Consejo de Ministros, previa autorización del Gobierno."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "2. Los actos del Rey serán refrendados por:",
+                options: {
+                    a: "la Reina.",
+                    b: "el Poder Judicial.",
+                    c: "el Presidente del Gobierno y, en su caso, por los Ministros competentes.",
+                    d: "el Presidente del Gobierno y, en su caso, aquellos que designe el Rey."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "3. De conformidad con lo señalado en la Constitución española en el artículo 159, los miembros del Tribunal Constitucional serán designados por un período de:",
+                options: {
+                    a: "9 años y se renovarán por terceras partes cada 3.",
+                    b: "9 años y se renovarán por terceras partes cada 2.",
+                    c: "6 años y se renovarán por terceras partes cada 3.",
+                    d: "6 años y se renovarán por terceras partes cada 2."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "4. Según el artículo 98 de la Constitución española, el Gobierno se compone de:",
+                options: {
+                    a: "Presidente, de los Vicepresidentes, en su caso, de los Ministros y de los demás miembros que establezca el Rey.",
+                    b: "Presidente, de los Vicepresidentes, en su caso, de los Ministros y de los demás miembros que establezca la Ley.",
+                    c: "Presidente, de los Vicepresidentes, en su caso, de los Ministros que establezca el Rey.",
+                    d: "Presidente, de los Vicepresidentes, en su caso, de los Ministros que establezca la ley."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "5. Según el artículo 101 de la Constitución Española, el Gobierno cesa tras:",
+                options: {
+                    a: "la celebración de elecciones generales, en los casos de pérdida de la mayoría parlamentaria, o por dimisión o fallecimiento de su Presidente.",
+                    b: "la celebración de elecciones generales, en los casos de pérdida de la confianza parlamentaria previstos en la Constitución, o por dimisión o fallecimiento de su Presidente.",
+                    c: "la celebración de elecciones, en los casos de estado de sitio, o por dimisión o fallecimiento de su Presidente.",
+                    d: "la celebración de elecciones, en los casos de pérdida de la confianza parlamentaria previstos en la Constitución, o por renuncia o fallecimiento del Rey."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "6. Según se establece en la Ley 19/2013, en relación a La Comisión de Transparencia y Buen Gobierno, NO es miembro de la citada Comisión un representante de:",
+                options: {
+                    a: "la Agencia Española de Protección de Datos.",
+                    b: "el Defensor del Pueblo.",
+                    c: "la Autoridad Independiente de Responsabilidad Fiscal.",
+                    d: "la Federación Española de Comunidades Autónomas."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "7. Según el artículo 7 del Real Decreto 919/2014, por el que se aprueba el Estatuto del Consejo de Transparencia y Buen Gobierno, el Consejo de Transparencia y Buen Gobierno este se estructura en los siguientes órganos:",
+                options: {
+                    a: "Presidente del Consejo de Transparencia y Buen Gobierno, la Comisión de Transparencia y Buen Gobierno, la Subdirección General de Reclamaciones, Subdirección General de Transparencia y Buen Gobierno.",
+                    b: "Director General de Transparencia y Buen Gobierno, Subdirector General de Transparencia, la Subdirección General de Buen Gobierno.",
+                    c: "Presidente del Consejo de Transparencia y Buen Gobierno, la Comisión de Transparencia y Buen Gobierno, y la Subdirección General de Gestión Administrativa.",
+                    d: "Subsecretario del Ministerio de la Presidencia, Presidente del consejo de Transparencia y Buen Gobierno, Subdirector de Régimen Interior e Inspección de Servicios."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "8. Según el artículo 82 de la Constitución Española, las Cortes Generales podrán otorgar delegación legislativa al Gobierno:",
+                options: {
+                    a: "En materia de desarrollo de los derechos fundamentales y de las libertades públicas.",
+                    b: "Mediante una ley de bases (textos articulados) o por una ley ordinaria (refundir textos legales).",
+                    c: "De forma expresa para una materia concreta y sin fijar plazo para su ejecución.",
+                    d: "Permitiendo la subdelegación expresa a autoridades distintas del propio Gobierno."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "9. Según la Ley Orgánica 1/2004, la funcionaria víctima de violencia de género que se vea obligada a abandonar el puesto de trabajo en la localidad donde venía prestando sus servicios, para hacer efectiva su protección, respecto a la provisión de puestos de trabajo tendrá derecho:",
+                options: {
+                    a: "Solidario.",
+                    b: "Subsidiario.",
+                    c: "Preferente.",
+                    d: "No tendrán derecho diferente al resto de funcionarias."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "10. Según la Ley 39/2006, de Promoción de la Autonomía Personal y Atención a las personas en situación de dependencia ¿Cuál NO es un grado de dependencia?",
+                options: {
+                    a: "Grado I. Dependencia moderada.",
+                    b: "Grado II. Dependencia severa.",
+                    c: "Grado III. Gran dependencia.",
+                    d: "Grado IV. Dependencia continua."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "11. Señale la respuesta correcta que identifica los nuevos tipos de certificados según el Reglamento (UE) 910/2014 (eIDAS):",
+                options: {
+                    a: "Certificados cualificados de firma electrónica, certificados cualificados de sello, certificados cualificados de autenticación web.",
+                    b: "Certificados cualificados de firma electrónica, certificados cualificados de sesión, certificados cualificados de cifrado, certificados cualificados de persona jurídica, y de persona física.",
+                    c: "Certificados cualificados de firma electrónica, certificados cualificados de Órgano, certificados cualificados de autenticación web y componentes.",
+                    d: "Certificados cualificados de autenticación, certificados cualificados de cifrado, certificados cualificados de firma y certificados cualificados de sello."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "12. El lector NFC y el DNI 3.0 negocian y establecen un canal seguro de comunicación usando el código CAN (Card Access Number), éste es un código:",
+                options: {
+                    a: "numérico de 9 dígitos que debe conocer sólo el ciudadano.",
+                    b: "de 6 dígitos y de un solo uso, es decir, sólo válido para una única sesión, terminada ésta habría que solicitar otro.",
+                    c: "de 6 dígitos que aparece en el anverso del documento físico del DNI 3.0.",
+                    d: "accesible en la zona privada del DNI 3.0 mediante la utilización de la clave personal de acceso o PIN."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "13. Según se establece en la Ley 15/1999, de Protección de Datos de Carácter Personal, el derecho de rectificación o cancelación de datos por parte del interesado deberá ser efectivo en un plazo de:",
+                options: {
+                    a: "10 días.",
+                    b: "15 días.",
+                    c: "20 días.",
+                    d: "1 mes."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "14. El artículo 2 de la Ley 39/2015, del Procedimiento Administrativo Común de las Administraciones Públicas, establece que dentro del ámbito subjetivo de aplicación de dicha Ley se encuentran:",
+                options: {
+                    a: "Cualesquiera organismos públicos y entidades de derecho público vinculados o no a las Administraciones Públicas.",
+                    b: "Las entidades de derecho privado vinculadas o dependientes de las Administraciones Públicas.",
+                    c: "Las Universidades públicas o privadas, que se regirán por su normativa específica y supletoriamente por las previsiones de esta Ley.",
+                    d: "El sector privado institucional."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "15. El artículo 11 de la Ley 39/2015, del Procedimiento Administrativo Común de las AA.PP, define las acciones para las cuáles las Administraciones Públicas requerirán a los interesados el uso obligatorio de firma. Entre ellas NO se encuentra especificada:",
+                options: {
+                    a: "Formular sugerencias.",
+                    b: "Presentar declaraciones responsables o comunicaciones.",
+                    c: "Desistir de acciones.",
+                    d: "Renunciar a derechos."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "16. La herramienta proporcionada por el CCN-CERT para analizar las características de seguridad técnicas definidas a través del Esquema Nacional de Seguridad en el ámbito de la Administración Electrónica se denomina:",
+                options: {
+                    a: "INES",
+                    b: "LUCIA",
+                    c: "CLARA",
+                    d: "CARMEN"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "17. REÚNETE es el Servicio Común de Reuniones Virtuales de la Red SARA, entre sus funcionalidades se encuentra:",
+                options: {
+                    a: "Directorio de empleados que facilita la conexión con los asistentes a la reunión virtual.",
+                    b: "Almacenamiento, gestión y reproducción de videos bajo demanda mediante streaming.",
+                    c: "Entorno de pruebas para demostraciones de servicios y aplicaciones comunes.",
+                    d: "Portal de acceso con interfaz disponible en todos los idiomas de la Unión Europea."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "18. e-EMGDE es un:",
+                options: {
+                    a: "Estándar XML para el intercambio de expedientes electrónicos médicos.",
+                    b: "Esquema de metadatos para la gestión del documento electrónico.",
+                    c: "Lenguaje de scripting para ofuscación código cliente.",
+                    d: "Metadatos mínimos incluidos en el estándar de firma electrónica para servicios web securizados WSS."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "19. El servicio que se corresponde con una solución integral de registro, que permite tanto la gestión de sus oficinas de registro de entrada/salida como la recepción y envío de registros en las unidades tramitadoras destinatarias de la documentación es:",
+                options: {
+                    a: "CL@VE",
+                    b: "EGEO",
+                    c: "GEISER",
+                    d: "ORVE"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "20. El servicio del Punto de Acceso General (PAG) que permite de una forma ágil y sencilla, acceder a un área personal en la que conocer los expedientes que se tienen abiertos en los distintos organismos de la Administración, sus asientos registrales entre administraciones o sus datos en poder de la Administración se llama:",
+                options: {
+                    a: "Carpeta ciudadana",
+                    b: "Represent@",
+                    c: "Habilit@",
+                    d: "e-ciudadano"
+                },
+                correctAnswer: "a"
+            },
+            // Bloque II
+            {
+                question: "21. La estrategia de organización de memoria caché en la que no existe el campo índice y la etiqueta coincide con el número de bloque de la memoria principal es correspondencia:",
+                options: {
+                    a: "directa.",
+                    b: "asociativa por conjuntos.",
+                    c: "(totalmente) asociativa.",
+                    d: "diferida."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "22. ¿Cuál es la unidad de capacidad de información que se corresponde con 10 elevado a 24 Bytes?",
+                options: {
+                    a: "1 ExaByte",
+                    b: "1 ZettaByte",
+                    c: "1 PetaByte",
+                    d: "1 YottaByte"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "23. En las tecnologías de clustering, la propiedad de un sistema que oculta la naturaleza heterogénea y distribuida de los recursos, y los presenta a los usuarios y a las aplicaciones como un recurso computacional unificado y sencillo se denomina:",
+                options: {
+                    a: "VCS (Virtual Cluster Software).",
+                    b: "SSI (Single System Image).",
+                    c: "SA (System Availability).",
+                    d: "AVS (Automatic Virtual System)."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "24. En relación con la computación GRID, señale la opción FALSA:",
+                options: {
+                    a: "S-OGSA extiende la especificación OGSA para profundizar en aspectos de la seguridad en la computación GRID.",
+                    b: "Globus Toolkit es el estándar de facto para grid computing basado en software de código abierto.",
+                    c: "Una implementación de OGSA (Open Grid Service Arquitecture) es el Globus Toolkit..",
+                    d: "seti@home es un proyecto de computación distribuida que funciona en la plataforma BOINC (Barkeley Open Infraestructure for Network Computing)."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "25. En relación con sistemas operativos Linux, señale la opción correcta:",
+                options: {
+                    a: "El comando vmstat muestra, entre otra información, el pid del proceso que más cantidad de memoria swap está consumiendo.",
+                    b: "El runlevel 4 inicia los servicios con soporte X para login gráfico.",
+                    c: "El comando \"vmstat -p 10\" muestra las estadísticas de memoria virtual con una periodicidad de 10 segundos.",
+                    d: "El comando \"crontab -r -u albert\" elimina los cron del usuario albert en el sistema."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "26. El comando Linux que permite listar los colores reconocidos en el sistema y su valor RGB es:",
+                options: {
+                    a: "listrgb",
+                    b: "statrgb",
+                    c: "showrgb",
+                    d: "no existe ese comando en Linux."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "27. ¿Qué archivo contiene un programa ejecutable que permite al usuario cambiar la información sobre la contraseña en Unix?",
+                options: {
+                    a: "/etc/passwd",
+                    b: "/bin/passwd",
+                    c: "/etc/shadow",
+                    d: "/bin/who"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "28. ¿Cuál es la novedad incorporada a la versión 8 de Java que convierte las funciones (métodos) en elementos de primer nivel de forma que no necesitan de una clase, abriéndose una puerta a la programación funcional?",
+                options: {
+                    a: "Functional Types.",
+                    b: "Expresiones Lambda.",
+                    c: "Java.util.Classless",
+                    d: "API Stream para métodos."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "29. Scratch es:",
+                options: {
+                    a: "Un lenguaje de programación completamente visual que permite crear animaciones, juegos e historias interactivas creado por el MIT.",
+                    b: "Un paradigma de programación MapReduce, el cual consiste en dividir en dos tareas (mapper - reducer) para manipular los datos distribuidos a nodos de un clúster logrando un alto paralelismo en el procesamiento.",
+                    c: "Una infraestructura de data warehouse que facilita administrar grandes conjuntos de datos que se encuentran almacenados en un ambiente distribuido.",
+                    d: "Un proyecto de Apache para realizar búsquedas sobre textos, provee de librerías para indexación y búsqueda de texto."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "30. Indique con qué operación se detallan los valores de los datos a lo largo de una dimensión dada en un modelo multidimensional:",
+                options: {
+                    a: "Drill-down",
+                    b: "Roll-across",
+                    c: "Pivot",
+                    d: "Drill-through"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "31. Dentro de los estándares de conectividad JDBC, señale la respuesta correcta, se considera driver:",
+                options: {
+                    a: "tipo 1: a los controladores utilizan un protocolo de red y middleware para comunicarse con un servidor. El servidor convierte el protocolo en llamadas propias del motor del Sistema Gestor de Base de Datos SGBD.",
+                    b: "tipo 2: al puente JDBC-ODBC, empleando la interfaz Java nativa (JNI) para llamar a funciones ODBC desde el controlador JDBC.",
+                    c: "tipo 3: al driver escrito parte en java que hace llamadas al API nativa del SGBD.",
+                    d: "tipo 4: al driver nativo escrito completamente en java, específico para cada SGBD."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "32. Entre los objetivos principales de las arquitecturas de servicios web se encuentra:",
+                options: {
+                    a: "Proporcionar interoperabilidad entre aplicaciones desarrolladas en diferentes entornos tecnológicos.",
+                    b: "Garantizar la persistencia de datos en entornos de alta disponibilidad.",
+                    c: "Simplificar el balanceo de carga en infraestructuras Web basadas en granjas de servidores.",
+                    d: "Aprovechar las ventajas de los servidores dispuestos en clúster."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "33. En una arquitectura cliente-servidor, las capas del modelo de 3 capas se denominan:",
+                options: {
+                    a: "Presentación, transformación y almacenamiento.",
+                    b: "Vista, control, almacenamiento.",
+                    c: "Frontend, transformación, backend.",
+                    d: "Presentación, lógica de negocio, datos."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "34. Un mensaje SOAP consta de un elemento:",
+                options: {
+                    a: "<Envelope> obligatorio, que contiene un elemento <Header> obligatorio y un elemento <Body> obligatorio.",
+                    b: "<Envelope> obligatorio, que contiene un elemento <Header> opcional y un elemento <Body> obligatorio.",
+                    c: "<Envelope> obligatorio, que contiene un elemento <Header> obligatorio y un elemento <Body> opcional.",
+                    d: "<Envelope> opcional, que contiene un elemento <Header> opcional y un elemento <Body> obligatorio."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "35. En IPv6, el campo Next Header define la siguiente cabecera en el datagrama, Indique cuál debería ser su valor para el encabezado \"opciones de destino\":",
+                options: {
+                    a: "0",
+                    b: "43",
+                    c: "44",
+                    d: "60"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "36. Señale la respuesta correcta, en relación a los tipos de mensajes usados en el protocolo BGP son:",
+                options: {
+                    a: "OPEN, KEEPALIVE, UPDATE CLOSE.",
+                    b: "OPEN, READ, WRITE, NOTIFICATION Y KEEPALIVE.",
+                    c: "OPEN, KEEPALIVE, NOTIFICATION UPDATE.",
+                    d: "OPEN, READ, WRITE, UPDATE CLOSE."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "37. Indique cuál de las siguientes es un tipo de estación definida en el protocolo HDLC (High-Level Data Link Control):",
+                options: {
+                    a: "Combinada",
+                    b: "Simple",
+                    c: "Dúplex",
+                    d: "Semidúplex"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "38. La mayoría de navegadores de Internet incluyen una implementación del estándar ECMAScript, que forma las bases de JavaScript, estandarizado en las especificaciones:",
+                options: {
+                    a: "ECMA-362 y ECMA-262.",
+                    b: "ECMA-262 y ECMA-402.",
+                    c: "ECMA-623 y ECMA-402.",
+                    d: "ECMA-262 y ECMA-263."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "39. Señale cuál de las siguientes etiquetas representa una sección o contenido citado desde otra fuente en HTML5:",
+                options: {
+                    a: "div",
+                    b: "blockquote",
+                    c: "cite",
+                    d: "source"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "40. Señale qué etiqueta de HTML5 permite crear gráficos dinámicos vía scripts:",
+                options: {
+                    a: "<svg>",
+                    b: "<nav>",
+                    c: "<canvas>",
+                    d: "<graphic>"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "41. En el ámbito de las Tecnologías de la Información, señale de entre las siguientes, cuál se considera una amenaza según Magerit v3:",
+                options: {
+                    a: "Ataques en Cascada.",
+                    b: "Formación del Personal.",
+                    c: "Ingeniería Social.",
+                    d: "Inspecciones de Seguridad."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "42. ¿Qué dos activos de entre los siguientes considera esenciales MAGERIT versión 3.0 en su Catálogo de Elementos?",
+                options: {
+                    a: "Equipos y comunicaciones.",
+                    b: "Software y hardware.",
+                    c: "Tangibles e intangibles..",
+                    d: "Información y servicios."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "43. El punto objetivo de recuperación que marcará la frecuencia de copias de respaldo:",
+                options: {
+                    a: "RTPO",
+                    b: "RTO",
+                    c: "DRP",
+                    d: "RPO"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "44. Señale el nivel de confianza en la evaluación con el que se corresponde un producto estructuralmente probado, según la ISO/IEC 15408:",
+                options: {
+                    a: "EAL1",
+                    b: "EAL2",
+                    c: "EAL3",
+                    d: "EAL4"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "45. Según se establece en el Artículo 96 del Real Decreto 1720/2007, de 21 de diciembre, los sistemas de información e instalaciones de tratamiento y almacenamiento de datos se someterán a una auditoría Interna o externa, para verificar las medidas de seguridad implantadas:",
+                options: {
+                    a: "a partir del nivel alto, una vez al año.",
+                    b: "a partir del nivel medio, al menos cada dos años",
+                    c: "a partir del nivel alto, al menos cada dos años.",
+                    d: "en todos los niveles de seguridad, al menos cada dos años."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "46. Señale cuál de los siguientes es un elemento de control utilizado en los formularios (forms) del lenguaje VoiceXML version 2.0:",
+                options: {
+                    a: "<record>",
+                    b: "<initial>",
+                    c: "<transfer>",
+                    d: "<subdialog>"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "47. El trashing es una técnica que afecta a la dimensión de:",
+                options: {
+                    a: "Disponibilidad",
+                    b: "Confidencialidad",
+                    c: "Trazabilidad",
+                    d: "Integridad"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "48. ¿Qué herramienta del CCN-Cert permite una gestión de ciberincidentes?",
+                options: {
+                    a: "LUCIA",
+                    b: "CORINTO",
+                    c: "CARMEN",
+                    d: "PLATA"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "49. Indique qué licencia Creative Commons se corresponde la siguiente definición: \"la más restrictiva de las 6 licencias principales, sólo permite que otros puedan descargar las obras y compartirlas con otras personas, siempre que se reconozca su autoría, pero no se pueden cambiar de ninguna manera ni se pueden utilizar comercialmente\".",
+                options: {
+                    a: "CC BY-ND",
+                    b: "CC BY-NC",
+                    c: "CC BY-NC-SA",
+                    d: "CC BY-NC-ND"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "50. Señale la respuesta INCORRECTA relativa a la sindicación y redifusión de contenidos:",
+                options: {
+                    a: "GeoRSS es un conjunto de estándares que representan la información geográfica dentro de la família de estándares RSS.",
+                    b: "Las siglas RSS de la versión 2.0 se corresponden con Really Simple Syndication (Sindicación Realmente Simple).",
+                    c: "El formato de sindicación basado en Atom no se considera un estándar.",
+                    d: "RSS utiliza ficheros XML."
+                },
+                correctAnswer: "b"
+            },
+            // Bloque III
+            {
+                question: "1. En lo que se refiere a estándares de referencia de Métrica v3, se ha tenido en cuenta el modelo de ciclo de vida de desarrollo propuesto en la norma:",
+                options: {
+                    a: "ISO 12.107",
+                    b: "ISO 12.207",
+                    c: "ISO 12.307",
+                    d: "ISO 12.407"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "2. En Métrica v3, dentro de la Interfaz de Gestión de Proyectos, las actividades contempladas en el grupo de actividades de seguimiento y control (GPS) se desarrollan durante los procesos:",
+                options: {
+                    a: "EVS, ASI, DSI, CSI, IAS.",
+                    b: "ASI, DSI, CSI, IAS, MSI.",
+                    c: "GPI, GPF.",
+                    d: "Se realizan al principio del proyecto, al concluir el proceso EVS y justo al finalizar, al empezar el proceso MSI."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "3. ¿Cuál de los siguientes productos le permite realizar un seguimiento de los errores de software del proyecto?",
+                options: {
+                    a: "Mantis",
+                    b: "CVS",
+                    c: "Nagios",
+                    d: "VisualBug"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "4. Según lo que especifica Métrica v3 respecto al Plan de Sistemas de Información (PSI), indique la respuesta correcta:",
+                options: {
+                    a: "No es fundamental que la alta dirección de la organización tome parte activa en la decisión del PSI con el fin de posibilitar su éxito.",
+                    b: "Para la elaboración del PSI se estudian las necesidades de información de los procesos de la organización afectados por el Plan, con el fin de definir los requisitos concretos y a muy bajo nivel. Conceptuales de información.",
+                    c: "El PSI nunca debe llevar ningún tipo de propuesta de calendario para la ejecución de los proyectos que incluya.",
+                    d: "La perspectiva del plan debe ser estratégica y operativa."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "5. El EUROMETODO es:",
+                options: {
+                    a: "Estándar abierto europeo de desarrollo software.",
+                    b: "Metodología europea de análisis y gestión de riesgos.",
+                    c: "Estándar europeo unificado de infraestructura de clave pública.",
+                    d: "Metodología europea para adquisición de sistemas de información y servicios relacionados."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "6. Según Métrica v3, dentro de las técnicas de Gestión de Proyectos, NO se encuentra:",
+                options: {
+                    a: "JRP (Joint Requirements Planning).",
+                    b: "Método MARKII para el Análisis de los Puntos Función.",
+                    c: "WBS (Work Breakdown Structure).",
+                    d: "Diagrama de Extrapolación."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "7. Según la metodología Métrica v3, los factores críticos de éxito (FCE) tienen como objetivo:",
+                options: {
+                    a: "Ayudar a la planificación de las actividades y recursos de cualquier organización, facilitando la asignación de prioridades dentro de ella.",
+                    b: "Identificar los requisitos a cubrir por un sistema de información.",
+                    c: "Determinar qué elementos están realmente implicados en las peticiones de cambio solicitadas por los usuarios, una vez que los sistemas de información se encuentran en producción.",
+                    d: "Verificar el funcionamiento correcto de las interfaces entre los distintos subsistemas que lo componen y con el resto de sistemas de información con los que se comunica."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "8. En relación con la metodología de desarrollo KANBAN, señale la respuesta FALSA:",
+                options: {
+                    a: "Surgió de una metodología llamada Lean (usando técnicas \"just-in-time\") creada por Suzuki.",
+                    b: "No se premia la rapidez, sino la calidad final de las tareas realizadas.",
+                    c: "La siguiente tarea a realizar del backlog se puede decidir en función de la necesidad del momento.",
+                    d: "En el tablero de tareas cada una de las columnas corresponderá a un estado concreto del flujo de tareas."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "9. La matriz de la asignación de responsabilidades que se utiliza generalmente en la gestión de proyectos para relacionar actividades con recursos es:",
+                options: {
+                    a: "Deming",
+                    b: "Extrapolación",
+                    c: "DAFO",
+                    d: "RACI"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "10. De acuerdo a la metodología Métrica v3, ¿cuál de las siguientes NO es una tarea de la actividad Análisis del Sistema de Información (ASI) 2: Establecimiento de Requisitos?",
+                options: {
+                    a: "Análisis de Requisitos.",
+                    b: "Elaboración de la Especificación de Requisitos Software.",
+                    c: "Especificación de Casos de Uso.",
+                    d: "Validación de Requisitos."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "11. En análisis estructurado, según Métrica v3, el objetivo del diagrama de estructura es:",
+                options: {
+                    a: "Proporcionar una visión física de la construcción del sistema de información.",
+                    b: "Capturar los requisitos funcionales del sistema y expresarlos desde el punto de vista del usuario.",
+                    c: "La obtención de un modelo lógico de procesos que represente el sistema, con independencia de las restricciones físicas del entorno.",
+                    d: "Representar la estructura modular del sistema o de un componente del mismo y, definir los parámetros de entrada y salida de cada uno de los módulos.."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "12. En análisis estructurado, según Métrica v3, indique los elementos de un diagrama de estructura:",
+                options: {
+                    a: "nodo, conexión, flujo de datos, almacén de datos, dispositivo físico.",
+                    b: "módulo, componente, interfaz, paquete, relación de dependencia.",
+                    c: "módulo, conexión, parámetro, módulo predefinido, almacén de datos, dispositivo físico.",
+                    d: "entidad externa, proceso, almacén de datos, flujo de datos."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "13. Señale la afirmación FALSA en relación a los Diagramas de Flujo de Datos (DFD):",
+                options: {
+                    a: "Los flujos de datos representan cómo fluyen los datos dentro del sistema y se pueden realizar entre cualquier elemento del DFD.",
+                    b: "Los procesos representan las transformaciones que se realizan sobre los datos en el sistema.",
+                    c: "Los almacenes de datos representan la información que se almacena en el sistema.",
+                    d: "Las entidades externas representan a los elementos generadores o consumidores de información del sistema."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "14. ¿Qué técnica NO es apropiada para crear un modelo conceptual de bases de datos?",
+                options: {
+                    a: "Modelo E/R.",
+                    b: "Diagrama de estructura.",
+                    c: "Diagramas IDEF1X.",
+                    d: "Diagramas ORM."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "15. El nivel de aislamiento, según ANSI/ISO SQL, de un Sistema Gestor de Base de Datos Relacional (SGBDR) en el que se pueden producir lecturas no repetibles pero no lecturas sucias, se denomina:",
+                options: {
+                    a: "Lectura no confirmada (read-uncommitted).",
+                    b: "Lectura confirmada (read-committed).",
+                    c: "Lectura repetible (repeatable-read).",
+                    d: "Serializable."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "16. Los grafos se representan por medio de dos conjuntos, G=(V,A), de tal modo que V son los vértices y A las aristas. Indique cuál de los siguientes conjuntos representa un grafo regular de grado 3, G=(V,A), dónde:",
+                options: {
+                    a: "V={1,2,3} y A={{1,2},{2,3}}",
+                    b: "V= {1,2,3} y A = {{1,2},{2,3},{3,1}}",
+                    c: "V= {1,2,3,4} y A = {{1,2},{2,4},{3,1},{1,4},{2,3}}",
+                    d: "V= {1,2,3,4) y A = {{1,2},{3,4},{3,1},{2,3},{1,4},{2,4}}"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "17. Con respecto al tipo abstracto de datos árbol podemos decir que:",
+                options: {
+                    a: "La profundidad de un nodo en un árbol es la longitud del camino desde dicho nodo a la hoja más lejana que sea alcanzable desde él.",
+                    b: "La altura de un nodo en un árbol es la longitud del único camino existente desde el nodo raíz hasta dicho nodo.",
+                    c: "La altura de un árbol es el nivel de la hoja menos profunda.",
+                    d: "El grado de un árbol es el número máximo de hijos que pueden tener sus subárboles."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "18. Señale la afirmación correcta en relación al Algoritmo de Floyd-Warshall para grafos:",
+                options: {
+                    a: "Compara todos los posibles caminos a través del grafo entre cada par de vértices.",
+                    b: "Es un ejemplo de programación estática.",
+                    c: "Resuelve el problema de encontrar el camino mínimo en grafos no dirigidos ponderados.",
+                    d: "Supone que hay ciclos negativos para que haya coherencia numérica."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "19. ¿Cuál es el comportamiento de una estructura de datos abstractos de tipo Pila (stack)?",
+                options: {
+                    a: "First in first output (FIFO).",
+                    b: "Last in first output (LIFO).",
+                    c: "First out last output (FOLO).",
+                    d: "Last in first input (LOFI)."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "20. Según la metodología Métrica v3, en el diseño de sistemas de información se espera que los módulos resultantes tengan:",
+                options: {
+                    a: "Máximo acoplamiento y máxima cohesión.",
+                    b: "Mínimo acoplamiento y mínima cohesión.",
+                    c: "Mínimo acoplamiento y máxima cohesión.",
+                    d: "Máximo acoplamiento y mínima cohesión."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "21. Señale el estándar para documentación de usuario de software:",
+                options: {
+                    a: "IEEE Std 1062-2001",
+                    b: "ISO/IEC/IEEE 26512:2011",
+                    c: "ISO/IEC/IEEE 15288:2008",
+                    d: "IEEE Std 1069-2001"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "22. Según Métrica v3, en la actividad \"Elaboración de los Manuales de Usuario\" del proceso de Construcción del Sistema de Información (CSI) Intervienen los participantes:",
+                options: {
+                    a: "Programadores.",
+                    b: "Equipo del Proyecto.",
+                    c: "Equipo de Arquitectura.",
+                    d: "Equipo de Operación."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "23. Señale el estándar para pruebas software:",
+                options: {
+                    a: "ISO/IEC/IEEE 29117",
+                    b: "ISO/IEC/IEEE 29118",
+                    c: "ISO/IEC/IEEE 29119",
+                    d: "Ninguna de las anteriores."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "24. Respecto al entorno de automatización de pruebas Selenium, señale la afirmación FALSA:",
+                options: {
+                    a: "Es un software de código abierto bajo licencia Apache 2.0.",
+                    b: "SeleniumWebDriver es un plugin de Firefox que genera un entorno de desarrollo y permite crear casos de prueba para aplicaciones web.",
+                    c: "Opera en los principales navegadores como IE, Mozilla o Chrome.",
+                    d: "Incluye un lenguaje específico de dominio para pruebas (Selanese)."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "25. ¿Cuál de las siguientes opciones es una herramienta de Integración continua?",
+                options: {
+                    a: "CIT",
+                    b: "Swing",
+                    c: "Lucene",
+                    d: "Jenkins"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "26. En relación a los diagramas de perfil (profile diagram) en UML 2.0, señale la afirmación correcta:",
+                options: {
+                    a: "Está incluido en la categoría de diagramas de comportamiento.",
+                    b: "Está basado en la definición de estereotipos, restricciones y valores etiquetados.",
+                    c: "Los valores etiquetados son metaclases específicas que se obtienen extendiendo una metaclase existente en el modelo de referencia.",
+                    d: "Los estereotipos son meta-atributos adicionales que se asocian a una metaclase del metamodelo extendido por un Perfil."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "27. Uno de los siguientes patrones de diseño responde a la siguiente definición: \"el problema a solucionar por este patrón es el de crear diferentes familias de objetos relacionados o que dependen entre sí, sin especificar sus clases concretas\"",
+                options: {
+                    a: "Singleton.",
+                    b: "Prototype.",
+                    c: "Abstract Factory.",
+                    d: "Factory Method."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "28. UML 2 permite la modificación de todos sus componentes mediante mecanismos de extensibilidad, ¿cuál es uno de ellos?",
+                options: {
+                    a: "Agregación",
+                    b: "Asociación",
+                    c: "Composición",
+                    d: "Restricción"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "29. En Java existen dos APIs: JAX-RS y JAX-WS, relacionadas con la implementación de servicios web. Indique de las siguientes frameworks o librerías, ¿cuál de ellos Implementa el API JAX-RS?",
+                options: {
+                    a: "Axis 2",
+                    b: "Jersey",
+                    c: "Xalie",
+                    d: "WebServiceRS"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "30. En el ámbito de Java Community Process, ¿cómo se llaman los documentos que describen las propuestas para ser añadidas a la plataforma Java?",
+                options: {
+                    a: "Request for Specifications (RFS's).",
+                    b: "Request for Comments (RFC's).",
+                    c: "Java Community Specifications (JCSS).",
+                    d: "Java Specification Requests (JSRs)."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "31. La interfaz API de Java que se utiliza en JPA para realizar operaciones y servicios CRUD (Create, Read, Update y Delete) es:",
+                options: {
+                    a: "CreateQuery",
+                    b: "EntityManager",
+                    c: "PersitenceContext",
+                    d: "JPQL"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "32. El fichero que se utiliza en el interfaz de Java en JPA para definir una unidad de persistencia se llama:",
+                options: {
+                    a: "persistence-container.xml",
+                    b: "mapping-jpa.xml",
+                    c: "persistence.xml",
+                    d: "web.xml"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "33. Componente de .NET Framework que permite crear servicios que utilizan Open Data Protocol (OData) para exponer y utilizar datos a través de la Web o de una intranet utilizando la semántica de REST:",
+                options: {
+                    a: "Transformaciones XSLT",
+                    b: "WCF Data Services",
+                    c: "Clases system.xml",
+                    d: "Odata Services"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "34. En relación al ciclo de vida de una página ASP.NET, señale cuál de los siguientes eventos de página realiza los cambios finales en el contenido de la página:",
+                options: {
+                    a: "Page_PreRender",
+                    b: "Page_PreInit",
+                    c: "Page_Unload",
+                    d: "Page_Init"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "35. Microsoft .NET Framework consta de los siguientes componentes principales:",
+                options: {
+                    a: "Common Language Runtime y la biblioteca de clases .NET framework.",
+                    b: "Common Language Specification y la biblioteca de clases.NET framework.",
+                    c: "Common Language Runtime, la biblioteca de clases .NET framework y un compilador JIT (Just in time).",
+                    d: "Common Language Specification, la biblioteca de clases.NET framework y un compilador JIT (Just in time)."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "36. Señale cuál de las siguientes respuestas es una plataforma que permite crear aplicaciones nativas para IOS, Android y Windows usando el lenguaje C#:",
+                options: {
+                    a: "Bootstrap",
+                    b: "Midlets",
+                    c: "Xamarin",
+                    d: "SonarQube"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "37. Estándar para especificación de lenguaje C#:",
+                options: {
+                    a: "ECMA 331",
+                    b: "ECMA 332",
+                    c: "ECMA 333",
+                    d: "ECMA 334"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "38. Existen multitud de frameworks JavaScript que facilitan el desarrollo de aplicaciones web, ¿cuál de los siguientes frameworks NO tiene esa finalidad?",
+                options: {
+                    a: "Backbone.js",
+                    b: "Ember.js",
+                    c: "Unit.js",
+                    d: "Angular.js"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "39. Apache Axis2 incluye soporte para la especificación WS-ReliableMessaging vía:",
+                options: {
+                    a: "Apache Rampart.",
+                    b: "Apache Kandula.",
+                    c: "Apache Sandesha2.",
+                    d: "Apache StAX."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "40. ¿Cuál de los siguientes es un gestor de contenidos CMS (Content Management System)?",
+                options: {
+                    a: "cPanel",
+                    b: "Drupal",
+                    c: "PHP",
+                    d: "Ruby"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "41. Señale cuál de las siguientes respuestas se corresponde con la evolución de la especificación JAX-RPC de servicios web basados en XML-SOAP que está detallada en la JSR 224:",
+                options: {
+                    a: "CXF",
+                    b: "JAX-WS",
+                    c: "JAX-RS",
+                    d: "Bootstrap"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "42. Señale la respuesta correcta, el protocolo AJP (Apache JServ Protocol) es un protocolo:",
+                options: {
+                    a: "que permite ejecutar diversas instancias CGI para la gestión concurrente de peticiones.",
+                    b: "binario que permite una comunicación entre un servidor web y un contenedor de servlets o servidor de aplicaciones sobre TCP.",
+                    c: "que gestiona distintas métricas del servidor web y las muestra en un cuadro de mandos para su posterior análisis.",
+                    d: "que permite servir peticiones HTTP sobre FTP."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "43. Según el modelo de calidad del software de McCall, los factores de transición son:",
+                options: {
+                    a: "Facilidad de mantenimiento, Extensibilidad y Reusabilidad.",
+                    b: "Portabilidad, Reusabilidad e Interoperabilidad.",
+                    c: "Facilidad de mantenimiento, Extensibilidad y Facilidad de prueba.",
+                    d: "Portabilidad, Reusabilidad y Extensibilidad."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "44. Jakob Nielsen definió 10 principios heurísticos de la usabilidad web. Señale cuál de los siguientes es uno de ellos:",
+                options: {
+                    a: "Visibilidad del estado del sistema.",
+                    b: "Proporcionar alternativas textuales para todo el contenido no textual.",
+                    c: "Facilitar a los usuarios ver y oír contenido.",
+                    d: "No diseñar el contenido de un modo que pueda provocar ataques, espasmos o convulsiones."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "45. ¿Cuál de las siguientes pautas de las WCAG 2.0 pertenece al principio \"comprensible\"?",
+                options: {
+                    a: "Proporcionar a los usuarios el tiempo suficiente para leer y usar el contenido.",
+                    b: "Proporcionar acceso a toda la funcionalidad mediante el teclado.",
+                    c: "Ayudar a los usuarios a evitar y corregir los errores.",
+                    d: "No diseñar contenido de un modo que se sepa podría provocar ataques, espasmos o convulsiones."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "46. La recomendación ITU-T dónde se presentan los requisitos y capacidades basados en la computación en la nube (Big Data) es:",
+                options: {
+                    a: "Y.3600",
+                    b: "Y.3700",
+                    c: "Y.3800",
+                    d: "Y.3900"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "47. ¿Cuál de los siguientes sistemas de gestión de bases de datos es de tipo NoSQL?",
+                options: {
+                    a: "DB2",
+                    b: "Interbase",
+                    c: "MariaDB",
+                    d: "MongoDB"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "48. El proyecto de la fundación Apache que provee una base de datos NoSQL. se denomina:",
+                options: {
+                    a: "Hadoop",
+                    b: "CouchDB",
+                    c: "Ignite",
+                    d: "MetaModel"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "49. Señale cuál de las siguientes respuestas se corresponde con una herramienta ETL (Extract Transform and Load) open source:",
+                options: {
+                    a: "Business Inteligence.",
+                    b: "Informatica Power Center.",
+                    c: "SAS ETL Studio.",
+                    d: "Pentaho Data Integration (Kettle ETL)."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "50. ¿Cuál de los siguientes conceptos NO forma parte de las conocidas V's de Big Data?",
+                options: {
+                    a: "Volumen.",
+                    b: "Voracidad.",
+                    c: "Velocidad.",
+                    d: "Variedad."
+                },
+                correctAnswer: "b"
+            },
+            // Bloque IV
+            {
+                question: "1. ¿Qué sentencia es equivalente a la siguiente: \"grep -n texto fichero\"?",
+                options: {
+                    a: "awk '/texto/{print NR\":\"\\$0}' fichero",
+                    b: "awk '/texto/{x++;}END{print x}' fichero",
+                    c: "awk '!/texto/' fichero",
+                    d: "awk '/texto/{print;getline;print ' fichero"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "2. Cuando se administran sistemas operativos Windows, la herramienta de escritorio remoto es fundamental. Si tuviera que ejecutarla por comandos necesitaría saber el nombre del ejecutable, y éste es:",
+                options: {
+                    a: "mtscs",
+                    b: "mstsc",
+                    c: "mtcsc",
+                    d: "mctss"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "3. En el sistema operativo Linux, el nivel 6 de ejecución se define como:",
+                options: {
+                    a: "Sistema Detenido (system halt).",
+                    b: "Modo de usuario individual (single mode user).",
+                    c: "Reinio del sistema (system reboot).",
+                    d: "Modo multiusario completo (full multiuser)."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "4. En la base de datos MySQL 5.7, ¿qué comando vacía por completo el contenido de una tabla sin eliminarla de la base de datos?",
+                options: {
+                    a: "TRUNCATE [TABLE] tbl_name",
+                    b: "DROP [TEMPORARY] TABLE [IF EXISTS] tbl_name [, tbl_name]... [RESTRICT | CASCADE]",
+                    c: "REMOVE * FROM tbl_name",
+                    d: "Ninguna de las anteriores."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "5. Para programar la ejecución del script/usr/bin/script el primer día de cada mes a las 12 de la mañana y a las 12 de la noche, deberemos añadir en el fichero /etc/crontab la línea:",
+                options: {
+                    a: "0 0,12 1** /usr/bin/script",
+                    b: "**/12 1/usr/bin/script",
+                    c: "00-12 1**/usr/bin/script",
+                    d: "$0~0/12^{*}1^{*}/usr/bin/script$"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "6. El benchmark SPEC CPU2006, ¿a qué grupo pertenece?",
+                options: {
+                    a: "The High-Performance Group (HPG).",
+                    b: "The Graphics and Workstation Performance Group (GWPG).",
+                    c: "The Open Systems Group (OSG).",
+                    d: "Research Group (RG)."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "7. En una red SAN de fibra óptica podemos tener estos 3 tipos de topologías:",
+                options: {
+                    a: "FC-AL, FC-HW, punto-a-punto",
+                    b: "FC-BL, FC-SW, FCoE",
+                    c: "FC-BL, FC-HW, FCoE",
+                    d: "FC-AL, FC-SW, punto-a-punto"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "8. Señale la respuesta correcta sobre un nivel de RAID 1+0:",
+                options: {
+                    a: "Es un espejo de divisiones (mirror of stripes).",
+                    b: "La porcentaje de espacio de que se dispone no es que es posible recuperar los datos ante un fallo de un disco.",
+                    c: "Primero se crean dos RAID 0 y luego, sobre los anteriores, se crea un RAID 1 para dotar al \"array\" de funcionalidad espejo.",
+                    d: "Es una división en espejo (stripe of mirrors)."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "9. Señale la correcta, respecto al protocolo IFCP es un protocolo:",
+                options: {
+                    a: "a) nivel de gateway que realiza la transformación de conexiones fibre channel en conexiones TCP para el envío de información entre distintas redes SAN.",
+                    b: "que utiliza la técnica del tunelado para transportar tramas Fibre Channel sin modificar en el interior de paquetes IP para el envío de información entre distintas redes SAN.",
+                    c: "que utiliza el servicio de transporte TCP para mover paquetes SCSI sobre una red típicamente Ethernet.",
+                    d: "a) nivel de red que realiza la conmutación de paquetes mediante el intercambio de etiquetas para el envío de la información."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "10. ¿Qué es JBOD (Just a Bunch Of Disks)?",
+                options: {
+                    a: "Un concatenación de discos redundantes similar a RAID 1.",
+                    b: "Particionado de un disco en varios de menor tamaño para salvaguardar la información.",
+                    c: "Una concatenación de discos requeridos para crear una unidad mayor.",
+                    d: "Discos del sistema RAID dedicados a almacenar la paridad."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "11. El estándar ISO/IEC 11801 clasifica las fibras multimodo. Indicar la respuesta ERRÓNEA:",
+                options: {
+                    a: "OM1: Fibra multimodo con núcleo de vidrio y 62,5 micrones de diámetro. Ancho de banda de 200 Mhz y atenuación de 3,5 dB en longitud de onda de 850 nm.",
+                    b: "OM2: Fibra multimodo con núcleo de vidrio y 50 micrones de diámetro. Ancho de banda de 500 Mhz y atenuación de 3,5 dB en longitud de onda de 850 nm.",
+                    c: "OM3: Fibra multimodo optimizada con núcleo de vidrio y 50 micrones de diámetro. Ancho de banda de 500 Mhz y atenuación de 3,5 dB en longitud de onda de 850 nm.",
+                    d: "OM4: Fibra multimodo optimizada de núcleo de vidrio que permite transportar 100 Gigabit Ethernet hasta 850 m."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "12. El código binario de Golay extendido es:",
+                options: {
+                    a: "Un código de corrección de errores que codifica 12 bits de datos en 24 bits y permite corregir cualquier error de 3 bits detectar cualquier error de 4 bits.",
+                    b: "Un código de detección de errores que añade un código más a una cadena de transmisión, e indica si número de unos es par o es impar.",
+                    c: "Una suma del valor de todas las palabras en las que se divide el mensaje a transmitir, y se añade el resultado al mensaje, pero cambiado de signo.",
+                    d: "Una versión del código de Hamming, que en lugar de añadir 3 bits por cada 4 bits de datos del mensaje, añade solamente 2 bits."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "13. El estándar Gigabit Ethernet para fibra óptica que opera con longitudes de onda alrededor de los 1550 nm es:",
+                options: {
+                    a: "1000BASE-SX",
+                    b: "1000BASE-LX",
+                    c: "1000BASE-ZX",
+                    d: "1000BASE-LH"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "14. ¿Qué satélites tienen un periodo orbital de 23 horas, 56 minutos y 4,09 segundos?",
+                options: {
+                    a: "LEO",
+                    b: "MEO",
+                    c: "GEO",
+                    d: "HEO"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "15. ¿Cuál de los siguientes medios de transmisión tiene una menor impedancia característica?",
+                options: {
+                    a: "Cable coaxial.",
+                    b: "Cable UTP.",
+                    c: "Cable STP.",
+                    d: "Cable FTP."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "16. El estándar 802.3bz-2016 permite una velocidad de hasta:",
+                options: {
+                    a: "5 Gbps a través de cables de red de clase Cat 5e y de hasta 10 Gbps sobre cable de clase Cat 6.",
+                    b: "2.5 Gbps a través de cables de red de clase Cat 6.",
+                    c: "10 Gbps sobre cable de clase Cat 6 de hasta 100 metros.",
+                    d: "2.5 Gbps a través de cables de red de clase Cat 5e y de hasta 5 Gbps sobre cable de clase Cat 6."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "17. ¿Cuál de las siguientes es una solución MDM (Mobile Device Management) para la gestión de dispositivos móviles?",
+                options: {
+                    a: "Magento",
+                    b: "Joomla",
+                    c: "AirWatch",
+                    d: "Kobli"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "18. ¿Qué puerto utiliza SNMP para los traps por defecto?",
+                options: {
+                    a: "391",
+                    b: "332",
+                    c: "162",
+                    d: "161"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "19. Una de las siguientes NO es una encoding rule de ASN.1:",
+                options: {
+                    a: "BER (Basic Encoding Rules).",
+                    b: "CER (Canonical Encoding Rules).",
+                    c: "DER (Distinguished Encoding Rules).",
+                    d: "XER (eXchange Encoding Rules)."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "20. Entre las siguientes, señale la plataforma de software libre para configurar y administrar computadoras:",
+                options: {
+                    a: "GitHub",
+                    b: "Plone",
+                    c: "Ansible",
+                    d: "MooTools"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "21. Una dirección IP en el protocolo IPv6 está formada por:",
+                options: {
+                    a: "32 bits",
+                    b: "64 bits",
+                    c: "128 bits",
+                    d: "256 bits"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "22. Señale la respuesta CORRECTA sobre el protocolo de transferencia segura de ficheros FTPS:",
+                options: {
+                    a: "Al igual que en FTP, se utilizan canales diferentes para comandos y datos.",
+                    b: "Usa el puerto estándar 22 (SSH) para realizar la transferencia de archivos.",
+                    c: "En el método de conexión explícito, el cliente debe conectarse directamente al puerto TCP 990.",
+                    d: "Tanto el canal de comandos como el de datos deben cifrarse en cualquier caso."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "23. Las direcciones IPv6 que proporcionan direccionamiento IP automático a los nodos en caso de que no exista un servidor DHCP, se denominan:",
+                options: {
+                    a: "Link-Local",
+                    b: "Aggregatable-Local",
+                    c: "Anycast",
+                    d: "Site-Local"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "24. La gestión de claves en IPSec se realiza a través del protocolo:",
+                options: {
+                    a: "IKE",
+                    b: "AH",
+                    c: "ESP",
+                    d: "A través de los protocolos AH y ESP."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "25. ¿Qué medida se utiliza para medir la eficiencia energética de un centro de proceso de datos?",
+                options: {
+                    a: "BTU (British Thermal Unit).",
+                    b: "Estándar TIA 942.",
+                    c: "TIER I, II, III, IV.",
+                    d: "PUE (Power Usage Effectiveness)."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "26. ¿Qué porcentaje de disponibilidad garantizada tiene un Data Center de categoría Tier 2?",
+                options: {
+                    a: "99.895",
+                    b: "99.671",
+                    c: "99.741",
+                    d: "99.982"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "27. Según la RFC 3032, de entre los valores reservados en la etiqueta MPLS, el valor 2 se corresponde con la etiqueta:",
+                options: {
+                    a: "de Alerta de Router.",
+                    b: "NULL Implícita.",
+                    c: "NULL Explícita IPv4.",
+                    d: "NULL Explícita IPv6."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "28. ¿Qué puertos por defecto utiliza el protocolo LDP (Label Distribution Protocol) de MPLS (Multiprotocol Label Switching)?",
+                options: {
+                    a: "El 646 en TCP y UDP.",
+                    b: "El 647 en UDP y 646 en TCP.",
+                    c: "El 647 en TCP y UDP.",
+                    d: "El 646 en UDP y 647 en TCP."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "29. Opción dentro de la herramienta NMAP que permite la detección del sistema operativo del objetivo a analizar:",
+                options: {
+                    a: "-sN",
+                    b: "-F",
+                    c: "-O",
+                    d: "-D"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "30. Según las normas de seguridad de las TIC (CCN-STIC-400), en relación a las medidas de seguridad, cuando trata de medidas para asegurar los canales de transmisión, se habla de:",
+                options: {
+                    a: "TRANSEC.",
+                    b: "COMPUSEC.",
+                    c: "EMSEC.",
+                    d: "NETSEC."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "31. Una distribución basada en Linux que permite efectuar pruebas de penetración en sistemas TI y auditorías de seguridad es:",
+                options: {
+                    a: "Metasploit",
+                    b: "Kali",
+                    c: "Wireshark",
+                    d: "Knoppix"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "32. ¿Cuál de estas afirmaciones respecto a un WAF (Web Application Firewall) es correcta?",
+                options: {
+                    a: "Es un dispositivo que trabaja en la capa de red, nivel 2 OSI y que protege de diversos ataques tales como SQL Injection, Cross Site Scripting, etc.",
+                    b: "Un ejemplo de dispositivo WAF hardware es el mod_security desarrollado por la compañía Breach Security.",
+                    c: "Los dispositivos WAF permiten enrutar tráfico y/o traducir direcciones IPs mediante el uso de NAT, para la detección y protección de posibles ataques.",
+                    d: "Uno de los principales objetivos del proyecto WAFEC (Wireless Application Firewall Evaluation Criteria), es difundir la bondades de implantación de dispositivos WAF."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "33. Una variante del phishing cuyo ataque se dirige hacia los objetivos de alta importancia dentro de una organización (altos directivos, políticos, etc.) o simplemente de gran transcendencia social (cantantes, artistas, famosos, etc.) se denomina:",
+                options: {
+                    a: "Phreaking",
+                    b: "Whaling",
+                    c: "Phishing CEO",
+                    d: "Cracker"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "34. ¿Cuáles de los siguientes es un estándar que permite el intercambio de datos de autenticación y autorización?",
+                options: {
+                    a: "XADES",
+                    b: "SAML",
+                    c: "PADES",
+                    d: "BPMN"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "35. ¿Qué término hace referencia a las emisiones electromagnéticas no deseadas que detectadas y analizadas con los medios adecuados pueden llevar a la obtención de información?",
+                options: {
+                    a: "TEMPEST",
+                    b: "CARMEN",
+                    c: "SCADA",
+                    d: "SAT"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "36. En el establecimiento de una comunicación mediante SSL, ¿cuál es el protocolo que especifica la forma de encapsular los datos que se van a intercambiar?",
+                options: {
+                    a: "Cipher Secure Layer.",
+                    b: "SSL Handshake.",
+                    c: "SSL Record Layer.",
+                    d: "Secure Socker Layer."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "37. El protocolo OAuth:",
+                options: {
+                    a: "Es propietario de Twitter, y permite gestionar el acceso a su API por parte de otras aplicaciones.",
+                    b: "Permite su uso en aplicaciones web y móviles, pero no en aplicaciones de escritorio.",
+                    c: "Permite el acceso a la identidad completa del usuario por parte del servidor de aplicaciones.",
+                    d: "Permite utilizar la cuenta de Facebook para acceder a otras aplicaciones."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "38. Una técnica estándar para extraer información expresada en RDF de una página XHTML es:",
+                options: {
+                    a: "RDFA",
+                    b: "GRDDL",
+                    c: "FOAF",
+                    d: "RSS"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "39. ¿Cuál NO es una modulación para DSL?",
+                options: {
+                    a: "CAP",
+                    b: "DMT",
+                    c: "WDMT",
+                    d: "FSK"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "40. ¿Cuál de las siguientes respuestas es correcta respecto a la norma G.fast?",
+                options: {
+                    a: "Es una norma auspiciada por el IEPT que forma parte del conjunto de normas de IPv6 relativo la flexibilidad de autoconfiguración de la direcciones IP en una red local.",
+                    b: "Es un protocolo que permite transferencias de hasta 600 Gbits/s en el interfaz aire en la banda de los 2,48Ghz.",
+                    c: "Es una norma de la ITU-T sobre banda ancha que permite velocidades de acceso por el par de cobre de hasta 1 Gbit/s.",
+                    d: "Es un nuevo estándar de la norma 3GPP, definida como una evolución de la norma UMTS(3G) que permitirá transmisión de datos y vídeos de alta definición gracias a la tecnología OFDMA."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "41. Una respuesta SIP comienza con una primera línea de estado. Señale cuál de los siguientes NO es un campo válido en esta línea de estado:",
+                options: {
+                    a: "Código de estado.",
+                    b: "Versión de SIP.",
+                    c: "Descripción del código de estado.",
+                    d: "Método SIP usado."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "42. Un servidor STUN es:",
+                options: {
+                    a: "Un servidor utilizado en telefonía IP que permite a los clientes NAT encontrar su dirección IP pública.",
+                    b: "Servidor de aplicaciones de software libre desarrollado por Sun Microsystems.",
+                    c: "Servidor de objetos distribuidos utilizado en CORBA.",
+                    d: "Módulo software empleado en algunos sistemas de detección de Intrusos de una red (NIDS) y que se encarga de analizar el tráfico en tiempo real buscando patrones sospechosos."
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "43. ¿Cómo se llama la red de satélites diseñada por Motorola que permite telefonía vía satélite?",
+                options: {
+                    a: "Galileo",
+                    b: "GSM",
+                    c: "HispaSat",
+                    d: "Iridium"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "44. ¿Qué frecuencia de muestreo tiene el Códec G728A utilizado en VoIP (Voice Over Internet Protocol)?",
+                options: {
+                    a: "8.000 veces por segundo.",
+                    b: "16.000 veces por segundo.",
+                    c: "64.000 veces por segundo.",
+                    d: "32.000 veces por segundo."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "45. Tecnología emergente, en desarrollo, que representa una tarjeta SIM electrónica que no requerirá la inserción de una SIM física en los diferentes dispositivos móviles:",
+                options: {
+                    a: "eSIM.",
+                    b: "uSIM.",
+                    c: "xSIM.",
+                    d: "ninguna de las anteriores."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "46. En la arquitectura de redes móviles LTE (Long Term Evolution), el Interfaz que enlaza los eNodeB con el núcleo de la red EPS (Evolved Packet System) se denomina:",
+                options: {
+                    a: "X2",
+                    b: "S1",
+                    c: "Um",
+                    d: "Abis"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "47. ¿Cuál de las siguientes modulaciones es utilizada por la tecnología 4G LTE?",
+                options: {
+                    a: "DSSS, Espectro Ensanchado por Secuencia Directa.",
+                    b: "OFDM, Acceso Múltiple por División de Frecuencia Ortogonal.",
+                    c: "FHSS, Espectro Ensanchado por Salto de Frecuencia.",
+                    d: "GMSK, Desplazamiento Mínimo Gaussiano."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "48. ¿Cuál es el nombre de la tecnología que permite transmitir a frecuencias entre 400 y 800 Thz en el espectro visible de los humanos?",
+                options: {
+                    a: "Li-Fi",
+                    b: "Visual Wi-Fi",
+                    c: "Ultra Wi-Fi",
+                    d: "UV-Fi"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "49. El dividendo digital es:",
+                options: {
+                    a: "El elemento que se divide por un número primo como operación criptográfica previa que se realiza en el cifrado AES.",
+                    b: "El conjunto de frecuencias que han quedado libres por la migración de la televisión analógica a la digital.",
+                    c: "El resultado económico de una inversión en Bitcoin o de otra divisa digital.",
+                    d: "Uno de los tres componentes de la unidad de cálculo en los procesadores de arquitectura x86."
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "50. DOCSIS es un estándar que permite la transferencia de datos en redes:",
+                options: {
+                    a: "HFC",
+                    b: "FTTH",
+                    c: "inalámbricas",
+                    d: "xDSL"
+                },
+                correctAnswer: "a"
+            },
+            // Preguntas de reserva (del Plantilla_def_GSI-L_1_ejer_2016_154AB89SD658.pdf)
+            {
+                question: "Reserva 1. En el artículo 116 de la Constitución española se indica que las competencias y limitaciones correspondientes a los estados de alarma, de excepción y de sitio se regularán mediante:",
+                options: {
+                    a: "un Real decreto.",
+                    b: "una Ley ordinaria.",
+                    c: "una Ley Orgánica.",
+                    d: "una resolución ministerial."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "Reserva 2. Según la ley 19/2013 en su artículo 15, en relación a la protección de los datos de carácter personal, será necesario el consentimiento expreso y por escrito del afectado para datos relativos a:",
+                options: {
+                    a: "origen racial.",
+                    b: "salud.",
+                    c: "ideología..",
+                    d: "vida sexual."
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "Reserva 3. El campo \"Límite de Saltos\" de la cabecera IPv6 disminuye en uno en cada salto (routers intermedios) del paquete, cuando este campo contiene el valor cero el paquete:",
+                options: {
+                    a: "Es destruido y se envía de regreso al nodo fuente un mensaje ICMPv6 tipo 3.",
+                    b: "Sigue su camino pero se envía de regreso al nodo fuente un mensaje ICMPv6 tipo 1.",
+                    c: "Sigue su camino y se envía de regreso al nodo fuente un mensaje ICMPv6 tipo 4.",
+                    d: "Es destruido y se envía de regreso al nodo fuente un mensaje ICMPv6 tipo 2."
+                },
+                correctAnswer: "a"
+            },
+            // Preguntas de reserva (del GSI2016.pdf - Bloque III)
+            {
+                question: "Reserva Bloque III 1. Dentro de la actividad Seguimiento y evaluación de los cambios hasta la aceptación de Métrica v3, indique los participantes intervinlentes en la tarea \"Realización de las Pruebas de Regresión\" (MSI 4.2):",
+                options: {
+                    a: "Responsable de Mantenimiento, Equipo de Mantenimiento y Jefe de Proyecto.",
+                    b: "Directores de los Usuarios y Responsable de Mantenimiento.",
+                    c: "Responsable de Operación, Responsable de Mantenimiento y Equipo de Mantenimiento.",
+                    d: "Directores de los Usuarios, Equipo de Mantenimiento y Jefe de Proyecto."
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "Reserva Bloque III 2. Un archivo creado en el formato de Protocolo de Inicio de Java Network, utilizado para lanzar y administrar programas de Java en una red o en la Web tiene la extensión:",
+                options: {
+                    a: ".jre",
+                    b: ".jnlp",
+                    c: ".jmx",
+                    d: ".jstl"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "Reserva Bloque III 3. Señala la respuesta FALSA con respecto de los servicios WMS (Web Map Services):",
+                options: {
+                    a: "Son una implementación del modelo cliente/servidor.",
+                    b: "Proporcionan informaciones geográficas en forma de archivos de imagen digital.",
+                    c: "Permiten el acceso y modificación de los datos remotos.",
+                    d: "Proporcionan información sobre el nivel de servicio en forma de metadatos."
+                },
+                correctAnswer: "c"
+            },
+            // Preguntas de reserva (del GSI2016.pdf - Bloque IV)
+            {
+                question: "Reserva Bloque IV 1. La denominada Generalized Multi-Protocol Label Switching (GMPLS) tiene propuesta su arquitectura en el:",
+                options: {
+                    a: "RFC 4372",
+                    b: "RFC 3031",
+                    c: "RFC 3945",
+                    d: "RFC 2684"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "Reserva Bloque IV 2. Indique el concepto correcto, es una clase especial de procedimiento almacenado que se ejecuta automáticamente cuando se produce un evento en el servidor de bases de datos:",
+                options: {
+                    a: "Trigger",
+                    b: "Assertion",
+                    c: "Index",
+                    d: "Synonym"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "Reserva Bloque IV 3. Según uno de los referentes en recomendaciones y mejores prácticas para la administración de servicios de Tecnologías de la Información como es ITIL Foundation, la Gestión de Incidencias:",
+                options: {
+                    a: "se centrará exclusivamente en restaurar el servicio, sin buscar ni analizar las causas del Incidente.",
+                    b: "debe contar entre sus funciones analizar y encontrar las causas subyacentes a un determinado incidente.",
+                    c: "se centrará en la aceptación de solicitudes que los usuarios planteen para mejorar el servicio.",
+                    d: "debe contar entre sus funciones la gestión del cambio derivada del mantenimiento evolutivo de los sistemas."
+                },
+                correctAnswer: "b"
+            }
+        ];
+
+        // Variables de estado del test
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Almacena las respuestas del usuario: {questionIndex: 'a', questionIndex: 'b', ...}
+
+        // Referencias a elementos del DOM
+        const quizContent = document.getElementById('quiz-content');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const messageArea = document.getElementById('message-area');
+        const resultsSummary = document.getElementById('results-summary');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+
+        // Referencias a elementos de la modal
+        const resetModal = document.getElementById('reset-modal');
+        const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        const cancelResetBtn = document.getElementById('cancel-reset-btn');
+
+        /**
+         * Carga el estado del test desde localStorage.
+         * Si no hay estado guardado, inicia el test desde el principio.
+         */
+        function loadProgress() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null && savedAnswers !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                currentQuestionIndex = 0;
+                userAnswers = {};
+            }
+            loadQuestion(); // Carga la primera pregunta (o la última guardada)
+        }
+
+        /**
+         * Guarda el estado actual del test en localStorage.
+         */
+        function saveProgress() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        /**
+         * Muestra un mensaje de retroalimentación (correcto/incorrecto).
+         * @param {string} type - 'success' o 'error'.
+         * @param {string} message - El texto del mensaje.
+         */
+        function showMessage(type, message) {
+            messageArea.classList.remove('hidden', 'success', 'error');
+            messageArea.classList.add(type);
+            messageArea.textContent = message;
+            // Ocultar el mensaje después de 2 segundos
+            setTimeout(() => {
+                messageArea.classList.add('hidden');
+            }, 2000);
+        }
+
+        /**
+         * Carga y muestra la pregunta actual en el DOM.
+         */
+        function loadQuestion() {
+            // Ocultar el resumen de resultados si está visible
+            resultsSummary.classList.add('hidden');
+
+            if (currentQuestionIndex >= quizData.length) {
+                // Si hemos llegado al final, mostrar resultados
+                showResults();
+                return;
+            }
+
+            const questionData = quizData[currentQuestionIndex];
+            let optionsHtml = '';
+            const currentAnswer = userAnswers[currentQuestionIndex];
+
+            for (const key in questionData.options) {
+                const isChecked = currentAnswer === key ? 'checked' : '';
+                const optionText = questionData.options[key];
+                // Determinar si la opción debe tener clases de correcto/incorrecto si ya fue respondida
+                let feedbackClass = '';
+                if (currentAnswer !== undefined) { // Si la pregunta ya fue respondida
+                    if (key === questionData.correctAnswer) {
+                        feedbackClass = 'correct';
+                    } else if (key === currentAnswer && key !== questionData.correctAnswer) {
+                        feedbackClass = 'incorrect';
+                    }
+                }
+
+                optionsHtml += `
+                    <label class="option-label ${feedbackClass}">
+                        <input type="radio" name="question-${currentQuestionIndex}" value="${key}" ${isChecked} ${currentAnswer ? 'disabled' : ''}>
+                        <span class="text-gray-700">${key.toUpperCase()}) ${optionText}</span>
+                    </label>
+                `;
+            }
+
+            quizContent.innerHTML = `
+                <div class="question-card">
+                    <p class="text-lg font-semibold text-gray-900 mb-4">${questionData.question}</p>
+                    <div class="options">${optionsHtml}</div>
+                </div>
+            `;
+
+            // Añadir event listeners a los radios para verificar la respuesta al seleccionar
+            document.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    handleAnswerSelection(event.target.value);
+                });
+            });
+
+            updateNavigationButtons();
+        }
+
+        /**
+         * Maneja la selección de una respuesta por parte del usuario.
+         * @param {string} selectedOption - La opción seleccionada ('a', 'b', 'c', 'd').
+         */
+        function handleAnswerSelection(selectedOption) {
+            // Si la pregunta ya fue respondida, no hacer nada
+            if (userAnswers[currentQuestionIndex] !== undefined) {
+                return;
+            }
+
+            userAnswers[currentQuestionIndex] = selectedOption;
+            saveProgress(); // Guardar el progreso inmediatamente
+
+            const questionData = quizData[currentQuestionIndex];
+            const correct = selectedOption === questionData.correctAnswer;
+
+            // Deshabilitar todas las opciones para esta pregunta
+            document.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(radio => {
+                radio.disabled = true;
+            });
+
+            // Aplicar clases de feedback visual
+            document.querySelectorAll('.option-label').forEach(label => {
+                const radio = label.querySelector('input');
+                if (radio.value === questionData.correctAnswer) {
+                    label.classList.add('correct');
+                } else if (radio.value === selectedOption) {
+                    label.classList.add('incorrect');
+                }
+            });
+
+            if (correct) {
+                showMessage('success', '¡Correcto!');
+            } else {
+                showMessage('error', `Incorrecto. La respuesta correcta era: ${questionData.correctAnswer.toUpperCase()}) ${questionData.options[questionData.correctAnswer]}`);
+            }
+        }
+
+        /**
+         * Actualiza el estado de los botones de navegación (Anterior/Siguiente).
+         */
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === quizData.length; // Deshabilitar Siguiente si ya estamos al final
+            if (currentQuestionIndex === quizData.length) {
+                nextBtn.textContent = 'Ver Resultados';
+            } else {
+                nextBtn.textContent = 'Siguiente';
+            }
+        }
+
+        /**
+         * Muestra el resumen final de los resultados del test.
+         */
+        function showResults() {
+            quizContent.innerHTML = ''; // Limpiar el contenido del quiz
+            messageArea.classList.add('hidden'); // Ocultar cualquier mensaje
+            prevBtn.classList.add('hidden'); // Ocultar botones de navegación
+            nextBtn.classList.add('hidden');
+            resetBtn.classList.remove('hidden'); // Asegurarse de que el botón de reinicio esté visible
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            quizData.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === undefined) {
+                    unansweredCount++;
+                } else if (userAnswer === question.correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            correctCountSpan.textContent = correctCount;
+            incorrectCountSpan.textContent = incorrectCount;
+            unansweredCountSpan.textContent = unansweredCount;
+            resultsSummary.classList.remove('hidden');
+        }
+
+        /**
+         * Reinicia el test a su estado inicial.
+         */
+        function resetTest() {
+            localStorage.clear();
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            resultsSummary.classList.add('hidden'); // Ocultar el resumen
+            prevBtn.classList.remove('hidden'); // Mostrar botones de navegación
+            nextBtn.classList.remove('hidden');
+            loadQuestion(); // Recargar la primera pregunta
+            showMessage('success', 'Test reiniciado.');
+            resetModal.classList.add('hidden'); // Ocultar la modal después del reinicio
+        }
+
+        // Event Listeners
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveProgress();
+                loadQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length) {
+                currentQuestionIndex++;
+                saveProgress();
+                loadQuestion();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            resetModal.classList.remove('hidden'); // Mostrar la modal de confirmación
+        });
+
+        confirmResetBtn.addEventListener('click', resetTest); // Si confirma, llamar a resetTest
+
+        cancelResetBtn.addEventListener('click', () => {
+            resetModal.classList.add('hidden'); // Ocultar la modal si cancela
+        });
+
+        // Cargar el progreso al iniciar la página
+        window.onload = loadProgress;
+    </script>
+</body>
+</html>

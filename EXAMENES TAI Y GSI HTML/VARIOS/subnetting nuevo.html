@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Subnetting</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #333;
+            line-height: 1.4;
+            text-align: left; /* Align question text to the left */
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .option-button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            text-align: left;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #cbd5e0;
+            transform: translateY(-2px);
+        }
+        .option-button.selected {
+            border-color: #4299e1;
+            background-color: #bee3f8;
+            color: #2b6cb0;
+        }
+        .option-button.correct {
+            background-color: #a7f3d0; /* Green for correct */
+            color: #065f46;
+            border-color: #34d399;
+        }
+        .option-button.incorrect {
+            background-color: #fecaca; /* Red for incorrect */
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+        .feedback-message {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .feedback-message.correct {
+            color: #10b981; /* Tailwind green-500 */
+        }
+        .feedback-message.incorrect {
+            color: #ef4444; /* Tailwind red-500 */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        .nav-button, .reset-button, .view-results-button {
+            background-color: #4299e1;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            text-align: center;
+        }
+        .nav-button:hover, .reset-button:hover, .view-results-button:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .reset-button {
+            background-color: #f56565;
+            margin-top: 20px;
+        }
+        .reset-button:hover {
+            background-color: #e53e3e;
+        }
+        .view-results-button {
+            background-color: #48bb78;
+            margin-top: 20px;
+        }
+        .view-results-button:hover {
+            background-color: #38a169;
+        }
+        .results-container {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+        .results-container h2 {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .results-summary p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+        .results-summary .correct-count {
+            color: #10b981;
+        }
+        .results-summary .incorrect-count {
+            color: #ef4444;
+        }
+        .results-summary .unanswered-count {
+            color: #f6ad55;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            max-width: 400px;
+            border: 2px solid #4299e1;
+        }
+        .message-box p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+        .message-box button {
+            background-color: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .message-box button:hover {
+            background-color: #3182ce;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div id="question-display">
+            <p class="question-text" id="question-text"></p>
+            <div class="options-container" id="options-container"></div>
+            <div id="feedback" class="feedback-message"></div>
+        </div>
+
+        <div id="quiz-controls">
+            <div class="navigation-buttons">
+                <button id="prev-button" class="nav-button" disabled>Anterior</button>
+                <button id="next-button" class="nav-button">Siguiente</button>
+            </div>
+            <button id="reset-button" class="reset-button">Reiniciar Test</button>
+            <button id="view-results-button" class="view-results-button" style="display: none;">Ver Resultados</button>
+        </div>
+
+        <div id="results-display" class="results-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <div class="results-summary">
+                <p>Correctas: <span id="correct-count" class="correct-count">0</span></p>
+                <p>Incorrectas: <span id="incorrect-count" class="incorrect-count">0</span></p>
+                <p>Sin contestar: <span id="unanswered-count" class="unanswered-count">0</span></p>
+            </div>
+            <button id="restart-from-results-button" class="reset-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <div id="message-box" class="message-box">
+        <p id="message-content"></p>
+        <button id="message-box-ok">OK</button>
+    </div>
+    <div id="overlay" class="overlay"></div>
+
+    <script>
+        /**
+         * Shuffles an array in place.
+         * @param {Array} array - The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Converts CIDR prefix to dotted decimal subnet mask.
+         * @param {number} cidr - The CIDR prefix (e.g., 24).
+         * @returns {string} The dotted decimal subnet mask (e.g., "255.255.255.0").
+         */
+        function cidrToDottedDecimal(cidr) {
+            let maskBinary = '1'.repeat(cidr) + '0'.repeat(32 - cidr);
+            const octets = [];
+            for (let i = 0; i < 4; i++) {
+                octets.push(parseInt(maskBinary.substring(i * 8, (i + 1) * 8), 2));
+            }
+            return octets.join('.');
+        }
+
+        /**
+         * Converts dotted decimal subnet mask to CIDR prefix.
+         * @param {string} dottedDecimal - The dotted decimal subnet mask (e.g., "255.255.255.0").
+         * @returns {number} The CIDR prefix (e.g., 24) or -1 if invalid.
+         */
+        function dottedDecimalToCidr(dottedDecimal) {
+            const octets = dottedDecimal.split('.').map(Number);
+            if (octets.length !== 4 || octets.some(o => o < 0 || o > 255)) {
+                return -1; // Invalid format
+            }
+            let binaryMask = octets.map(o => o.toString(2).padStart(8, '0')).join('');
+            let cidr = 0;
+            for (let i = 0; i < binaryMask.length; i++) {
+                if (binaryMask[i] === '1') {
+                    cidr++;
+                } else {
+                    // All subsequent bits must be 0 for a valid subnet mask
+                    if (binaryMask.substring(i).includes('1')) {
+                        return -1; // Invalid mask
+                    }
+                    break;
+                }
+            }
+            return cidr;
+        }
+
+        /**
+         * Converts an integer IP representation to dotted decimal format.
+         * @param {number} int - The integer representation of an IP address.
+         * @returns {string} The IP address in dotted decimal format.
+         */
+        function intToIp(int) {
+            return `${(int >>> 24) & 0xFF}.${(int >>> 16) & 0xFF}.${(int >>> 8) & 0xFF}.${int & 0xFF}`;
+        }
+
+        /**
+         * Converts a dotted decimal IP representation to an integer.
+         * @param {string} ipAddress - The IP address in dotted decimal format.
+         * @returns {number} The integer representation of the IP address.
+         */
+        function ipToInt(ipAddress) {
+            const parts = ipAddress.split('.').map(Number);
+            return (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
+        }
+
+        /**
+         * Generates plausible incorrect options based on the correct answer type.
+         * @param {string} correctAnswer - The correct answer as a string.
+         * @param {string} networkAddress - The network address.
+         * @param {string} broadcastAddress - The broadcast address.
+         * @param {string} firstUsableAddress - The first usable IP.
+         * @param {string} lastUsableAddress - The last usable IP.
+         * @param {number} usableHosts - The number of usable hosts.
+         * @param {string} dottedDecimalSubnetMask - The dotted decimal subnet mask.
+         * @param {number} cidrPrefix - The CIDR prefix of the current question.
+         * @returns {string[]} An array of 4 options including the correct one.
+         */
+        function generateOptions(correctAnswer, networkAddress, broadcastAddress, firstUsableAddress, lastUsableAddress, usableHosts, dottedDecimalSubnetMask, cidrPrefix, type) {
+            let options = new Set();
+            options.add(correctAnswer);
+
+            let incorrectOptionsPool = [];
+
+            if (type === 'ip') {
+                const correctIpInt = ipToInt(correctAnswer);
+
+                // Add other key subnet addresses if they are distinct and not the correct answer
+                if (networkAddress !== correctAnswer) incorrectOptionsPool.push(networkAddress);
+                if (broadcastAddress !== correctAnswer) incorrectOptionsPool.push(broadcastAddress);
+                if (firstUsableAddress !== correctAnswer && firstUsableAddress !== "N/A") incorrectOptionsPool.push(firstUsableAddress);
+                if (lastUsableAddress !== correctAnswer && lastUsableAddress !== "N/A") incorrectOptionsPool.push(lastUsableAddress);
+
+                // Generate IPs in adjacent subnets or slightly off
+                const subnetSize = Math.pow(2, (32 - cidrPrefix));
+                const currentNetworkInt = ipToInt(networkAddress);
+
+                // Adjacent network address (if valid)
+                if (currentNetworkInt - subnetSize >= 0) incorrectOptionsPool.push(intToIp(currentNetworkInt - subnetSize));
+                incorrectOptionsPool.push(intToIp(currentNetworkInt + subnetSize));
+
+                // Slightly off IPs within the current block
+                incorrectOptionsPool.push(intToIp(correctIpInt + 1));
+                incorrectOptionsPool.push(intToIp(correctIpInt - 1));
+                incorrectOptionsPool.push(intToIp(correctIpInt + Math.floor(Math.random() * 10) + 2)); // Random offset
+                incorrectOptionsPool.push(intToIp(correctIpInt - Math.floor(Math.random() * 10) + 2)); // Random offset
+
+            } else if (type === 'number') {
+                const correctNum = parseInt(correctAnswer);
+                incorrectOptionsPool.push(String(correctNum + 1));
+                incorrectOptionsPool.push(String(correctNum - 1));
+                incorrectOptionsPool.push(String(usableHosts + 2)); // Total hosts
+                // Generate powers of 2 - 2 (common host counts)
+                let powerOf2 = 2;
+                while (powerOf2 <= 256 * 256) { // Up to 65536
+                    if (powerOf2 - 2 !== correctNum) {
+                        incorrectOptionsPool.push(String(powerOf2 - 2));
+                    }
+                    powerOf2 *= 2;
+                }
+                
+            } else if (type === 'mask') {
+                const currentCidr = dottedDecimalToCidr(correctAnswer);
+                if (currentCidr !== -1) {
+                    // CIDR +1, -1
+                    if (currentCidr + 1 <= 30) incorrectOptionsPool.push(cidrToDottedDecimal(currentCidr + 1));
+                    if (currentCidr - 1 >= 8) incorrectOptionsPool.push(cidrToDottedDecimal(currentCidr - 1));
+                }
+                // Other common masks
+                const commonMasks = ["255.255.255.0", "255.255.255.128", "255.255.255.192", "255.255.255.224", "255.255.255.240", "255.255.255.248", "255.255.255.252"];
+                commonMasks.forEach(mask => {
+                    if (mask !== correctAnswer) incorrectOptionsPool.push(mask);
+                });
+            }
+
+            // Filter out duplicates and the correct answer from the pool
+            incorrectOptionsPool = Array.from(new Set(incorrectOptionsPool)).filter(opt => opt !== correctAnswer);
+
+            // Select 3 random incorrect options from the pool
+            shuffleArray(incorrectOptionsPool);
+            for (let i = 0; options.size < 4 && i < incorrectOptionsPool.length; i++) {
+                options.add(incorrectOptionsPool[i]);
+            }
+
+            // If still not enough options, generate truly random ones
+            while (options.size < 4) {
+                let randomOption;
+                if (type === 'ip') {
+                    randomOption = `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+                } else if (type === 'number') {
+                    randomOption = String(Math.floor(Math.random() * 250) + 1); // Small random number
+                } else if (type === 'mask') {
+                    randomOption = cidrToDottedDecimal(Math.floor(Math.random() * 23) + 8); // Random CIDR between /8 and /30
+                }
+                options.add(randomOption);
+            }
+
+            return Array.from(options);
+        }
+
+        /**
+         * Helper function to calculate subnet details
+         * @param {string} ipAddress - The IP address string.
+         * @param {number} cidrPrefix - The CIDR prefix.
+         * @returns {object} An object containing network, broadcast, host details.
+         */
+        function calculateSubnetDetails(ipAddress, cidrPrefix) {
+            const octets = ipAddress.split('.').map(Number);
+            let ipInt = (octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3];
+
+            const networkMaskInt = (-1 << (32 - cidrPrefix));
+            const networkAddressInt = (ipInt & networkMaskInt) >>> 0; // Unsigned right shift
+
+            const broadcastMaskInt = ~networkMaskInt;
+            const broadcastAddressInt = (networkAddressInt | broadcastMaskInt) >>> 0;
+
+            const totalHosts = Math.pow(2, (32 - cidrPrefix));
+            const usableHosts = totalHosts > 2 ? totalHosts - 2 : 0; // Handle /31 and /32
+
+            const firstUsableAddress = totalHosts > 2 ? intToIp(networkAddressInt + 1) : "N/A";
+            const lastUsableAddress = totalHosts > 2 ? intToIp(broadcastAddressInt - 1) : "N/A";
+            const dottedDecimalSubnetMask = cidrToDottedDecimal(cidrPrefix);
+
+            return {
+                networkAddress: intToIp(networkAddressInt),
+                broadcastAddress: intToIp(broadcastAddressInt),
+                totalHosts,
+                usableHosts,
+                firstUsableAddress,
+                lastUsableAddress,
+                dottedDecimalSubnetMask,
+                cidrPrefix
+            };
+        }
+
+        /**
+         * Function to get subnet details for a specific subnet number within a larger network.
+         * @param {string} baseNetworkAddress - The base network address of the larger network.
+         * @param {number} baseCidr - The CIDR prefix of the base network.
+         * @param {number} targetSubnetCidr - The CIDR prefix of the subnets being created.
+         * @param {number} subnetIndex - The 0-indexed number of the specific subnet.
+         * @returns {object} Subnet details for the specified subnet.
+         */
+        function getSubnetNthDetails(baseNetworkAddress, baseCidr, targetSubnetCidr, subnetIndex) {
+            const baseOctets = baseNetworkAddress.split('.').map(Number);
+            let baseNetworkInt = (baseOctets[0] << 24) | (baseOctets[1] << 16) | (baseOctets[2] << 8) | baseOctets[3];
+
+            const subnetSize = Math.pow(2, (32 - targetSubnetCidr));
+            const subnetNetworkAddressInt = baseNetworkInt + (subnetIndex * subnetSize);
+
+            return calculateSubnetDetails(intToIp(subnetNetworkAddressInt), targetSubnetCidr);
+        }
+
+        /**
+         * Generates a single subnetting question.
+         * @param {number} questionNumber - The sequential number of the question.
+         * @returns {object} A question object with id, question text, options, and correct answer.
+         */
+        function generateSubnettingQuestion(questionNumber) {
+            // Randomly choose an IP class for diversity (prioritize private ranges)
+            const ipClassChoice = Math.random();
+            let ipOctet1, ipOctet2, ipOctet3, ipOctet4;
+            let minPrefix, maxPrefix;
+
+            if (ipClassChoice < 0.33) { // Class A private (10.0.0.0/8)
+                ipOctet1 = 10;
+                ipOctet2 = Math.floor(Math.random() * 256);
+                ipOctet3 = Math.floor(Math.random() * 256);
+                ipOctet4 = Math.floor(Math.random() * 256);
+                minPrefix = 9;
+                maxPrefix = 29;
+            } else if (ipClassChoice < 0.66) { // Class B private (172.16.0.0/12 to 172.31.255.255/12)
+                ipOctet1 = 172;
+                ipOctet2 = Math.floor(Math.random() * 16) + 16; // 172.16 to 172.31
+                ipOctet3 = Math.floor(Math.random() * 256);
+                ipOctet4 = Math.floor(Math.random() * 256);
+                minPrefix = 17;
+                maxPrefix = 29;
+            } else { // Class C private (192.168.0.0/16 to 192.168.255.255/16)
+                ipOctet1 = 192;
+                ipOctet2 = 168;
+                ipOctet3 = Math.floor(Math.random() * 256);
+                ipOctet4 = Math.floor(Math.random() * 256);
+                minPrefix = 25;
+                maxPrefix = 29;
+            }
+
+            const ipAddress = `${ipOctet1}.${ipOctet2}.${ipOctet3}.${ipOctet4}`;
+            const cidrPrefix = Math.floor(Math.random() * (maxPrefix - minPrefix + 1)) + minPrefix;
+
+            // Calculate network, broadcast, and host range
+            const details = calculateSubnetDetails(ipAddress, cidrPrefix);
+
+            // Randomly choose question type
+            const questionTypes = [
+                `¿Cuál es la dirección de red para ${ipAddress}/${cidrPrefix}?`,
+                `¿Cuál es la dirección de broadcast para ${ipAddress}/${cidrPrefix}?`,
+                `¿Cuántos hosts utilizables hay en la red ${ipAddress}/${cidrPrefix}?`,
+                `¿Cuál es la primera dirección IP utilizable en la subred ${ipAddress}/${cidrPrefix}?`,
+                `¿Cuál es la última dirección IP utilizable en la subred ${ipAddress}/${cidrPrefix}?`,
+                `¿Cuál es la máscara de subred en formato decimal punteado para ${ipAddress}/${cidrPrefix}?`
+            ];
+            const chosenQuestionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+
+            let correctAnswerText;
+            let options = [];
+
+            // Determine correct answer and generate options
+            switch (chosenQuestionType) {
+                case questionTypes[0]: // Network Address
+                    correctAnswerText = details.networkAddress;
+                    options = generateOptions(correctAnswerText, details.networkAddress, details.broadcastAddress, details.firstUsableAddress, details.lastUsableAddress, details.usableHosts, details.dottedDecimalSubnetMask, details.cidrPrefix, 'ip');
+                    break;
+                case questionTypes[1]: // Broadcast Address
+                    correctAnswerText = details.broadcastAddress;
+                    options = generateOptions(correctAnswerText, details.networkAddress, details.broadcastAddress, details.firstUsableAddress, details.lastUsableAddress, details.usableHosts, details.dottedDecimalSubnetMask, details.cidrPrefix, 'ip');
+                    break;
+                case questionTypes[2]: // Usable Hosts
+                    correctAnswerText = String(details.usableHosts);
+                    options = generateOptions(correctAnswerText, details.networkAddress, details.broadcastAddress, details.firstUsableAddress, details.lastUsableAddress, details.usableHosts, details.dottedDecimalSubnetMask, details.cidrPrefix, 'number');
+                    break;
+                case questionTypes[3]: // First Usable IP
+                    correctAnswerText = details.firstUsableAddress;
+                    options = generateOptions(correctAnswerText, details.networkAddress, details.broadcastAddress, details.firstUsableAddress, details.lastUsableAddress, details.usableHosts, details.dottedDecimalSubnetMask, details.cidrPrefix, 'ip');
+                    break;
+                case questionTypes[4]: // Last Usable IP
+                    correctAnswerText = details.lastUsableAddress;
+                    options = generateOptions(correctAnswerText, details.networkAddress, details.broadcastAddress, details.firstUsableAddress, details.lastUsableAddress, details.usableHosts, details.dottedDecimalSubnetMask, details.cidrPrefix, 'ip');
+                    break;
+                case questionTypes[5]: // Dotted Decimal Subnet Mask
+                    correctAnswerText = details.dottedDecimalSubnetMask;
+                    options = generateOptions(correctAnswerText, details.networkAddress, details.broadcastAddress, details.firstUsableAddress, details.lastUsableAddress, details.usableHosts, details.dottedDecimalSubnetMask, details.cidrPrefix, 'mask');
+                    break;
+            }
+
+            // Assign letters to options and find the correct one
+            const shuffledOptions = shuffleArray(options);
+            const correctOptionLetter = String.fromCharCode(97 + shuffledOptions.indexOf(correctAnswerText));
+            const finalOptions = shuffledOptions.map((opt, idx) => `${String.fromCharCode(97 + idx)}) ${opt}`);
+
+            return {
+                id: `question-${questionNumber}`,
+                question: `${questionNumber}. ${chosenQuestionType}`,
+                options: finalOptions,
+                correctAnswer: correctOptionLetter
+            };
+        }
+
+        // --- Specific Company Scenario Questions ---
+        const generateCompanySubnettingQuestions = (startQuestionNumber) => {
+            const companyQuestions = [];
+            let currentQNum = startQuestionNumber;
+
+            // Company Scenario 1: Small Office Subnetting (Class C base) - 10 questions
+            // Base Network: 192.168.X.0/24
+            // Requirement: 4 departments, each needs ~60 hosts. -> /26 mask, 62 usable hosts
+            for (let i = 0; i < 5; i++) { // Generate 5 sets of questions (2 questions per set)
+                const baseOctet3 = Math.floor(Math.random() * 256); // Random third octet for variety
+                const baseNetwork = `192.168.${baseOctet3}.0`;
+                const baseCidr = 24;
+                const targetSubnetCidr = 26; // For ~60 hosts (62 usable)
+
+                // Question: Subnet Mask
+                const details1 = calculateSubnetDetails(baseNetwork, targetSubnetCidr);
+                let q1 = {
+                    id: `company-q-${currentQNum}`,
+                    question: `${currentQNum}. Una empresa con la red ${baseNetwork}/${baseCidr} necesita subdividirla para 4 departamentos, cada uno con 60 hosts. ¿Qué máscara de subred debe aplicar?`,
+                    correctAnswer: '',
+                    options: []
+                };
+                let options1 = generateOptions(details1.dottedDecimalSubnetMask, details1.networkAddress, details1.broadcastAddress, details1.firstUsableAddress, details1.lastUsableAddress, details1.usableHosts, details1.dottedDecimalSubnetMask, details1.cidrPrefix, 'mask');
+                let shuffledOptions1 = shuffleArray(options1);
+                q1.correctAnswer = String.fromCharCode(97 + shuffledOptions1.indexOf(details1.dottedDecimalSubnetMask));
+                q1.options = shuffledOptions1.map((opt, idx) => `${String.fromCharCode(97 + idx)}) ${opt}`);
+                companyQuestions.push(q1);
+                currentQNum++;
+
+                // Question: Hosts per subnet
+                let q2 = {
+                    id: `company-q-${currentQNum}`,
+                    question: `${currentQNum}. Para la red ${baseNetwork}/${baseCidr} subdividida en departamentos de 60 hosts, ¿cuántos hosts utilizables hay en cada departamento?`,
+                    correctAnswer: '',
+                    options: []
+                };
+                let options2 = generateOptions(String(details1.usableHosts), details1.networkAddress, details1.broadcastAddress, details1.firstUsableAddress, details1.lastUsableAddress, details1.usableHosts, details1.dottedDecimalSubnetMask, details1.cidrPrefix, 'number');
+                let shuffledOptions2 = shuffleArray(options2);
+                q2.correctAnswer = String.fromCharCode(97 + shuffledOptions2.indexOf(String(details1.usableHosts)));
+                q2.options = shuffledOptions2.map((opt, idx) => `${String.fromCharCode(97 + idx)}) ${opt}`);
+                companyQuestions.push(q2);
+                currentQNum++;
+            }
+
+            // Company Scenario 2: Large Enterprise Subnetting (Class B base) - 10 questions
+            // Base Network: 172.16.X.0/16
+            // Requirement: 8 branches, each needs ~2000 hosts. -> /21 mask, 2046 usable hosts
+            for (let i = 0; i < 5; i++) { // Generate 5 sets of questions (2 questions per set)
+                const baseOctet2 = Math.floor(Math.random() * 16) + 16; // 172.16 to 172.31
+                const baseNetwork = `172.${baseOctet2}.0.0`;
+                const baseCidr = 16;
+                const targetSubnetCidr = 21; // For ~2000 hosts (2046 usable)
+
+                // Question: Network Address of a specific branch (e.g., 5th branch, index 4)
+                const branchIndex1 = Math.floor(Math.random() * 8); // Random branch index (0-7), assuming 8 branches are created
+                const branchNumber1 = branchIndex1 + 1;
+                const specificBranchDetails1 = getSubnetNthDetails(baseNetwork, baseCidr, targetSubnetCidr, branchIndex1);
+                let q3 = {
+                    id: `company-q-${currentQNum}`,
+                    question: `${currentQNum}. Una gran empresa con la red ${baseNetwork}/${baseCidr} planea crear 8 sucursales, cada una con al menos 2000 hosts. ¿Cuál es la dirección de red de la ${branchNumber1}ª sucursal?`,
+                    correctAnswer: '',
+                    options: []
+                };
+                let options3 = generateOptions(specificBranchDetails1.networkAddress, specificBranchDetails1.networkAddress, specificBranchDetails1.broadcastAddress, specificBranchDetails1.firstUsableAddress, specificBranchDetails1.lastUsableAddress, specificBranchDetails1.usableHosts, specificBranchDetails1.dottedDecimalSubnetMask, specificBranchDetails1.cidrPrefix, 'ip');
+                let shuffledOptions3 = shuffleArray(options3);
+                q3.correctAnswer = String.fromCharCode(97 + shuffledOptions3.indexOf(specificBranchDetails1.networkAddress));
+                q3.options = shuffledOptions3.map((opt, idx) => `${String.fromCharCode(97 + idx)}) ${opt}`);
+                companyQuestions.push(q3);
+                currentQNum++;
+
+                // Question: Broadcast Address of a specific branch (e.g., 8th branch, index 7)
+                const branchIndex2 = Math.floor(Math.random() * 8); // Random branch index (0-7)
+                const branchNumber2 = branchIndex2 + 1;
+                const specificBranchDetails2 = getSubnetNthDetails(baseNetwork, baseCidr, targetSubnetCidr, branchIndex2);
+                let q4 = {
+                    id: `company-q-${currentQNum}`,
+                    question: `${currentQNum}. Para la red ${baseNetwork}/${baseCidr} subdividida, ¿cuál es la dirección de broadcast de la ${branchNumber2}ª sucursal?`,
+                    correctAnswer: '',
+                    options: []
+                };
+                let options4 = generateOptions(specificBranchDetails2.broadcastAddress, specificBranchDetails2.networkAddress, specificBranchDetails2.broadcastAddress, specificBranchDetails2.firstUsableAddress, specificBranchDetails2.lastUsableAddress, specificBranchDetails2.usableHosts, specificBranchDetails2.dottedDecimalSubnetMask, specificBranchDetails2.cidrPrefix, 'ip');
+                let shuffledOptions4 = shuffleArray(options4);
+                q4.correctAnswer = String.fromCharCode(97 + shuffledOptions4.indexOf(specificBranchDetails2.broadcastAddress));
+                q4.options = shuffledOptions4.map((opt, idx) => `${String.fromCharCode(97 + idx)}) ${opt}`);
+                companyQuestions.push(q4);
+                currentQNum++;
+            }
+            return companyQuestions;
+        };
+
+        // Declare questions array once and populate it
+        const questions = (() => {
+            const allQuestions = [];
+            // Generate the initial 100 generic questions
+            for (let i = 0; i < 100; i++) {
+                allQuestions.push(generateSubnettingQuestion(i + 1));
+            }
+            // Add the 20 new company scenario questions, starting their numbering from 101
+            const newCompanyQuestions = generateCompanySubnettingQuestions(101);
+            allQuestions.push(...newCompanyQuestions);
+            return allQuestions;
+        })();
+
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores the index of the selected option for each question
+        let answeredCorrectly = 0;
+        let answeredIncorrectly = 0;
+        let unanswered = 0;
+
+        // Get DOM elements
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackElement = document.getElementById('feedback');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const viewResultsButton = document.getElementById('view-results-button');
+        const questionDisplay = document.getElementById('question-display');
+        const quizControls = document.getElementById('quiz-controls');
+        const resultsDisplay = document.getElementById('results-display');
+        const correctCountElement = document.getElementById('correct-count');
+        const incorrectCountElement = document.getElementById('incorrect-count');
+        const unansweredCountElement = document.getElementById('unanswered-count');
+        const restartFromResultsButton = document.getElementById('restart-from-results-button');
+        const messageBox = document.getElementById('message-box');
+        const messageContent = document.getElementById('message-content');
+        const messageBoxOkButton = document.getElementById('message-box-ok');
+        const overlay = document.getElementById('overlay');
+
+
+        /**
+         * Displays a custom message box.
+         * @param {string} message - The message to display.
+         */
+        function showMessageBox(message) {
+            messageContent.textContent = message;
+            messageBox.style.display = 'flex';
+            overlay.style.display = 'block';
+        }
+
+        /**
+         * Hides the custom message box.
+         */
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+            overlay.style.display = 'none';
+        }
+
+        // Event listener for the message box OK button
+        messageBoxOkButton.addEventListener('click', hideMessageBox);
+
+        /**
+         * Loads the quiz state from localStorage.
+         */
+        function loadQuizState() {
+            try {
+                const savedState = localStorage.getItem('subnettingQuizState');
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    currentQuestionIndex = state.currentQuestionIndex;
+                    userAnswers = state.userAnswers;
+                    // Ensure userAnswers array matches the current number of questions
+                    if (userAnswers.length !== questions.length) {
+                        userAnswers = Array(questions.length).fill(undefined);
+                        showMessageBox("El número de preguntas ha cambiado. Tu progreso anterior se ha reiniciado.");
+                    }
+                } else {
+                    userAnswers = Array(questions.length).fill(undefined);
+                }
+            } catch (e) {
+                console.error("Error loading quiz state from localStorage:", e);
+                showMessageBox("Error al cargar el progreso del test. Se iniciará desde el principio.");
+                resetQuiz(); // Reset if loading fails
+            }
+        }
+
+        /**
+         * Saves the quiz state to localStorage.
+         */
+        function saveQuizState() {
+            try {
+                const state = {
+                    currentQuestionIndex: currentQuestionIndex,
+                    userAnswers: userAnswers
+                };
+                localStorage.setItem('subnettingQuizState', JSON.stringify(state));
+            } catch (e) {
+                console.error("Error saving quiz state to localStorage:", e);
+                showMessageBox("Error al guardar el progreso del test.");
+            }
+        }
+
+        /**
+         * Displays the current question and its options.
+         */
+        function displayQuestion() {
+            // Hide results display if visible
+            resultsDisplay.style.display = 'none';
+            questionDisplay.style.display = 'block';
+            quizControls.style.display = 'block';
+            viewResultsButton.style.display = 'none';
+
+            const questionData = questions[currentQuestionIndex];
+            // Replace newline characters with <br> for HTML rendering
+            questionTextElement.innerHTML = questionData.question.replace(/\n/g, '<br>');
+            optionsContainer.innerHTML = '';
+            feedbackElement.textContent = ''; // Clear previous feedback
+
+            questionData.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option-button', 'rounded-lg');
+                button.textContent = option;
+                button.dataset.index = String.fromCharCode(97 + index); // 'a', 'b', 'c', 'd'
+                button.addEventListener('click', () => selectAnswer(button, questionData.correctAnswer));
+                optionsContainer.appendChild(button);
+
+                // If an answer was previously selected for this question, mark it
+                if (userAnswers[currentQuestionIndex] === button.dataset.index) {
+                    button.classList.add('selected');
+                    // Also show correct/incorrect feedback if already answered
+                    if (button.dataset.index === questionData.correctAnswer) {
+                        button.classList.add('correct');
+                        feedbackElement.textContent = '¡Correcto!';
+                        feedbackElement.classList.remove('incorrect');
+                        feedbackElement.classList.add('correct');
+                    } else {
+                        button.classList.add('incorrect');
+                        feedbackElement.textContent = 'Incorrecto. La respuesta correcta es ' + questionData.correctAnswer.toUpperCase() + '.';
+                        feedbackElement.classList.remove('correct');
+                        feedbackElement.classList.add('incorrect');
+                    }
+                    // Disable all options once an answer is loaded
+                    disableOptions();
+                }
+            });
+
+            updateNavigationButtons();
+        }
+
+        /**
+         * Handles the selection of an answer.
+         * @param {HTMLElement} selectedButton - The button element that was clicked.
+         * @param {string} correctAnswer - The correct answer for the current question.
+         */
+        function selectAnswer(selectedButton, correctAnswer) {
+            // Prevent re-answering if already answered
+            if (userAnswers[currentQuestionIndex]) {
+                return;
+            }
+
+            const selectedOption = selectedButton.dataset.index;
+            userAnswers[currentQuestionIndex] = selectedOption; // Save the user's answer
+            saveQuizState(); // Save state immediately after answering
+
+            disableOptions(); // Disable all options after selection
+
+            // Provide visual feedback
+            if (selectedOption === correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackElement.textContent = '¡Correcto!';
+                feedbackElement.classList.remove('incorrect');
+                feedbackElement.classList.add('correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackElement.textContent = 'Incorrecto. La respuesta correcta es ' + correctAnswer.toUpperCase() + '.';
+                feedbackElement.classList.remove('correct');
+                feedbackElement.classList.add('incorrect');
+
+                // Highlight the correct answer if the user was wrong
+                Array.from(optionsContainer.children).forEach(button => {
+                    if (button.dataset.index === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            updateNavigationButtons(); // Update buttons after answering (e.g., enable "View Results")
+        }
+
+        /**
+         * Disables all option buttons for the current question.
+         */
+        function disableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.removeEventListener('click', () => {}); // Remove listener to prevent re-clicks
+                button.style.pointerEvents = 'none'; // Visually disable
+            });
+        }
+
+        /**
+         * Enables all option buttons for the current question.
+         */
+        function enableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.addEventListener('click', () => selectAnswer(button, questions[currentQuestionIndex].correctAnswer));
+                button.style.pointerEvents = 'auto';
+            });
+        }
+
+        /**
+         * Updates the state of navigation buttons (Previous, Next, View Results).
+         */
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1 && !userAnswers[currentQuestionIndex]; // Disable next if last question and not answered
+            
+            // Show "View Results" button if on the last question and it's answered
+            if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex]) {
+                viewResultsButton.style.display = 'inline-block';
+                nextButton.style.display = 'none'; // Hide next button
+            } else {
+                viewResultsButton.style.display = 'none';
+                nextButton.style.display = 'inline-block'; // Show next button
+            }
+        }
+
+        /**
+         * Moves to the previous question.
+         */
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        });
+
+        /**
+         * Moves to the next question.
+         */
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex]) {
+                // If on the last question and answered, show results
+                showResults();
+            }
+        });
+
+        /**
+         * Resets the quiz state and clears localStorage.
+         */
+        function resetQuiz() {
+            showMessageBox("¿Estás seguro de que quieres reiniciar el test? Se borrará todo tu progreso.");
+            document.getElementById('message-box-ok').onclick = () => {
+                hideMessageBox();
+                currentQuestionIndex = 0;
+                userAnswers = Array(questions.length).fill(undefined); // Reset all answers
+                localStorage.removeItem('subnettingQuizState');
+                displayQuestion();
+                resultsDisplay.style.display = 'none';
+                questionDisplay.style.display = 'block';
+                quizControls.style.display = 'block';
+                viewResultsButton.style.display = 'none';
+                nextButton.style.display = 'inline-block';
+            };
+        }
+        resetButton.addEventListener('click', resetQuiz);
+        restartFromResultsButton.addEventListener('click', resetQuiz);
+
+
+        /**
+         * Calculates and displays the quiz results.
+         */
+        function showResults() {
+            answeredCorrectly = 0;
+            answeredIncorrectly = 0;
+            unanswered = 0;
+
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === undefined) {
+                    unanswered++;
+                } else if (userAnswer === question.correctAnswer) {
+                    answeredCorrectly++;
+                } else {
+                    answeredIncorrectly++;
+                }
+            });
+
+            correctCountElement.textContent = answeredCorrectly;
+            incorrectCountElement.textContent = answeredIncorrectly;
+            unansweredCountElement.textContent = unanswered;
+
+            questionDisplay.style.display = 'none';
+            quizControls.style.display = 'none';
+            resultsDisplay.style.display = 'block';
+        }
+
+        viewResultsButton.addEventListener('click', showResults);
+
+        // Initialize quiz on page load
+        window.onload = () => {
+            loadQuizState();
+            displayQuestion();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEMA 9</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the quiz */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .quiz-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .option {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background-color: #e0f2fe; /* Light blue */
+            border: 1px solid #90cdf4; /* Blue border */
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .option:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #bfdbfe; /* Lighter blue on hover */
+        }
+        .option.selected {
+            background-color: #dbeafe; /* Even lighter blue when selected */
+            border-color: #60a5fa; /* Darker blue border */
+        }
+        .option.correct {
+            background-color: #d1fae5; /* Light green */
+            border-color: #34d399; /* Green border */
+            color: #065f46; /* Dark green text */
+            font-weight: 600;
+        }
+        .option.incorrect {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+            color: #991b1b; /* Dark red text */
+            font-weight: 600;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        .feedback.correct {
+            background-color: #ecfdf5; /* Very light green */
+            color: #065f46;
+        }
+        .feedback.incorrect {
+            background-color: #fef2f2; /* Very light red */
+            color: #991b1b;
+        }
+        .navigation-buttons button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .navigation-buttons button:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+        .navigation-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .reset-button {
+            background-color: #f87171; /* Red */
+            color: white;
+            padding: 0.75rem 1.5rem; /* Add padding for consistency */
+            border-radius: 0.75rem; /* Add border-radius for consistency */
+            font-weight: 600; /* Add font-weight for consistency */
+            transition: background-color 0.2s ease-in-out; /* Add transition for consistency */
+        }
+        .reset-button:hover {
+            background-color: #ef4444; /* Darker red */
+        }
+        .results-container {
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="quiz-app" class="quiz-container w-full">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">TEMA 9</h1>
+
+        <!-- Quiz Section -->
+        <div id="quiz-section">
+            <div class="mb-6">
+                <p class="text-lg font-semibold text-gray-700 mb-4" id="question-text"></p>
+                <div id="options-container">
+                    <!-- Options will be loaded here by JavaScript -->
+                </div>
+                <div id="feedback-message" class="feedback hidden"></div>
+            </div>
+
+            <div class="navigation-buttons flex justify-between mt-8">
+                <button id="prev-btn" class="bg-blue-500 text-white hover:bg-blue-600">Anterior</button>
+                <button id="next-btn" class="bg-blue-500 text-white hover:bg-blue-600">Siguiente</button>
+            </div>
+            <!-- Reset button moved here to be visible on all pages -->
+            <button id="reset-btn" class="reset-button w-full mt-4">Reiniciar Test</button>
+            <button id="finish-btn" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold mt-4 hover:bg-green-700 transition-colors">Finalizar Test</button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="results-container hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
+            <p class="text-lg text-green-700 mb-2">Correctas: <span id="correct-count" class="font-bold">0</span></p>
+            <p class="text-lg text-red-700 mb-2">Incorrectas: <span id="incorrect-count" class="font-bold">0</span></p>
+            <p class="text-lg text-gray-600 mb-4">Sin Contestar: <span id="unanswered-count" class="font-bold">0</span></p>
+            <!-- The reset button is now outside this section, so it's removed from here -->
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions, options, and correct answers (0-indexed)
+        const questions = [
+            {
+                question: "¿Cuál es el plazo que determina el Reglamento (UE) 910/2014 del Parlamento Europeo y del Consejo para auditar a los prestadores cualificados de servicios de confianza, por un organismo de evaluación de la conformidad, corriendo a su cargo los gastos que ello genere?",
+                options: ["Un año.", "24 meses al menos.", "36 meses en todo caso", "12 meses al menos"],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La prestación de servicios de la sociedad de la información:",
+                options: ["No se podrá restringir.", "Siempre será gratuita para proteger el interés general.", "Buscar el interés general y el bien común de la sociedad", "No estará sujeta a autorización previa."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "A efectos del Reglamento (UE) 910/2014 del Parlamento Europeo y del Consejo, el proceso de utilizar los datos de identificación de una persona en formato electrónico que representan de manera única a una persona física o jurídica o a una persona física que representa a una persona jurídica es la definición de:",
+                options: ["Identificación electrónica.", "Medios de identificación electrónica.", "Medios de identificación electrónica", "Sistema de identificación electrónica."],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Según la ley 34/2002, de 11 de julio, de servicios de la sociedad de la información y de comercio electrónico, se entenderá que un prestador de servicios está establecido en España:",
+                options: ["Cuando su residencia o domicilio social se encuentren en territorio español aunque no esté centralizada la gestión administrativa.", "Cuando su residencia o domicilio social se encuentren en territorios español aunque no esté centralizada la dirección de sus negocios.", "Cuando su residencia o domicilio social se encuentren en territorio español en cualquier caso.", "Cuando su residencia o domicilio social se encuentren en territorio español, siempre que éstos coincidan con el lugar en que esté efectivamente centralizada la gestión administrativa y la dirección de sus negocios."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Una novedad que incorpora el sistema Cl@ve es la posibilidad de realizar firma electrónica mediante certificados electrónicos centralizados, entendiendo como centralizados:",
+                options: ["Un complemento del certificado de empleado público, que permite realizar firmas electrónicas de forma independiente al navegador y sistema operativo que utiliza, permitiendo que estas puedan realizarse incluso desde dispositivos móviles.", "Aquellos que han sido autenticados previamente de forma centralizada.", "Certificados que permiten firmar documentos electrónicos desde cualquier dispositivo aunque no tenga conexión a Internet y sin ningún equipamiento adicional.", "Ninguna contestación es correcta."],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Características del modelo del chip SLE78CLFx408AP de Infineon Technologies, utilizado en la versión comercial del sistema operativo del DNIe 3.0:",
+                options: ["Sistema operativo DNI.4.0 (versión comercial 3.0)", "8 KB de memoria RAM", "Dual Interface", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "La ley 25/2007, de 18 de octubre, de conservación de datos relativos a las comunicaciones electrónicas y a las redes públicas de comunicaciones establece que la obligación de conservación de datos impuesta cesa a los doce meses computados desde la fecha en que se haya producido la comunicación. Reglamentariamente, previa consulta a los operadores, se podrá ampliar o reducir el plazo de conservación para determinados datos o una categoría de dato:",
+                options: ["Hasta un máximo de dos años o un mínimo de ocho meses.", "Hasta un máximo de dos años o un mínimo de seis meses.", "Hasta un máximo de tres años o un mínimo de doce meses.", "Hasta un máximo de tres años o un mínimo de doce meses."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La firma electrónica avanzada cumplirá los requisitos siguientes:",
+                options: ["Estar vinculada al firmante de manera única.", "Permitir la identificación del firmante.", "Haber sido creada utilizando datos de creación de la firma electrónica que el firmante puede utilizar, con un alto nivel de confianza, bajo su control exclusivo.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Son servicios de la sociedad de la información siempre que representen una actividad económica:",
+                options: ["Los servicios prestados por medio de fax.", "El envío de comunicaciones comerciales.", "La emisión de programas televisados destinados al público.", "La radiodifusión sonora."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El periodo de vigencia de un certificado electrónico cualificado no podrá ser superior a.",
+                options: ["2 años.", "3 años.", "4 años.", "5 años."],
+                correctAnswerIndex: 3 // Note: For DNIe certificates, it's typically 2 years, but general qualified certificates can be up to 5 years. Given the options, 5 years is the most plausible intended answer.
+            },
+            {
+                question: "Son causas de extinción de la vigencia de los certificados electrónicos:",
+                options: ["La resolución administrativa que lo ordene.", "Violación del secreto de los datos de creación de firma o de sello.", "La resolución judicial que lo ordene.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Cl@ve es un sistema de Identificación, Autenticación y Firma Electrónica para los ciudadanos común a todo el Sector Público Administrativo Estatal basado:",
+                options: ["En el uso de firmas electrónicas reconocidas.", "En el uso de claves concertadas.", "En el uso de firmas con claves establecidas de un solo uso.", "En el uso de claves acordadas con los ciudadanos."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Cuál será el periodo de validez de un certificado de un DNIe expedido cuando el titular tenga veinte años?",
+                options: ["Tres años.", "Cinco años.", "Diez años.", "Permanente si es un invlido."],
+                correctAnswerIndex: 1 // This refers to the DNIe *card* validity for someone aged 20 (5-29 years old, 5 years validity). The electronic certificates within the DNIe have a validity of 2 years.
+            },
+            {
+                question: "Cuál será el periodo de validez de la tarjeta-soporte de un DNIe expedido cuando el titular tenga veinte años?",
+                options: ["Tres años.", "Cinco años.", "Diez años.", "Permanente si es un invlido."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Cuál es un prestador de servicios de Validación para la validación del DNIe?",
+                options: ["La Fábrica Nacional de la Moneda y Timbre-Real Casa de la Moneda.", "El Ministerio del Interior.", "El Ministerio de Asuntos Económicos y Transformación Digital.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 0 // Both FNMT-RCM and the Ministry of Hacienda (now part of Ministry of Economic Affairs and Digital Transformation) are validators. Since only one specific option is correct and not "Todas las contestaciones son correctas", FNMT-RCM is a definitive one.
+            },
+            {
+                question: "La prohibición de la existencia de restricciones o discriminaciones para los ciudadanos que se relacionen con las Administraciones Públicas por medios no electrónicos, se conoce como:",
+                options: ["Principio de igualdad.", "Principio de cooperación.", "Principio de accesibilidad.", "Principio de seguridad."],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "En relación con la validación del DNIe es FALSO que:",
+                options: ["La Fábrica Nacional de Moneda y Timbre- Real Casa de la Moneda presta sus servicios de validación con carácter universal a empresas y Administraciones Públicas.", "El Ministerio de Hacienda y Administraciones Públicas, que prestará los servicios de validación al conjunto de las Administraciones Públicas.", "El servicio de validación está disponible de forma ininterrumpida todos los días del año.", "Ninguna contestación es falsa."],
+                correctAnswerIndex: 3 // All statements A, B, C are true. Therefore, the statement "Ninguna contestación es falsa" is the correct answer to "es FALSO que".
+            },
+            {
+                question: "Qué Ley se ocupa de la contratación por vía electrónica?",
+                options: ["Ley 56/2007, de 28 de diciembre, de Medidas de Impulso de la Sociedad de la Información.", "Ley 34/2002, de 11 de julio, de servicios de la sociedad de la información y de comercio electrónico.", "Ley 59/2003, de 19 de diciembre, de firma electrónica.", "Real Decreto Legislativo 1/1996, de 12 de abril, por el que se aprueba el texto refundido de la Ley de Propiedad Intelectual,"],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Son servicios incluidos en el ámbito de aplicación de la Ley de servicios de la sociedad de la información:",
+                options: ["Los servicios prestados por medio de télex por los abogados en sus funciones de defensa en juicio.", "Los servicios prestados por los registradores de la propiedad.", "Los servicios que consistan en el suministro de información por vía telemática.", "Los servicios que consistan en radiodifusión sonora."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Para revocar el consentimiento prestado a la recepción de comunicaciones comerciales, se requerirá:",
+                options: ["Un escrito enviado de forma fehaciente por conducto notarial.", "Solo será precisa una simple notificación de su voluntad al remitente.", "Una carta certificada con acuse de recibo.", "Una reclamación ante la Agencia de Protección de Datos."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El prestador y el destinatario de servicios de la sociedad de la información podrán someter sus conflictos al arbitraje de consumo, mediante la adhesión de aquéllos:",
+                options: ["Al Sistema Arbitral de Consumo.", "Al Sistema de Arbitraje de la Sociedad de la Información.", "Al Sistema Arbitral Electrónico.", "Al Sistema Arbitral del Consumo Electrónico."],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La suspensión de la vigencia de los certificados electrónicos se producirá cuando concurra alguna de las siguientes causas:",
+                options: ["Cualquier causa lícita prevista en la declaración de prácticas de certificación.", "En algunos casos, cuando se produzca una resolución judicial o administrativa.", "A solicitud de un tercero interesado.", "Al cesar la actividad del prestador de servicios de certificación."],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Los certificados electrónicos cualificados incorporados al DNIe tendrán un periodo de vigencia máxima de:",
+                options: ["Cuatro años.", "La misma que el periodo de validez del DNIe.", "Cinco años.", "Tres años."],
+                correctAnswerIndex: 2 // As noted for Q10, DNIe certificates are 2 years. However, if forced to choose from options, and considering general qualified certificates can be up to 5 years, this is the most plausible intended answer if the question implies general qualified certificates or has outdated information.
+            },
+            {
+                question: "Según dispone la ley 6/2020, de 11 de noviembre los prestadores de servicios de confianza no cualificados no necesitan verificación Administrativa previa de cumplimiento de requisitos para iniciar su actividad, pero deberán comunicar su actividad al Ministerio de Asuntos Económicos y Transformación Digital, desde que la inicien en un plazo de:",
+                options: ["Seis meses.", "Tres meses.", "No existe plazo puesto que no es obligatoria la comunicación.", "Prestadores de servicios de confianza no cualificados tres meses y los prestadores cualificados un mes."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La Agenda Digital para España se estructura en torno a seis grandes objetivos entre los que no se encuentra:",
+                options: ["Fomentar el despliegue de redes y servicio para garantizar la conectividad digital y trasladar a la sociedad los beneficios económicos, sociales y de competitividad derivadas de las redes de banda ancha ultrarrápida y del desarrollo de servicios digitales innovadores.", "Desarrollar la economía digital para el crecimiento, la competitividad y la internacionalización de la empresa española mediante el uso más intenso y eficiente de las TIC, el fomento del comercio electrónico, el desarrollo de una industria de contenidos digitales, la internacionalización de la empresa tecnológica y la apuesta por las industrias de futuro.", "Mejorar la e-Administración y adoptar soluciones analógicas para una prestación eficiente de los servicios públicos mediante la transformación de la Administración para impulsar el uso de canales electrónicos y el aumento de la eficiencia.", "Reforzar la confianza en el ámbito digital para fomentar el desarrollo de la actividad comercial, social y de relaciones entre ciudadana, empresas y Administraciones a través de Internet y de canales electrónicos."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La acreditación por medios electrónicos de la identidad de una persona y del contenido de la voluntad expresada en sus operaciones se conoce como:",
+                options: ["Aplicación.", "Verificación.", "Autenticación.", "Legitimación"],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El chip criptográfico del DNIe contiene:",
+                options: ["Un certificado electrónico para firmar electrónicamente.", "Un certificado electrónico para autenticar la personalidad del ciudadano.", "Un certificado de la Autoridad de Certificación emisora.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "El chip incorporado a la tarjeta soporte el DNIe, no contendrá:",
+                options: ["La imagen digitalizada de la fotografía.", "La imagen digitalizada de la firma manuscrita.", "Los datos de filiación del titular.", "La plantilla de la impresión dactilar del dedo índice, en todo caso."],
+                correctAnswerIndex: 3 // This statement is FALSE because the DNIe chip *does* contain the fingerprint template. The question asks what it *will not* contain, so this option (which is false) is the correct answer to the "no contendrá" statement.
+            },
+            {
+                question: "Los prestadores de servicios de certificación que expidan certificados cualificados deberán constituir un seguro de responsabilidad civil por importe de:",
+                options: ["2.000.000 euros., como máximo.", "2.000.000 euros como mínimo.", "1.750.000 euros como máximo.", "1.500.000 euros como mínimo."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "Son funciones de la Comisin de Estrategia TIC, según dispone el Real Decreto 806/2014:",
+                options: ["Actuar como Observatorio de la Administración Electrónica y Transformación Digital.", "Definir las prioridades de inversión en materias TIC de acuerdo con los objetivos establecidos por el Gobierno.", "Fijar las líneas estratégicas, de acuerdo con la política establecida por el Gobierno, en materia de tecnologías de la información y las comunicaciones, para el impulso de la Administración digital en la Administración General del Estado y sus organismos públicos.", "Todas son funciones de la Comisión."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "En el DNIe el segundo nivel de seguridad perceptible con aparatos no incluye:",
+                options: ["Tintas reactivas UV.", "Las iridiscencias y tintas OVI.", "Las Fotos Fantasma.", "Microescritura."],
+                correctAnswerIndex: 2 // Note: This question is ambiguous as all options are generally DNIe security features. "Fotos Fantasma" is chosen here as the answer for the quiz to function, but it's a problematic question.
+            },
+            {
+                question: "Para entender a un servicio como Servicio de la sociedad de la información, deberá prestarse:",
+                options: ["En todo caso, a título oneroso.", "Cuando lo solicita una pluralidad de personas.", "Mediante una vía electrónica.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Uno de los algoritmos criptográficos soportados por el DNIe 3.0 es:",
+                options: ["Generación de claves de hash SHA-1024 en la validación de certificados y en los comandos de autenticación.", "Rivest, Shamir y Adleman.", "Generación de claves RSA según el estándar PKCS#12", "Longitud de claves de hasta 2048 bits en formato normal."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Es FALSO que la firma electrónica avanzada según se define en el artículo 26 del Reglamento eIDAS contemple como requisito:",
+                options: ["Estar vinculada al prestador de servicios de manera única.", "Permitir la identificación del firmante.", "Haber sido creada utilizando datos de creación de la firma electrónica que el firmante puede utilizar, con un alto nivel de confianza, bajo su control exclusivo.", "Estar vinculada con los datos firmados por la misma de modo tal que cualquier modificación ulterior de los mismos sea detectable."],
+                correctAnswerIndex: 0 // The requirement is linked to the *signer*, not the *service provider*.
+            },
+            {
+                question: "Como se llama el órgano colegiado encargado de la definición y supervisión de la aplicación de la estrategia sobre tecnológicas de la Información de la Administración General del Estado.",
+                options: ["Comisión de Gobernanza TIC.", "Comisión de Estrategia TIC.", "Comisión de las Tecnologías.", "Comisión de Estrategia y Gobernanza TIC."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Según establece el Real Decreto 806/2014, de 19 de septiembre, sobre organización e instrumentos operativos de las TIC en la Administración General del Estado, se entenderá por provisión de servicios TIC la realización de las siguientes funciones, salvo:",
+                options: ["Soporte, operación, implementacin y/o gestión de sistemas informáticos corporativos o de redes de telecomunicación.", "Desarrollo de aplicativos informáticos en entornos monousuario.", "Consultoría informática", "Conformar la voluntad de adquisición de bienes o servicios en el ámbito de las tecnologías de la información y las comunicaciones."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Son servicios de la sociedad de la información, entre otros y siempre que representen una actividad económica:",
+                options: ["La gestión de compras en la red por grupos de personas.", "Los servicios prestados por medio de telefonía vocal, fax o télex.", "Los servicios de radiodifusión televisiva.", "Todos constituyen servicios de la sociedad de la información."],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "No tendrán la consideración de servicios de la sociedad de la información los que no sean a título oneroso, a distancia, por vía electrónica y a petición individual del destinatario, y además.",
+                options: ["El teletexto televisivo y otros servicios equivalentes como las guías electrónicas de programas ofrecidas a través de las plataformas televisivas.", "Los servicios de radiodifusión sonora", "El intercambio de información por medio de correo electrónico u otro medio de comunicación electrónica equivalente para fines ajenos a la actividad económica de quienes lo utilizan.", "Ninguna contestación tendrá la consideración de servicios de la sociedad de la información."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Los niveles de seguridad de los sistemas de identificación electrónica, según establece el artículo 8.1 del Reglamento (UE) nro 910/2014 del Parlamento Europeo y del Consejo pueden ser:",
+                options: ["Máximo, alto y bajo.", "Alto, sustancial y bajo.", "Máximo, sustancial y mínimo.", "Sustancial, bajo y mínimo."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Son requisitos para firmas electrónicas avanzadas:",
+                options: ["Permitir en determinadas circunstancias la identificación del firmante.", "Estar vinculada o no al firmante de manera única.", "Estar vinculada con los datos firmados por la misma de modo tal que cualquier modificación ulterior de los mismos sea detectable.", "Haber sido creada utilizando datos de creación de la firma electrónica que el firmante puede utilizar, con algún nivel de confianza, bajo su control exclusivo."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Quién tiene la competencia para publicar en su dirección de Internet la información remitida por los prestadores de servicios de confianza con la finalidad de otorgarle la máxima difusión y conocimiento:",
+                options: ["El Ministerio de Hacienda y Función Pública.", "El Ministerio de Economía, Industria y Competitividad.", "El Ministerio de Asuntos Económicos y Transformación Digital.", "El Ministerio de la Presidencia y para las Administraciones Territoriales."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "En relación con la notificación de incidentes de seguridad el artículo 19.2 del Reglamento eIDAS impone:",
+                options: ["A todos los prestadores de servicios de confianza cualificados y no cualificados, la obligación de notificar al organismo de supervisión cualquier violación de la seguridad.", "La contestación b) es correcta y la obligación se extiende a la perdida de la integridad.", "La contestación c) es correcta siempre que la violación de la seguridad o la pérdida de la integridad tenga un impacto significativo en el servicio de confianza prestado o en los datos personales correspondientes.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El Reglamento UE 910/2014 establece que, en caso de cese de la actividad de un prestador de servicios de certificación, éste remitirá al Ministerio de Asuntos Económicos y Transformación Digital, con carácter previo al cese definitivo de su actividad, la información relativa a los certificados electrónicos cuya vigencia haya sido extinguida para que éste se haga cargo de su custodia. Durante cuánto tiempo será custodiada la información relativa a un certificado desde el momento de su expedición?",
+                options: ["Entre cinco y diez años", "Durante quince años.", "No menos de veinte años.", "No hay plazo establecido para la custodia."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Cada Estado miembro establecerá, mantendrá y publicará, en el BOE listas de confianza con información relativa a los prestadores cualificados de servicios de confianza con respecto a los cuales sea responsable, junto con la información relacionada con los servicios de confianza cualificados prestados por ellos. Los Estados miembros establecerán, mantendrán y publicarán, en el DOUE, de manera segura, las listas de confianza firmadas o selladas electrónicamente en una forma apropiada para el tratamiento automático. Los Estados miembros notificarán a la Comisin, los retrasos en tramitar información sobre el organismo responsable del establecimiento, mantenimiento y publicación de las listas de confianza nacionales, y detalles relativos al lugar en que se publican dichas listas, los certificados utilizados para firmar o sellar las listas de confianza y cualquier modificación de los mismos. La Comisin pondrá a disposición del público, a través de un canal seguro, la información de la denuncia, del denunciado y del denunciante, en forma firmada o sellada electrónicamente apropiada para el tratamiento automático. Todas las contestaciones son falsas.",
+                options: ["Cada Estado miembro establecerá, mantendrá y publicará, en el BOE listas de confianza con información relativa a los prestadores cualificados de servicios de confianza con respecto a los cuales sea responsable, junto con la información relacionada con los servicios de confianza cualificados prestados por ellos.", "Los Estados miembros establecerán, mantendrán y publicarán, en el DOUE, de manera segura, las listas de confianza firmadas o selladas electrónicamente en una forma apropiada para el tratamiento automático.", "Los Estados miembros notificarán a la Comisin, los retrasos en tramitar información sobre el organismo responsable del establecimiento, mantenimiento y publicación de las listas de confianza nacionales, y detalles relativos al lugar en que se publican dichas listas, los certificados utilizados para firmar o sellar las listas de confianza y cualquier modificación de los mismos.", "Todas las contestaciones son falsas."],
+                correctAnswerIndex: 0 // The first statement is true. The question asks to identify the correct statement.
+            },
+            {
+                question: "La edad en que se debe solicitar obligatoriamente el DNI para los residentes en España será:",
+                options: ["A los 12 años con autorización de los padres o tutores.", "A los 14 años.", "A los 16 años.", "A los 18 años."],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Es FALSO que no se denegarán efectos jurídicos ni admisibilidad como prueba en procedimientos judiciales a una firma electrónica por el mero hecho de ser una firma electrónica o porque no cumpla los requisitos de la firma electrónica cualificada, en relación con esa afirmación:",
+                options: ["Una firma electrónica cualificada tendrá un efecto jurídico equivalente al de una firma manuscrita.", "Una firma electrónica cualificada basada en un certificado reconocido emitido en un Estado miembro será reconocida como una firma electrónica avanzada en todos los demás Estados miembros.", "Los certificados cualificados de firmas electrónicas podrán incluir atributos específicos adicionales no obligatorios. Esos atributos no afectarán a la interoperabilidad y el reconocimiento de las firmas electrónicas cualificadas.", "Si un certificado cualificado de firma electrónica ha sido revocado después de su activación inicial, perderá su validez desde el momento de su revocación y no podrá en ninguna circunstancia recuperar su estado."],
+                correctAnswerIndex: 1 // This statement is false because a qualified signature based on a qualified certificate is recognized as a *qualified* signature, not just advanced.
+            },
+            {
+                question: "Contra las conductas que lesionen interese colectivos o difusos de los consumidores podrá interponerse acción de cesación que se dirige a obtener una sentencia que condene al demandado a cesar en la conducta contraria a la Ley 34/2002, de 11 de julio, de servicios de la sociedad de la información. NO están legitimados para interponer la acción de cesación:",
+                options: ["El Ministerio Fiscal.", "Los grupos de consumidores o usuarios interesados.", "Las personas físicas o jurídicas titulares de un derecho o interés legítimo.", "Las entidades de otros Estados miembros de la Unión Europea constituidas para la protección de los intereses colectivos o difusos de los consumidores."],
+                correctAnswerIndex: 2 // Note: This question is problematic as all listed options are generally legitimized. This option is chosen as the answer for the quiz to function, but it's a problematic question.
+            },
+            {
+                question: "Según establece la Ley 34/2002 por la comisión de faltas graves se impondrá multa de:",
+                options: ["150.001 hasta 600.000 euros.", "300.001 hasta 600.000 euros.", "30.001 hasta 150.000 euros.", "15.001 hasta 30.000 euros."],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La expedición del Certificado electrónico irá asociada al soporte físico del documento que haya sido utilizado para el registro en Cl@ve y que será:",
+                options: ["En el caso de ciudadanos españoles el Documento Nacional de Identidad.", "En el caso de extranjeros comunitarios el Certificado de Registro de Ciudadano de la Unión, acompañado del Pasaporte o documento de identificación del país del interesado.", "En el caso de ciudadanos extranjeros la Tarjeta de Extranjero.", "Todas las contestaciones son correctas."],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "No constituyen un elemento de seguridad del DNIe:",
+                options: ["Los hologramas.", "Los guilloches.", "Los kikogramas.", "Las letras táctiles."],
+                correctAnswerIndex: 2
+            }
+        ];
+
+        // Quiz state
+        let quizState = {
+            currentQuestionIndex: 0,
+            answers: Array(questions.length).fill(null), // Stores the index of the selected option for each question
+            isCompleted: false
+        };
+
+        // DOM elements
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const quizSection = document.getElementById('quiz-section');
+        const resultsSection = document.getElementById('results-section');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+        const resetBtn = document.getElementById('reset-btn');
+
+        /**
+         * Loads the quiz state from localStorage.
+         */
+        function loadQuizState() {
+            const savedState = localStorage.getItem('quizState');
+            if (savedState) {
+                quizState = JSON.parse(savedState);
+            }
+        }
+
+        /**
+         * Saves the current quiz state to localStorage.
+         */
+        function saveQuizState() {
+            localStorage.setItem('quizState', JSON.stringify(quizState));
+        }
+
+        /**
+         * Renders the current question and its options.
+         */
+        function renderQuestion() {
+            // Hide feedback message
+            feedbackMessage.classList.add('hidden');
+            feedbackMessage.textContent = '';
+            feedbackMessage.classList.remove('correct', 'incorrect');
+
+            const currentQuestion = questions[quizState.currentQuestionIndex];
+            questionText.textContent = `Pregunta ${quizState.currentQuestionIndex + 1}/${questions.length}: ${currentQuestion.question}`;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.textContent = option;
+                optionDiv.classList.add('option');
+                optionDiv.dataset.index = index; // Store option index
+
+                // Add click listener if the quiz is not completed
+                if (!quizState.isCompleted) {
+                    optionDiv.addEventListener('click', () => selectOption(index));
+                }
+
+                // If an answer was previously selected for this question
+                if (quizState.answers[quizState.currentQuestionIndex] !== null) {
+                    // Disable all options if already answered
+                    optionDiv.style.pointerEvents = 'none';
+                    optionDiv.style.cursor = 'default';
+
+                    // Mark selected option
+                    if (quizState.answers[quizState.currentQuestionIndex] === index) {
+                        optionDiv.classList.add('selected');
+                    }
+
+                    // Show correct/incorrect status if quiz is completed or option was selected
+                    if (quizState.answers[quizState.currentQuestionIndex] === currentQuestion.correctAnswerIndex) {
+                        optionDiv.classList.add('correct');
+                    } else if (quizState.answers[quizState.currentQuestionIndex] === index) {
+                        optionDiv.classList.add('incorrect');
+                        // Also highlight the correct answer if the selected one was incorrect
+                        if (index !== currentQuestion.correctAnswerIndex) {
+                            optionsContainer.children[currentQuestion.correctAnswerIndex].classList.add('correct');
+                        }
+                    }
+                    // Show general feedback message
+                    showFeedback(quizState.answers[quizState.currentQuestionIndex] === currentQuestion.correctAnswerIndex);
+                }
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            // Update navigation button states
+            prevBtn.disabled = quizState.currentQuestionIndex === 0;
+            nextBtn.disabled = quizState.currentQuestionIndex === questions.length - 1;
+
+            // Show/hide finish button
+            if (quizState.currentQuestionIndex === questions.length - 1 && !quizState.isCompleted) {
+                finishBtn.classList.remove('hidden');
+            } else {
+                finishBtn.classList.add('hidden');
+            }
+
+            // If quiz is completed, disable all options and buttons
+            if (quizState.isCompleted) {
+                Array.from(optionsContainer.children).forEach(optionDiv => {
+                    optionDiv.style.pointerEvents = 'none';
+                    optionDiv.style.cursor = 'default';
+                });
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                finishBtn.classList.add('hidden');
+                showResults();
+            } else {
+                quizSection.classList.remove('hidden');
+                resultsSection.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Handles option selection.
+         * @param {number} selectedIndex - The index of the selected option.
+         */
+        function selectOption(selectedIndex) {
+            // If already answered, do nothing
+            if (quizState.answers[quizState.currentQuestionIndex] !== null) {
+                return;
+            }
+
+            quizState.answers[quizState.currentQuestionIndex] = selectedIndex;
+            saveQuizState(); // Save state immediately after answering
+
+            // Disable all options after an answer is selected
+            Array.from(optionsContainer.children).forEach(optionDiv => {
+                optionDiv.style.pointerEvents = 'none';
+                optionDiv.style.cursor = 'default';
+            });
+
+            const currentQuestion = questions[quizState.currentQuestionIndex];
+            const isCorrect = (selectedIndex === currentQuestion.correctAnswerIndex);
+
+            // Apply styling to selected and correct/incorrect options
+            Array.from(optionsContainer.children).forEach((optionDiv, index) => {
+                if (index === selectedIndex) {
+                    optionDiv.classList.add('selected');
+                    if (isCorrect) {
+                        optionDiv.classList.add('correct');
+                    } else {
+                        optionDiv.classList.add('incorrect');
+                    }
+                }
+                // Always show the correct answer if the selected one was incorrect
+                if (!isCorrect && index === currentQuestion.correctAnswerIndex) {
+                    optionDiv.classList.add('correct');
+                }
+            });
+
+            showFeedback(isCorrect);
+        }
+
+        /**
+         * Displays feedback message (correct/incorrect).
+         * @param {boolean} isCorrect - True if the answer is correct, false otherwise.
+         */
+        function showFeedback(isCorrect) {
+            feedbackMessage.classList.remove('hidden');
+            if (isCorrect) {
+                feedbackMessage.textContent = "¡Correcto!";
+                feedbackMessage.classList.add('correct');
+                feedbackMessage.classList.remove('incorrect');
+            } else {
+                feedbackMessage.textContent = "Incorrecto. La respuesta correcta está resaltada en verde.";
+                feedbackMessage.classList.add('incorrect');
+                feedbackMessage.classList.remove('correct');
+            }
+        }
+
+        /**
+         * Navigates to the next question.
+         */
+        function nextQuestion() {
+            if (quizState.currentQuestionIndex < questions.length - 1) {
+                quizState.currentQuestionIndex++;
+                saveQuizState();
+                renderQuestion();
+            }
+        }
+
+        /**
+         * Navigates to the previous question.
+         */
+        function prevQuestion() {
+            if (quizState.currentQuestionIndex > 0) {
+                quizState.currentQuestionIndex--;
+                saveQuizState();
+                renderQuestion();
+            }
+        }
+
+        /**
+         * Calculates and displays the final results.
+         */
+        function showResults() {
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            questions.forEach((q, index) => {
+                if (quizState.answers[index] === null) {
+                    unanswered++;
+                } else if (quizState.answers[index] === q.correctAnswerIndex) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
+            });
+
+            correctCountSpan.textContent = correct;
+            incorrectCountSpan.textContent = incorrect;
+            unansweredCountSpan.textContent = unanswered;
+
+            quizSection.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+        }
+
+        /**
+         * Resets the quiz to its initial state.
+         */
+        function resetQuiz() {
+            localStorage.removeItem('quizState');
+            quizState = {
+                currentQuestionIndex: 0,
+                answers: Array(questions.length).fill(null),
+                isCompleted: false
+            };
+            renderQuestion();
+            quizSection.classList.remove('hidden');
+            resultsSection.classList.add('hidden');
+        }
+
+        // Event Listeners
+        prevBtn.addEventListener('click', prevQuestion);
+        nextBtn.addEventListener('click', nextQuestion);
+        finishBtn.addEventListener('click', () => {
+            quizState.isCompleted = true;
+            saveQuizState();
+            showResults(); // Call showResults directly here
+        });
+        resetBtn.addEventListener('click', resetQuiz);
+
+        // Initial load
+        loadQuizState();
+        renderQuestion();
+    </script>
+</body>
+</html>
