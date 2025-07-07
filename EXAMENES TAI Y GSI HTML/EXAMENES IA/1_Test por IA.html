@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMEN TAI IA</title>
+    <!-- Carga de Tailwind CSS para un estilo moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Fuente Inter para mejor legibilidad */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Fondo gris claro */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinea al inicio para permitir scroll */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* Bordes más redondeados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Ancho máximo del contenedor */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Fondo ligeramente diferente para la tarjeta de pregunta */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Borde sutil */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Azul claro para la opción seleccionada */
+            border-color: #3b82f6; /* Borde azul */
+        }
+        input[type="radio"] {
+            display: none; /* Oculta el botón de radio nativo */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Verde claro */
+            border-color: #10b981; /* Borde verde */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Rojo claro */
+            border-color: #ef4444; /* Borde rojo */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Azul */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Azul más oscuro al pasar el ratón */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gris */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: center; /* Alinea los elementos verticalmente al centro */
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas más pequeñas */
+            gap: 10px; /* Espacio entre botones */
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Fondo verde muy claro */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.2rem; /* Fuente ligeramente más pequeña para estadísticas individuales */
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 8px;
+        }
+        .final-score-container .total-score {
+            font-size: 1.5rem; /* Fuente más grande para la puntuación total */
+            font-weight: 700;
+            color: #047857;
+            margin-top: 15px;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">EXAMEN TAI IA</h1>
+        <div id="quiz-questions">
+            <!-- Las preguntas se cargarán aquí -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary">Anterior</button>
+            <button id="reset-test-btn" class="button-secondary">Reiniciar Test</button>
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Aciertos: <span id="correct-answers-display" class="text-green-700"></span></p>
+            <p>Fallos: <span id="incorrect-answers-display" class="text-red-700"></span></p>
+            <p>Sin contestar: <span id="unanswered-questions-display" class="text-gray-700"></span></p>
+            <p class="total-score">Has completado <span id="total-questions-answered-display"></span> de <span id="total-questions-display"></span> preguntas.</p>
+            <button id="restart-btn" class="button-primary mt-6">Revisar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Definición de las preguntas del test
+        const allQuestions = [
+            // BLOQUE I: ORGANIZACIÓN DEL ESTADO Y ADMINISTRACIÓN ELECTRÓNICA (20 preguntas)
+            {
+                id: "B1-1",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "1. ¿Cuál de los siguientes no es un derecho fundamental según el Título I de la Constitución Española?",
+                options: {
+                    A: "Derecho a la huelga.",
+                    B: "Derecho a la propiedad privada y a la herencia.",
+                    C: "Derecho a la libertad de expresión.",
+                    D: "Derecho a la educación."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-2",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "2. La función de refrendar los actos del Rey corresponde a:",
+                options: {
+                    A: "El Presidente del Tribunal Constitucional.",
+                    B: "El Presidente del Gobierno y, en su caso, los Ministros competentes.",
+                    C: "El Presidente del Congreso de los Diputados.",
+                    D: "El Fiscal General del Estado."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-3",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "3. ¿Cuántos miembros componen el Tribunal Constitucional y por cuánto tiempo son nombrados?",
+                options: {
+                    A: "10 miembros por 6 años.",
+                    B: "12 miembros por 9 años.",
+                    C: "15 miembros por 5 años.",
+                    D: "9 miembros por 4 años."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-4",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "4. ¿Qué tipo de norma con rango de ley puede dictar el Gobierno en casos de extraordinaria y urgente necesidad?",
+                options: {
+                    A: "Ley Orgánica.",
+                    B: "Decreto Legislativo.",
+                    C: "Decreto-Ley.",
+                    D: "Reglamento."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B1-5",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "5. La Ley Orgánica 3/2007, de 22 de marzo, tiene por objeto:",
+                options: {
+                    A: "Regular el acceso electrónico de los ciudadanos a los servicios públicos.",
+                    B: "Promover la igualdad efectiva de mujeres y hombres.",
+                    C: "Establecer el régimen jurídico del sector público.",
+                    D: "Proteger los datos de carácter personal."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-6",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "6. ¿Cuál de los siguientes no es un principio de actuación de la Administración Pública según la Ley 40/2015?",
+                options: {
+                    A: "Eficiencia.",
+                    B: "Jerarquía.",
+                    C: "Discrecionalidad absoluta.",
+                    D: "Transparencia."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B1-7",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "7. El Esquema Nacional de Seguridad (ENS) se aplica a:",
+                options: {
+                    A: "Solo a los organismos de la Administración General del Estado.",
+                    B: "A todas las Administraciones Públicas y a las entidades de derecho público vinculadas o dependientes de ellas.",
+                    C: "Únicamente a empresas privadas que gestionen datos públicos.",
+                    D: "A cualquier sistema informático en España."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-8",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "8. ¿Qué instrumento permite a los ciudadanos identificarse y autenticarse electrónicamente ante las Administraciones Públicas sin necesidad de certificados digitales?",
+                options: {
+                    A: "El DNI electrónico.",
+                    B: "CL@VE.",
+                    C: "La firma electrónica avanzada.",
+                    D: "El sello electrónico."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-9",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "9. La Ley 39/2015, del Procedimiento Administrativo Común de las Administraciones Públicas, establece que los interesados tienen derecho a:",
+                options: {
+                    A: "Ser notificados exclusivamente en papel.",
+                    B: "No aportar documentos que ya obren en poder de la Administración actuante.",
+                    C: "Iniciar cualquier procedimiento administrativo de forma oral.",
+                    D: "Exigir la paralización indefinida de un procedimiento."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-10",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "10. ¿Cuál es la finalidad principal del Registro Electrónico General de la Administración General del Estado?",
+                options: {
+                    A: "Gestionar el personal funcionario.",
+                    B: "Permitir la presentación de documentos por parte de los ciudadanos y la recepción de los mismos por la Administración.",
+                    C: "Almacenar bases de datos de carácter secreto.",
+                    D: "Publicar leyes y reglamentos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-11",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "11. Según el RGPD, ¿qué es un 'responsable del tratamiento'?",
+                options: {
+                    A: "La persona física que realiza el tratamiento de datos.",
+                    B: "La persona física o jurídica, autoridad pública, agencia u otro organismo que, solo o junto con otros, determine los fines y medios del tratamiento.",
+                    C: "El encargado de seguridad de la información.",
+                    D: "El usuario final de los datos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-12",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "12. El principio de 'privacidad desde el diseño y por defecto' (Privacy by Design and by Default) implica:",
+                options: {
+                    A: "Asegurar la privacidad una vez el sistema está en producción.",
+                    B: "Integrar la protección de datos desde las primeras fases del diseño de sistemas y servicios.",
+                    C: "Dejar la privacidad como una opción configurable por el usuario.",
+                    D: "Minimizar la cantidad de datos recogidos a posteriori."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-13",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "13. ¿Qué es una sede electrónica?",
+                options: {
+                    A: "Una oficina física de la Administración con acceso a internet.",
+                    B: "Una dirección electrónica disponible para los ciudadanos a través de redes de telecomunicaciones cuya titularidad, gestión y administración corresponde a una Administración Pública.",
+                    C: "Un portal web informativo sin capacidad de tramitación.",
+                    D: "Un servicio de correo electrónico oficial."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-14",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "14. ¿Cuál de los siguientes no es un elemento de la firma electrónica avanzada?",
+                options: {
+                    A: "Está vinculada al firmante de manera única.",
+                    B: "Permite la identificación del firmante.",
+                    C: "Ha sido creada utilizando datos de creación de la firma electrónica que el firmante puede utilizar, con un alto nivel de confianza, bajo su control exclusivo.",
+                    D: "Requiere siempre un dispositivo seguro de creación de firma."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "B1-15",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "15. ¿Qué es el Esquema Nacional de Interoperabilidad (ENI)?",
+                options: {
+                    A: "Un conjunto de normas técnicas para la seguridad de la información.",
+                    B: "El marco que establece los criterios y recomendaciones para la interoperabilidad de los sistemas de información de las Administraciones Públicas.",
+                    C: "Un estándar para la comunicación entre dispositivos móviles.",
+                    D: "Una guía para la gestión de proyectos informáticos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-16",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "16. La Ley 19/2013, de Transparencia, Acceso a la Información Pública y Buen Gobierno, establece el principio de:",
+                options: {
+                    A: "Opacidad administrativa.",
+                    B: "Publicidad activa.",
+                    C: "Confidencialidad absoluta de la información pública.",
+                    D: "Acceso restringido a la información."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-17",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "17. ¿Qué se entiende por 'actuación administrativa automatizada'?",
+                options: {
+                    A: "Cualquier acto o actuación realizada por un funcionario público.",
+                    B: "Cualquier acto o actuación realizada íntegramente a través de medios electrónicos por una Administración Pública en el marco de un procedimiento administrativo y en la que no haya intervenido de forma directa un empleado público.",
+                    C: "La tramitación electrónica de expedientes con intervención humana.",
+                    D: "La emisión de informes por sistemas expertos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-18",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "18. ¿Cuál es el objetivo principal de la Ley Orgánica 1/2004, de Medidas de Protección Integral contra la Violencia de Género?",
+                options: {
+                    A: "Proteger a las mujeres en el ámbito laboral.",
+                    B: "Erradicar la violencia contra las mujeres y ofrecer protección integral a las víctimas.",
+                    C: "Garantizar la igualdad salarial.",
+                    D: "Fomentar la participación política de las mujeres."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-19",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "19. ¿Qué es el Punto de Acceso General (PAG) de la Administración General del Estado?",
+                options: {
+                    A: "Una base de datos interna de los funcionarios.",
+                    B: "Un portal único que facilita el acceso a la información, servicios y trámites electrónicos de la Administración General del Estado.",
+                    C: "Una red social para empleados públicos.",
+                    D: "Un sistema de gestión de expedientes."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-20",
+                section: "BLOQUE I: Organización del Estado y Administración Electrónica",
+                question: "20. La validez de los certificados electrónicos cualificados, según la Ley 6/2020, de servicios de confianza, no podrá ser superior a:",
+                options: {
+                    A: "1 año.",
+                    B: "3 años.",
+                    C: "5 años.",
+                    D: "Indefinida."
+                },
+                correctAnswer: "C"
+            },
+            // Preguntas de reserva Bloque I (5 preguntas)
+            {
+                id: "B1-R1",
+                section: "BLOQUE I (Reserva)",
+                question: "R1. ¿Qué órgano tiene la potestad reglamentaria en el ámbito del Gobierno central?",
+                options: {
+                    A: "Las Cortes Generales.",
+                    B: "El Tribunal Supremo.",
+                    C: "El Gobierno.",
+                    D: "El Consejo de Estado."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B1-R2",
+                section: "BLOQUE I (Reserva)",
+                question: "R2. ¿Qué principio rige la organización y funcionamiento de la Administración Pública, según el artículo 103 de la Constitución Española?",
+                options: {
+                    A: "Principio de oportunidad.",
+                    B: "Principio de legalidad.",
+                    C: "Principio de discrecionalidad.",
+                    D: "Principio de conveniencia."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-R3",
+                section: "BLOQUE I (Reserva)",
+                question: "R3. ¿Qué es el derecho al olvido digital?",
+                options: {
+                    A: "El derecho a eliminar cualquier información personal de internet.",
+                    B: "El derecho a que los enlaces a datos personales obsoletos o irrelevantes sean eliminados de los resultados de los motores de búsqueda.",
+                    C: "El derecho a no ser recordado por las redes sociales.",
+                    D: "El derecho a que las empresas borren todos tus datos inmediatamente."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-R4",
+                section: "BLOQUE I (Reserva)",
+                question: "R4. ¿Qué es la 'interoperabilidad semántica' en el contexto del ENI?",
+                options: {
+                    A: "La capacidad de los sistemas de conectarse físicamente.",
+                    B: "La capacidad de los sistemas de entender el significado de los datos intercambiados.",
+                    C: "La capacidad de los sistemas de comunicarse a nivel de software.",
+                    D: "La capacidad de los sistemas de compartir hardware."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B1-R5",
+                section: "BLOQUE I (Reserva)",
+                question: "R5. ¿Qué es el Padrón Municipal?",
+                options: {
+                    A: "Un registro de propiedades urbanas.",
+                    B: "El registro administrativo donde constan los vecinos de un municipio.",
+                    C: "Una base de datos de empresas locales.",
+                    D: "Un censo de votantes."
+                },
+                correctAnswer: "B"
+            },
+
+            // BLOQUE II: TECNOLOGÍA BÁSICA (20 preguntas)
+            {
+                id: "B2-1",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "1. ¿Cuál de los siguientes componentes es fundamental para la ejecución de instrucciones en la Unidad Central de Proceso (CPU)?",
+                options: {
+                    A: "Disco duro.",
+                    B: "Memoria RAM.",
+                    C: "Unidad Aritmético-Lógica (ALU).",
+                    D: "Tarjeta de red."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-2",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "2. ¿Qué tipo de memoria es volátil y se utiliza para almacenar datos y programas que la CPU está utilizando activamente?",
+                options: {
+                    A: "ROM.",
+                    B: "Flash.",
+                    C: "RAM.",
+                    D: "EEPROM."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-3",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "3. ¿Cuál de los siguientes no es un tipo de periférico de almacenamiento?",
+                options: {
+                    A: "SSD (Solid State Drive).",
+                    B: "Impresora.",
+                    C: "Disco duro externo.",
+                    D: "Memoria USB."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-4",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "4. ¿Qué estructura de datos organiza los elementos de forma jerárquica, donde cada elemento puede tener múltiples 'hijos' pero solo un 'padre'?",
+                options: {
+                    A: "Lista enlazada.",
+                    B: "Pila (Stack).",
+                    C: "Árbol (Tree).",
+                    D: "Cola (Queue)."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-5",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "5. ¿Qué característica principal diferencia a un sistema operativo de un software de aplicación?",
+                options: {
+                    A: "Su interfaz gráfica.",
+                    B: "La gestión de los recursos de hardware y software del ordenador.",
+                    C: "Su capacidad para realizar cálculos complejos.",
+                    D: "La posibilidad de ser instalado en múltiples dispositivos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-6",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "6. En el contexto de sistemas operativos, ¿qué es el 'kernel'?",
+                options: {
+                    A: "La interfaz gráfica de usuario.",
+                    B: "El núcleo del sistema operativo que gestiona los recursos del sistema.",
+                    C: "Un programa de aplicación.",
+                    D: "Un tipo de archivo de configuración."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-7",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "7. ¿Qué tipo de base de datos organiza los datos en tablas con filas y columnas?",
+                options: {
+                    A: "Base de datos orientada a objetos.",
+                    B: "Base de datos jerárquica.",
+                    C: "Base de datos relacional.",
+                    D: "Base de datos de red."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-8",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "8. ¿Cuál de los siguientes no es un sistema operativo para dispositivos móviles?",
+                options: {
+                    A: "Android.",
+                    B: "iOS.",
+                    C: "Windows Server.",
+                    D: "HarmonyOS."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-9",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "9. ¿Qué es un algoritmo?",
+                options: {
+                    A: "Un lenguaje de programación.",
+                    B: "Un conjunto finito y ordenado de instrucciones para resolver un problema o realizar una tarea.",
+                    C: "Un tipo de dato abstracto.",
+                    D: "Un dispositivo de entrada/salida."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-10",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "10. ¿Qué se entiende por 'virtualización' en sistemas operativos?",
+                options: {
+                    A: "La creación de una copia de seguridad de un sistema.",
+                    B: "La ejecución de múltiples sistemas operativos en un mismo hardware físico.",
+                    C: "La optimización del rendimiento del sistema.",
+                    D: "La instalación de software en la nube."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-11",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "11. ¿Cuál es el principal objetivo de un sistema de gestión de bases de datos (SGBD)?",
+                options: {
+                    A: "Almacenar archivos de texto.",
+                    B: "Gestionar y organizar grandes volúmenes de datos de forma eficiente y segura.",
+                    C: "Crear páginas web.",
+                    D: "Realizar cálculos matemáticos complejos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-12",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "12. ¿Qué tipo de memoria es no volátil y se utiliza para almacenar el firmware de un ordenador (BIOS/UEFI)?",
+                options: {
+                    A: "SRAM.",
+                    B: "DRAM.",
+                    C: "ROM.",
+                    D: "Cache."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-13",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "13. ¿Qué es un 'proceso' en un sistema operativo?",
+                options: {
+                    A: "Un archivo ejecutable.",
+                    B: "Una instancia de un programa en ejecución.",
+                    C: "Un conjunto de datos.",
+                    D: "Un componente de hardware."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-14",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "14. ¿Cuál de los siguientes es un algoritmo de ordenación?",
+                options: {
+                    A: "Búsqueda binaria.",
+                    B: "Dijkstra.",
+                    C: "Quicksort.",
+                    D: "Hash."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-15",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "15. ¿Qué es un 'sistema de archivos' en un sistema operativo?",
+                options: {
+                    A: "Un programa para abrir archivos.",
+                    B: "La estructura que organiza cómo se almacenan y recuperan los archivos en un dispositivo de almacenamiento.",
+                    C: "Un tipo de archivo de texto.",
+                    D: "Un componente de red."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-16",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "16. ¿Qué puerto se utiliza comúnmente para conectar un monitor a un ordenador?",
+                options: {
+                    A: "USB.",
+                    B: "Ethernet.",
+                    C: "HDMI/DisplayPort.",
+                    D: "Jack de audio."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-17",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "17. ¿Qué es un 'driver' o 'controlador' en informática?",
+                options: {
+                    A: "Un tipo de software de aplicación.",
+                    B: "Un programa que permite al sistema operativo interactuar con un dispositivo de hardware.",
+                    C: "Un componente físico del ordenador.",
+                    D: "Un lenguaje de programación."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-18",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "18. ¿Qué tipo de memoria caché es la más cercana a la CPU y la más rápida?",
+                options: {
+                    A: "L3 Cache.",
+                    B: "L2 Cache.",
+                    C: "L1 Cache.",
+                    D: "Main Memory."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-19",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "19. ¿Cuál de los siguientes es un sistema operativo de código abierto?",
+                options: {
+                    A: "Windows.",
+                    B: "macOS.",
+                    C: "Linux.",
+                    D: "iOS."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-20",
+                section: "BLOQUE II: Tecnología Básica",
+                question: "20. ¿Qué es un 'bit' en informática?",
+                options: {
+                    A: "La unidad más pequeña de información, que puede ser 0 o 1.",
+                    B: "Un byte.",
+                    C: "Un carácter alfanumérico.",
+                    D: "Una dirección de memoria."
+                },
+                correctAnswer: "A"
+            },
+            // Preguntas de reserva Bloque II (5 preguntas)
+            {
+                id: "B2-R1",
+                section: "BLOQUE II (Reserva)",
+                question: "R1. ¿Qué es la 'arquitectura Von Neumann'?",
+                options: {
+                    A: "Una arquitectura de red.",
+                    B: "Una arquitectura de ordenador donde las instrucciones del programa y los datos se almacenan en la misma memoria.",
+                    C: "Un modelo de base de datos.",
+                    D: "Un tipo de procesador."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-R2",
+                section: "BLOQUE II (Reserva)",
+                question: "R2. ¿Qué es un 'sistema de información'?",
+                options: {
+                    A: "Un conjunto de ordenadores conectados.",
+                    B: "Un conjunto de componentes interrelacionados que recopilan, procesan, almacenan y distribuyen información para apoyar la toma de decisiones y el control en una organización.",
+                    C: "Un software de oficina.",
+                    D: "Una base de datos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-R3",
+                section: "BLOQUE II (Reserva)",
+                question: "R3. ¿Qué tipo de periférico es una webcam?",
+                options: {
+                    A: "Salida.",
+                    B: "Almacenamiento.",
+                    C: "Entrada.",
+                    D: "Procesamiento."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B2-R4",
+                section: "BLOQUE II (Reserva)",
+                question: "R4. ¿Qué es un 'deadlock' (interbloqueo) en sistemas operativos?",
+                options: {
+                    A: "Un error de hardware.",
+                    B: "Una situación en la que dos o más procesos están esperando indefinidamente por un recurso que está siendo retenido por otro proceso.",
+                    C: "Un fallo del sistema de archivos.",
+                    D: "Una interrupción del sistema."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B2-R5",
+                section: "BLOQUE II (Reserva)",
+                question: "R5. ¿Qué es la 'normalización' en bases de datos relacionales?",
+                options: {
+                    A: "El proceso de hacer que una base de datos funcione más rápido.",
+                    B: "El proceso de organizar las columnas y tablas de una base de datos relacional para minimizar la redundancia de datos y mejorar la integridad de los datos.",
+                    C: "El proceso de cifrar los datos de la base de datos.",
+                    D: "El proceso de crear copias de seguridad de la base de datos."
+                },
+                correctAnswer: "B"
+            },
+
+            // BLOQUE III: DESARROLLO DE SISTEMAS (20 preguntas)
+            {
+                id: "B3-1",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "1. En el modelo conceptual de datos, ¿qué representa una 'entidad'?",
+                options: {
+                    A: "Una característica de un objeto.",
+                    B: "Un objeto o concepto del mundo real sobre el que se desea almacenar información.",
+                    C: "Una relación entre dos tablas.",
+                    D: "Un tipo de dato."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-2",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "2. ¿Qué fase del diseño de bases de datos se enfoca en la implementación del modelo lógico en un SGBD específico?",
+                options: {
+                    A: "Diseño conceptual.",
+                    B: "Diseño lógico.",
+                    C: "Diseño físico.",
+                    D: "Diseño de requisitos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-3",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "3. ¿Qué sentencia SQL se utiliza para recuperar datos de una base de datos?",
+                options: {
+                    A: "INSERT.",
+                    B: "UPDATE.",
+                    C: "DELETE.",
+                    D: "SELECT."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "B3-4",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "4. En programación orientada a objetos, ¿qué concepto permite que una clase herede propiedades y métodos de otra clase?",
+                options: {
+                    A: "Polimorfismo.",
+                    B: "Encapsulamiento.",
+                    C: "Herencia.",
+                    D: "Abstracción."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-5",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "5. ¿Qué lenguaje de programación es ampliamente utilizado para el desarrollo web del lado del cliente (frontend)?",
+                options: {
+                    A: "Python.",
+                    B: "Java.",
+                    C: "JavaScript.",
+                    D: "C#."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-6",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "6. ¿Qué es un 'diagrama de flujo de datos' (DFD)?",
+                options: {
+                    A: "Un diagrama que muestra la secuencia de ejecución de un programa.",
+                    B: "Una representación gráfica del flujo de información y los procesos que la transforman en un sistema.",
+                    C: "Un diagrama de la estructura de una base de datos.",
+                    D: "Un diagrama de la arquitectura de red."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-7",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "7. ¿Cuál de los siguientes no es un tipo de bucle en programación?",
+                options: {
+                    A: "For.",
+                    B: "While.",
+                    C: "If-Else.",
+                    D: "Do-While."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-8",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "8. ¿Qué lenguaje se utiliza para definir la estructura y el contenido de documentos web, pero no su presentación?",
+                options: {
+                    A: "CSS.",
+                    B: "JavaScript.",
+                    C: "HTML.",
+                    D: "PHP."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-9",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "9. ¿Qué es una 'función' o 'procedimiento' en programación?",
+                options: {
+                    A: "Un tipo de dato.",
+                    B: "Un bloque de código reutilizable que realiza una tarea específica.",
+                    C: "Una variable global.",
+                    D: "Un error de compilación."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-10",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "10. En una arquitectura cliente/servidor de 3 capas, ¿qué capa es responsable de la lógica de negocio?",
+                options: {
+                    A: "Capa de presentación.",
+                    B: "Capa de datos.",
+                    C: "Capa de lógica de negocio.",
+                    D: "Capa de red."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-11",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "11. ¿Qué es UML (Unified Modeling Language)?",
+                options: {
+                    A: "Un lenguaje de programación.",
+                    B: "Un lenguaje de modelado estándar para especificar, visualizar, construir y documentar los artefactos de un sistema de software.",
+                    C: "Una herramienta de depuración.",
+                    D: "Un sistema de gestión de bases de datos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-12",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "12. ¿Qué tecnología se utiliza para crear servicios web que permiten la comunicación entre diferentes aplicaciones a través de la red?",
+                options: {
+                    A: "HTML.",
+                    B: "CSS.",
+                    C: "SOAP/REST.",
+                    D: "SQL."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-13",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "13. ¿Qué concepto de la programación orientada a objetos se refiere a la capacidad de un objeto de tomar muchas formas, como la sobrecarga de métodos?",
+                options: {
+                    A: "Encapsulamiento.",
+                    B: "Herencia.",
+                    C: "Polimorfismo.",
+                    D: "Abstracción."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-14",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "14. ¿Qué es un 'repositorio' en el contexto de herramientas CASE y control de versiones?",
+                options: {
+                    A: "Un lugar para almacenar copias de seguridad de datos.",
+                    B: "Un almacén centralizado donde se guardan y gestionan los artefactos de software (código fuente, documentación, etc.) y su historial de cambios.",
+                    C: "Una base de datos de usuarios.",
+                    D: "Un servidor web."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-15",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "15. ¿Qué es la 'usabilidad' en el diseño de sistemas?",
+                options: {
+                    A: "La seguridad de un sistema.",
+                    B: "La capacidad de un sistema para ser utilizado por personas con discapacidad.",
+                    C: "La facilidad con la que los usuarios pueden aprender a usar un sistema y lograr sus objetivos de manera eficiente y satisfactoria.",
+                    D: "La velocidad de ejecución de un sistema."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-16",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "16. ¿Qué lenguaje de descripción de datos se utiliza para almacenar y transportar datos, siendo extensible y no predefinido?",
+                options: {
+                    A: "HTML.",
+                    B: "CSS.",
+                    C: "XML.",
+                    D: "JavaScript."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B3-17",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "17. ¿Qué es un 'patrón de diseño' en ingeniería de software?",
+                options: {
+                    A: "Un algoritmo específico para resolver un problema.",
+                    B: "Una solución general y reutilizable a un problema común que ocurre dentro de un contexto dado en el diseño de software.",
+                    C: "Un lenguaje de programación.",
+                    D: "Una herramienta de depuración."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-18",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "18. ¿Qué es 'recusividad' en programación?",
+                options: {
+                    A: "Un tipo de bucle.",
+                    B: "Una técnica donde una función se llama a sí misma para resolver un problema.",
+                    C: "Una forma de evitar errores.",
+                    D: "Un tipo de variable."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-19",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "19. ¿Cuál de las siguientes es una ventaja de la programación orientada a objetos?",
+                options: {
+                    A: "Menor consumo de memoria.",
+                    B: "Mayor reutilización de código.",
+                    C: "Menor tiempo de compilación.",
+                    D: "Mayor velocidad de ejecución."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-20",
+                section: "BLOQUE III: Desarrollo de Sistemas",
+                question: "20. ¿Qué significa 'CRUD' en el contexto de la gestión de bases de datos?",
+                options: {
+                    A: "Control, Reporte, Uso, Desarrollo.",
+                    B: "Crear, Recuperar, Actualizar, Borrar.",
+                    C: "Cifrar, Restaurar, Unir, Desconectar.",
+                    D: "Conectar, Revisar, Usar, Deshabilitar."
+                },
+                correctAnswer: "B"
+            },
+            // Preguntas de reserva Bloque III (5 preguntas)
+            {
+                id: "B3-R1",
+                section: "BLOQUE III (Reserva)",
+                question: "R1. ¿Qué es un 'vector' o 'array' en programación?",
+                options: {
+                    A: "Un tipo de dato único.",
+                    B: "Una colección de elementos del mismo tipo almacenados en posiciones de memoria contiguas.",
+                    C: "Una función matemática.",
+                    D: "Un operador lógico."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-R2",
+                section: "BLOQUE III (Reserva)",
+                question: "R2. ¿Qué es un 'trigger' en bases de datos?",
+                options: {
+                    A: "Una función que se ejecuta manualmente.",
+                    B: "Un procedimiento almacenado que se ejecuta automáticamente en respuesta a ciertos eventos (INSERT, UPDATE, DELETE) en una tabla.",
+                    C: "Un tipo de índice.",
+                    D: "Una restricción de clave externa."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-R3",
+                section: "BLOQUE III (Reserva)",
+                question: "R3. ¿Qué es 'JavaScript' en el contexto de aplicaciones web?",
+                options: {
+                    A: "Un lenguaje de marcado.",
+                    B: "Un lenguaje de programación interpretado, utilizado principalmente para crear interactividad en páginas web.",
+                    C: "Un lenguaje de estilos.",
+                    D: "Un lenguaje de base de datos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-R4",
+                section: "BLOQUE III (Reserva)",
+                question: "R4. ¿Qué es la 'accesibilidad web'?",
+                options: {
+                    A: "La velocidad de carga de una página web.",
+                    B: "La capacidad de una página web para ser utilizada por personas con diversas capacidades y discapacidades.",
+                    C: "El nivel de seguridad de una página web.",
+                    D: "La facilidad de acceso a internet."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B3-R5",
+                section: "BLOQUE III (Reserva)",
+                question: "R5. ¿Qué es un 'IDE' (Integrated Development Environment)?",
+                options: {
+                    A: "Un tipo de sistema operativo.",
+                    B: "Un software que proporciona facilidades integradas para el desarrollo de software, incluyendo un editor de código, un compilador/intérprete y un depurador.",
+                    C: "Un protocolo de red.",
+                    D: "Un lenguaje de programación."
+                },
+                correctAnswer: "B"
+            },
+
+            // BLOQUE IV: SISTEMAS Y COMUNICACIONES (20 preguntas)
+            {
+                id: "B4-1",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "1. ¿Qué comando de Linux se utiliza para ver la tabla de enrutamiento?",
+                options: {
+                    A: "ifconfig",
+                    B: "netstat -rn",
+                    C: "ip addr show",
+                    D: "ping"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-2",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "2. ¿Qué protocolo se utiliza para enviar correo electrónico desde un cliente a un servidor de correo?",
+                options: {
+                    A: "POP3",
+                    B: "IMAP",
+                    C: "SMTP",
+                    D: "HTTP"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-3",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "3. ¿Qué dispositivo de red opera en la capa de red (Capa 3) del modelo OSI y reenvía paquetes entre diferentes redes?",
+                options: {
+                    A: "Switch",
+                    B: "Hub",
+                    C: "Router",
+                    D: "Bridge"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-4",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "4. ¿Cuál de los siguientes es un concepto clave en la seguridad lógica de los sistemas de información?",
+                options: {
+                    A: "Control de acceso.",
+                    B: "CCTV.",
+                    C: "Extintores.",
+                    D: "Sistemas anti-incendios."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "B4-5",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "5. ¿Qué medio de transmisión utiliza pulsos de luz para transmitir datos?",
+                options: {
+                    A: "Cable UTP.",
+                    B: "Cable coaxial.",
+                    C: "Fibra óptica.",
+                    D: "Ondas de radio."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-6",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "6. En el modelo TCP/IP, ¿qué capa es responsable de la comunicación de extremo a extremo y la fiabilidad de la entrega de datos?",
+                options: {
+                    A: "Capa de Aplicación.",
+                    B: "Capa de Internet.",
+                    C: "Capa de Transporte.",
+                    D: "Capa de Acceso a la Red."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-7",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "7. ¿Qué protocolo se utiliza para la navegación web segura?",
+                options: {
+                    A: "HTTP.",
+                    B: "FTP.",
+                    C: "HTTPS.",
+                    D: "SMTP."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-8",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "8. ¿Qué es un 'firewall' (cortafuegos)?",
+                options: {
+                    A: "Un dispositivo para apagar incendios en CPDs.",
+                    B: "Un sistema de seguridad de red que controla el tráfico de red entrante y saliente basándose en un conjunto de reglas de seguridad.",
+                    C: "Un software antivirus.",
+                    D: "Un sistema de detección de intrusiones."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-9",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "9. ¿Qué tipo de red local utiliza un concentrador (hub) para conectar dispositivos, compartiendo el mismo medio de transmisión?",
+                options: {
+                    A: "Red en estrella.",
+                    B: "Red en anillo.",
+                    C: "Red en bus.",
+                    D: "Red en malla."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "B4-10",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "10. ¿Qué comando de Windows se utiliza para ver las conexiones de red activas y las estadísticas de protocolo?",
+                options: {
+                    A: "ipconfig.",
+                    B: "ping.",
+                    C: "netstat.",
+                    D: "tracert."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-11",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "11. ¿Qué es una VPN (Red Privada Virtual)?",
+                options: {
+                    A: "Una red local sin acceso a internet.",
+                    B: "Una tecnología que permite crear una conexión segura sobre una red pública, como Internet.",
+                    C: "Un tipo de red inalámbrica.",
+                    D: "Una red utilizada exclusivamente por el gobierno."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-12",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "12. ¿Qué protocolo se utiliza para la transferencia de archivos en internet?",
+                options: {
+                    A: "HTTP.",
+                    B: "SMTP.",
+                    C: "FTP.",
+                    D: "DNS."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-13",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "13. ¿Qué es un 'sistema de gestión de incidencias' en el ámbito de la administración de sistemas?",
+                options: {
+                    A: "Un software para planificar reuniones.",
+                    B: "Un sistema para registrar, clasificar, asignar y resolver problemas o fallos en los sistemas informáticos.",
+                    C: "Una herramienta de monitoreo de red.",
+                    D: "Un software de contabilidad."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-14",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "14. ¿Qué tipo de dirección IP es 10.0.0.1?",
+                options: {
+                    A: "Pública.",
+                    B: "Privada.",
+                    C: "Multicast.",
+                    D: "Broadcast."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-15",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "15. ¿Qué capa del modelo OSI convierte los datos en un formato que puede ser transmitido por el medio físico?",
+                options: {
+                    A: "Capa de Sesión.",
+                    B: "Capa de Presentación.",
+                    C: "Capa Física.",
+                    D: "Capa de Enlace de Datos."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "B4-16",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "16. ¿Qué es un 'CPD' (Centro de Procesamiento de Datos)?",
+                options: {
+                    A: "Un tipo de ordenador personal.",
+                    B: "Una instalación centralizada que alberga equipos informáticos y de red para almacenar, procesar y distribuir grandes volúmenes de datos.",
+                    C: "Un software de gestión de proyectos.",
+                    D: "Un tipo de base de datos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-17",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "17. ¿Qué protocolo se utiliza para la configuración automática de direcciones IP en una red?",
+                options: {
+                    A: "ARP.",
+                    B: "ICMP.",
+                    C: "DHCP.",
+                    D: "DNS."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-18",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "18. ¿Qué comando de Linux se utiliza para ver el estado de los procesos en ejecución?",
+                options: {
+                    A: "ls.",
+                    B: "cd.",
+                    C: "ps.",
+                    D: "mkdir."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-19",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "19. ¿Qué es una 'red de conmutación de paquetes'?",
+                options: {
+                    A: "Una red donde los datos se envían como un flujo continuo.",
+                    B: "Una red donde los datos se dividen en pequeños bloques (paquetes) que se envían individualmente y se reensamblan en el destino.",
+                    C: "Una red telefónica tradicional.",
+                    D: "Una red de área personal."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-20",
+                section: "BLOQUE IV: Sistemas y Comunicaciones",
+                question: "20. ¿Qué se entiende por 'seguridad física' en un CPD?",
+                options: {
+                    A: "La seguridad del software instalado.",
+                    B: "Las medidas para proteger el hardware y las instalaciones de amenazas físicas (incendios, robos, desastres naturales).",
+                    C: "La seguridad de los datos almacenados.",
+                    D: "La seguridad de la red."
+                },
+                correctAnswer: "B"
+            },
+            // Preguntas de reserva Bloque IV (5 preguntas)
+            {
+                id: "B4-R1",
+                section: "BLOQUE IV (Reserva)",
+                question: "R1. ¿Qué puerto es comúnmente utilizado por el protocolo FTP para la transferencia de datos?",
+                options: {
+                    A: "20 y 21.",
+                    B: "22.",
+                    C: "23.",
+                    D: "80."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "B4-R2",
+                section: "BLOQUE IV (Reserva)",
+                question: "R2. ¿Qué comando de Windows se utiliza para mostrar la configuración de red detallada, incluyendo DNS y DHCP?",
+                options: {
+                    A: "ipconfig /all",
+                    B: "ipconfig /release",
+                    C: "ipconfig /renew",
+                    D: "ipconfig /flushdns"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "B4-R3",
+                section: "BLOQUE IV (Reserva)",
+                question: "R3. ¿Qué es un 'ataque de denegación de servicio (DoS)'?",
+                options: {
+                    A: "Un ataque que busca robar información.",
+                    B: "Un ataque que busca dejar un servicio o recurso inaccesible para sus usuarios legítimos.",
+                    C: "Un ataque que modifica datos.",
+                    D: "Un ataque que instala malware."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "B4-R4",
+                section: "BLOQUE IV (Reserva)",
+                question: "R4. ¿Qué tipo de cable de red es susceptible a interferencias electromagnéticas si no está apantallado?",
+                options: {
+                    A: "Fibra óptica.",
+                    B: "Cable coaxial.",
+                    C: "Par trenzado no apantallado (UTP).",
+                    D: "Cable de fibra multimodo."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "B4-R5",
+                section: "BLOQUE IV (Reserva)",
+                question: "R5. ¿Qué es el 'control remoto de puestos de usuario'?",
+                options: {
+                    A: "La gestión física de los ordenadores.",
+                    B: "La capacidad de acceder y controlar un ordenador desde una ubicación remota a través de la red.",
+                    C: "El uso de un ratón inalámbrico.",
+                    D: "La administración de usuarios en un directorio activo."
+                },
+                correctAnswer: "B"
+            },
+
+            // SUPUESTO 2 (20 preguntas + 5 de reserva) - Más difícil, BLOQUE IV + LINUX
+            {
+                id: "S2-1",
+                section: "SUPUESTO 2",
+                question: "1. Dada la dirección IP 172.16.0.0/22, ¿cuál es la dirección de broadcast de la primera subred utilizable?",
+                options: {
+                    A: "172.16.3.255",
+                    B: "172.16.0.255",
+                    C: "172.16.4.255",
+                    D: "172.16.7.255"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "S2-2",
+                section: "SUPUESTO 2",
+                question: "2. En Linux, para ver los sockets de red, incluyendo los puertos abiertos y las conexiones establecidas, ¿qué comando utilizarías con sus opciones más comunes?",
+                options: {
+                    A: "netstat -a",
+                    B: "netstat -tulnp",
+                    C: "ss -l",
+                    D: "ip link show"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-3",
+                section: "SUPUESTO 2",
+                question: "3. ¿Qué comando de Windows permite registrar o anular el registro de DLLs (Dynamic Link Libraries) en el sistema?",
+                options: {
+                    A: "sfc /scannow",
+                    B: "regedit",
+                    C: "regsvr32",
+                    D: "msconfig"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-4",
+                section: "SUPUESTO 2",
+                question: "4. Un administrador de red necesita implementar una política de seguridad que permita o deniegue el tráfico basándose en el estado de la conexión. ¿Qué tipo de firewall sería el más adecuado?",
+                options: {
+                    A: "Firewall de filtrado de paquetes sin estado (Stateless Packet Filtering).",
+                    B: "Firewall de filtrado de paquetes con estado (Stateful Packet Filtering).",
+                    C: "Firewall de proxy de aplicación.",
+                    D: "Firewall personal."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-5",
+                section: "SUPUESTO 2",
+                question: "5. ¿Cuál es el propósito principal del protocolo OSPF (Open Shortest Path First) en redes IP?",
+                options: {
+                    A: "Resolución de nombres de dominio.",
+                    B: "Asignación dinámica de direcciones IP.",
+                    C: "Enrutamiento dinámico basado en el estado de enlace.",
+                    D: "Transferencia de archivos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-6",
+                section: "SUPUESTO 2",
+                question: "6. En Linux, ¿qué archivo de configuración contiene las entradas de DNS que el sistema utilizará para la resolución de nombres?",
+                options: {
+                    A: "/etc/hosts",
+                    B: "/etc/network/interfaces",
+                    C: "/etc/resolv.conf",
+                    D: "/etc/sysconfig/network-scripts/ifcfg-eth0"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-7",
+                section: "SUPUESTO 2",
+                question: "7. Para un servidor Windows, ¿qué rol o característica se debe instalar para proporcionar servicios de nombres de dominio (DNS)?",
+                options: {
+                    A: "Active Directory Domain Services.",
+                    B: "DHCP Server.",
+                    C: "DNS Server.",
+                    D: "Web Server (IIS)."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-8",
+                section: "SUPUESTO 2",
+                question: "8. Se te asigna la dirección de red 192.168.10.0/26. Si necesitas crear 4 subredes de igual tamaño, ¿cuál sería la nueva máscara de subred para cada una de ellas?",
+                options: {
+                    A: "/27",
+                    B: "/28",
+                    C: "/29",
+                    D: "/30"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-9",
+                section: "SUPUESTO 2",
+                question: "9. ¿Qué técnica de seguridad de red se utiliza para ocultar la topología interna de una red privada a Internet, traduciendo direcciones IP privadas a una o varias direcciones IP públicas?",
+                options: {
+                    A: "VPN.",
+                    B: "Firewall.",
+                    C: "NAT (Network Address Translation).",
+                    D: "IDS (Intrusion Detection System)."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-10",
+                section: "SUPUESTO 2",
+                question: "10. En Linux, ¿qué comando se utiliza para programar tareas para que se ejecuten en un momento específico o de forma recurrente?",
+                options: {
+                    A: "at",
+                    B: "batch",
+                    C: "cron",
+                    D: "schedule"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-11",
+                section: "SUPUESTO 2",
+                question: "11. ¿Qué herramienta de línea de comandos de Windows permite gestionar usuarios, grupos y equipos en un entorno de Active Directory?",
+                options: {
+                    A: "gpedit.msc",
+                    B: "dsa.msc",
+                    C: "compmgmt.msc",
+                    D: "services.msc"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-12",
+                section: "SUPUESTO 2",
+                question: "12. Calcular la dirección de red y la dirección de broadcast para la IP 192.168.5.100 con una máscara de subred 255.255.255.224.",
+                options: {
+                    A: "Red: 192.168.5.0, Broadcast: 192.168.5.31",
+                    B: "Red: 192.168.5.64, Broadcast: 192.168.5.95",
+                    C: "Red: 192.168.5.96, Broadcast: 192.168.5.127",
+                    D: "Red: 192.168.5.128, Broadcast: 192.168.5.159"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-13",
+                section: "SUPUESTO 2",
+                question: "13. ¿Qué protocolo se utiliza para la sincronización de la hora entre dispositivos en una red?",
+                options: {
+                    A: "SNMP.",
+                    B: "NTP.",
+                    C: "FTP.",
+                    D: "DHCP."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-14",
+                section: "SUPUESTO 2",
+                question: "14. En Linux, para ver los mensajes del kernel y del sistema en tiempo real, ¿qué comando se utiliza?",
+                options: {
+                    A: "cat /var/log/syslog",
+                    B: "dmesg",
+                    C: "journalctl",
+                    D: "tail -f /var/log/messages"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-15",
+                section: "SUPUESTO 2",
+                question: "15. ¿Qué componente de Windows Server es esencial para la gestión centralizada de usuarios, equipos y recursos en un dominio?",
+                options: {
+                    A: "IIS (Internet Information Services).",
+                    B: "Active Directory Domain Services (AD DS).",
+                    C: "Hyper-V.",
+                    D: "File and Storage Services."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-16",
+                section: "SUPUESTO 2",
+                question: "16. ¿Qué tipo de ataque de seguridad se basa en la interceptación de la comunicación entre dos partes para suplantar la identidad de una de ellas?",
+                options: {
+                    A: "Phishing.",
+                    B: "DDoS.",
+                    C: "Man-in-the-Middle (MitM).",
+                    D: "SQL Injection."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-17",
+                section: "SUPUESTO 2",
+                question: "17. En Linux, para buscar archivos que contengan un texto específico dentro de un directorio y sus subdirectorios, ¿qué comando sería el más eficiente?",
+                options: {
+                    A: "find . -name '*.txt' | xargs grep 'texto'",
+                    B: "grep -r 'texto' .",
+                    C: "locate 'texto'",
+                    D: "cat * | grep 'texto'"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-18",
+                section: "SUPUESTO 2",
+                question: "18. ¿Qué puerto es comúnmente utilizado por el protocolo RDP (Remote Desktop Protocol) para la conexión remota a escritorios de Windows?",
+                options: {
+                    A: "22.",
+                    B: "3389.",
+                    C: "23.",
+                    D: "8080."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-19",
+                section: "SUPUESTO 2",
+                question: "19. ¿Cuál de los siguientes no es un tipo de registro DNS?",
+                options: {
+                    A: "A (Address Record).",
+                    B: "MX (Mail Exchange Record).",
+                    C: "TXT (Text Record).",
+                    D: "MAC (Media Access Control Record)."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "S2-20",
+                section: "SUPUESTO 2",
+                question: "20. En un entorno de virtualización, ¿qué software se encarga de crear y gestionar las máquinas virtuales, asignando los recursos físicos del hardware?",
+                options: {
+                    A: "Sistema operativo invitado.",
+                    B: "Hypervisor.",
+                    C: "Emulator.",
+                    D: "Container."
+                },
+                correctAnswer: "B"
+            },
+            // Preguntas de reserva Supuesto 2 (5 preguntas)
+            {
+                id: "S2-R1",
+                section: "SUPUESTO 2 (Reserva)",
+                question: "R1. Para la dirección IP 192.168.1.10/29, ¿cuál es la primera dirección IP utilizable en la subred?",
+                options: {
+                    A: "192.168.1.8",
+                    B: "192.168.1.9",
+                    C: "192.168.1.10",
+                    D: "192.168.1.15"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-R2",
+                section: "SUPUESTO 2 (Reserva)",
+                question: "R2. En Linux, ¿qué comando se utiliza para montar un sistema de archivos (por ejemplo, una partición o un dispositivo USB)?",
+                options: {
+                    A: "df",
+                    B: "fdisk",
+                    C: "mount",
+                    D: "umount"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "S2-R3",
+                section: "SUPUESTO 2 (Reserva)",
+                question: "R3. ¿Qué servicio de Windows permite la gestión centralizada de políticas de seguridad para usuarios y equipos en un dominio?",
+                options: {
+                    A: "Servicios de Terminal Server.",
+                    B: "Directiva de Grupo (Group Policy).",
+                    C: "Firewall de Windows.",
+                    D: "BitLocker."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-R4",
+                section: "SUPUESTO 2 (Reserva)",
+                question: "R4. ¿Qué es un 'VLAN' (Virtual Local Area Network)?",
+                options: {
+                    A: "Una red inalámbrica.",
+                    B: "Una red lógica que segmenta una red física en múltiples dominios de broadcast.",
+                    C: "Una red privada virtual.",
+                    D: "Un tipo de red de área amplia."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "S2-R5",
+                section: "SUPUESTO 2 (Reserva)",
+                question: "R5. ¿Qué comando de Linux se utiliza para ver el contenido de un archivo de texto paginado (una pantalla a la vez)?",
+                options: {
+                    A: "cat",
+                    B: "more o less",
+                    C: "grep",
+                    D: "head"
+                },
+                correctAnswer: "B"
+            }
+        ];
+
+        const quizQuestionsDiv = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const resetTestBtn = document.getElementById('reset-test-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const correctAnswersDisplay = document.getElementById('correct-answers-display');
+        const incorrectAnswersDisplay = document.getElementById('incorrect-answers-display');
+        const unansweredQuestionsDisplay = document.getElementById('unanswered-questions-display');
+        const totalQuestionsAnsweredDisplay = document.getElementById('total-questions-answered-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const restartBtn = document.getElementById('restart-btn');
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Almacena las respuestas del usuario {questionId: selectedOptionKey}
+        let quizSubmitted = false; // Estado para saber si el test ha sido finalizado
+
+        const LOCAL_STORAGE_KEY_INDEX = 'currentQuestionIndex_TAIIA_v2'; // Cambiado para evitar conflictos con versiones anteriores
+        const LOCAL_STORAGE_KEY_ANSWERS = 'userAnswers_TAIIA_v2'; // Cambiado para evitar conflictos con versiones anteriores
+        const LOCAL_STORAGE_KEY_SUBMITTED = 'quizSubmitted_TAIIA_v2'; // Cambiado para evitar conflictos con versiones anteriores
+
+        // Función para cargar el estado del quiz desde localStorage
+        function loadQuizState() {
+            try {
+                const savedIndex = localStorage.getItem(LOCAL_STORAGE_KEY_INDEX);
+                const savedAnswers = localStorage.getItem(LOCAL_STORAGE_KEY_ANSWERS);
+                const savedSubmitted = localStorage.getItem(LOCAL_STORAGE_KEY_SUBMITTED);
+
+                if (savedIndex !== null) {
+                    currentQuestionIndex = parseInt(savedIndex, 10);
+                }
+                if (savedAnswers !== null) {
+                    userAnswers = JSON.parse(savedAnswers);
+                }
+                if (savedSubmitted !== null) {
+                    quizSubmitted = JSON.parse(savedSubmitted);
+                }
+            } catch (e) {
+                console.error("Error loading from LocalStorage:", e);
+                // Si hay un error, inicializar a valores por defecto
+                currentQuestionIndex = 0;
+                userAnswers = {};
+                quizSubmitted = false;
+            }
+        }
+
+        // Función para guardar el estado del quiz en localStorage
+        function saveQuizState() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY_INDEX, currentQuestionIndex);
+                localStorage.setItem(LOCAL_STORAGE_KEY_ANSWERS, JSON.stringify(userAnswers));
+                localStorage.setItem(LOCAL_STORAGE_KEY_SUBMITTED, JSON.stringify(quizSubmitted));
+            } catch (e) {
+                console.error("Error saving to LocalStorage:", e);
+            }
+        }
+
+        // Función para renderizar una pregunta
+        function renderQuestion() {
+            quizQuestionsDiv.innerHTML = ''; // Limpiar preguntas anteriores
+            quizResultsDiv.style.display = 'none'; // Ocultar resultados
+            quizQuestionsDiv.style.display = 'block'; // Mostrar preguntas
+
+            const questionData = allQuestions[currentQuestionIndex];
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionNumber = document.createElement('p');
+            questionNumber.className = 'text-sm text-gray-500 mb-2';
+            questionNumber.textContent = `Pregunta ${currentQuestionIndex + 1} de ${allQuestions.length} (${questionData.section})`;
+            questionCard.appendChild(questionNumber);
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text text-lg md:text-xl font-medium text-gray-900 mb-4';
+            questionText.textContent = questionData.question;
+            questionCard.appendChild(questionText);
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options flex flex-col space-y-3';
+
+            const optionKeys = ['A', 'B', 'C', 'D'];
+            optionKeys.forEach(key => {
+                const optionId = `q${currentQuestionIndex}-option-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${currentQuestionIndex}`;
+                input.id = optionId;
+                input.value = key;
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.innerHTML = `<span class="option-text">${key}. ${questionData.options[key]}</span>`;
+
+                // Si ya hay una respuesta guardada, marcarla
+                if (userAnswers[questionData.id] === key) {
+                    input.checked = true;
+                }
+
+                // Deshabilitar opciones si el quiz ha sido enviado o si ya se ha respondido la pregunta
+                if (quizSubmitted || userAnswers[questionData.id] !== undefined) {
+                    input.disabled = true;
+                    label.classList.add('disabled-option');
+                    // Mostrar feedback si la pregunta ya ha sido respondida
+                    if (userAnswers[questionData.id] !== undefined) {
+                        if (userAnswers[questionData.id] === questionData.correctAnswer) {
+                            label.classList.add('correct-answer');
+                        } else {
+                            label.classList.add('incorrect-answer');
+                            // Resaltar la respuesta correcta si el usuario falló
+                            if (key === questionData.correctAnswer) {
+                                label.classList.add('correct-answer');
+                            }
+                        }
+                    }
+                }
+
+                // Añadir evento de cambio para el feedback instantáneo
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !input.disabled) {
+                        const selectedOption = event.target.value;
+                        userAnswers[questionData.id] = selectedOption;
+                        saveQuizState(); // Guardar la respuesta inmediatamente
+
+                        // Deshabilitar todas las opciones para esta pregunta
+                        optionsContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
+                            radio.disabled = true;
+                            radio.nextElementSibling.classList.add('disabled-option');
+                        });
+
+                        // Mostrar feedback visual
+                        const feedbackMessage = document.createElement('div');
+                        feedbackMessage.className = 'result-message mt-4';
+
+                        if (selectedOption === questionData.correctAnswer) {
+                            feedbackMessage.classList.add('correct');
+                            feedbackMessage.textContent = '¡Correcto!';
+                            label.classList.add('correct-answer'); // Resaltar la opción seleccionada como correcta
+                        } else {
+                            feedbackMessage.classList.add('incorrect');
+                            feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es ' + questionData.correctAnswer + '.';
+                            label.classList.add('incorrect-answer'); // Resaltar la opción seleccionada como incorrecta
+
+                            // Resaltar la respuesta correcta
+                            const correctLabel = optionsContainer.querySelector(`label[for="q${currentQuestionIndex}-option-${questionData.correctAnswer}"]`);
+                            if (correctLabel) {
+                                correctLabel.classList.add('correct-answer');
+                            }
+                        }
+                        questionCard.appendChild(feedbackMessage);
+                    }
+                });
+
+                optionsContainer.appendChild(input);
+                optionsContainer.appendChild(label);
+            });
+
+            questionCard.appendChild(optionsContainer);
+            quizQuestionsDiv.appendChild(questionCard);
+
+            updateNavigationButtons();
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === allQuestions.length - 1 && !quizSubmitted;
+
+            if (currentQuestionIndex === allQuestions.length - 1 && !quizSubmitted) {
+                submitBtn.style.display = 'block';
+                nextBtn.style.display = 'none';
+            } else {
+                submitBtn.style.display = 'none';
+                nextBtn.style.display = 'block';
+            }
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+                resetTestBtn.style.display = 'block'; // Mostrar botón de reiniciar test
+            } else {
+                resetTestBtn.style.display = 'block'; // Siempre visible para reiniciar
+            }
+        }
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            quizQuestionsDiv.style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'none';
+            resetTestBtn.style.display = 'block'; // Mantener visible el botón de reiniciar
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            allQuestions.forEach(q => {
+                const userAnswer = userAnswers[q.id];
+                if (userAnswer === undefined) {
+                    unansweredCount++;
+                } else if (userAnswer === q.correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            correctAnswersDisplay.textContent = correctCount;
+            incorrectAnswersDisplay.textContent = incorrectCount;
+            unansweredQuestionsDisplay.textContent = unansweredCount;
+            totalQuestionsAnsweredDisplay.textContent = correctCount + incorrectCount + unansweredCount;
+            totalQuestionsDisplay.textContent = allQuestions.length;
+        }
+
+        // Función para reiniciar el test completamente
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            localStorage.clear(); // Limpia todo el localStorage para esta aplicación
+            renderQuestion();
+            updateNavigationButtons();
+        }
+
+        // Event Listeners
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < allQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+                saveQuizState();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+                saveQuizState();
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            saveQuizState();
+            showResults();
+        });
+
+        resetTestBtn.addEventListener('click', resetQuiz);
+
+        restartBtn.addEventListener('click', () => {
+            // Permite revisar el test después de finalizarlo, volviendo a la primera pregunta
+            currentQuestionIndex = 0;
+            renderQuestion();
+            updateNavigationButtons();
+        });
+
+        // Inicializar el test al cargar la página
+        window.onload = () => {
+            loadQuizState();
+            if (quizSubmitted) {
+                showResults(); // Si ya se envió, mostrar resultados al cargar
+            } else {
+                renderQuestion(); // Si no, renderizar la pregunta actual
+            }
+        };
+    </script>
+</body>
+</html>

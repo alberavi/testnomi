@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Oposición TAI - Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better aesthetics and responsiveness */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #2d3748; /* Darker text for readability */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            max-width: 900px;
+            width: 95%; /* Responsive width */
+            margin: 1rem;
+        }
+        h1, h2 {
+            color: #2b6cb0; /* Deeper blue for headings */
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 700; /* Bold headings */
+        }
+        .question-block {
+            background-color: #ebf4ff; /* Lighter blue background for question blocks */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #c3dafe; /* Light blue border */
+        }
+        .question-number {
+            font-weight: bold;
+            color: #4a5568; /* Slightly darker gray for question number */
+            margin-bottom: 0.5rem;
+        }
+        .question-text {
+            margin-bottom: 1rem;
+            font-weight: 600; /* Semi-bold */
+            color: #2d3748;
+            line-height: 1.5;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease-in-out;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* Light border for options */
+        }
+        .options label:hover {
+            background-color: #f7fafc; /* Very light gray on hover */
+        }
+        .options input[type="radio"] {
+            margin-right: 0.75rem;
+            transform: scale(1.1); /* Slightly larger radio buttons */
+        }
+        .result {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: bold;
+            display: none;
+            text-align: center;
+        }
+        .correct {
+            background-color: #e6fffa; /* Light green */
+            color: #38a169; /* Dark green text */
+            border: 1px solid #68d391;
+        }
+        .incorrect {
+            background-color: #fff5f5; /* Light red */
+            color: #e53e3e; /* Dark red text */
+            border: 1px solid #fc8181;
+        }
+        .correct-answer-display {
+            font-size: 0.9em;
+            color: #3182ce; /* Blue for correct answer hint */
+            margin-top: 0.5rem;
+            display: none;
+            text-align: center;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1rem; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: #4299e1; /* Blue button */
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1; /* Allow buttons to grow */
+            min-width: 150px; /* Minimum width for buttons */
+        }
+        button:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        button:disabled {
+            background-color: #a0aec0; /* Gray when disabled */
+            cursor: not-allowed;
+            transform: none;
+        }
+        #summary {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding: 1.5rem;
+            border: 2px dashed #4299e1;
+            border-radius: 0.75rem;
+            background-color: #ebf8ff; /* Very light blue for summary */
+        }
+        #summary p {
+            font-size: 1.1em;
+            margin: 0.75rem 0;
+        }
+        #summary strong {
+            color: #2b6cb0;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .navigation-buttons button {
+            flex-grow: 1;
+        }
+        .question-indicator {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Oposición TAI - IA 2</h1>
+        <p class="text-center mb-6">Selecciona una opción para cada pregunta. Tu progreso se guardará automáticamente.</p>
+
+        <div id="quizContainer">
+            <!-- Question will be rendered here -->
+        </div>
+
+        <div class="navigation-buttons">
+            <button id="prevBtn" onclick="prevQuestion()" class="bg-gray-500 hover:bg-gray-700">Anterior</button>
+            <button id="nextBtn" onclick="nextQuestion()">Siguiente</button>
+        </div>
+
+        <div class="question-indicator" id="questionIndicator"></div>
+
+        <div class="button-group">
+            <button id="resetQuizBtn" onclick="resetQuiz()" class="bg-red-500 hover:bg-red-700">Reiniciar Test</button>
+            <button id="finishQuizBtn" onclick="submitQuiz()">Finalizar Test y Ver Puntuación Final</button>
+        </div>
+
+        <div id="summary" class="hidden">
+            <h2>Resultados Finales</h2>
+            <p>Puntuación total: <strong id="finalScore"></strong></p>
+            <p>Preguntas correctas: <strong id="correctCount"></strong></p>
+            <p>Preguntas incorrectas: <strong id="incorrectCount"></strong></p>
+            <p>Preguntas sin contestar: <strong id="unansweredCount"></strong></p>
+            <button onclick="resetQuiz()" class="mt-4 bg-blue-500 hover:bg-blue-700">Volver a Empezar</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            // Parte 1: Sistemas Operativos (Windows y Linux)
+            {
+                question: "¿Cuál de los siguientes no es un tipo de cuenta de usuario en Windows?",
+                options: ["Administrador", "Estándar", "Invitado", "Superusuario"],
+                correct: "Superusuario",
+                source: null
+            },
+            {
+                question: "En Windows, ¿qué combinación de teclas abre el Administrador de Tareas?",
+                options: ["Ctrl + Shift + Esc", "Alt + F4", "Ctrl + Alt + Supr", "Windows + R"],
+                correct: "Ctrl + Shift + Esc",
+                source: null
+            },
+            {
+                question: "¿Qué comando de Linux se utiliza para listar el contenido de un directorio?",
+                options: ["`dir`", "`ls`", "`list`", "`show`"],
+                correct: "`ls`",
+                source: null
+            },
+            {
+                question: "¿Cuál es el comando de Linux para cambiar los permisos de un archivo?",
+                options: ["`chown`", "`chmod`", "`chgrp`", "`mod`"],
+                correct: "`chmod`",
+                source: null
+            },
+            {
+                question: "En Windows, ¿qué utilidad permite desfragmentar un disco duro?",
+                options: ["Comprobación de errores", "Liberador de espacio en disco", "Desfragmentador de disco", "Copias de seguridad"],
+                correct: "Desfragmentador de disco",
+                source: null
+            },
+            {
+                question: "¿Qué archivo de configuración principal utiliza Linux para la gestión de usuarios?",
+                options: ["`/etc/passwd`", "`/etc/users`", "`/etc/shadow`", "`/etc/group`"],
+                correct: "`/etc/passwd`",
+                source: null
+            },
+            {
+                question: "¿Cuál es el propósito del archivo `pagefile.sys` en Windows?",
+                options: ["Almacenar archivos temporales de Internet.", "Contener la memoria virtual o archivo de paginación.", "Guardar puntos de restauración del sistema.", "Almacenar archivos de configuración del sistema."],
+                correct: "Contener la memoria virtual o archivo de paginación.",
+                source: null
+            },
+            {
+                question: "En Linux, ¿qué comando se utiliza para detener un proceso en ejecución por su PID (Process ID)?",
+                options: ["`stop`", "`kill`", "`halt`", "`terminate`"],
+                correct: "`kill`",
+                source: null
+            },
+            {
+                question: "¿Qué sistema de archivos es el predeterminado en las instalaciones modernas de Windows?",
+                options: ["FAT32", "exFAT", "NTFS", "CDFS"],
+                correct: "NTFS",
+                source: null
+            },
+            {
+                question: "¿Cuál de los siguientes comandos de Linux se utiliza para mostrar el directorio de trabajo actual?",
+                options: ["`pwd`", "`cwd`", "`dir`", "`home`"],
+                correct: "`pwd`",
+                source: null
+            },
+
+            // Parte 2: Redes
+            {
+                question: "¿Qué protocolo se utiliza para la resolución de nombres de dominio a direcciones IP?",
+                options: ["FTP", "HTTP", "DNS", "SMTP"],
+                correct: "DNS",
+                source: null
+            },
+            {
+                question: "¿Cuál de los siguientes rangos de direcciones IP es de clase B y privado?",
+                options: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16"],
+                correct: "172.16.0.0/12",
+                source: null
+            },
+            {
+                question: "¿Qué dispositivo de red opera en la capa 2 (Enlace de Datos) del modelo OSI?",
+                options: ["Router", "Firewall", "Switch", "Hub"],
+                correct: "Switch",
+                source: null
+            },
+            {
+                question: "¿Qué protocolo se utiliza para la transferencia segura de archivos?",
+                options: ["FTP", "TFTP", "SFTP", "SNMP"],
+                correct: "SFTP",
+                source: null
+            },
+            {
+                question: "¿Cuál es el puerto estándar utilizado por el protocolo HTTP?",
+                options: ["21", "23", "80", "443"],
+                correct: "80",
+                source: null
+            },
+            {
+                question: "¿Qué comando se utiliza en Windows para comprobar la conectividad IP con otro host?",
+                options: ["`ipconfig`", "`netstat`", "`ping`", "`tracert`"],
+                correct: "`ping`",
+                source: null
+            },
+            {
+                question: "¿Qué tipo de cable de red se utiliza comúnmente para conectar dispositivos de red de diferentes tipos (por ejemplo, PC a switch)?",
+                options: ["Cable cruzado (crossover)", "Cable directo (straight-through)", "Cable coaxial", "Fibra óptica"],
+                correct: "Cable directo (straight-through)",
+                source: null
+            },
+            {
+                question: "¿Qué dirección IP es utilizada comúnmente como dirección de loopback?",
+                options: ["0.0.0.0", "127.0.0.1", "255.255.255.255", "192.168.1.1"],
+                correct: "127.0.0.1",
+                source: null
+            },
+            {
+                question: "¿Qué protocolo se utiliza para el envío de correo electrónico?",
+                options: ["POP3", "IMAP", "SMTP", "DHCP"],
+                correct: "SMTP",
+                source: null
+            },
+            {
+                question: "¿Qué hace un servidor DHCP?",
+                options: ["Resuelve nombres de dominio a direcciones IP.", "Asigna dinámicamente direcciones IP a los clientes.", "Almacena páginas web.", "Permite la transferencia de archivos."],
+                correct: "Asigna dinámicamente direcciones IP a los clientes.",
+                source: null
+            },
+
+            // Parte 3: Hardware
+            {
+                question: "¿Qué componente principal de un ordenador se encarga de ejecutar las instrucciones de los programas?",
+                options: ["RAM", "Disco Duro", "CPU", "Tarjeta Gráfica"],
+                correct: "CPU",
+                source: null
+            },
+            {
+                question: "¿Qué tipo de memoria es volátil y pierde su contenido al apagar el ordenador?",
+                options: ["ROM", "BIOS", "RAM", "Flash"],
+                correct: "RAM",
+                source: null
+            },
+            {
+                question: "¿Cuál de los siguientes no es un tipo de puerto de conexión de vídeo?",
+                options: ["HDMI", "DisplayPort", "USB-C (con modo alternativo DisplayPort)", "Ethernet"],
+                correct: "Ethernet",
+                source: null
+            },
+            {
+                question: "¿Qué es un SSD?",
+                options: ["Un tipo de disco duro mecánico.", "Una unidad de estado sólido.", "Una tarjeta de expansión de red.", "Un tipo de procesador."],
+                correct: "Una unidad de estado sólido.",
+                source: null
+            },
+            {
+                question: "¿Qué componente proporciona energía a los demás componentes del ordenador?",
+                options: ["Placa Base", "Fuente de Alimentación", "Tarjeta Gráfica", "Disipador"],
+                correct: "Fuente de Alimentación",
+                source: null
+            },
+            {
+                question: "¿Qué función cumple la BIOS/UEFI en un ordenador?",
+                options: ["Almacena el sistema operativo.", "Gestiona la memoria RAM.", "Inicia el hardware y carga el sistema operativo.", "Ejecuta los programas de aplicación."],
+                correct: "Inicia el hardware y carga el sistema operativo.",
+                source: null
+            },
+            {
+                question: "¿Qué tipo de ranura de expansión se utiliza comúnmente para tarjetas gráficas de alto rendimiento?",
+                options: ["PCI", "PCIe", "AGP", "ISA"],
+                correct: "PCIe",
+                source: null
+            },
+            {
+                question: "¿Cuál es la unidad de medida utilizada para la velocidad de la CPU?",
+                options: ["Gigabytes (GB)", "Terabytes (TB)", "Gigahercios (GHz)", "Megabits por segundo (Mbps)"],
+                correct: "Gigahercios (GHz)",
+                source: null
+            },
+            {
+                question: "¿Qué dispositivo es esencial para la comunicación de un ordenador portátil con una red Wi-Fi?",
+                options: ["Tarjeta de red Ethernet", "Tarjeta de red inalámbrica", "Módem", "Router"],
+                correct: "Tarjeta de red inalámbrica",
+                source: null
+            },
+            {
+                question: "¿Qué diferencia principal existe entre la RAM DDR4 y la DDR5?",
+                options: ["DDR5 tiene menos pines.", "DDR5 tiene mayor velocidad y eficiencia.", "DDR4 es más reciente.", "DDR4 solo funciona con procesadores Intel."],
+                correct: "DDR5 tiene mayor velocidad y eficiencia.",
+                source: null
+            },
+
+            // Parte 4: Software de Ofimática (Microsoft Office / LibreOffice)
+            {
+                question: "En Microsoft Word, ¿qué vista permite ver el documento tal y como se imprimirá?",
+                options: ["Borrador", "Esquema", "Diseño de impresión", "Lectura"],
+                correct: "Diseño de impresión",
+                source: null
+            },
+            {
+                question: "En Microsoft Excel, ¿qué símbolo debe preceder a una fórmula?",
+                options: ["`+`", "`-`", "`=`", "`*`"],
+                correct: "`=`",
+                source: null
+            },
+            {
+                question: "¿Qué función de Excel se utiliza para sumar un rango de celdas que cumplen una condición?",
+                options: ["`SUMA`", "`CONTAR.SI`", "`SUMAR.SI`", "`PROMEDIO`"],
+                correct: "`SUMAR.SI`",
+                source: null
+            },
+            {
+                question: "En PowerPoint, ¿qué es un patrón de diapositivas?",
+                options: ["Un conjunto de diapositivas prediseñadas.", "Una plantilla que define el diseño y el formato de las diapositivas.", "Un efecto de transición entre diapositivas.", "Una herramienta para insertar gráficos."],
+                correct: "Una plantilla que define el diseño y el formato de las diapositivas.",
+                source: null
+            },
+            {
+                question: "¿Qué programa de LibreOffice es el equivalente a Microsoft Word?",
+                options: ["Calc", "Impress", "Writer", "Base"],
+                correct: "Writer",
+                source: null
+            },
+            {
+                question: "En Excel, ¿qué tipo de referencia de celda no cambia cuando se copia la fórmula a otra celda?",
+                options: ["Relativa", "Absoluta", "Mixta", "Circular"],
+                correct: "Absoluta",
+                source: null
+            },
+            {
+                question: "En Word, ¿qué opción permite crear un índice automático del contenido del documento?",
+                options: ["Tabla de ilustraciones", "Tabla de contenido", "Índice analítico", "Notas al pie"],
+                correct: "Tabla de contenido",
+                source: null
+            },
+            {
+                question: "En PowerPoint, ¿qué vista permite organizar y reorganizar las diapositivas de una presentación?",
+                options: ["Vista Normal", "Vista Clasificador de diapositivas", "Vista Presentación", "Vista Esquema"],
+                correct: "Vista Clasificador de diapositivas",
+                source: null
+            },
+            {
+                question: "¿Qué programa de LibreOffice se utiliza para crear presentaciones?",
+                options: ["Draw", "Math", "Impress", "Writer"],
+                correct: "Impress",
+                source: null
+            },
+            {
+                question: "¿Cuál es el formato de archivo predeterminado para guardar un documento en Microsoft Word 2016 o posterior?",
+                options: [".doc", ".docx", ".txt", ".rtf"],
+                correct: ".docx",
+                source: null
+            },
+
+            // Parte 5: Bases de Datos
+            {
+                question: "¿Qué es una clave primaria en una base de datos relacional?",
+                options: ["Un campo que puede contener valores nulos.", "Un campo que identifica de forma única cada registro en una tabla.", "Un campo que relaciona dos tablas.", "Un campo utilizado para ordenar los registros."],
+                correct: "Un campo que identifica de forma única cada registro en una tabla.",
+                source: null
+            },
+            {
+                question: "¿Qué lenguaje se utiliza para definir y manipular datos en una base de datos relacional?",
+                options: ["HTML", "XML", "SQL", "Python"],
+                correct: "SQL",
+                source: null
+            },
+            {
+                question: "¿Qué comando SQL se utiliza para recuperar datos de una o más tablas?",
+                options: ["`INSERT`", "`UPDATE`", "`DELETE`", "`SELECT`"],
+                correct: "`SELECT`",
+                source: null
+            },
+            {
+                question: "¿Qué comando SQL se utiliza para añadir nuevos registros a una tabla?",
+                options: ["`ADD`", "`INSERT INTO`", "`CREATE RECORD`", "`PUT`"],
+                correct: "`INSERT INTO`",
+                source: null
+            },
+            {
+                question: "¿Qué es una clave foránea (Foreign Key)?",
+                options: ["Una clave que identifica de forma única una tabla.", "Una clave primaria de otra tabla que se utiliza para establecer una relación.", "Un campo que no puede ser indexado.", "Un tipo de restricción de integridad de datos."],
+                correct: "Una clave primaria de otra tabla que se utiliza para establecer una relación.",
+                source: null
+            },
+            {
+                question: "¿Qué comando SQL se utiliza para modificar datos existentes en una tabla?",
+                options: ["`ALTER`", "`MODIFY`", "`UPDATE`", "`CHANGE`"],
+                correct: "`UPDATE`",
+                source: null
+            },
+            {
+                question: "¿Qué tipo de relación existe cuando un registro de la tabla A puede estar relacionado con varios registros de la tabla B, y un registro de la tabla B puede estar relacionado con varios registros de la tabla A?",
+                options: ["Uno a uno", "Uno a muchos", "Muchos a uno", "Muchos a muchos"],
+                correct: "Muchos a muchos",
+                source: null
+            },
+            {
+                question: "¿Cuál de los siguientes no es un sistema gestor de bases de datos relacionales (SGBDR) popular?",
+                options: ["MySQL", "PostgreSQL", "MongoDB", "Oracle Database"],
+                correct: "MongoDB",
+                source: null
+            },
+            {
+                question: "¿Qué comando SQL se utiliza para eliminar una tabla de la base de datos?",
+                options: ["`REMOVE TABLE`", "`DROP TABLE`", "`DELETE TABLE`", "ERASE TABLE"],
+                correct: "`DROP TABLE`",
+                source: null
+            },
+            {
+                question: "¿Qué es la normalización de bases de datos?",
+                options: ["El proceso de hacer una copia de seguridad de una base de datos.", "El proceso de diseñar una base de datos para reducir la redundancia de datos y mejorar la integridad.", "El proceso de optimizar las consultas SQL.", "El proceso de asegurar los datos contra accesos no autorizados."],
+                correct: "El proceso de diseñar una base de datos para reducir la redundancia de datos y mejorar la integridad.",
+                source: null
+            },
+
+            // Parte 6: Seguridad Informática y CPD
+            {
+                question: "Según la metodología SGSI, ¿qué estrategia se basa en la mejora continua PDCA (Plan Do Check Act)?",
+                options: ["MAGERIT", "ENS", "ISO/IEC 27001 y 27002", "Common Criteria"],
+                correct: "ISO/IEC 27001 y 27002",
+                source: "4, 5"
+            },
+            {
+                question: "¿Qué herramienta del CCN-CERT está destinada al análisis avanzado de malware e integra MARIA y MARTA?",
+                options: ["ANA", "AMPARO", "ADA", "CLAUDIA"],
+                correct: "ADA",
+                source: "107"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un atributo core a proteger en seguridad de la información, según la tríada CIA?",
+                options: ["Confidencialidad", "Disponibilidad", "Autenticidad", "Rendimiento"],
+                correct: "Rendimiento",
+                source: "14, 15, 17, 18"
+            },
+            {
+                question: "En el contexto de seguridad informática, ¿qué se entiende por \"vulnerabilidad\"?",
+                options: ["Un evento que pueda darse aprovechando una debilidad del sistema.", "El daño producido por la ocurrencia de una amenaza.", "La probabilidad de ocurrencia/materialización de una amenaza o debilidad del sistema.", "Una medida para evitar o reducir el riesgo."],
+                correct: "La probabilidad de ocurrencia/materialización de una amenaza o debilidad del sistema.",
+                source: "22"
+            },
+            {
+                question: "¿Qué método de autenticación permite la autenticación multifactor (MFA/2FA)?",
+                options: ["Solo PIN", "Solo huella dactilar", "Combinar \"lo que sé\", \"lo que tengo\" y \"lo que soy\"", "Solo token"],
+                correct: "Combinar \"lo que sé\", \"lo que tengo\" y \"lo que soy\"",
+                source: "74, 75, 76"
+            },
+            {
+                question: "¿Qué tipo de malware cifra archivos para pedir un rescate?",
+                options: ["Troyano", "Spyware", "Ransomware", "Gusano"],
+                correct: "Ransomware",
+                source: "86"
+            },
+            {
+                question: "¿Qué norma regula el Esquema Nacional de Seguridad (ENS) y es de obligado cumplimiento para la Administración Pública española?",
+                options: ["Ley Orgánica 3/2018", "Real Decreto 3/2010", "ISO/IEC 27001", "Ley 39/2015"],
+                correct: "Real Decreto 3/2010",
+                source: "6, 74"
+            },
+            {
+                question: "En un Centro de Procesamiento de Datos (CPD), ¿cuál es la anchura normalizada de los racks/bastidores?",
+                options: ["21 pulgadas", "175 pulgadas", "19 pulgadas", "42U"],
+                correct: "19 pulgadas",
+                source: "139"
+            },
+            {
+                question: "Según la norma TIA 942, ¿qué Tier de Data Center tiene una disponibilidad del 99,995% y todos sus componentes son redundantes ($2(N+1)$)?",
+                options: ["Tier I", "Tier II", "Tier III", "Tier IV"],
+                correct: "Tier IV",
+                source: "152"
+            },
+            {
+                question: "¿Qué herramienta de seguridad del CCN-CERT está especializada en la defensa contra ataques avanzados (APT) y analiza el tráfico de red en la DMZ?",
+                options: ["ADA", "ANA", "CARMEN", "GLORIA"],
+                correct: "CARMEN",
+                source: "114"
+            },
+            {
+                question: "¿Qué tipo de ataque permite a una tercera persona inyectar código JavaScript malicioso en páginas web por falta de validación en las entradas?",
+                options: ["SQL Injection", "Phishing", "XSS (Cross Site Scripting)", "Pharming"],
+                correct: "XSS (Cross Site Scripting)",
+                source: "92"
+            },
+            {
+                question: "¿Qué concepto se refiere a la probabilidad de ocurrencia de una amenaza junto con el impacto que tendría?",
+                options: ["Vulnerabilidad", "Riesgo", "Amenaza", "Impacto"],
+                correct: "Riesgo",
+                source: "28"
+            },
+            {
+                question: "En el contexto de seguridad física de un CPD, ¿qué significa la sigla HVAC?",
+                options: ["Alta Velocidad y Alta Capacidad.", "Calefacción, Ventilación y Aire Acondicionado (Climatización).", "Hardware y Verificación de Acceso Controlado.", "Hot Vents and Cooling."],
+                correct: "Calefacción, Ventilación y Aire Acondicionado (Climatización).",
+                source: "141"
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas es un \"password cracker\" por fuerza bruta y diccionarios?",
+                options: ["nmap", "nessus", "John the Ripper", "Wireshark"],
+                correct: "John the Ripper",
+                source: "78"
+            },
+            {
+                question: "¿Qué equipo se encarga de analizar sistemas de seguridad, detectar fallos e implementar medidas de seguridad, siendo parte de la \"Seguridad Defensiva\"?",
+                options: ["Red Team", "Blue Team", "Purple Team", "Hacker"],
+                correct: "Blue Team",
+                source: "101"
+            },
+            {
+                question: "¿Qué herramienta del CCN-CERT se utiliza para el análisis y gestión de riesgos, siguiendo la metodología MAGERIT?",
+                options: ["AMPARO", "CLARA", "PILAR", "GLORIA"],
+                correct: "PILAR",
+                source: "133"
+            },
+            {
+                question: "¿Qué tipo de ataque se basa en la suplantación de identidad, como recibir un email supuestamente del banco para obtener credenciales?",
+                options: ["Pharming", "Spoofing", "Phishing", "DoS"],
+                correct: "Phishing",
+                source: "95"
+            },
+            {
+                question: "¿Qué herramienta se utiliza para la detección de vulnerabilidades en sistemas, mencionada junto con OpenVAS?",
+                options: ["nmap", "nessus", "Metasploit", "Snort"],
+                correct: "nessus",
+                source: "60, 61"
+            },
+            {
+                question: "¿Qué sistema de autenticación utiliza \"tickets\" y se menciona junto con Radius?",
+                options: ["SAML", "Kerberos", "OAuth", "OTP"],
+                correct: "Kerberos",
+                source: "48"
+            },
+            {
+                question: "¿Qué medida de seguridad lógica se menciona para el control de acceso sin autenticación?",
+                options: ["MFA/2FA", "Backdoor", "VPN", "Antivirus"],
+                correct: "Backdoor",
+                source: "72"
+            },
+
+            // Parte 7: Programación y Conceptos Generales de TI
+            {
+                question: "¿Qué es un algoritmo?",
+                options: ["Un lenguaje de programación.", "Un conjunto finito de instrucciones bien definidas, ordenadas y finitas para resolver un problema.", "Un tipo de estructura de datos.", "Un programa compilado."],
+                correct: "Un conjunto finito de instrucciones bien definidas, ordenadas y finitas para resolver un problema.",
+                source: null
+            },
+            {
+                question: "¿Qué es la virtualización?",
+                options: ["La capacidad de un programa para interactuar con el usuario.", "La creación de una versión virtual de un recurso informático (como un sistema operativo, un servidor, un dispositivo de almacenamiento).", "El proceso de cifrar datos.", "La optimización del rendimiento de hardware."],
+                correct: "La creación de una versión virtual de un recurso informático (como un sistema operativo, un servidor, un dispositivo de almacenamiento).",
+                source: null
+            },
+            {
+                question: "¿Qué es el software de código abierto (Open Source)?",
+                options: ["Software que solo puede ser utilizado por empresas.", "Software cuyo código fuente está disponible públicamente para su estudio, modificación y distribución.", "Software que requiere una licencia de pago.", "Software diseñado para ser ejecutado en un único tipo de hardware."],
+                correct: "Software cuyo código fuente está disponible públicamente para su estudio, modificación y distribución.",
+                source: null
+            },
+            {
+                question: "¿Qué es un API (Application Programming Interface)?",
+                options: ["Un lenguaje de programación.", "Un conjunto de definiciones y protocolos que se utilizan para desarrollar e integrar software de aplicaciones.", "Un tipo de base de datos.", "Un sistema operativo móvil."],
+                correct: "Un conjunto de definiciones y protocolos que se utilizan para desarrollar e integrar software de aplicaciones.",
+                source: null
+            },
+            {
+                question: "¿Qué es la computación en la nube (Cloud Computing)?",
+                options: ["El uso de un único servidor para todas las aplicaciones.", "La entrega de servicios informáticos (servidores, almacenamiento, bases de datos, redes, software, análisis, inteligencia artificial) a través de Internet.", "Un tipo de sistema operativo.", "La conexión de varios ordenadores para compartir recursos."],
+                correct: "La entrega de servicios informáticos (servidores, almacenamiento, bases de datos, redes, software, análisis, inteligencia artificial) a un través de Internet.",
+                source: null
+            },
+            {
+                question: "¿Qué es un IDE (Integrated Development Environment)?",
+                options: ["Un editor de texto simple.", "Un entorno de desarrollo de software que proporciona instalaciones integradas para los programadores.", "Un sistema operativo.", "Un compilador."],
+                correct: "Un entorno de desarrollo de software que proporciona instalaciones integradas para los programadores.",
+                source: null
+            },
+            {
+                question: "¿Qué es el \"Big Data\"?",
+                options: ["Una base de datos muy grande en un solo servidor.", "Un conjunto de datos tan grandes y complejos que las aplicaciones de procesamiento de datos tradicionales son inadecuadas para tratarlos.", "Un método para almacenar datos en la nube.", "Un tipo de algoritmo de compresión."],
+                correct: "Un conjunto de datos tan grandes y complejos que las aplicaciones de procesamiento de datos tradicionales son inadecuadas para tratarlos.",
+                source: null
+            },
+            {
+                question: "¿Qué es un sistema de control de versiones (ej. Git)?",
+                options: ["Un sistema para hacer copias de seguridad automáticas.", "Un sistema que registra los cambios realizados en un archivo o conjunto de archivos a lo largo del tiempo.", "Un software para la gestión de proyectos.", "Una herramienta de despliegue de software."],
+                correct: "Un sistema que registra los cambios realizados en un archivo o conjunto de archivos a lo largo del tiempo.",
+                source: null
+            },
+            {
+                question: "¿Qué es un contenedor (ej. Docker)?",
+                options: ["Una máquina virtual ligera y portable que empaqueta una aplicación y todas sus dependencias.", "Un tipo de base de datos.", "Un dispositivo de almacenamiento externo.", "Un servidor de archivos."],
+                correct: "Una máquina virtual ligera y portable que empaqueta una aplicación y todas sus dependencias.",
+                source: null
+            },
+            {
+                question: "¿Qué es la inteligencia artificial (IA)?",
+                options: ["Un nuevo tipo de procesador.", "La simulación de procesos de inteligencia humana por parte de máquinas, especialmente sistemas informáticos.", "Un lenguaje de programación muy avanzado.", "Un sistema operativo de próxima generación."],
+                correct: "La simulación de procesos de inteligencia humana por parte de máquinas, especialmente sistemas informáticos.",
+                source: null
+            },
+
+            // Parte 8: Legislación y Administración Electrónica (Contexto Español)
+            {
+                question: "¿Qué Ley establece el marco legal de la Administración Electrónica en España?",
+                options: ["Ley 39/2015, de Procedimiento Administrativo Común de las Administraciones Públicas.", "Ley 40/2015, de Régimen Jurídico del Sector Público.", "Ambas.", "Real Decreto 3/2010, de Esquema Nacional de Seguridad."],
+                correct: "Ambas.",
+                source: null
+            },
+            {
+                question: "Según la Ley 40/2015, ¿cuál es el régimen de funcionamiento de los órganos colegiados?",
+                options: ["Presencial exclusivamente.", "Solo telemático.", "Preferentemente electrónico, salvo que se prevea lo contrario.", "De forma mixta, sin preferencia."],
+                correct: "Preferentemente electrónico, salvo que se prevea lo contrario.",
+                source: null
+            },
+            {
+                question: "¿Qué instrumento garantiza la autenticidad e integridad de la documentación generada por las Administraciones Públicas, tanto en papel como en formato electrónico?",
+                options: ["El certificado digital.", "La firma electrónica.", "El código seguro de verificación (CSV).", "El sello electrónico de la Administración."],
+                correct: "El sello electrónico de la Administración.",
+                source: null
+            },
+            {
+                question: "¿Qué norma regula el Esquema Nacional de Seguridad (ENS)?",
+                options: ["Real Decreto 3/2010", "Ley Orgánica 3/2018 (LOPDGDD)", "Ley 11/2007, de Acceso Electrónico de los Ciudadanos a los Servicios Públicos.", "Real Decreto-ley 14/1999."],
+                correct: "Real Decreto 3/2010",
+                source: "6, 74"
+            },
+            {
+                question: "¿Cuál es el objetivo principal del Esquema Nacional de Seguridad (ENS)?",
+                options: ["Promover el uso de software de código abierto.", "Establecer un marco común de principios básicos y requisitos mínimos para una protección adecuada de la información gestionada por las Administraciones Públicas.", "Regular las comunicaciones entre Administraciones.", "Establecer los requisitos técnicos para los sistemas de información."],
+                correct: "Establecer un marco común de principios básicos y requisitos mínimos para una protección adecuada de la información gestionada por las Administraciones Públicas.",
+                source: "75"
+            },
+            {
+                question: "Qué norma regula la protección de datos personales en España, adaptando el Reglamento General de Protección de Datos (RGPD) de la UE?",
+                options: ["Ley 19/2013, de Transparencia.", "Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales.", "Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico.", "Real Decreto 1720/2007."],
+                correct: "Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales.",
+                source: "76"
+            },
+            {
+                question: "¿Qué es el Punto de Acceso General Electrónico de la Administración (PAGe)?",
+                options: ["El portal web único de todas las Administraciones Públicas españolas.", "Un directorio de empleados públicos.", "Una base de datos centralizada de trámites administrativos.", "Un sistema de gestión documental."],
+                correct: "El portal web único de todas las Administraciones Públicas españolas.",
+                source: null
+            },
+            {
+                question: "Según la Ley 39/2015, ¿qué canal es el preferente para la relación de las personas jurídicas con las Administraciones Públicas?",
+                options: ["Presencial.", "Telefónico.", "Electrónico.", "Postal."],
+                correct: "Electrónico.",
+                source: null
+            },
+            {
+                question: "¿Qué sistema de identificación permite a los ciudadanos interactuar electrónicamente con las Administraciones Públicas con nivel de seguridad alto?",
+                options: ["Usuario y contraseña.", "DNIe o certificado digital.", "Clave PIN.", "SMS a móvil."],
+                correct: "DNIe o certificado digital.",
+                source: null
+            },
+            {
+                question: "¿Qué se entiende por interoperabilidad en el contexto de la Administración Electrónica?",
+                options: ["La capacidad de un sistema para ser compatible con hardware antiguo.", "La capacidad de los sistemas de información de las Administraciones para intercambiar datos y compartir información.", "La facilidad de uso de las aplicaciones informáticas.", "La seguridad de los datos almacenados en la nube."],
+                correct: "La capacidad de los sistemas de información de las Administraciones para intercambiar datos y compartir información.",
+                source: null
+            },
+
+            // Parte 9: Conceptos Adicionales de TI
+            {
+                question: "¿Qué es un CDN (Content Delivery Network)?",
+                options: ["Un tipo de firewall.", "Una red de servidores distribuidos geográficamente que entregan contenido web y otros recursos a los usuarios.", "Un sistema operativo de red.", "Un protocolo de comunicación segura."],
+                correct: "Una red de servidores distribuidos geográficamente que entregan contenido web y otros recursos a los usuarios.",
+                source: null
+            },
+            {
+                question: "¿Qué es un proxy?",
+                options: ["Un tipo de software antivirus.", "Un servidor que actúa como intermediario para las solicitudes de los clientes a otros servidores.", "Un dispositivo de almacenamiento en red.", "Un protocolo de red."],
+                correct: "Un servidor que actúa como intermediario para las solicitudes de los clientes a otros servidores.",
+                source: null
+            },
+            {
+                question: "¿Qué es la telemetría en el contexto de un sistema operativo o software?",
+                options: ["La capacidad de controlar un dispositivo a distancia.", "La recolección automática de datos de rendimiento y uso de un sistema o aplicación.", "La comunicación entre dos dispositivos a través de una red inalámbrica.", "El envío de comandos de voz a un ordenador."],
+                correct: "La recolección automática de datos de rendimiento y uso de un sistema o aplicación.",
+                source: "83"
+            },
+            {
+                question: "¿Qué es un backup diferencial?",
+                options: ["Una copia de seguridad completa del sistema.", "Una copia de seguridad de todos los datos que han cambiado desde el último backup completo.", "Una copia de seguridad de todos los datos que han cambiado desde el último backup, ya sea completo o diferencial.", "Una copia de seguridad solo de los archivos de configuración."],
+                correct: "Una copia de seguridad de todos los datos que han cambiado desde el último backup completo.",
+                source: "84"
+            },
+            {
+                question: "¿Qué es el SLA (Service Level Agreement)?",
+                options: ["Un tipo de licencia de software.", "Un contrato que define el nivel de servicio esperado de un proveedor.", "Un protocolo de seguridad de red.", "Un estándar de hardware."],
+                correct: "Un contrato que define el nivel de servicio esperado de un proveedor.",
+                source: "85"
+            },
+            {
+                question: "¿Qué es DevOps?",
+                options: ["Un lenguaje de programación.", "Una metodología que combina el desarrollo de software (Dev) y las operaciones de TI (Ops) para acortar el ciclo de vida del desarrollo del sistema.", "Un tipo de sistema operativo.", "Un modelo de seguridad."],
+                correct: "Una metodología que combina el desarrollo de software (Dev) y las operaciones de TI (Ops) para acortar el ciclo de vida del desarrollo del sistema.",
+                source: "86"
+            },
+            {
+                question: "¿Qué es un webhook?",
+                options: ["Un método para depurar código.", "Un mecanismo mediante el cual una aplicación puede proporcionar información en tiempo real a otra aplicación.", "Un tipo de ataque cibernético.", "Una herramienta de gestión de proyectos."],
+                correct: "Un mecanismo mediante el cual una aplicación puede proporcionar información en tiempo real a otra aplicación.",
+                source: "87"
+            },
+            {
+                question: "¿Qué es la ofuscación de código?",
+                options: ["Un método para organizar el código fuente.", "La práctica de convertir el código de un programa en una forma más difícil de entender para los humanos.", "Un tipo de cifrado de datos.", "El proceso de compilar un programa."],
+                correct: "La práctica de convertir el código de un programa en una forma más difícil de entender para los humanos.",
+                source: "88"
+            },
+            {
+                question: "¿Qué es un \"thin client\" (cliente ligero)?",
+                options: ["Un ordenador potente con grandes capacidades de almacenamiento.", "Un ordenador de bajo coste y poco rendimiento que depende en gran medida de un servidor para su funcionalidad.", "Un software que no requiere instalación.", "Un tipo de dispositivo móvil."],
+                correct: "Un ordenador de bajo coste y poco rendimiento que depende en gran medida de un servidor para su funcionalidad.",
+                source: "89"
+            },
+            {
+                question: "¿Qué es un hypervisor (o VMM)?",
+                options: ["Un software para la gestión de redes.", "Un software, firmware o hardware que permite crear y ejecutar máquinas virtuales.", "Un tipo de sistema operativo en la nube.", "Un programa para optimizar el rendimiento del hardware."],
+                correct: "Un software, firmware o hardware que permite crear y ejecutar máquinas virtuales.",
+                source: "90"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores selected option for each question
+        let quizCompleted = false;
+
+        const QUIZ_STATE_KEY = 'quizState';
+
+        // Function to save the quiz state to localStorage
+        function saveQuizState() {
+            const state = {
+                currentQuestionIndex: currentQuestionIndex,
+                userAnswers: userAnswers,
+                quizCompleted: quizCompleted
+            };
+            localStorage.setItem(QUIZ_STATE_KEY, JSON.stringify(state));
+        }
+
+        // Function to load the quiz state from localStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem(QUIZ_STATE_KEY);
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                userAnswers = state.userAnswers;
+                quizCompleted = state.quizCompleted;
+            } else {
+                // Initialize userAnswers array if no state is found
+                userAnswers = new Array(questions.length).fill(null);
+            }
+        }
+
+        // Function to render the current question
+        function renderQuestion() {
+            const quizContainer = document.getElementById('quizContainer');
+            quizContainer.innerHTML = ''; // Clear previous question
+
+            if (quizCompleted) {
+                // If quiz is completed, show summary
+                showSummary();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            const questionBlock = document.createElement('div');
+            questionBlock.classList.add('question-block');
+            questionBlock.innerHTML = `
+                <p class="question-number">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</p>
+                <p class="question-text">${q.question} ${q.source ? '<span style="font-size:0.8em; color:#888;"></span>' : ''}</p>
+                <div class="options" id="options-${currentQuestionIndex}">
+                    ${q.options.map(option => `
+                        <label>
+                            <input type="radio" name="question${currentQuestionIndex}" value="${option}" onchange="selectAnswer(${currentQuestionIndex}, '${option.replace(/'/g, "\\'")}')" ${userAnswers[currentQuestionIndex] === option ? 'checked' : ''} ${quizCompleted ? 'disabled' : ''}>
+                            ${option}
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="result" id="result-${currentQuestionIndex}"></div>
+                <div class="correct-answer-display" id="correct-answer-${currentQuestionIndex}"></div>
+            `;
+            quizContainer.appendChild(questionBlock);
+
+            // Update navigation button states
+            document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+            document.getElementById('nextBtn').disabled = currentQuestionIndex === questions.length - 1 || quizCompleted;
+            document.getElementById('finishQuizBtn').disabled = quizCompleted;
+
+            // Update question indicator
+            document.getElementById('questionIndicator').textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+
+            // If an answer was previously selected for this question, show feedback
+            if (userAnswers[currentQuestionIndex] !== null) {
+                checkAnswer(currentQuestionIndex, userAnswers[currentQuestionIndex]);
+            } else {
+                // Hide feedback if no answer selected
+                document.getElementById(`result-${currentQuestionIndex}`).style.display = 'none';
+                document.getElementById(`correct-answer-${currentQuestionIndex}`).style.display = 'none';
+            }
+        }
+
+        // Function to handle answer selection and save to localStorage
+        function selectAnswer(questionIndex, selectedOptionValue) {
+            userAnswers[questionIndex] = selectedOptionValue;
+            saveQuizState(); // Save state immediately after an answer is selected
+            checkAnswer(questionIndex, selectedOptionValue);
+        }
+
+        // Function to check the selected answer and display feedback
+        function checkAnswer(questionIndex, selectedOptionValue) {
+            const question = questions[questionIndex];
+            const resultDiv = document.getElementById(`result-${questionIndex}`);
+            const correctAnswerDisplay = document.getElementById(`correct-answer-${questionIndex}`);
+            const optionsDiv = document.getElementById(`options-${questionIndex}`);
+
+            resultDiv.style.display = 'block';
+            correctAnswerDisplay.style.display = 'block';
+            resultDiv.classList.remove('correct', 'incorrect');
+            correctAnswerDisplay.textContent = `La respuesta correcta es: ${question.correct}`;
+
+            if (selectedOptionValue === question.correct) {
+                resultDiv.textContent = "¡Correcto!";
+                resultDiv.classList.add('correct');
+                // Disable all options for this question once correct
+                Array.from(optionsDiv.querySelectorAll('input[type="radio"]')).forEach(radio => {
+                    radio.disabled = true;
+                });
+            } else {
+                resultDiv.textContent = "Incorrecto.";
+                resultDiv.classList.add('incorrect');
+                // Keep options enabled if incorrect, but disable the selected one
+                Array.from(optionsDiv.querySelectorAll('input[type="radio"]')).forEach(radio => {
+                    if (radio.value === selectedOptionValue) {
+                        radio.disabled = true; // Disable the incorrect selected option
+                    }
+                });
+            }
+        }
+
+        // Navigate to the next question
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+                saveQuizState();
+            }
+        }
+
+        // Navigate to the previous question
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+                saveQuizState();
+            }
+        }
+
+        // Function to submit the quiz and show final results
+        function submitQuiz() {
+            quizCompleted = true;
+            saveQuizState(); // Save final state
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === q.correct) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('finalScore').textContent = `${correctCount} / ${questions.length}`;
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('incorrectCount').textContent = incorrectCount;
+            document.getElementById('unansweredCount').textContent = unansweredCount;
+
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.querySelector('.navigation-buttons').classList.add('hidden');
+            document.querySelector('.button-group').classList.add('hidden');
+            document.getElementById('questionIndicator').classList.add('hidden');
+            document.getElementById('summary').classList.remove('hidden');
+
+            // Disable all radio buttons if quiz is completed
+            questions.forEach((q, index) => {
+                const optionsDiv = document.getElementById(`options-${index}`);
+                if (optionsDiv) { // Check if element exists (only current question is rendered)
+                    Array.from(optionsDiv.querySelectorAll('input[type="radio"]')).forEach(radio => {
+                        radio.disabled = true;
+                    });
+                }
+            });
+        }
+
+        // Function to reset the quiz
+        function resetQuiz() {
+            localStorage.removeItem(QUIZ_STATE_KEY);
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            quizCompleted = false;
+
+            document.getElementById('quizContainer').classList.remove('hidden');
+            document.querySelector('.navigation-buttons').classList.remove('hidden');
+            document.querySelector('.button-group').classList.remove('hidden');
+            document.getElementById('questionIndicator').classList.remove('hidden');
+            document.getElementById('summary').classList.add('hidden');
+
+            renderQuestion(); // Render the first question
+        }
+
+        // Function to show the summary when quiz is completed
+        function showSummary() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === q.correct) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('finalScore').textContent = `${correctCount} / ${questions.length}`;
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('incorrectCount').textContent = incorrectCount;
+            document.getElementById('unansweredCount').textContent = unansweredCount;
+
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.querySelector('.navigation-buttons').classList.add('hidden');
+            document.querySelector('.button-group').classList.add('hidden');
+            document.getElementById('questionIndicator').classList.add('hidden');
+            document.getElementById('summary').classList.remove('hidden');
+        }
+
+        // Initialize quiz on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizState();
+            renderQuestion();
+        });
+    </script>
+</body>
+</html>
