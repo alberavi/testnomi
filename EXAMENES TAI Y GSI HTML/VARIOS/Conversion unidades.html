@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Conversión de Unidades de Almacenamiento</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .question-container {
+            margin-bottom: 25px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .option-button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-size: 1.1rem;
+            text-align: left;
+            border: 2px solid transparent;
+            width: 100%;
+        }
+        .option-button:hover {
+            background-color: #cbd5e0;
+            transform: translateY(-2px);
+        }
+        .option-button.selected {
+            background-color: #a7d9f7; /* Light blue for selected */
+            border-color: #3b82f6; /* Blue border for selected */
+            color: #1e40af;
+        }
+        .option-button.correct {
+            background-color: #a7f3d0; /* Light green for correct */
+            border-color: #10b981; /* Green border for correct */
+            color: #065f46;
+        }
+        .option-button.incorrect {
+            background-color: #fecaca; /* Light red for incorrect */
+            border-color: #ef4444; /* Red border for incorrect */
+            color: #991b1b;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .nav-button, .reset-button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-size: 1.1rem;
+            font-weight: bold;
+            flex-grow: 1;
+            border: none;
+        }
+        .nav-button:hover, .reset-button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result-container {
+            text-align: left;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        .result-container p {
+            margin-bottom: 10px;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-6">Test de Conversión de Unidades</h1>
+
+        <div id="quiz-container">
+            <div class="question-container">
+                <p id="question-number" class="text-lg text-gray-600 mb-4"></p>
+                <p id="question-text" class="question-text"></p>
+                <div id="options-container" class="options-container">
+                    <!-- Options will be loaded here by JavaScript -->
+                </div>
+            </div>
+
+            <div class="navigation-buttons">
+                <button id="prev-button" class="nav-button">Anterior</button>
+                <button id="next-button" class="nav-button">Siguiente</button>
+            </div>
+            <button id="reset-button" class="reset-button mt-4 w-full">Reiniciar Test</button>
+        </div>
+
+        <div id="result-container" class="result-container hidden">
+            <h2 class="text-2xl font-bold mb-4">Resultados del Test</h2>
+            <p>Respuestas Correctas: <span id="correct-answers" class="font-semibold text-green-600"></span></p>
+            <p>Respuestas Erróneas: <span id="incorrect-answers" class="font-semibold text-red-600"></span></p>
+            <p>Preguntas Sin Contestar: <span id="unanswered-questions" class="font-semibold text-yellow-600"></span></p>
+            <button id="restart-from-results-button" class="reset-button mt-4 w-full">Reiniciar Test</button>
+        </div>
+
+        <div id="message-box" class="message-box"></div>
+    </div>
+
+    <script>
+        // Array of questions for the test
+        const questions = [
+            {
+                question: "¿Cuántos bytes ocupa un documento que tiene 69 Kb?",
+                options: ["690 bytes", "70656 bytes", "706560 bytes", "6900 bytes"],
+                answer: "70656 bytes" // 69 * 1024 = 70656
+            },
+            {
+                question: "¿Cuántos bits son 68 bytes?",
+                options: ["68 bits", "544 bits", "5440 bits", "680 bits"],
+                answer: "544 bits" // 68 * 8 = 544
+            },
+            {
+                question: "¿Cuántos Bytes son 512 bits?",
+                options: ["512 bytes", "64 bytes", "4096 bytes", "8 bytes"],
+                answer: "64 bytes" // 512 / 8 = 64
+            },
+            {
+                question: "¿Cuántos MB son 3 GB?",
+                options: ["3000 MB", "3072 MB", "30720 MB", "300 MB"],
+                answer: "3072 MB" // 3 * 1024 = 3072
+            },
+            {
+                question: "¿Cuántos KB son 2 GB?",
+                options: ["2048 KB", "20480 KB", "2097152 KB", "209715 KB"],
+                answer: "2097152 KB" // 2 * 1024 * 1024 = 2097152
+            },
+            {
+                question: "¿Cuántos GB son 4096 MB?",
+                options: ["4 GB", "40 GB", "0.4 GB", "409.6 GB"],
+                answer: "4 GB" // 4096 / 1024 = 4
+            },
+            {
+                question: "Tengo un DVD de 4.812,8 megabytes, ¿Cuántos gigabytes tengo con esta cantidad?",
+                options: ["4.8128 GB", "4.7 GB", "47 GB", "48.128 GB"],
+                answer: "4.7 GB" // 4812.8 / 1024 = 4.7
+            },
+            {
+                question: "¿Cuántos CD'S de 700 Mb necesito para llenar la capacidad de un DVD de 4.7 Gb?",
+                options: ["6 CD's", "7 CD's", "8 CD's", "9 CD's"],
+                answer: "7 CD's" // (4.7 * 1024) / 700 = 6.88 -> 7 CD's
+            },
+            {
+                question: "Dos CD con música en formato MP3, tienen grabado 700 Mb c/u. ¿Qué medida de tarjeta de memoria necesitaré para copiar la música?",
+                options: ["700 MB", "1 GB", "1.4 GB", "2 GB"],
+                answer: "1.4 GB" // 2 * 700 MB = 1400 MB = 1.4 GB
+            },
+            {
+                question: "Poseo los siguientes pendrive's: de 4Gb, de 3Gb y uno de 512Mb. ¿Cuál de los pendrive's es el más adecuado para bajar videos de la Web, en formato MP4, si todos los videos tienen un total de 3.145.728 Kb?",
+                options: ["El de 512 MB", "El de 3 GB", "El de 4 GB", "Ninguno"],
+                answer: "El de 4 GB" // 3145728 KB / 1024 = 3072 MB = 3 GB. Need 4GB pendrive.
+            },
+            {
+                question: "En la P.C. hay 100 temas musicales de 3.072Kb c/u. ¿Podré bajar los temas musicales al reproductor MP3 de 512 Mb?",
+                options: ["Sí", "No", "Solo algunos", "Necesito más información"],
+                answer: "Sí" // 100 * 3072 KB = 307200 KB = 300 MB. 512 MB > 300 MB.
+            },
+            {
+                question: "En mis documentos, tengo los siguientes archivos: Juliana.doc de 1024 Kb. Carlos.RTF de 2048 Bytes. Guía de clientes.doc de 5120Kb. ¿Cuántos DVD de 4.812.8 megabytes necesito para almacenarlos?",
+                options: ["1 DVD", "2 DVD's", "3 DVD's", "4 DVD's"],
+                answer: "1 DVD" // Total size: 1024 KB + (2048 Bytes / 1024) KB + 5120 KB = 1024 KB + 2 KB + 5120 KB = 6146 KB.
+                                // 6146 KB / 1024 = 6 MB (approx). A DVD is 4812.8 MB. So 1 DVD is enough.
+            },
+            // New questions added to reach 40 total
+            {
+                question: "¿Cuántos KB son 5 MB?",
+                options: ["5000 KB", "5120 KB", "5200 KB", "5024 KB"],
+                answer: "5120 KB"
+            },
+            {
+                question: "¿Cuántos GB son 2048 MB?",
+                options: ["2 GB", "20 GB", "0.2 GB", "2.5 GB"],
+                answer: "2 GB"
+            },
+            {
+                question: "¿Cuántos bits hay en 1 Byte?",
+                options: ["1 bit", "4 bits", "8 bits", "16 bits"],
+                answer: "8 bits"
+            },
+            {
+                question: "¿Cuántos Bytes son 1 KB?",
+                options: ["1000 Bytes", "1024 Bytes", "8 Bytes", "100 Bytes"],
+                answer: "1024 Bytes"
+            },
+            {
+                question: "¿Cuántos MB son 1 TB?",
+                options: ["1000 MB", "1024 MB", "1048576 MB", "1000000 MB"],
+                answer: "1048576 MB"
+            },
+            {
+                question: "Si tienes un archivo de 2.5 GB, ¿cuántos MB son?",
+                options: ["2500 MB", "2560 MB", "2048 MB", "2.5 MB"],
+                answer: "2560 MB"
+            },
+            {
+                question: "Un disco duro tiene una capacidad de 500 GB. ¿Cuántos KB son?",
+                options: ["500000 KB", "51200000 KB", "524288000 KB", "500000000 KB"],
+                answer: "524288000 KB"
+            },
+            {
+                question: "¿Cuántos Bytes son 1024 bits?",
+                options: ["100 Bytes", "128 Bytes", "1024 Bytes", "8192 Bytes"],
+                answer: "128 Bytes"
+            },
+            {
+                question: "Tienes 3 archivos de 1.5 GB cada uno. ¿Cuál es el tamaño total en MB?",
+                options: ["4500 MB", "4608 MB", "4096 MB", "3072 MB"],
+                answer: "4608 MB"
+            },
+            {
+                question: "Una canción en formato MP3 ocupa 5 MB. ¿Cuántas canciones caben en una tarjeta SD de 8 GB?",
+                options: ["1600", "1638", "8000", "5000"],
+                answer: "1638"
+            },
+            {
+                question: "¿Cuál de las siguientes unidades es la más grande?",
+                options: ["Kilobyte", "Megabyte", "Gigabyte", "Terabyte"],
+                answer: "Terabyte"
+            },
+            {
+                question: "¿Cuántos Bytes son 1 MB?",
+                options: ["1000000 Bytes", "1024 Bytes", "1048576 Bytes", "8000000 Bytes"],
+                answer: "1048576 Bytes"
+            },
+            {
+                question: "Un video de alta definición ocupa 10 GB. ¿Cuántos videos de este tipo caben en un disco duro de 2 TB?",
+                options: ["20", "200", "204", "2048"],
+                answer: "204"
+            },
+            {
+                question: "Si una conexión a internet tiene una velocidad de 100 Mbps, ¿cuántos MB por segundo (MB/s) puede descargar teóricamente? (Considera 1 Byte = 8 bits)",
+                options: ["10 MB/s", "12.5 MB/s", "100 MB/s", "800 MB/s"],
+                answer: "12.5 MB/s"
+            },
+            {
+                question: "¿Cuántos GB son 0.5 TB?",
+                options: ["500 GB", "512 GB", "1024 GB", "50 GB"],
+                answer: "512 GB"
+            },
+            {
+                question: "Un documento de texto ocupa 20 KB. ¿Cuántos documentos caben en un pendrive de 1 GB?",
+                options: ["50000", "51200", "52428", "100000"],
+                answer: "52428"
+            },
+            {
+                question: "¿Cuántos bits son 1 KB?",
+                options: ["1024 bits", "8000 bits", "8192 bits", "1000 bits"],
+                answer: "8192 bits"
+            },
+            {
+                question: "Un disco duro externo tiene 4 TB de capacidad. Si ya has usado 1.5 TB, ¿cuántos GB te quedan disponibles?",
+                options: ["2500 GB", "2560 GB", "1500 GB", "4096 GB"],
+                answer: "2560 GB"
+            },
+            {
+                question: "¿Cuántos Petabytes (PB) son 1024 Terabytes (TB)?",
+                options: ["1 PB", "10 PB", "0.1 PB", "1024 PB"],
+                answer: "1 PB"
+            },
+            {
+                question: "Si una imagen tiene un tamaño de 2048 KB, ¿cuántos MB son?",
+                options: ["2 MB", "20 MB", "0.2 MB", "2.5 MB"],
+                answer: "2 MB"
+            },
+            {
+                question: "¿Cuántos Bytes son 2 GB?",
+                options: ["2000000000 Bytes", "2147483648 Bytes", "2048000000 Bytes", "2097152 Bytes"],
+                answer: "2147483648 Bytes"
+            },
+            {
+                question: "Un servidor tiene 16 GB de RAM. ¿Cuántos MB son?",
+                options: ["16000 MB", "16384 MB", "16284 MB", "16024 MB"],
+                answer: "16384 MB"
+            },
+            {
+                question: "¿Cuántos Exabytes (EB) son 1024 Petabytes (PB)?",
+                options: ["1 EB", "10 EB", "0.1 EB", "1024 EB"],
+                answer: "1 EB"
+            },
+            {
+                question: "Si tienes 1000 fotos y cada una ocupa 3 MB, ¿cuántos GB necesitas para almacenarlas todas?",
+                options: ["2 GB", "2.5 GB", "3 GB", "3.5 GB"],
+                answer: "3 GB"
+            },
+            {
+                question: "¿Cuántos Yottabytes (YB) son 1024 Zettabytes (ZB)?",
+                options: ["1 YB", "10 YB", "0.1 YB", "1024 YB"],
+                answer: "1 YB"
+            },
+            {
+                question: "Un archivo de música tiene un tamaño de 4096 KB. ¿Cuántos MB son?",
+                options: ["4 MB", "40 MB", "0.4 MB", "4.5 MB"],
+                answer: "4 MB"
+            },
+            {
+                question: "¿Cuántos Terabytes (TB) son 3072 Gigabytes (GB)?",
+                options: ["3 TB", "30 TB", "0.3 TB", "3.5 TB"],
+                answer: "3 TB"
+            },
+            {
+                question: "¿Cuántos Gigabytes (GB) son 5242880 Kilobytes (KB)?",
+                options: ["5 GB", "50 GB", "500 GB", "0.5 GB"],
+                answer: "5 GB"
+            },
+            {
+                question: "Un archivo de 10 MB se descarga a una velocidad de 1 MB/s. ¿Cuánto tiempo tardará en descargarse?",
+                options: ["1 segundo", "10 segundos", "60 segundos", "100 segundos"],
+                answer: "10 segundos"
+            },
+            {
+                question: "Tienes un disco duro de 1 TB y quieres guardar 500 películas de 2 GB cada una. ¿Caben todas?",
+                options: ["Sí", "No", "Solo la mitad", "Necesito más información"],
+                answer: "Sí" // 500 * 2 GB = 1000 GB = 0.976 TB. 1 TB is enough.
+            },
+            {
+                question: "¿Cuántos Kilobytes (KB) son 0.5 Megabytes (MB)?",
+                options: ["500 KB", "512 KB", "1024 KB", "0.5 KB"],
+                answer: "512 KB"
+            },
+            {
+                question: "Si un programa ocupa 200 MB, ¿cuántos de estos programas caben en un disco de 10 GB?",
+                options: ["50", "51", "100", "500"],
+                answer: "51" // (10 * 1024) / 200 = 51.2
+            },
+            {
+                question: "¿Cuál es la unidad de almacenamiento más pequeña comúnmente utilizada?",
+                options: ["Bit", "Byte", "Kilobyte", "Megabyte"],
+                answer: "Bit"
+            },
+            {
+                question: "Un disco Blu-ray tiene una capacidad de 50 GB. ¿Cuántos CD's de 700 MB equivalen a un Blu-ray?",
+                options: ["70", "71", "73", "75"],
+                answer: "73" // (50 * 1024) / 700 = 73.14
+            },
+            {
+                question: "Si un archivo tiene un tamaño de 8192 bits, ¿cuántos KB son?",
+                options: ["1 KB", "8 KB", "1024 KB", "0.5 KB"],
+                answer: "1 KB" // 8192 bits / 8 = 1024 Bytes = 1 KB
+            },
+            {
+                question: "Un correo electrónico con un archivo adjunto de 1.5 MB es enviado. ¿Cuántos KB son?",
+                options: ["1500 KB", "1536 KB", "1024 KB", "1.5 KB"],
+                answer: "1536 KB"
+            },
+            {
+                question: "¿Cuántos Gigabytes (GB) son 0.001 Terabytes (TB)?",
+                options: ["1 GB", "10 GB", "0.1 GB", "0.001 GB"],
+                answer: "1 GB" // 0.001 * 1024 = 1.024 GB (approx 1 GB for common usage)
+            },
+            {
+                question: "Si tienes 100 fotos de 2 MB cada una y 5 videos de 50 MB cada uno, ¿cuál es el tamaño total en MB?",
+                options: ["450 MB", "500 MB", "400 MB", "475 MB"],
+                answer: "450 MB" // (100 * 2) + (5 * 50) = 200 + 250 = 450 MB
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Stores the selected option index for each question
+
+        // Get DOM elements
+        const questionNumberElement = document.getElementById('question-number');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultContainer = document.getElementById('result-container');
+        const correctAnswersSpan = document.getElementById('correct-answers');
+        const incorrectAnswersSpan = document.getElementById('incorrect-answers');
+        const unansweredQuestionsSpan = document.getElementById('unanswered-questions');
+        const restartFromResultsButton = document.getElementById('restart-from-results-button');
+        const messageBox = document.getElementById('message-box');
+
+        // Function to show a temporary message
+        function showMessage(message, duration = 2000) {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, duration);
+        }
+
+        // Load state from LocalStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Initialize userAnswers array if nothing is saved
+                userAnswers = new Array(questions.length).fill(null);
+            }
+        }
+
+        // Save state to LocalStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Render the current question
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            quizContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+
+            const question = questions[currentQuestionIndex];
+            questionNumberElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionTextElement.textContent = question.question;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            const hasAnswered = userAnswers[currentQuestionIndex] !== null;
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option-button');
+                button.textContent = option;
+                button.dataset.index = index; // Store the index of the option
+                button.addEventListener('click', () => selectOption(index, button)); // Pass button to selectOption
+
+                // If this question was previously answered, apply feedback and disable
+                if (hasAnswered) {
+                    button.disabled = true; // Disable all options if already answered
+                    if (userAnswers[currentQuestionIndex] === index) {
+                        button.classList.add('selected');
+                        if (option === question.answer) {
+                            button.classList.add('correct');
+                        } else {
+                            button.classList.add('incorrect');
+                        }
+                    }
+                }
+                optionsContainer.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            saveState(); // Save state after rendering
+        }
+
+        // Handle option selection
+        function selectOption(selectedIndex, clickedButton) {
+            // Only allow selection if the question hasn't been answered yet
+            if (userAnswers[currentQuestionIndex] === null) {
+                userAnswers[currentQuestionIndex] = selectedIndex; // Store the selected option index
+                const question = questions[currentQuestionIndex];
+
+                // Remove 'selected' class from all options and add to the clicked one
+                Array.from(optionsContainer.children).forEach((button) => {
+                    button.classList.remove('selected', 'correct', 'incorrect');
+                    button.disabled = true; // Disable all options after selection
+                });
+
+                clickedButton.classList.add('selected');
+
+                // Provide immediate feedback
+                if (question.options[selectedIndex] === question.answer) {
+                    clickedButton.classList.add('correct');
+                    showMessage("¡Correcto!", 1500);
+                } else {
+                    clickedButton.classList.add('incorrect');
+                    showMessage("Incorrecto. Inténtalo de nuevo en el siguiente test.", 2500);
+                    // Optionally, highlight the correct answer if incorrect
+                    // Array.from(optionsContainer.children).forEach(button => {
+                    //     if (button.textContent === question.answer) {
+                    //         button.classList.add('correct');
+                    //     }
+                    // });
+                }
+                saveState(); // Save state after selection
+            }
+        }
+
+        // Update navigation button states (enabled/disabled)
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.textContent = currentQuestionIndex === questions.length - 1 ? 'Finalizar Test' : 'Siguiente';
+        }
+
+        // Navigate to the next question
+        function goToNextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        // Navigate to the previous question
+        function goToPrevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        // Show test results
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            questions.forEach((question, index) => {
+                const userAnswerIndex = userAnswers[index];
+                if (userAnswerIndex === null) {
+                    unanswered++;
+                } else {
+                    const selectedOption = question.options[userAnswerIndex];
+                    if (selectedOption === question.answer) {
+                        correct++;
+                    } else {
+                        incorrect++;
+                    }
+                }
+            });
+
+            correctAnswersSpan.textContent = correct;
+            incorrectAnswersSpan.textContent = incorrect;
+            unansweredQuestionsSpan.textContent = unanswered;
+
+            // Clear LocalStorage when the test is finished
+            localStorage.removeItem('currentQuestionIndex');
+            localStorage.removeItem('userAnswers');
+        }
+
+        // Reset the test
+        function resetTest() {
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null); // Reset all answers
+            localStorage.clear(); // Clear all test data from LocalStorage
+            showMessage("Test Reiniciado", 1500); // Show a message
+            renderQuestion(); // Render the first question
+        }
+
+        // Event Listeners
+        nextButton.addEventListener('click', goToNextQuestion);
+        prevButton.addEventListener('click', goToPrevQuestion);
+        resetButton.addEventListener('click', resetTest);
+        restartFromResultsButton.addEventListener('click', resetTest);
+
+        // Initialize the test when the page loads
+        window.onload = () => {
+            loadState();
+            renderQuestion();
+        };
+    </script>
+</body>
+</html>
