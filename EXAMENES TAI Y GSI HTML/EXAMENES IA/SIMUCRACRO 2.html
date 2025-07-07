@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo TAI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .question-card {
+            border: 1px solid #e5e7eb; /* Light gray border */
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background-color: #f9fafb; /* Slightly darker than body for contrast */
+        }
+        .option-label {
+            display: block;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #ffffff;
+        }
+        .option-label:hover {
+            background-color: #e0e7ff; /* Light blue on hover */
+            border-color: #6366f1; /* Darker blue border on hover */
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #6366f1; /* Blue for selected */
+            color: #ffffff;
+            border-color: #4f46e5;
+        }
+        .feedback-message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #d1fae5; /* Light green */
+            color: #065f46; /* Dark green text */
+            border: 1px solid #34d399;
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2; /* Light red */
+            color: #991b1b; /* Dark red text */
+            border: 1px solid #ef4444;
+        }
+        .button-primary {
+            background-color: #6366f1; /* Blue */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .button-primary:hover {
+            background-color: #4f46e5; /* Darker blue on hover */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Light gray */
+            color: #374151; /* Dark gray text */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db; /* Darker gray on hover */
+        }
+        .button-danger {
+            background-color: #ef4444; /* Red */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .button-danger:hover {
+            background-color: #dc2626; /* Darker red on hover */
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div id="quiz-container" class="container">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">SIMULACRO 2 Zbrain</h1>
+
+        <div id="question-display" class="question-card">
+            <p id="question-number" class="text-lg font-semibold text-gray-700 mb-4"></p>
+            <p id="question-text" class="text-xl font-medium text-gray-900 mb-6"></p>
+            <div id="options-container" class="space-y-2">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+            <div id="feedback" class="feedback-message hidden"></div>
+        </div>
+
+        <div class="flex justify-between items-center mt-6">
+            <button id="prev-button" class="button-secondary px-4 py-2 rounded-md" disabled>Anterior</button>
+            <button id="reset-button" class="button-danger px-4 py-2 rounded-md">Reiniciar Test</button>
+            <button id="next-button" class="button-primary px-4 py-2 rounded-md">Siguiente</button>
+        </div>
+
+        <div id="results-display" class="question-card hidden mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
+            <p class="text-lg text-gray-700 mb-2">Respuestas Correctas: <span id="correct-count" class="font-bold text-green-600"></span></p>
+            <p class="text-lg text-gray-700 mb-2">Respuestas Erróneas: <span id="incorrect-count" class="font-bold text-red-600"></span></p>
+            <p class="text-lg text-gray-700 mb-2">Preguntas Sin Contestar: <span id="unanswered-count" class="font-bold text-yellow-600"></span></p>
+            <button id="restart-button-end" class="button-primary mt-4">Volver a Empezar</button>
+        </div>
+    </div>
+
+    <script>
+        // Preguntas del cuestionario (80 de la primera parte + 20 del SUPUESTO I)
+        const questions = [
+            {
+                id: 1,
+                text: "CONSTITUCIÓN Respecto al estado de sitio:",
+                options: {
+                    a: "Su ámbito territorial será siempre nacional y su duración de un máximo de 30 días",
+                    b: "El Gobierno determinará su ámbito territorial, duración y condiciones",
+                    c: "Su ámbito territorial será nacional o local y su duración de un mínimo de 30 días",
+                    d: "El Congreso determinará su ámbito territorial, duración y condiciones"
+                }
+            },
+            {
+                id: 2,
+                text: "CONSTITUCIÓN Podrá impugnar ante el Tribunal Constitucional las disposiciones y resoluciones adoptadas por los órganos de las Comunidades Autónomas:",
+                options: {
+                    a: "El Gobierno",
+                    b: "El Congreso",
+                    c: "Las Cortes Generales",
+                    d: "El Ministerio Fiscal"
+                }
+            },
+            {
+                id: 3,
+                text: "TRANSPARENCIA Según el art. 11 de la Ley de Transparencia, se establecen los principios a los que tendrá que adecuarse la información publicada en el Portal de Transparencia. Estos principios son:",
+                options: {
+                    a: "Accesibilidad, integridad e interoperabilidad",
+                    b: "Accesibilidad, reutilización e interoperabilidad",
+                    c: "Accesibilidad, disponibilidad y reutilización",
+                    d: "Accesibilidad, disponibilidad en integridad"
+                }
+            },
+            {
+                id: 4,
+                text: "EBEP Por nacimiento de hijos prematuros o que por cualquier otra causa deban permanecer hospitalizados a continuación del parto, la funcionaria o el funcionario tendrá derecho a ausentarse del trabajo durante un máximo de:",
+                options: {
+                    a: "Una hora diaria con deducción de haberes",
+                    b: "Dos horas diarias percibiendo las retribuciones integras",
+                    c: "Una hora diaria percibiendo las retribuciones integras",
+                    d: "Dos horas diarias con deducción de haberes"
+                }
+            },
+            {
+                id: 5,
+                text: "DEPENDENCIA A tenor de la Ley de Dependencia, esta última se puede definir como",
+                options: {
+                    a: "Estado de carácter permanente en que se encuentran las personas que, por distintas razones y ligadas a la falta o a la pérdida de autonomía física, mental, intelectual o sensorial, precisen de la atención de otra u otras personas o ayudas importantes para realizar actividades básicas de la vida diaria",
+                    b: "Estado de carácter permanente o temporal en que se encuentran las personas que, por razones de enfermedad, precisan de la atención de cuidados no profesionales para obtener información en términos comprensibles y accesibles",
+                    c: "Condición bajo la cual ciertas personas presentan alguna deficiencia física, mental o sensorial, temporal o permanente",
+                    d: "Situación debida a enfermedad común o profesional y a accidente, sea o no de trabajo, durante el tiempo en que el trabajador reciba asistencia sanitaria de la Seguridad Social y esté impedido para el trabajo"
+                }
+            },
+            {
+                id: 6,
+                text: "LEY 6/2020, Servicios electrónicos de confianza-Los prestadores de servicios de confianza no cualificados deberán-art.12-",
+                options: {
+                    a: "Obtener verificación administrativa previa de cumplimiento de requisitos",
+                    b: "Comunicar la actividad al Ministerio de Asuntos Económicos y Transformación Digital en el plazo de dos meses desde que inicien dicha actividad",
+                    c: "Publicar en la página web el listado de prestadores de servicios de confianza no cualificados",
+                    d: "Ninguno es requisito"
+                }
+            },
+            {
+                id: 7,
+                text: "DNI ELECTRÓNICO-De forma excepcional, se puede otorgar validez distinta al Documento Nacional de Identidad-art.6-",
+                options: {
+                    a: "Permanente, personas mayores de 25 años que acrediten la condición de gran inválido",
+                    b: "Permanente, a un titular de 70 años",
+                    c: "No presentar una certificación literal de nacimiento, pero que se acrediten por otros medios, a juicio del encargado de la expedición",
+                    d: "En todos los casos"
+                }
+            },
+            {
+                id: 8,
+                text: "PROTECCIÓN DE DATOS ¿Qué consideración tiene la reversión deliberada de un procedimiento de anonimización a fin de permitir la reidentificación de los afectados?",
+                options: {
+                    a: "Infracción leve",
+                    b: "Infracción grave",
+                    c: "Infracción muy grave",
+                    d: "Infracción no contemplada en la Ley Orgánica, sino en el RGPD"
+                }
+            },
+            {
+                id: 9,
+                text: "REAL DECRETO 203/2021. Las condiciones aplicables a la reutilización de cualquier tipo de material en formato electrónico que pueda ser empleado de forma recurrente, se denomina",
+                options: {
+                    a: "Interoperabilidad",
+                    b: "Licenciamiento",
+                    c: "Integridad",
+                    d: "Marca de tiempo"
+                }
+            },
+            {
+                id: 10,
+                text: "LEY 39/2015 Según el artículo 11 de la Ley 39/2015, ¿para cuál de los siguientes supuestos no se requiere a los interesados el uso obligatorio de firma?",
+                options: {
+                    a: "Formular solicitudes",
+                    b: "Interponer recursos",
+                    c: "Desistir de acciones",
+                    d: "Consultar datos fiscales"
+                }
+            },
+            {
+                id: 11,
+                text: "Según la Ley 4/2023, si hablamos del Consejo de Participación de la Personas LGTBI, indica la respuesta correcta",
+                options: {
+                    a: "Depende del Ministerio de Igualdad a través de la Subsecretaría de Igualdad",
+                    b: "Presenta un memorial trimestral, detallando su actividad, reuniones y actuaciones conforme a la Ley 19/2013",
+                    c: "La presidenta del Consejo remitirá la memoria al Pleno del Congreso de los Diputados",
+                    d: "Tiene por finalidad institucionalizar la colaboración y fortalecer el diálogo permanente entre las Administraciones públicas y la sociedad civil en materias relacionadas con la igualdad de trato"
+                }
+            },
+            {
+                id: 12,
+                text: "A tenor del art.15 de la Ley del Gobierno, ¿quién nombra a los Secretarios de Estado?",
+                options: {
+                    a: "El presidente del Gobierno, por RD",
+                    b: "El Consejo de Ministros, por RD",
+                    c: "El miembro del Gobierno a cuyo departamento pertenezcan",
+                    d: "El Rey"
+                }
+            },
+            {
+                id: 13,
+                text: "Según la LO 3/2007, no es un criterio general de actuación de los Poderes Públicos-art.14-",
+                options: {
+                    a: "La participación equilibrada de mujeres y hombres en las candidaturas electorales y en la toma de decisiones",
+                    b: "El tratamiento no reservado de las denuncias de hechos que pudieran ser constitutivos de acoso sexual o de acoso por razón de sexo, sin perjuicio de lo establecido en la normativa de régimen disciplinario",
+                    c: "La implantación de un lenguaje no sexista en el ámbito administrativo y su fomento en la totalidad de las relaciones sociales, culturales y artísticas",
+                    d: "La consideración de las singulares dificultades en que se encuentran las mujeres de colectivos de especial vulnerabilidad como son las que pertenecen a minorías, las mujeres migrantes, las niñas, las mujeres con discapacidad, las mujeres mayores, las mujeres viudas y las mujeres víctimas de violencia de género, para las cuales los poderes públicos podrán adoptar, igualmente, medidas de acción positiva"
+                }
+            },
+            {
+                id: 14,
+                text: "CE-Es susceptible de recurso de amparo el siguiente derecho",
+                options: {
+                    a: "El sostenimiento de los gastos públicos",
+                    b: "Las debidas garantías de la objeción de conciencia a las obligaciones militares",
+                    c: "La libre elección de profesión u oficio",
+                    d: "Ninguno es susceptible de amparo constitucional"
+                }
+            },
+            {
+                id: 15,
+                text: "¿Cuál de los siguientes no es un lenguaje de descripción de página?",
+                options: {
+                    a: "PDF",
+                    b: "XPS",
+                    c: "DIV",
+                    d: "PCL"
+                }
+            },
+            {
+                id: 16,
+                text: "Según la especificación de UML, una de sus partes es OCL y representa:",
+                options: {
+                    a: "Un lenguaje para la descripción formal de expresiones en los modelos UML",
+                    b: "Un lenguaje grafico para la generación de procesos",
+                    c: "Un lenguaje procedural con el que definir procesos",
+                    d: "Todas las anteriores son ciertas"
+                }
+            },
+            {
+                id: 17,
+                text: "¿Qué nivel de certificación le ha otorgado el CCN al chip del eDNI de acuerdo a los Common Criteria?",
+                options: {
+                    a: "EAL3+",
+                    b: "EAL4+",
+                    c: "EAL5+",
+                    d: "EAL6+"
+                }
+            },
+            {
+                id: 18,
+                text: "¿Cuál de los siguientes productos NoSQL es documental y de grafos?",
+                options: {
+                    a: "Neo4J",
+                    b: "OrientDB",
+                    c: "RavenDB",
+                    d: "Voldemort"
+                }
+            },
+            {
+                id: 19,
+                text: "El algoritmo que propone buscar caminos en los que se pueda aumentar el flujo, hasta que se alcance el flujo máximo es:",
+                options: {
+                    a: "Tarjan",
+                    b: "Floyd-Warshall",
+                    c: "Ford-Fulkerson",
+                    d: "Knuth-Morris-Pratt"
+                }
+            },
+            {
+                id: 20,
+                text: "De acuerdo con el protocolo AH, ¿cual de estos campos no estaría dentro del cálculo del ICV?",
+                options: {
+                    a: "Dirección IP Origen",
+                    b: "TTL",
+                    c: "Versión",
+                    d: "Protocolo"
+                }
+            },
+            {
+                id: 21,
+                text: "Dentro de la arquitectura.Net, ¿con cual de las siguientes tecnologías se relacionan los servicios web?",
+                options: {
+                    a: "WPF",
+                    b: "WWF",
+                    c: "WMF",
+                    d: "WCF"
+                }
+            },
+            {
+                id: 22,
+                text: "¿Cuál de los siguientes productos representa un servidor web multiplataforma para ASP.Net?",
+                options: {
+                    a: "IIS",
+                    b: "Nginx",
+                    c: "Kestrel",
+                    d: "Express"
+                }
+            },
+            {
+                id: 23,
+                text: "Las 12 reglas de Codd son",
+                options: {
+                    a: "Un conjunto de 13 reglas propuestas diseñadas para definir que requiere un SGBBDD",
+                    b: "Un conjunto de 13 reglas propuestas diseñadas para definir que requiere una BBDD",
+                    c: "Un conjunto de 13 reglas propuestas diseñadas para definir que requiere un DBA",
+                    d: "Ninguna de las anteriores"
+                }
+            },
+            {
+                id: 24,
+                text: "Señale que afirmación no es correcta respecto de los casos de uso en UML",
+                options: {
+                    a: "Se pueden establecer entre ellos relaciones de herencia",
+                    b: "Se pueden establecer entre ellos relaciones de extensión",
+                    c: "Con ellos podemos definir la funcionalidad de una aplicación",
+                    d: "Se pueden dividir en casos de uso más pequeños"
+                }
+            },
+            {
+                id: 25,
+                text: "Si estamos comprando en una web implementada con JEE y desactivamos las cookies en el navegador, ¿podremos finalizar el proceso de compra?",
+                options: {
+                    a: "No porque el servidor necesita una cookie denominada JSESSIONID para saber \"quienes somos\"",
+                    b: "No porque el servidor lo detecta como fallo de seguridad",
+                    c: "Si porque podríamos pasar la información necesaria del cliente por la URL",
+                    d: "No se necesitan las cookies para un proceso de compra"
+                }
+            },
+            {
+                id: 26,
+                text: "¿Cuál es la velocidad máxima de transferencia del interface SATA-3?",
+                options: {
+                    a: "3 Gb/s",
+                    b: "12 Gb/s",
+                    c: "20 Gb/s",
+                    d: "6 Gb/s"
+                }
+            },
+            {
+                id: 27,
+                text: "Dentro del proyecto OpenStack, ¿para que nos sirve Swift?",
+                options: {
+                    a: "Proporciona un servicio de almacenamiento en modo bloque",
+                    b: "Proporciona un servicio de aprovisionamiento de motores de BBDD",
+                    c: "Proporciona un servicio de almacenamiento en modo objeto",
+                    d: "Proporciona un servicio de aprovisionamiento de maquinas virtuales"
+                }
+            },
+            {
+                id: 28,
+                text: "Si queremos realizar desde Linux una consulta de cual es el servidor de correo que usan en ruinosa.com deberíamos de usar",
+                options: {
+                    a: "dig @8.8.8.8 ruinosa.com MX",
+                    b: "lookup-query=mx ruinosa.com",
+                    c: "nslookup-type_query=mx tarazona.es",
+                    d: "Todas son validas"
+                }
+            },
+            {
+                id: 29,
+                text: "Dentro del contexto del desarrollo web, ¿a que se refiere la arquitectura MEAN?",
+                options: {
+                    a: "Al desarrollo de micro-servicios",
+                    b: "Al desarrollo TDD dirigido por pruebas",
+                    c: "Al desarrollo que usa Javascript/JSON en todas las capas de la aplicación",
+                    d: "Al desarrollo con Java y MongoDB"
+                }
+            },
+            {
+                id: 30,
+                text: "¿Cuál de los siguientes no es un gestor de ventanas de Linux?",
+                options: {
+                    a: "GNOME",
+                    b: "CDI",
+                    c: "CDE",
+                    d: "XFCE"
+                }
+            },
+            {
+                id: 31,
+                text: "En Windows, si el directorio activo nos sirve para gestionar \"acme.com\" y \"ruinosa.com\", estaríamos hablando de:",
+                options: {
+                    a: "Un bosque",
+                    b: "Un dominio",
+                    c: "Un árbol de dominios",
+                    d: "Ninguna de las anteriores"
+                }
+            },
+            {
+                id: 32,
+                text: "¿Cuál es el numero decimal 31415 en octal?",
+                options: {
+                    a: "75368",
+                    b: "76321",
+                    c: "76421",
+                    d: "75267"
+                }
+            },
+            {
+                id: 33,
+                text: "En Linux, si el administrador quisiera implementar una serie de políticas de seguridad a nivel de Kernel usaría",
+                options: {
+                    a: "SELinux",
+                    b: "Grasp",
+                    c: "Systemd",
+                    d: "SecureShell"
+                }
+            },
+            {
+                id: 34,
+                text: "Según el modelo relacional propuesto por Edgar Frank Codd, una entidad del modelo",
+                options: {
+                    a: "Debería de tener al menos una clave primaria",
+                    b: "Debería de tener como máximo una clave primaria",
+                    c: "Debería de tener una clave primaria y podría tener otras, denominadas claves candidatas",
+                    d: "Todas las anteriores son correctas"
+                }
+            },
+            {
+                id: 35,
+                text: "¿Cuál de los siguientes lenguajes no es tipicamente funcional?",
+                options: {
+                    a: "OCaml",
+                    b: "Rust",
+                    c: "Scheme",
+                    d: "Clojure"
+                }
+            },
+            {
+                id: 36,
+                text: "¿Cuál es la resolución correspondiente a 8K con ratio de aspecto 16:9?",
+                options: {
+                    a: "7680x4320",
+                    b: "7680x4230",
+                    c: "7860x4320",
+                    d: "7860x4230"
+                }
+            },
+            {
+                id: 37,
+                text: "¿Cuál de las siguientes herramientas del CCN representa una plataforma en la que podemos participar en la resolución de diferentes desafíos de seguridad?",
+                options: {
+                    a: "ANA",
+                    b: "ATENEA",
+                    c: "VANESA",
+                    d: "ELENA"
+                }
+            },
+            {
+                id: 38,
+                text: "¿Cuál de las siguientes tecnologías está relacionada con la virtualización del backup?",
+                options: {
+                    a: "LVM",
+                    b: "KVM",
+                    c: "VTL",
+                    d: "LTO"
+                }
+            },
+            {
+                id: 39,
+                text: "Si tenemos una web con muchísima información que queremos indexar, ¿Cuál de las siguientes sería una tecnología adecuada?",
+                options: {
+                    a: "Solr",
+                    b: "ElasticSearch",
+                    c: "Apache Lucene",
+                    d: "Todas las anteriores"
+                }
+            },
+            {
+                id: 40,
+                text: "En un servicio REST queremos devolver información de un cliente, pero de sus pedidos relacionados vamos a proporcionar un campo con una referencia para que el usuario pueda acceder a ellos si realiza otra petición más. ¿Cómo se denomina a este modo de funcionamiento?",
+                options: {
+                    a: "GraphQL",
+                    b: "Restful",
+                    c: "Hateoas",
+                    d: "XPointer"
+                }
+            },
+            {
+                id: 41,
+                text: "En Java8, un interface se puede definir como:",
+                options: {
+                    a: "Es una colección de métodos sin implementación y atributos inicializados",
+                    b: "Es una colección de métodos con o sin implementación y una serie de constantes",
+                    c: "Puede heredar de una clase",
+                    d: "Todas son ciertas"
+                }
+            },
+            {
+                id: 42,
+                text: "¿A partir de cual de los siguientes niveles de CPD se puede hacer un mantenimiento concurrente?",
+                options: {
+                    a: "Tier I",
+                    b: "Tier II",
+                    c: "Tier III",
+                    d: "Tier IV"
+                }
+            },
+            {
+                id: 43,
+                text: "¿Cómo se denomina la técnica mediante la cual obtenemos privilegios de administración en un móvil IOS?",
+                options: {
+                    a: "Rooting",
+                    b: "Jailbreak",
+                    c: "Exploit",
+                    d: "Runas"
+                }
+            },
+            {
+                id: 44,
+                text: "La técnica de securización del correo electrónico mediante la cual se realiza una firma de los correos salientes es:",
+                options: {
+                    a: "TKIP",
+                    b: "SPF",
+                    c: "SFP",
+                    d: "DKIM"
+                }
+            },
+            {
+                id: 45,
+                text: "Si queremos compartir ficheros de nuestro sistema Linux Debian con clientes Windows deberíamos hacer lo siguiente:",
+                options: {
+                    a: "apt-get install smb-client",
+                    b: "apt-get install cifs-utils",
+                    c: "apt-get install samba",
+                    d: "apt-get install mount-cifs"
+                }
+            },
+            {
+                id: 46,
+                text: "¿Cuál de las siguientes es la recomendación del sistema Shortest Path Bridging?",
+                options: {
+                    a: "802.1ap",
+                    b: "802.1aq",
+                    c: "802.1D",
+                    d: "802.1w"
+                }
+            },
+            {
+                id: 47,
+                text: "Si tenemos la sentencia SELECT DISTINCT e.nombre,e.edad,e.cargo FROM Empleado AS e, ¿qué nos devolverá?",
+                options: {
+                    a: "Todos los empleados de la base de datos",
+                    b: "Todos los empleados que tengan únicamente distinto nombre",
+                    c: "Todos los empleados que tengan distinto nombre, edad y cargo",
+                    d: "La sentencia es errónea"
+                }
+            },
+            {
+                id: 48,
+                text: "¿Cuál de los siguientes no es un gestor de paquetes?",
+                options: {
+                    a: "apt",
+                    b: "dnf",
+                    c: "brew",
+                    d: "gulp"
+                }
+            },
+            {
+                id: 49,
+                text: "Cuando accedemos con un navegador a ruinosa.com y también accedemos al mismo sitio con www.ruinosa.com es porque hemos configurado en el DNS el registro",
+                options: {
+                    a: "TXT",
+                    b: "CNAME",
+                    c: "MX",
+                    d: "PTR"
+                }
+            },
+            {
+                id: 50,
+                text: "¿Cuál de estas no es una primitiva de DHCP?",
+                options: {
+                    a: "DHCP DISCOVERY",
+                    b: "DHCP REQUEST",
+                    c: "DHCP OFFER",
+                    d: "DHCP BIND"
+                }
+            },
+            {
+                id: 51,
+                text: "¿Cuál de estos estándares no soporta la tecnología MIMO?",
+                options: {
+                    a: "802.11n",
+                    b: "802.11ac",
+                    c: "802.11ax",
+                    d: "802.11g"
+                }
+            },
+            {
+                id: 52,
+                text: "¿Cuál de las siguientes complejidades algorítmicas es más eficiente?",
+                options: {
+                    a: "O(n³)",
+                    b: "O(n!)",
+                    c: "0(2)",
+                    d: "O(n log(n))"
+                }
+            },
+            {
+                id: 53,
+                text: "¿Mediante que herramienta de línea de comandos del sdk de Android podemos instalar un apk desde nuestro terminal?",
+                options: {
+                    a: "adp",
+                    b: "apk",
+                    c: "adb",
+                    d: "art"
+                }
+            },
+            {
+                id: 54,
+                text: "Si ejecutamos el comando chmod 4764 myscript en Linux, ¿Qué podríamos decir de los permisos de myscript?",
+                options: {
+                    a: "Esa configuración de permisos da error",
+                    b: "Se ejecuta myscript con permisos de root",
+                    c: "Se ejecuta myscript con los permisos del propietario",
+                    d: "Se ejecuta myscript con los permisos del grupo propietario"
+                }
+            },
+            {
+                id: 55,
+                text: "¿Para que podríamos usar el comando wget en Linux?",
+                options: {
+                    a: "Consultar el valor de una variable de entorno",
+                    b: "Descargar un fichero a partir de una URL",
+                    c: "Descargar un fichero de un FTP",
+                    d: "Las dos anteriores son ciertas"
+                }
+            },
+            {
+                id: 56,
+                text: "Una red clase B será dividida en 20 subredes a las que se sumaran 30 más en los próximos años ¿qué máscara se deberá utilizar para obtener un total de 800 host por subred?",
+                options: {
+                    a: "255.248.0.0",
+                    b: "255.255.252.0",
+                    c: "255.255.224.0",
+                    d: "255.255.248.0"
+                }
+            },
+            {
+                id: 57,
+                text: "En el protocolo TLS, una vez que se ha terminado la fase de handshake, cliente y servidor comienzan la fase de intercambio de datos de aplicación. ¿Cuál es valor del campo \"Record Type\" de la capa de más bajo nivel \"Record Subprotocol\" para indicar que está transportando \"Datos de Aplicación\"?",
+                options: {
+                    a: "20",
+                    b: "21",
+                    c: "22",
+                    d: "23"
+                }
+            },
+            {
+                id: 58,
+                text: "¿Para que se usa la clase InitialContext dentro del ámbito de una aplicación JEE?",
+                options: {
+                    a: "Para gestionar las transacciones",
+                    b: "Para poder recuperar del servicio de directorio distintos objetos/recursos",
+                    c: "Para persistir objetos en la base de datos",
+                    d: "Para poder invocar a un servicio web"
+                }
+            },
+            {
+                id: 59,
+                text: "¿Cuál es el uso de una dirección IP de tipo anycast?",
+                options: {
+                    a: "Enviar información a un único host",
+                    b: "Enviar información a un grupo y que les llegue a todos los hosts de ese grupo",
+                    c: "Enviar información a un grupo y que le llegue a un único host dentro de ese grupo",
+                    d: "Enviar información a todos los grupos"
+                }
+            },
+            {
+                id: 60,
+                text: "En relación al parámetro MTU indica la afirmación correcta",
+                options: {
+                    a: "La de Ethernet son 1.500 octetos",
+                    b: "Depende de cada protocolo",
+                    c: "Para IP son 64 KB",
+                    d: "Todas las anteriores son ciertas"
+                }
+            },
+            {
+                id: 61,
+                text: "¿Cuál de los siguientes no es un patrón de comportamiento?",
+                options: {
+                    a: "Proxy",
+                    b: "Command",
+                    c: "State",
+                    d: "Strategy"
+                }
+            },
+            {
+                id: 62,
+                text: "¿Cuál de los siguientes productos no está relacionado con la integración continua?",
+                options: {
+                    a: "Bazaar",
+                    b: "Bamboo",
+                    c: "Jenkins",
+                    d: "TeamCity"
+                }
+            },
+            {
+                id: 63,
+                text: "Si en un documento xml vemos esta declaración: <?xml version =\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>",
+                options: {
+                    a: "El dtd con la gramática del lenguaje está en un fichero independiente",
+                    b: "El dtd con la gramática del lenguaje está en el mismo fichero xml",
+                    c: "El parser no lo procesa, es meramente informativo",
+                    d: "El parser daría un error de procesamiento"
+                }
+            },
+            {
+                id: 64,
+                text: "Si queremos generar un sello de tiempos asociado a nuestro documento, ¿qué información debemos de pasarle a la TSA para que nos lo genere?",
+                options: {
+                    a: "La clave pública del certificado",
+                    b: "El hash del documento con la fecha y la hora",
+                    c: "La fecha y la hora",
+                    d: "Ninguna de las anteriores"
+                }
+            },
+            {
+                id: 65,
+                text: "Si tenemos una web en la que realizamos llamadas Ajax con este objeto var xhr = new XMLHttpRequest(); ¿Cómo se configura la función donde se nos va a informar de que los datos ya están disponibles para procesarse?",
+                options: {
+                    a: "xhr.callback = function() {...}",
+                    b: "xhr.open = function() {...}",
+                    c: "xhr.send = function() {...}",
+                    d: "xhr.onreadystatechange = function() {...}"
+                }
+            },
+            {
+                id: 66,
+                text: "¿Cuál de estos navegadores no está basado en Chromium?",
+                options: {
+                    a: "Chrome",
+                    b: "Opera",
+                    c: "Edge",
+                    d: "Safari"
+                }
+            },
+            {
+                id: 67,
+                text: "Dentro de la metodología SCRUM ¿en que consiste el concepto de backlog?",
+                options: {
+                    a: "Lista de tareas que están ya estimadas",
+                    b: "Conjunto de todos los requisitos del proyecto",
+                    c: "Lista con lo puntos de mejora identificados en las iteraciones",
+                    d: "Conjunto de los requisitos críticos para que el proyecto no se retrase"
+                }
+            },
+            {
+                id: 68,
+                text: "¿Cuál es el tamaño del residuo que genera la función SHA-1?",
+                options: {
+                    a: "128bits",
+                    b: "160bits",
+                    c: "180bits",
+                    d: "220bits"
+                }
+            },
+            {
+                id: 69,
+                text: "¿Qué representa un vector de interrupción?",
+                options: {
+                    a: "La dirección de memoria de la rutina que atiende a la interrupción",
+                    b: "El índice la tabla donde están las direcciones de las rutinas de atención a la interrupción",
+                    c: "Los datos generados por la propia interrupción",
+                    d: "Todas son falsas"
+                }
+            },
+            {
+                id: 70,
+                text: "¿Qué tipo de imagen es la que se conoce como SVG?",
+                options: {
+                    a: "Vectorial",
+                    b: "Su tipo MIME es image/svg+xml",
+                    c: "HTML5 lo tiene soportado",
+                    d: "Todas las anteriores son ciertas"
+                }
+            },
+            {
+                id: 71,
+                text: "¿Para qué se usa la etiqueta ID3 dentro de un fichero MP3?",
+                options: {
+                    a: "Para guardar el estado de reproducción",
+                    b: "Para poder catalogar el fichero (artista, álbum, ...)",
+                    c: "Para especificar los formatos de audios (códec)",
+                    d: "Para proteger contra copia"
+                }
+            },
+            {
+                id: 72,
+                text: "¿Cuál de estos formatos no es un contenedor multimedia?",
+                options: {
+                    a: "mkv",
+                    b: "asf",
+                    c: "wmv",
+                    d: "ogg"
+                }
+            },
+            {
+                id: 73,
+                text: "¿Para qué sirve la \"Beacon Frame\" en el contexto de una red Wi-Fi?",
+                options: {
+                    a: "Notificar congestión a los clientes",
+                    b: "Notificar el SSID",
+                    c: "Notificar el máximo número de canales",
+                    d: "Notificar la velocidad máxima de recepción"
+                }
+            },
+            {
+                id: 74,
+                text: "¿Cuál de los siguientes datos no se almacena en un i-nodo?",
+                options: {
+                    a: "Tamaño del fichero",
+                    b: "Nombre del fichero",
+                    c: "Permisos",
+                    d: "Numero de Hard-Links"
+                }
+            },
+            {
+                id: 75,
+                text: "El orden de aplicación de las directivas de grupo sobre un equipo que pertenece a un dominio de Directorio Activo es:",
+                options: {
+                    a: "Local, Sitio, Dominio, Unidad Organizativa",
+                    b: "Sitio, Dominio, Unidad Organizativa, Local",
+                    c: "Unidad Organizativa, Dominio, Sitio, Local",
+                    d: "Local, Unidad Organizativa, Dominio, Sitio"
+                }
+            },
+            {
+                id: 76,
+                text: "¿Cuál es el equivalente al concepto del package de Java en .Net?",
+                options: {
+                    a: "Exactamente lo mismo",
+                    b: "Group",
+                    c: "Namespace",
+                    d: "Module"
+                }
+            },
+            {
+                id: 77,
+                text: "La tabla siguiente PIEZAS (COD_PIEZA, COD_ALMACEN, TIPO, CANTIDAD, DIRECCION_ALMACEN) donde la clave principal es COD_PIEZA COD_ALMACEN",
+                options: {
+                    a: "No cumple la segunda forma normal",
+                    b: "No cumple la tercera forma normal, pero cumple la segunda",
+                    c: "No cumple la cuarta forma normal, pero cumple la tercera",
+                    d: "Cumple la segunda forma normal"
+                }
+            },
+            {
+                id: 78,
+                text: "¿Qué cantidad de memoria de video mínima se precisa en un dispositivo de visualización para obtener una resolución gráfica de 1024x1024 puntos con un modelo cromático True Color (Color Verdadero)?",
+                options: {
+                    a: "1KiB",
+                    b: "3KiB",
+                    c: "1MiB",
+                    d: "3MiB"
+                }
+            },
+            {
+                id: 79,
+                text: "Para poder rastrear un correo electrónico (por donde ha ido pasando) la cabecera en la que nos tenemos que fijar es:",
+                options: {
+                    a: "Replay",
+                    b: "Path",
+                    c: "Received",
+                    d: "Delivered"
+                }
+            },
+            {
+                id: 80,
+                text: "¿Qué tipo de memoria es la cache de L1 y que tipo de información almacena?",
+                options: {
+                    a: "SRAM y almacena instrucciones y datos de forma separada",
+                    b: "SRAM y almacena instrucciones y datos mezclados",
+                    c: "NVRAM y almacena instrucciones y datos de forma separada",
+                    d: "NVRAM y almacena instrucciones y datos mezclados"
+                }
+            },
+            // SUPUESTO I Questions (81-100)
+            {
+                id: 81,
+                text: "Si queremos obtener una lista con los camioneros que tienen un salario mayor que la media de los de su misma población",
+                options: {
+                    a: "select dni, nombre, salario from camionero where salario > avg(salario) group by poblacion",
+                    b: "select dni, nombre, salario from camionero c1 where c1.salario > (select avg(c2.salario) from camionero c2)",
+                    c: "select dni, nombre, salario from camionero c1 where c1.salario > (select avg(c2.salario) from camionero c2 and c1.poblacion=c2.poblacion)",
+                    d: "select dni, nombre, salario from camionero c1 where c1.salario > (select avg(c2.salario) from camionero c2 where c1.poblacion=c2.poblacion)"
+                }
+            },
+            {
+                id: 82,
+                text: "¿Cuál sería la transformación correcta del tipo de entidad Paquete al modelo relacional?",
+                options: {
+                    a: "Paquete(código, descripción, destinatario, dirección, dni_camionero)",
+                    b: "Paquete(código, descripción, destinatario,dni_camionero)",
+                    c: "Paquete(código, destinatario, dirección, dni_camionero,código_provincia)",
+                    d: "Paquete(código, descripción, destinatario, dirección, dni_camionero, código_provincia)"
+                }
+            },
+            {
+                id: 83,
+                text: "Suponiendo que cada modelo y tipo de camión tiene una potencia determinada, ¿en que forma normal se encuentra la siguiente relación? Camion(matricula, potencia, modelo, tipo)",
+                options: {
+                    a: "2FN",
+                    b: "3FN",
+                    c: "FNBC",
+                    d: "4FN"
+                }
+            },
+            {
+                id: 84,
+                text: "Manejamos en JavaScript un array con los salarios de los camioneros y en el código nos encontramos con la siguiente sentencia: salarios.splice(0,1,1500) ¿Cuál es el objetivo de dicha sentencia?",
+                options: {
+                    a: "Añade el salario 1500 por el principio del array",
+                    b: "Borra el salario cuyo valor sea 1500 empezando a buscar por el índice 1",
+                    c: "Reemplaza el primer salario con el valor 1500",
+                    d: "Ninguna de las anteriores"
+                }
+            },
+            {
+                id: 85,
+                text: "¿Cuál de los siguientes patrones sería adecuado para \"organizar\" las sentencias de JDBC en la parte de JEE?",
+                options: {
+                    a: "Data Access Object",
+                    b: "Value Object",
+                    c: "Data Transfer Object",
+                    d: "Service Locator"
+                }
+            },
+            {
+                id: 86,
+                text: "Si queremos que todos los párrafos que vayan justo a continuación de un encabezado h1 tengan la primera letra en mayúscula sería:",
+                options: {
+                    a: "p~h1 {text-transform: capitalize;}",
+                    b: "p+h1 {text-transform: capitalize;}",
+                    c: "h1~p {text-transform: capitalize;}",
+                    d: "h1+p {text-transform: capitalize;}"
+                }
+            },
+            {
+                id: 87,
+                text: "En la parte de administración vamos a usar el API de JSF, ¿Cuál de los siguiente no sería una implementación valida?",
+                options: {
+                    a: "ICEfaces",
+                    b: "PrimeFaces",
+                    c: "Rich Faces",
+                    d: "IronFaces"
+                }
+            },
+            {
+                id: 88,
+                text: "Queremos detectar en la aplicación web de PHP el navegador del usuario",
+                options: {
+                    a: "$useragent = $_SERVER ['HTTP_USER_AGENT']; echo \"<b>Your User Agent is</b>:\" . $useragent;",
+                    b: "$useragent = $SERVER ['HTTP_USER_AGENT']; echo \"<b>Your User Agent is</b>:\" . $useragent;",
+                    c: "$useragent = $_SERVER ['HTTP_USER_AGENT']; echo \"<b>Your User Agent is</b>:\" . useragent;",
+                    d: "$useragent = $_REQUEST ['HTTP_USER_AGENT']; echo \"<b>Your User Agent is</b>:\" . $useragent;"
+                }
+            },
+            {
+                id: 89,
+                text: "Nos piden realizar un informe en PHP con los camiones pero ordenados de mayor a menor potencia. Si el array que tenemos tiene este formato (\"a001\"=>100, \"b002\"=>50, \"xj04\"=>85,...), ¿Cuál será la función más adecuada para generar dicho informe?",
+                options: {
+                    a: "ksort",
+                    b: "asort",
+                    c: "krsort",
+                    d: "arsort"
+                }
+            },
+            {
+                id: 90,
+                text: "Tenemos en nuestras hojas de estilo definidas dos clases, clase1 y clase2. Si queremos que un div quede afectado por ambas clases sería:",
+                options: {
+                    a: "<div class=\"clase1, clase2\">",
+                    b: "<div style=\"clase1, clase2\">",
+                    c: "<div class=\"clase1 clase2\">",
+                    d: "<div style=\"clase1 clase2\">"
+                }
+            },
+            {
+                id: 91,
+                text: "Usamos npm como gestor de depedencias y hemos añadido bootstrap al fichero package.json con el comando \"npm i bootstrap\". ¿Dónde se instalará el código de dicha dependencia?",
+                options: {
+                    a: "Carpeta node_modules del proyecto",
+                    b: "Carpeta vendor del proyecto",
+                    c: "Carpeta node_modules global",
+                    d: "Carpeta vendor global"
+                }
+            },
+            {
+                id: 92,
+                text: "Estamos usando git como sistema de control de versiones y queremos tener la posibilidad de subir el código a un servidor con Gitlab de nuestra propia compañia",
+                options: {
+                    a: "git remote add ruinosa https://gitlab-server.ruinosa.com/proyecto.git",
+                    b: "git add remote ruinosa https://gitlab-server.ruinosa.com/proyecto.git",
+                    c: "git add branch https://gitlab-server.ruinosa.com/proyecto.git",
+                    d: "git remote ruinosa https://gitlab-server.ruinosa.com/proyecto.git"
+                }
+            },
+            {
+                id: 93,
+                text: "Tenemos que implementar un algoritmo de calculo de rutas pero los programadores ofrecen distintas alternativas. ¿Cuál sería el patrón de diseño mas adecuado para que podamos manejar correctamente diferentes implementaciones de dicho algoritmo?",
+                options: {
+                    a: "Mediator",
+                    b: "Command",
+                    c: "Strategy",
+                    d: "Adapter"
+                }
+            },
+            {
+                id: 94,
+                text: "Si queremos un interface web en el que las imágenes y/o textos se adapten lo mejor posible al dispositivo en el que se visualizan no deberíamos de usar:",
+                options: {
+                    a: "atributo srcset",
+                    b: "etiqueta source",
+                    c: "La at-rule @media",
+                    d: "La at-rule @page"
+                }
+            },
+            {
+                id: 95,
+                text: "Tenemos un formulario con un campo de entrada para recoger la información de la potencia de los camiones. Estás potencias nunca son menores de 100CV ni mayores de 1000CV y además van de 100 en 100.",
+                options: {
+                    a: "<input type=\"range\" name=\"potencia\" min=\"100\" max=\"1000\" step=\"100\">",
+                    b: "<input type=\"list\" name=\"potencia\" min=\"100\" max=\"1000\" step=\"100\">",
+                    c: "<input type=\"range\" name=\"potencia\" min=\"100\" max=\"1000\" inc=\"100\">",
+                    d: "<input type=\"list\" name=\"potencia\" min=\"100\" max=\"1000\" inc=\"100\">"
+                }
+            },
+            {
+                id: 96,
+                text: "Si queremos implementar la parte de usuario con una arquitectura basada en Microservicios, ¿Cuál es el patrón de diseño que nos aconseja separar las consultas del resto de las operaciones en un servicio?",
+                options: {
+                    a: "Saga",
+                    b: "Circuit Breaker",
+                    c: "CQRS",
+                    d: "API Composition"
+                }
+            },
+            {
+                id: 97,
+                text: "En la parte de administración, capa de persistencia, ¿Cuál será el objeto que tenemos que usar para poder abrir una conexión contra la base de datos?",
+                options: {
+                    a: "DataSource",
+                    b: "Driver",
+                    c: "Connection",
+                    d: "Statement"
+                }
+            },
+            {
+                id: 98,
+                text: "A la hora de optimizar las consultas a bbdd, ¿Cuál sería el método con el que podemos configurar el flujo de información y asi evitar un excesivo volumen de llamadas al servidor?",
+                options: {
+                    a: "setResultSize",
+                    b: "setFetchSize",
+                    c: "setMaxRows",
+                    d: "setMinRows"
+                }
+            },
+            {
+                id: 99,
+                text: "Del objeto XmlHttpRequest de AJAX, ¿con que propiedades podemos controlar que la petición se ha completado con éxito?",
+                options: {
+                    a: "State y status",
+                    b: "readyState y status",
+                    c: "state y readyStatus",
+                    d: "readyState y readyStatus"
+                }
+            },
+            {
+                id: 100,
+                text: "¿Cuál será la forma correcta de enlazar la hoja de estilos de Bootstrap en nuestro proyecto?",
+                options: {
+                    a: "<link rel=\"stylesheet\" href=\"bootstrap.css\">",
+                    b: "<link rel=\"text/css\" href=\" bootstrap.css\">",
+                    c: "<link rel=\"stylesheet\" src=\" bootstrap.css\">",
+                    d: "<link rel=\"text/css\" src=\" bootstrap.css\">"
+                }
+            }
+        ];
+
+        // Respuestas correctas (actualizadas para incluir solo las 100 preguntas)
+        const correctAnswers = {
+            "1": "D", "2": "A", "3": "B", "4": "B", "5": "A", "6": "D", "7": "C", "8": "C", "9": "B", "10": "D",
+            "11": "D", "12": "B", "13": "B", "14": "B", "15": "C", "16": "A", "17": "C", "18": "B", "19": "C", "20": "B",
+            "21": "D", "22": "C", "23": "A", "24": "D", "25": "C", "26": "D", "27": "C", "28": "A", "29": "C", "30": "B",
+            "31": "A", "32": "D", "33": "A", "34": "D", "35": "B", "36": "A", "37": "B", "38": "C", "39": "D", "40": "C",
+            "41": "B", "42": "C", "43": "B", "44": "D", "45": "C", "46": "B", "47": "C", "48": "D", "49": "B", "50": "D",
+            "51": "D", "52": "D", "53": "C", "54": "C", "55": "D", "56": "B", "57": "D", "58": "B", "59": "C", "60": "D",
+            "61": "A", "62": "A", "63": "B", "64": "D", "65": "D", "66": "D", "67": "B", "68": "B", "69": "A", "70": "D",
+            "71": "B", "72": "C", "73": "B", "74": "B", "75": "A", "76": "C", "77": "A", "78": "D", "79": "C", "80": "A",
+            // Respuestas SUPUESTO I (preguntas 81-100)
+            "81": "D", "82": "D", "83": "A", "84": "C", "85": "A", "86": "D", "87": "D", "88": "A", "89": "D", "90": "C",
+            "91": "A", "92": "A", "93": "C", "94": "D", "95": "A", "96": "C", "97": "A", "98": "B", "99": "B", "100": "A"
+        };
+
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Stores user's answers: { "questionId": "selectedOption" }
+
+        // Elementos del DOM
+        const questionNumberElem = document.getElementById('question-number');
+        const questionTextElem = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackElem = document.getElementById('feedback');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const resultsDisplay = document.getElementById('results-display');
+        const questionDisplay = document.getElementById('question-display');
+        const correctCountElem = document.getElementById('correct-count');
+        const incorrectCountElem = document.getElementById('incorrect-count');
+        const unansweredCountElem = document.getElementById('unanswered-count');
+        const restartButtonEnd = document.getElementById('restart-button-end');
+
+        // Claves para LocalStorage
+        const LS_CURRENT_INDEX = 'quizCurrentIndex';
+        const LS_USER_ANSWERS = 'quizUserAnswers';
+
+        /**
+         * Carga el estado del test desde LocalStorage.
+         */
+        function loadState() {
+            try {
+                const savedIndex = localStorage.getItem(LS_CURRENT_INDEX);
+                const savedAnswers = localStorage.getItem(LS_USER_ANSWERS);
+
+                if (savedIndex !== null) {
+                    currentQuestionIndex = parseInt(savedIndex, 10);
+                }
+                if (savedAnswers !== null) {
+                    userAnswers = JSON.parse(savedAnswers);
+                }
+            } catch (e) {
+                console.error("Error al cargar el estado de LocalStorage:", e);
+                // Si hay un error, resetear el estado
+                resetTest();
+            }
+        }
+
+        /**
+         * Guarda el estado actual del test en LocalStorage.
+         */
+        function saveState() {
+            try {
+                localStorage.setItem(LS_CURRENT_INDEX, currentQuestionIndex.toString());
+                localStorage.setItem(LS_USER_ANSWERS, JSON.stringify(userAnswers));
+            } catch (e) {
+                console.error("Error al guardar el estado en LocalStorage:", e);
+            }
+        }
+
+        /**
+         * Muestra la pregunta actual en el DOM.
+         */
+        function displayQuestion() {
+            // Ocultar resultados si están visibles
+            resultsDisplay.classList.add('hidden');
+            questionDisplay.classList.remove('hidden');
+            feedbackElem.classList.add('hidden');
+            feedbackElem.classList.remove('feedback-correct', 'feedback-incorrect');
+            feedbackElem.textContent = '';
+
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            questionNumberElem.textContent = `Pregunta ${question.id} de ${questions.length}`;
+            questionTextElem.textContent = question.text;
+            optionsContainer.innerHTML = ''; // Limpiar opciones anteriores
+
+            const currentAnswer = userAnswers[question.id];
+
+            // Crear y añadir las opciones
+            Object.entries(question.options).forEach(([key, value]) => {
+                const optionId = `q${question.id}-option-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${question.id}`;
+                input.id = optionId;
+                input.value = key;
+                input.classList.add('hidden'); // Ocultar el radio button nativo
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.classList.add('option-label');
+                label.textContent = `${key.toUpperCase()}) ${value}`;
+
+                // Marcar la opción si ya fue seleccionada
+                if (currentAnswer === key) {
+                    input.checked = true;
+                }
+
+                // Deshabilitar opciones si ya se ha respondido
+                if (currentAnswer) {
+                    input.disabled = true;
+                }
+
+                optionsContainer.appendChild(input);
+                optionsContainer.appendChild(label);
+
+                // Añadir evento de cambio para manejar la selección
+                input.addEventListener('change', (event) => handleAnswer(question.id, event.target.value));
+            });
+
+            updateNavigationButtons();
+            saveState();
+        }
+
+        /**
+         * Maneja la selección de una respuesta.
+         * @param {number} questionId - El ID de la pregunta.
+         * @param {string} selectedOption - La opción seleccionada (a, b, c, d).
+         */
+        function handleAnswer(questionId, selectedOption) {
+            userAnswers[questionId] = selectedOption;
+            saveState(); // Guardar la respuesta inmediatamente
+
+            const correctAnswer = correctAnswers[questionId];
+            feedbackElem.classList.remove('hidden');
+
+            // Deshabilitar todas las opciones después de responder
+            const radioButtons = optionsContainer.querySelectorAll(`input[name="question-${questionId}"]`);
+            radioButtons.forEach(radio => radio.disabled = true);
+
+            if (selectedOption === correctAnswer.toLowerCase()) {
+                feedbackElem.textContent = '¡Correcto!';
+                feedbackElem.classList.remove('feedback-incorrect');
+                feedbackElem.classList.add('feedback-correct');
+            } else {
+                feedbackElem.textContent = `Incorrecto. La respuesta correcta es ${correctAnswer.toUpperCase()}.`;
+                feedbackElem.classList.remove('feedback-correct');
+                feedbackElem.classList.add('feedback-incorrect');
+            }
+        }
+
+        /**
+         * Actualiza el estado de los botones de navegación.
+         */
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length; // Deshabilitar si estamos en la última pregunta o más allá
+        }
+
+        /**
+         * Muestra los resultados finales del test.
+         */
+        function showResults() {
+            questionDisplay.classList.add('hidden');
+            resultsDisplay.classList.remove('hidden');
+            feedbackElem.classList.add('hidden'); // Ocultar feedback
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach(question => {
+                const userAnswer = userAnswers[question.id];
+                const correctAnswer = correctAnswers[question.id];
+
+                if (userAnswer) {
+                    if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                } else {
+                    unansweredCount++;
+                }
+            });
+
+            correctCountElem.textContent = correctCount;
+            incorrectCountElem.textContent = incorrectCount;
+            unansweredCountElem.textContent = unansweredCount;
+        }
+
+        /**
+         * Reinicia el test, borrando el progreso de LocalStorage.
+         */
+        function resetTest() {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            localStorage.removeItem(LS_CURRENT_INDEX);
+            localStorage.removeItem(LS_USER_ANSWERS);
+            displayQuestion();
+        }
+
+        // Event Listeners
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length) {
+                currentQuestionIndex++;
+                displayQuestion();
+            }
+        });
+
+        resetButton.addEventListener('click', resetTest);
+        restartButtonEnd.addEventListener('click', resetTest);
+
+        // Inicializar el test al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            displayQuestion();
+        });
+    </script>
+</body>
+</html>

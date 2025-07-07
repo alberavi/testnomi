@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo TAI</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configuración de la fuente Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Fondo gris claro */
+            color: #333; /* Color de texto principal */
+        }
+        .container {
+            max-width: 900px; /* Ancho máximo del contenedor */
+        }
+        .option-label {
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        }
+        .option-label:hover {
+            background-color: #e2e8f0; /* Gris más oscuro al pasar el ratón */
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #bfdbfe; /* Azul claro cuando está seleccionado */
+            border-color: #3b82f6; /* Borde azul */
+        }
+        /* Estilos para retroalimentación inmediata */
+        .option-correct {
+            background-color: #dcfce7; /* Verde claro */
+            border-color: #22c55e; /* Borde verde */
+        }
+        .option-incorrect {
+            background-color: #fee2e2; /* Rojo claro */
+            border-color: #ef4444; /* Borde rojo */
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra para los botones */
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* Azul */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb; /* Azul más oscuro al pasar el ratón */
+            transform: translateY(-1px); /* Efecto de elevación */
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* Gris */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563; /* Gris más oscuro */
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background-color: #ef4444; /* Rojo */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626; /* Rojo más oscuro */
+            transform: translateY(-1px);
+        }
+        /* Ocultar el radio button nativo */
+        input[type="radio"] {
+            display: none;
+        }
+        .feedback-message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        .feedback-correct {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #22c55e;
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-8 rounded-lg shadow-xl w-full">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-700">SIMULACRO 1 ZBRAIN</h1>
+
+        <div id="quiz-container" class="space-y-6">
+            <div class="flex justify-between items-center mb-4">
+                <span id="question-counter" class="text-lg font-semibold text-gray-700"></span>
+                <button id="reset-button" class="btn btn-danger">Reiniciar Test</button>
+            </div>
+
+            <div id="question-display" class="bg-blue-50 p-6 rounded-lg shadow-md mb-6">
+                <p id="question-text" class="text-xl font-medium text-gray-800"></p>
+            </div>
+
+            <div id="options-container" class="space-y-3">
+                <!-- Opciones de respuesta se cargarán aquí -->
+            </div>
+
+            <div id="feedback-message" class="feedback-message hidden">
+                <!-- Mensaje de feedback se cargará aquí -->
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button id="prev-button" class="btn btn-secondary" disabled>Anterior</button>
+                <button id="next-button" class="btn btn-primary">Siguiente</button>
+            </div>
+        </div>
+
+        <div id="results-container" class="hidden text-center p-8 rounded-lg shadow-xl bg-green-50 mt-8">
+            <h2 class="text-3xl font-bold text-green-700 mb-6">Resultados del Test</h2>
+            <p class="text-xl text-gray-800 mb-2">Respuestas Correctas: <span id="correct-count" class="font-bold text-green-600"></span></p>
+            <p class="text-xl text-gray-800 mb-2">Respuestas Erróneas: <span id="incorrect-count" class="font-bold text-red-600"></span></p>
+            <p class="text-xl text-gray-800 mb-6">Preguntas Sin Contestar: <span id="unanswered-count" class="font-bold text-yellow-600"></span></p>
+            <button id="restart-from-results-button" class="btn btn-primary">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Datos del cuestionario
+        const quizData = [
+            // PRIMERA PARTE (Preguntas 1-80)
+            { id: 1, question: "Según lo dispuesto en el artículo 99.3 de la CE:", options: { a: "El Presidente del Gobierno de España, previa deliberación del Consejo de Ministros, y bajo su exclusiva responsabilidad, podrá disolver el Congreso, el Senado o las Cortes Generales incluso cuando esté en trámite una moción de censura.", b: "La responsabilidad criminal del Presidente del Gobierno de España será exigible, en su caso, ante la Sala de lo Civil del Tribunal Supremo.", c: "El Presidente del Gobierno de España requiere para su nombramiento, entre otros trámites, que las Cortes Generales le otorguen su confianza.", d: "El Presidente del Gobierno de España requiere para su nombramiento, entre otros trámites, que el Congreso de los Diputados le otorgue su confianza" }, correctAnswer: "d" },
+            { id: 2, question: "El artículo 53.2 de la CE establece que \"cualquier ciudadano podrá recabar la tutela de las libertades y derechos reconocidos en el artículo 14 y la Sección primera del Capítulo segundo ante los Tribunales ordinarios por un procedimiento basado en\":", options: { a: "Los principios de preferencia y sumariedad y, en su caso, a través del recurso de amparo ante el Tribunal Constitucional.", b: "Los principios de transparencia y seguridad jurídica y, en su caso, a través del recurso de amparo ante el Tribunal Constitucional.", c: "Los principios de eficacia y seguridad jurídica y, en su caso, a través del recurso de amparo ante el Tribunal Constitucional.", d: "Los principios de eficiencia y seguridad jurídica y, en su caso, a través del recurso de amparo ante el Tribunal Constitucional." }, correctAnswer: "b" },
+            { id: 3, question: "Según el art.87.2 de la CE, las Asambleas de las Comunidades Autónomas podrán-", options: { a: "Solicitar del Gobierno la adopción de un proyecto de ley o remitir a la Mesa del Congreso una proposición de ley", b: "Solicitar del Gobierno la adopción de una proposición de ley o remitir a la Mesa del Congreso un proyecto de ley", c: "Solicitar del Congreso la adopción de una proposición de ley o remitir a la Mesa del Congreso un proyecto de ley", d: "Solicitar del Congreso la adopción de un proyecto de ley o remitir a la Mesa del Congreso una proposición de ley" }, correctAnswer: "a" },
+            { id: 4, question: "Según el art.92.2 de la CE, el referéndum será convocado por-art.92.2-", options: { a: "El Presidente del Gobierno, mediante propuesta del Rey, previamente autorizada por el Congreso de los Diputados", b: "El Rey, mediante propuesta del Presidente del Gobierno, previamente autorizada por el Congreso de los Diputados", c: "El Rey, mediante propuesta del Congreso de los Diputados, previamente autorizada por el Presidente del Gobierno", d: "El Presidente del Gobierno, mediante propuesta del Congreso de los Diputados, previamente autorizada por el Rey" }, correctAnswer: "b" },
+            { id: 5, question: "Con objeto de facilitar la promoción profesional de las empleadas públicas y su acceso a puestos directivos en la Administración General del Estado, en las convocatorias de los correspondientes cursos de formación se reservará para las mujeres, al menos", options: { a: "Un 30% de las plazas", b: "Un 35% de las plazas", c: "Un 40% de las plazas", d: "Un 60% de las plazas" }, correctAnswer: "c" },
+            { id: 6, question: "Tendrán la consideración de servicios de la sociedad de la información, siempre que representen una actividad económica, los siguientes", options: { a: "La contratación de bienes y servicios por vía electrónica.", b: "El teletexto televisivo y otros servicios equivalentes como las guías electrónicas de programas ofrecidas a través de las plataformas televisivas.", c: "Los servicios de radiodifusión sonora.", d: "Los servicios de radiodifusión" }, correctAnswer: "a" },
+            { id: 7, question: "El artículo 22 del TREBEP determina que las pagas extraordinarias de los funcionarios públicos serán dos al año:", options: { a: "Cada una por el importe de la totalidad de las retribuciones básicas y de la totalidad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo.", b: "Cada una por el importe de una mensualidad de las retribuciones básicas y de la totalidad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo.", c: "Cada una por el importe de dos mensualidades de las retribuciones básicas y de la totalidad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo.", d: "Cada una por el importe de una mensualidad de las retribuciones básicas y de la mitad de las retribuciones complementarias, salvo aquellas complementarias que retribuyan el grado de interés, iniciativa o esfuerzo con que el funcionario desempeña su trabajo y el rendimiento o resultados obtenidos, y los servicios extraordinarios prestados fuera de la jornada normal de trabajo." }, correctAnswer: "b" },
+            { id: 8, question: "Si hablamos de la Ley 6/2020, de los Servicios electrónicos de confianza, indica la respuesta incorrecta", options: { a: "La terminación de la representación en los certificados electrónicos con atributo de representante es una causa de extinción por revocación", b: "Si hay un certificado cualificado de sello electrónico y de firma electrónica con atributo de representante, los prestadores de servicios de confianza comprobarán la personalidad jurídica de la persona representada", c: "El prestador de servicios electrónicos de confianza es responsable de daños y perjuicios por la falta de comunicación sin demora indebida de la persona a la que se le ha prestado los servicios sobre cualquier modificación de circunstancias que incidan en la prestación del servicio", d: "Alguna es incorrecta" }, correctAnswer: "c" },
+            { id: 9, question: "Según la Ley Orgánica de Protección de Datos, los trabajadores y los empleados públicos tendrán derecho a la desconexión digital a fin de garantizar:", options: { a: "Fuera del tiempo de trabajo legal o convencionalmente establecido, el respeto de su tiempo de descanso, permisos y vacaciones, salvo su intimidad personal y familiar", b: "Dentro y fuera del tiempo de trabajo legal o convencionalmente establecido, el respeto de su tiempo de descanso, permisos y vacaciones, salvo su intimidad personal y familiar", c: "Dentro y fuera del tiempo de trabajo legal o convencionalmente establecido, el respeto de su tiempo de descanso, permisos y vacaciones, así como de su intimidad personal y familiar", d: "Fuera del tiempo de trabajo legal o convencionalmente establecido, el respeto de su tiempo de descanso, permisos y vacaciones, así como de su intimidad personal y familiar" }, correctAnswer: "d" },
+            { id: 10, question: "¿Cuál de los siguientes sujetos no tiene obligación de relacionarse a través de medios electrónicos con las Administraciones Públicas para la realización de cualquier trámite de un procedimiento administrativo, según el art 14 de la Ley 39/2015?", options: { a: "Las personas jurídicas", b: "Quienes representen a un interesado que esté obligado a relacionarse electrónicamente con la Administración", c: "Quienes ejerzan una actividad profesional que no requiera colegiación obligatoria", d: "Los empleados de las Administraciones Públicas para los trámites y actuaciones que realicen con ellas por razón de su condición de empleado público" }, correctAnswer: "c" },
+            { id: 11, question: "Cl@ve es un sistema de Identificación, Autenticación y Firma Electrónica para los ciudadanos común a todo el Sector Público Administrativo Estatal, basado", options: { a: "En el uso de claves concertadas", b: "En el uso de firmas electrónicas reconocidas", c: "En el uso de firmas con claves establecidas de un solo uso", d: "En el uso de claves acordadas con los ciudadanos" }, correctAnswer: "a" },
+            { id: 12, question: "A tenor de la Ley de Transparencia, la competencia para la imposición de sanciones corresponderá:", options: { a: "Al Consejo de Ministros cuando el responsable sea un alto cargo de la Administración General del Estado", b: "Al Ministro de Hacienda y Administraciones Públicas cuando el alto cargo tenga la condición de miembro del Gobierno o Secretario de Estado", c: "Cuando el procedimiento se dirija contra altos cargos de las Comunidades Autónomas o Entidades Locales, los órganos que tengan atribuidas estas funciones en aplicación del régimen disciplinario propio de Administraciones en las que presten servicios los cargos contra los que se dirige el procedimiento o, en su caso, el Consejo de Gobierno de la Comunidad Autónoma o el Pleno de la Junta de Gobierno de la Entidad Local de que se trate", d: "Ninguna es correcta" }, correctAnswer: "c" },
+            { id: 13, question: "Según la Ley 4/2023, para la Igualdad real y efectiva de las personas trans y para las garantías de los derechos de las personas LGTBI, la condición de aquellas personas nacidas con unas características biológicas, anatómicas o fisiológicas, una anatomía sexual, unos órganos reproductivos o un patrón cromosómico que no se corresponden con las nociones socialmente establecidas de los cuerpos masculinos o femeninos, se denomina", options: { a: "Orientación sexual", b: "Identidad sexual", c: "Intersexualidad", d: "Transfobia" }, correctAnswer: "c" },
+            { id: 14, question: "Indica, de entre las siguientes medidas previstas en España Digital 2025, cuál pertenece al Eje Impulso de la Tecnología 5G", options: { a: "Turismo inteligente", b: "Ley de Start-ups", c: "Plan UniDigital", d: "Liberación del segundo dividendo digital en 2020" }, correctAnswer: "d" },
+            { id: 15, question: "¿Cuál de las siguientes tecnologías no está relacionada con dispositivos de almacenamiento?", options: { a: "PATA", b: "SAS", c: "PDC", d: "NVMe" }, correctAnswer: "c" },
+            { id: 16, question: "¿A qué corresponde el acrónimo ISIS?", options: { a: "Protocolo de routing de tipo IGP", b: "Una interface para escaneo de imágenes", c: "Las dos anteriores son verdaderas", d: "Ninguna de las anteriores" }, correctAnswer: "a" }, // Corrected based on answer key, was C
+            { id: 17, question: "Según las Normas Técnicas de Interoperabilidad, ¿Cuál es la resolución mínima a la que tiene que escanearse un documento para que este sea legible?", options: { a: "150 ppp", b: "200 ppp", c: "300 ppp", d: "600 ppp" }, correctAnswer: "b" },
+            { id: 18, question: "¿Cómo se denomina la norma que define el formato XML de intercambio de asientos entre entidades registrarles?", options: { a: "ORVE", b: "SICRES", c: "GEISER", d: "SIR 3.0" }, correctAnswer: "d" },
+            { id: 19, question: "En un servicio web SOAP, ¿con que tipo de mensaje XML nos informa el servicio de un error controlado?", options: { a: "<soap:fault>", b: "<soap:exception>", c: "<soap:body>", d: "Ninguna de las anteriores" }, correctAnswer: "a" },
+            { id: 20, question: "En un documento WSDL 2.0, ¿dónde se definen las distintas operaciones del servicio?", options: { a: "<portType>", b: "<service>", c: "<interface>", d: "<message>" }, correctAnswer: "c" },
+            { id: 21, question: "¿Cuál de los siguientes algoritmos sirve para calcular un árbol de recubrimiento mínimo dentro de un grafo?", options: { a: "Dijkstra", b: "Prim", c: "Floyd", d: "Bellman-Ford" }, correctAnswer: "b" },
+            { id: 22, question: "Si tuviéramos que analizar una red IPv4 y nos preocupara la fragmentación de los datagramas, ¿en cuál de las siguientes opciones nos fijaríamos más?", options: { a: "MSS", b: "CRC", c: "MTU", d: "MAC" }, correctAnswer: "c" },
+            { id: 23, question: "¿Cuál de los siguientes verbos HTTP no es idempotente?", options: { a: "GET", b: "HEAD", c: "POST", d: "DELETE" }, correctAnswer: "c" },
+            { id: 24, question: "¿Cuáles son los pesos correspondientes a la codificación decimal en binario AIKEN?", options: { a: "2421", b: "8421", c: "4221", d: "4242" }, correctAnswer: "a" },
+            { id: 25, question: "¿Cuántos bytes ocupa como máximo un carácter en UTF-8?", options: { a: "1 byte", b: "2 bytes", c: "3 bytes", d: "4 bytes" }, correctAnswer: "d" },
+            { id: 26, question: "En una estructura de datos de tipo montículo, ¿Qué se puede decir de la raíz?", options: { a: "Es el mayor de todos los elementos del árbol", b: "Es el menor de todos los elementos del árbol", c: "Se puede implementar con un array", d: "Todas las anteriores son ciertas" }, correctAnswer: "d" },
+            { id: 27, question: "¿Cuál de las siguientes NO es una herramienta de instalación de paquetes en Linux?", options: { a: "deb", b: "rpm", c: "dpkg", d: "dnf" }, correctAnswer: "a" },
+            { id: 28, question: "¿Cuál de los siguiente productos NoSQL es documental?", options: { a: "Cassandra", b: "HBase", c: "CouchDB", d: "Redis" }, correctAnswer: "c" },
+            { id: 29, question: "¿En qué fichero de Linux se encuentran configurados servidores DNS?", options: { a: "/etc/host", b: "/etc/hosts", c: "/etc/resolv.conf", d: "/etc/dhchp.conf" }, correctAnswer: "c" },
+            { id: 30, question: "¿Qué representan las siglas del teorema CAP para sistemas distribuidos?", options: { a: "Consistencia, Atomicidad, Particionamiento", b: "Consistencia, Disponibilidad, Protección", c: "Consistencia, Disponibilidad, Tolerancia al Particionado", d: "Coherencia, Disponibilidad, Particionamiento" }, correctAnswer: "c" },
+            { id: 31, question: "¿Cuál es el estándar del formato JSON?", options: { a: "ECMA 404", b: "ISO 40500", c: "ECMA 272", d: "ISO 9075" }, correctAnswer: "a" },
+            { id: 32, question: "¿Cuál son las autoridades de validación del dni electrónico?", options: { a: "FNMT-RCM y Ministerio de Hacienda y Administraciones Publicas", b: "DGP y FNMT-RCM", c: "DGP únicamente", d: "FNMT-RCM únicamente" }, correctAnswer: "a" },
+            { id: 33, question: "Si queremos implantar una sede electrónica en nuestro organismo, ¿Qué producto/servicio común debemos de utilizar?", options: { a: "INSIDE", b: "ACCEDA", c: "ORVE", d: "GEISER" }, correctAnswer: "b" },
+            { id: 34, question: "Dentro de los perfiles de XaDES, ¿Cuál es el mínimo que hay que usar según la norma NTI de política de firma electrónica?", options: { a: "XaDES-BES", b: "XaDES-EPES", c: "XaDES-C", d: "XaDES-T" }, correctAnswer: "b" },
+            { id: 35, question: "¿Cuál de estas herramientas del CCN representa un servicio de almacenamiento en modo nube?", options: { a: "LUCIA", b: "MARTA", c: "LORETO", d: "VANESA" }, correctAnswer: "c" },
+            { id: 36, question: "¿Qué fichero tengo que configurar en git si quiero excluir ciertos archivos del control de versiones?", options: { a: "fileignore", b: "excludefile", c: "No se puede", d: "gitignore" }, correctAnswer: "d" },
+            { id: 37, question: "¿Cuál de los siguientes componentes JEE NO los gestiona el Web Container?", options: { a: "Servlets", b: "Filters", c: "JSP", d: "EJB de tipo MDB" }, correctAnswer: "d" },
+            { id: 38, question: "¿Con que API podemos guardar/recuperar objetos de una base de datos relacional sin tener que escribir nada de SQL?", options: { a: "JTA", b: "JPA", c: "JDBC", d: "JMS" }, correctAnswer: "b" },
+            { id: 39, question: "¿Cómo se denomina el código que resulta de compilar C# en un fichero con extensión.dll?", options: { a: "Bitecode", b: "Assembly", c: "Lenguaje Intermedio", d: "CLR" }, correctAnswer: "c" },
+            { id: 40, question: "¿Cuál es la velocidad máxima de un USB 4.0?", options: { a: "40 Gbps", b: "100 Gbps", c: "20 Gbps", d: "200 Gbps" }, correctAnswer: "a" },
+            { id: 41, question: "¿Cuál de las siguientes formas normales tiene que ver con el análisis de dependencias multivaluadas?", options: { a: "3FN", b: "4FN", c: "5FN", d: "6FN" }, correctAnswer: "b" },
+            { id: 42, question: "Según el modelo relacional, el numero de tuplas de una relación se denomina", options: { a: "Intensión", b: "Grado", c: "Dominio", d: "Cardinalidad" }, correctAnswer: "d" },
+            { id: 43, question: "De los siguientes flujos en un Diagrama de Flujo de Datos o DFD indica aquel que no está permitido", options: { a: "Entre dos procesos", b: "Entre dos entidades externas", c: "Entre proceso y almacén", d: "Entre proceso y entidad externa" }, correctAnswer: "b" },
+            { id: 44, question: "¿Cual de los siguientes no es un diagrama de comportamiento en UML?", options: { a: "Estados", b: "Perfil", c: "Actividad", d: "Casos de uso" }, correctAnswer: "b" },
+            { id: 45, question: "¿Cuál sería el patrón GoF más adecuado si tuviéramos que implementar la creación de objetos muy complejos (con muchas partes)?", options: { a: "Factory Method", b: "Proxy", c: "Singleton", d: "Builder" }, correctAnswer: "d" },
+            { id: 46, question: "Según el RD 1112/2018, ¿cuál es la norma de WAI que hay que cumplir y con qué nivel?", options: { a: "WCAG 2.0-AA", b: "WCAG 2.1-A", c: "WCAG 2.0 - AAA", d: "WCAG 2.1-AA" }, correctAnswer: "d" },
+            { id: 47, question: "¿Cuál de las siguientes no es una herramienta de cifrado que nos sirve para garantizar la confidencialidad de nuestros documentos?", options: { a: "BitLocker", b: "TrueCipher", c: "VeraCrypt", d: "GnuPG" }, correctAnswer: "b" },
+            { id: 48, question: "¿Cuál es la sentencia de SQL para iniciar una transacción?", options: { a: "SET TRANSACTION", b: "START TRANSACTION", c: "RUN TRANSACTION", d: "EXEC TRANSACTION" }, correctAnswer: "b" },
+            { id: 49, question: "¿Cuál es el formato de la sentencia REVOKE del lenguaje SQL?", options: { a: "REVOKE <privilegio> ON object_name FROM grantee", b: "REVOKE <privilegio> ON object_name TO grantee", c: "REVOKE <privilegio> ON object_name OF grantee", d: "REVOKE <privilegio> TO object_name FROM grantee" }, correctAnswer: "a" },
+            { id: 50, question: "¿Cuál de las siguientes no es una plataforma git en modo nube?", options: { a: "GitHub", b: "GitLab", c: "BitBucket", d: "Heroku" }, correctAnswer: "d" },
+            { id: 51, question: "Si queremos enviar SMS desde una aplicación de nuestro organismo, ¿Qué servicio/producto común deberíamos usar?", options: { a: "Notific@", b: "SIR", c: "SIM", d: "FACE" }, correctAnswer: "c" },
+            { id: 52, question: "¿Con que comando se pueden consultar las políticas de grupo que te aplican en Windows?", options: { a: "gpresult", b: "gpconfig", c: "gpresolv", d: "gpreport" }, correctAnswer: "a" },
+            { id: 53, question: "Tenemos dos tablas t1 y t2 que queremos relacionar con una consulta, de forma que nos interesan todos los registros que estén en t1 y t2 (en función de una clave), y además los de t1 que no hayan encontrado coincidencia en t2", options: { a: "inner join", b: "unión", c: "cross join", d: "left outer join" }, correctAnswer: "d" },
+            { id: 54, question: "¿Cuál es el equivalente en las tecnologías de XML para seleccionar nodos del árbol al estilo de CSS?", options: { a: "DOM", b: "SAX", c: "XPath", d: "XSelector" }, correctAnswer: "c" },
+            { id: 55, question: "¿Cuál de las siguientes no es una etiqueta semántica de HTML5?", options: { a: "article", b: "aside", c: "news", d: "nav" }, correctAnswer: "c" },
+            { id: 56, question: "Dentro de un documento XML, si no queremos que el parser analice un cierto texto dentro un elemento, ¿cómo debemos de especificarlo?", options: { a: "<[EXCLUDE[....]]>", b: "<![CDATA[....]]>", c: "<![PCDATA[...]]>", d: "<[IGNORE[...]]>" }, correctAnswer: "b" },
+            { id: 57, question: "En un servicio Rest, ¿Cuál sería el formato que más se ajusta a un token JWT usado como mecanismo de autenticación?", options: { a: "eyJhbGciOiJlUzI1NilkpXVCJ9.eyJzdWliOilaG4gRG9lliwiaWF0ljo2MjM5MDIyfQ.SfIKxwRJSMeKKF2QT4fdQssw5c", b: "eyJhbGciOiJlUzl1NilkpXVCJ9eyJzdWliOilaG4gRG9lliwiaWF0Ijo2MjM5MDIyfQSfIKxWRJSMeKKF2QT4fdQssw5c", c: "eyJhbGciOiJlUzI1NilkpXVCJ9.eyJzdWliOilaG4gRG9lliwiaWF0ljo2MjM5MDIyfQ", d: "eyJhbGciOiJlUzI1NilkpXVCJ9" }, correctAnswer: "a" },
+            { id: 58, question: "¿Cuál es el puerto de IMAP cuando se configura con seguridad?", options: { a: "143", b: "993", c: "995", d: "443" }, correctAnswer: "b" },
+            { id: 59, question: "¿Cuál de los siguientes algoritmos está relacionado con criptografía simétrica?", options: { a: "RSA", b: "DSA", c: "AES", d: "DH" }, correctAnswer: "c" },
+            { id: 60, question: "¿Cuál de los siguiente no es una vulnerabilidad de SSL/TLS?", options: { a: "POODLE", b: "BEAST", c: "CRIME", d: "HALO" }, correctAnswer: "d" },
+            { id: 61, question: "¿Cuál de estos productos no nos sirve de proxy inverso?", options: { a: "Nginx", b: "Varnish", c: "HAProxy", d: "Squit" }, correctAnswer: "d" },
+            { id: 62, question: "¿Qué parámetros de entrada tiene una función HMAC-SHA256?", options: { a: "Una clave y el mensaje o documento", b: "El mensaje o documento", c: "Una clave y un certificado", d: "Dos documentos" }, correctAnswer: "a" },
+            { id: 63, question: "Cuando tenemos un router (con una única IP Publica) conectado a internet y todos los equipos de nuestra LAN acceden a través de él, si este router, sobre el tráfico saliente, cambia las IP privadas de los datagramas que recibe de los equipos por la IP publica que él tiene asignada, se dice que hemos aplicado la siguiente técnica", options: { a: "IP Spoofing", b: "PAT", c: "IP Masquerade", d: "IP Transalation" }, correctAnswer: "c" },
+            { id: 64, question: "¿Qué tipo de ataque es aquel en el que se produce un robo de sesión?", options: { a: "XSS", b: "TearDrop", c: "Hijacking", d: "Flooding" }, correctAnswer: "c" },
+            { id: 65, question: "En el ámbito de un CPD, ¿cuál es la medida normalizada de la altura en un rack denominada \"U\"?", options: { a: "2 pulgadas", b: "4 pulgadas", c: "1,75 pulgadas", d: "2,5 pulgadas" }, correctAnswer: "c" },
+            { id: 66, question: "¿Cuál de las siguientes herramientas no es de \"Gestión de incidencias\"?", options: { a: "GLPI", b: "Trac", c: "Moodle", d: "Remedy" }, correctAnswer: "c" },
+            { id: 67, question: "¿Cuál es el tamaño de la celda en ATM?", options: { a: "48 bytes", b: "50 bytes", c: "53 bytes", d: "9180 bytes" }, correctAnswer: "c" },
+            { id: 68, question: "¿Cuáles son los bits en el protocolo Frame Relay para el control de congestión?", options: { a: "FECN", b: "BECN", c: "DE", d: "Todas las anteriores" }, correctAnswer: "d" },
+            { id: 69, question: "¿Cuál es el campo o campos dentro de una celda ATM que nos sirven para identificar el circuito virtual?", options: { a: "DLCI", b: "VCI/VPI", c: "CVC", d: "VCI" }, correctAnswer: "b" },
+            { id: 70, question: "Si nos instalan un cableado OS1, se están refiriendo a un tipo de cable", options: { a: "Par trenzado de cobre sin apantallar", b: "Cable coaxial", c: "Fibra óptica monomodo", d: "Fibra óptica multimodo" }, correctAnswer: "c" },
+            { id: 71, question: "¿Cuál es el identificador, dentro de una red SAN, de una tarjeta HBA?", options: { a: "MAC", b: "WWN", c: "LUN", d: "LBA" }, correctAnswer: "b" },
+            { id: 72, question: "¿Cuál de las siguientes secuencias de backup está ordenada de mayor a menor tiempo de recuperación?", options: { a: "Incremental, Completa, Diferencial", b: "Completa, Diferencial, Incremental", c: "Incremental, Diferencial, Completa", d: "Diferencial, Incremental, Completa" }, correctAnswer: "c" },
+            { id: 73, question: "¿Qué tamaño máximo puede almacenar una cinta LTO-8 sin comprimir?", options: { a: "30TB", b: "12TB", c: "24TB", d: "6TB" }, correctAnswer: "b" },
+            { id: 74, question: "¿Cuál de las siguientes direcciones IPv6 es incorrecta?", options: { a: "2001:db8:85a3:0:0:8a2e:370:7334", b: "2001:db8:85a3::8a2e:370:7334", c: "2001:0db8:3c4d:0015:0000:0000:1a2f:1a2b", d: "2001:db8:85a3::8a2g:7334" }, correctAnswer: "d" },
+            { id: 75, question: "¿Cuál de los siguientes no es un registro DNS valido?", options: { a: "CNAME", b: "TXT", c: "AA", d: "CAA" }, correctAnswer: "c" },
+            { id: 76, question: "Indicar las direcciones IP de red y de broadcast para la siguiente subred 132.27.31.77/26", options: { a: "Red: 132.27.31.0 y broadcast: 132.27.31.127", b: "Red: 132.27.31.0 y broadcast: 132.27.31.111", c: "Red: 132.27.31.64 y broadcast: 132.27.31.127", d: "Red: 132.27.31.64 y broadcast: 132.27.31.111" }, correctAnswer: "c" },
+            { id: 77, question: "En relación con TCP/IP, ¿Qué nos indica el parámetro MSS?", options: { a: "La cantidad máxima de conexiones en TCP", b: "El tamaño máximo de bytes que puede recibir un único segmento TCP", c: "El tamaño mínimo de bytes que puede recibir un único segmento TCP", d: "El tamaño máximo de bytes que pueden transportar las capas inferiores" }, correctAnswer: "b" },
+            { id: 78, question: "¿Con que palabra reservada en VB.Net podemos definir que un miembro está asociado a la clase en lugar de a las instancias?", options: { a: "Static", b: "Shared", c: "Class", d: "Public" }, correctAnswer: "b" },
+            { id: 79, question: "En un cable de par trenzado, ¿Cómo se denomina al efecto de las interferencias entre cables próximos?", options: { a: "Atenuación", b: "Ruido Blanco", c: "Diafonía", d: "Jitter" }, correctAnswer: "c" },
+            { id: 80, question: "Unidad de información que se corresponde con 128 bytes", options: { a: "1 Gigabit", b: "1 Kibibit", c: "1 Mebibit", d: "1 Megabit" }, correctAnswer: "b" },
+
+            // SUPUESTO I (Preguntas 81-100)
+            { id: 81, question: "Indique cual de las siguientes sentencias SQL nos sirve para localizar coches que no han pasado ninguna revisión", options: { a: "SELECT Matricula, Marca, Modelo, Color, Precio from Coche INNER JOIN Revision ON Coche.Matricula Revision. Matricula", b: "SELECT Matricula, Marca, Modelo, Color, Precio from Coche INNER JOIN Pasa ON Coche.Matricula Pasa.Matricula", c: "SELECT Matricula, Marca, Modelo, Color, Precio from Coche LEFT JOIN Revision ON Coche.Matricula Revision.Matricula", d: "SELECT Matricula, Marca, Modelo, Color, Precio from Coche WHERE Coche. Matricula NOT IN (SELECT Matricula FROM Pasa)" }, correctAnswer: "d" },
+            { id: 82, question: "¿Cuál sería el tipo de correspondencia de la relación Pasa y su transformación al modelo relacional?", options: { a: "M:N y Pasa (Matricula, Codigo)", b: "1:N y Pasa(Matricula)", c: "M:N y Pasa(Codigo)", d: "1:N y Pasa (Matricula, Codigo)" }, correctAnswer: "a" },
+            { id: 83, question: "Indique que sentencia nos podría servir para generar los códigos internos de los clientes", options: { a: "CREATE SEQUENCE sec_codigo_interno START WITH 1 INCREMENT BY 1;", b: "CREATE INCREMENT sec_codigo_interno START WITH 1 INCREMENT BY 1;", c: "CREATE IDENTITY sec_codigo_interno START WITH 1 INCREMENT BY 1;", d: "CREATE AUTO_INCREMENT sec_codigo_interno START WITH 1 INCREMENT BY 1;" }, correctAnswer: "d" },
+            { id: 84, question: "¿Cuál de las siguientes sería una superclave de la relación Cliente?", options: { a: "NIF,Nombre", b: "CodigoInterno, Nombre", c: "CodigoInterno,NIF", d: "Todas son correctas" }, correctAnswer: "c" },
+            { id: 85, question: "¿Cuál de las siguientes anotaciones de JAX-RS nos sirve para indicar la URI de cada uno de los recursos?", options: { a: "@GET", b: "@QueryParam", c: "@Path", d: "@URLPattern" }, correctAnswer: "c" },
+            { id: 86, question: "Dada la transformación al modelo relacional de Cliente (NIF, CodigoInterno, Nombre, CodigoPostal, Ciudad, Teléfono).", options: { a: "Está en 1FN pero no en 2FN", b: "Está en 2FN pero no en 3FN", c: "Está en 3FN pero no en FNBC", d: "Está en FNBC pero no en 4FN" }, correctAnswer: "c" },
+            { id: 87, question: "Queremos automatizar la construcción de nuestros Servicios Web con Java. Indique la herramienta correcta", options: { a: "npm", b: "nuget", c: "gradle", d: "composer" }, correctAnswer: "c" },
+            { id: 88, question: "Indique con que herramienta no podríamos hacer pruebas de código estático", options: { a: "SonarQube", b: "PMD", c: "CheckStyle", d: "JRun" }, correctAnswer: "d" },
+            { id: 89, question: "En la clase Cliente ¿que anotaciones usaríamos para el atributo CodigoInternoDeCliente relacionado con la columna CodigoInterno?", options: { a: "@Id", b: "@GeneratedValue", c: "@Column", d: "Todas son correctas" }, correctAnswer: "d" },
+            { id: 90, question: "Se ha diseñado un formulario en HTML5 para enviar los datos de una revisión. ¿Cuál de los siguientes atributos relacionado con el input de tipo submit deberíamos de configurar?", options: { a: "action", b: "formaction", c: "value", d: "url" }, correctAnswer: "b" },
+            { id: 91, question: "Nos han solicitado pasar algún tipo de prueba de calidad a nuestro código JavaScript. Señale con que herramienta", options: { a: "Babel", b: "Mocha", c: "ESLint", d: "Jasmine" }, correctAnswer: "c" },
+            { id: 92, question: "¿Con cual de los siguientes selectores de CSS podemos destacar en color rojo los enlaces que no tengan informado el atributo “title”?", options: { a: "a[title] {text-color:red;}", b: "a:not([title]) {text-color:red;}", c: "a:not([title]) {color:red;}", d: "not:(a[title]) {color:red;}" }, correctAnswer: "c" },
+            { id: 93, question: "Si queremos implementar los distintos servicios Rest como piezas independientes al estilo de las arquitecturas basadas en microservicios, ¿con que producto proporcionamos a los clientes un único punto de entrada para la utilización de los mismos?", options: { a: "Zuul", b: "Ribbon", c: "Eureka", d: "Struts" }, correctAnswer: "a" },
+            { id: 94, question: "¿Con que API de HTML5 podemos lanzar eventos desde el backend para que los distintos clientes conectados puedan actualizar su información?", options: { a: "Web Storage", b: "Server-Sent Events", c: "AJAX", d: "Web Events" }, correctAnswer: "b" },
+            { id: 95, question: "Se ha implementado una especie de memoria cache con la clase java.util.Hashtable para almacenar a los Clientes. ¿Con que método no podríamos acceder a dichos clientes?", options: { a: "get(key)", b: "elements()", c: "iterator()", d: "forEach()" }, correctAnswer: "c" },
+            { id: 96, question: "El equipo de desarrollo está pensando en un usar GraphQL para ofrecer una mejor integración a los distintos clientes (web, móviles) en el futuro. ¿Con que tipo de petición podremos realizar bajas de ciertos recursos?", options: { a: "type", b: "query", c: "mutation", d: "resolver" }, correctAnswer: "c" },
+            { id: 97, question: "La autenticación del cliente web se realiza mediante tokens JWT, ¿Cuál de estos claims nos sirve para establecer una caducidad del mismo?", options: { a: "exp", b: "iat", c: "iss", d: "aud" }, correctAnswer: "a" },
+            { id: 98, question: "Si quisiéramos intercambiar los datos de una revisión en formato JSON, ¿Cuál de las siguientes opciones sería adecuada?", options: { a: "{“código”:100,”aceite”:true}", b: "{código:100,”aceite”:false}", c: "{“código”:100,”aceite”:”true”}", d: "{“código”:”100”,”aceite”:”true”}" }, correctAnswer: "a" },
+            { id: 99, question: "Si queremos avisar al cliente cuando cambie algún dato sobre la revisión de su coche, ¿Cuál sería el patrón de diseño mas adecuado?", options: { a: "Mediator", b: "Memento", c: "Observer", d: "Facade" }, correctAnswer: "c" },
+            { id: 100, question: "Nos piden que usemos una solución para poder traducir los textos de nuestras aplicaciones web a los distintos idiomas oficiales", options: { a: "RUN", b: "PLATEA", c: "PLATA", d: "SIA" }, correctAnswer: "c" },
+
+            // SUPUESTO II (Preguntas 101-120)
+            { id: 101, question: "¿Cuál será el numero máximo de host de usuario que podemos configurar en cada una de las plantas?", options: { a: "8192", b: "8190", c: "4096", d: "4094" }, correctAnswer: "d" },
+            { id: 102, question: "¿Cuál es la dirección de difusión correspondiente a la subred de la cuarta planta?", options: { a: "10.38.255.255", b: "10.38.96.255", c: "10.38.64.255", d: "10.38.127.255" }, correctAnswer: "d" },
+            { id: 103, question: "Si queremos monitorizar los distintos dispositivos de red con SNMPv2 ¿cual de los siguientes es un elemento relacionado?", options: { a: "OID", b: "MIB", c: "NMS", d: "Todas son correctas" }, correctAnswer: "d" },
+            { id: 104, question: "Para proteger el organismo de posibles ataques a través de ficheros infectados la solución del CCN que deberá adoptar es:", options: { a: "ROCIO", b: "ADA", c: "CARLA", d: "ELENA" }, correctAnswer: "b" },
+            { id: 105, question: "Si desde que un servidor situado en la quinta planta filtre todo el trafico de la orden “ping” que provenga de un equipo de la cuarta planta lo haríamos con:", options: { a: "iptables -A INPUT -s 10.38.96.0/19 -p ICMP --icmp-type echo-request -j DROP", b: "iptables -A INPUT -s 10.38.96.0/16 -p ICMP --icmp-type echo-request -j DROP", c: "iptables -A INPUT -s 10.38.128.0/19 -p ICMP --icmp-type echo-reply -j DROP", d: "iptables -A INPUT -s 10.38.128.0/16 0 -p ICMP --icmp-type echo-reply -j DROP" }, correctAnswer: "a" },
+            { id: 106, question: "Queremos comprobar que el servicio de Nginx se encuentra funcionando con normalidad", options: { a: "systemctl active nginx", b: "systemctl nginx active", c: "systemctl status nginx", d: "systemctl nginx status" }, correctAnswer: "c" },
+            { id: 107, question: "Queremos añadirle al usuario “usu01” los grupos DreamTeam y FlowerPower", options: { a: "usermod -aG DreamTeam,FlowerPower usu01", b: "usermod -G DreamTeam,FlowerPower usu01", c: "usermod -g DreamTeam,FlowerPower usu01", d: "usermod -ag DreamTeam,FlowerPower usu01" }, correctAnswer: "a" },
+            { id: 108, question: "Para poder averiguar que el comando anterior ha funcionado correctamente", options: { a: "id usu01", b: "group usu01", c: "getgroups usu01", d: "Ninguna de las anteriores" }, correctAnswer: "a" },
+            { id: 109, question: "Se desea implantar una solución para la gestión de los dispositivos móviles corporativos, indique con cual:", options: { a: "WMware IWatch", b: "Microsoft Intune", c: "GLPI", d: "HP OpenView" }, correctAnswer: "b" },
+            { id: 110, question: "Cual de los siguientes no será un producto adecuado si tenemos que monitorizar nuestra propia infraestructura de microservicios:", options: { a: "cAdvisor", b: "Prometheus", c: "Grafana", d: "Envoy" }, correctAnswer: "d" },
+            { id: 111, question: "¿Con cual de los siguientes comandos podemos consultar si nuestro contenedor de Nginx está corriendo?", options: { a: "docker stat", b: "docker ps", c: "docker status", d: "docker info" }, correctAnswer: "b" },
+            { id: 112, question: "¿Qué registros DNS tendremos que configurar para poder asociarle nombre a unas determinadas direcciones IPv6?", options: { a: "AA", b: "AAA", c: "AAAA", d: "6toA" }, correctAnswer: "c" },
+            { id: 113, question: "En los servidores Windows, ¿con que comando podemos importar un nuevo certificado con formato p12?", options: { a: "importpfx", b: "certutil", c: "keytool", d: "Todas son correctas" }, correctAnswer: "b" },
+            { id: 114, question: "Queremos dotar de una solución muy escalable y robusta al trafico http mediante balanceadores. Indique el producto más adecuado", options: { a: "Nginx", b: "HAProxy", c: "F5 BIG-IP", d: "Todas son correctas" }, correctAnswer: "d" },
+            { id: 115, question: "Nos piden que usemos una solución para poder traducir los textos de nuestras aplicaciones web a los distintos idiomas oficiales", options: { a: "RUN", b: "PLATEA", c: "PLATA", d: "SIA" }, correctAnswer: "c" },
+            { id: 116, question: "Para poder habilitar el acceso por ssh a los servidores Linux, ¿en que fichero deberíamos de añadir las claves públicas RSA generadas por los usuarios?", options: { a: "/etc/ssh_keys", b: "/etc/ssh/keys", c: "/etc/sshd/keys", d: "~/.ssh/authorized_keys" }, correctAnswer: "d" },
+            { id: 117, question: "Queremos automatizar la instalación del paquete spartacus en todos los servidores. Indique la opción mas correcta", options: { a: "ansible all -m apt -a \"name=spartacus state=present\"", b: "apt install --all spartacus", c: "dpkg install --all spartacus", d: "Ninguna de las anteriores" }, correctAnswer: "a" },
+            { id: 118, question: "¿Qué puerto habrá que habilitar para poder acceder al servidor de base datos Oracle?", options: { a: "1433", b: "1541", c: "3306", d: "1521" }, correctAnswer: "d" },
+            { id: 119, question: "De acuerdo al ENS le piden analizar el estado de seguridad de todos los sistemas de información. ¿Cuales serían las dimensiones que usted no analizaría para activos de tipo información?", options: { a: "Confidencialidad", b: "Disponibilidad", c: "Trazabilidad", d: "Integridad" }, correctAnswer: "c" },
+            { id: 120, question: "Si quisiéramos contratar un servicio de PaaS en la nube para nuestro departamento de desarrollo sería:", options: { a: "AWS EC2", b: "Google App Engine", c: "OpenStack Nova", d: "ELK" }, correctAnswer: "b" }
+        ];
+
+        // Elementos del DOM
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessageDiv = document.getElementById('feedback-message'); // Nuevo elemento para el mensaje
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const correctCountSpan = document.getElementById('correct-count');
+        const incorrectCountSpan = document.getElementById('incorrect-count');
+        const unansweredCountSpan = document.getElementById('unanswered-count');
+        const restartFromResultsButton = document.getElementById('restart-from-results-button');
+
+        // Estado del test
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // { questionId: 'selectedOptionLetter' }
+
+        // Cargar estado desde LocalStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            // Asegurarse de que el índice no exceda el número de preguntas
+            if (currentQuestionIndex >= quizData.length) {
+                currentQuestionIndex = quizData.length - 1;
+                if (currentQuestionIndex < 0) currentQuestionIndex = 0; // Handle empty quizData
+            }
+        }
+
+        // Guardar estado en LocalStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Renderizar la pregunta actual
+        function renderQuestion() {
+            // Ocultar resultados si están visibles
+            quizContainer.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            feedbackMessageDiv.classList.add('hidden'); // Ocultar mensaje al cargar nueva pregunta
+            feedbackMessageDiv.classList.remove('feedback-correct', 'feedback-incorrect'); // Limpiar clases
+
+            const question = quizData[currentQuestionIndex];
+            if (!question) {
+                showResults(); // Si no hay pregunta, mostrar resultados
+                return;
+            }
+
+            questionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+            questionText.textContent = `${question.id}. ${question.question}`;
+            optionsContainer.innerHTML = ''; // Limpiar opciones anteriores
+
+            // Crear opciones de respuesta
+            const optionLetters = ['a', 'b', 'c', 'd'];
+            optionLetters.forEach(letter => {
+                const optionText = question.options[letter];
+                if (optionText) { // Solo renderizar si la opción existe
+                    const optionDiv = document.createElement('div');
+                    optionDiv.classList.add('flex', 'items-center', 'mb-2');
+
+                    const radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    radioInput.id = `option-${letter}`;
+                    radioInput.name = `question-${question.id}`;
+                    radioInput.value = letter;
+                    radioInput.classList.add('hidden'); // Ocultar el radio button nativo
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `option-${letter}`;
+                    label.classList.add(
+                        'option-label',
+                        'flex-1',
+                        'p-4',
+                        'border',
+                        'border-gray-300',
+                        'rounded-lg',
+                        'shadow-sm',
+                        'hover:bg-blue-50',
+                        'transition-colors',
+                        'duration-200'
+                    );
+                    label.innerHTML = `<span class="font-bold mr-2">${letter.toUpperCase()})</span> ${optionText}`;
+
+                    // Marcar la opción si ya fue seleccionada y aplicar feedback
+                    if (userAnswers[question.id] === letter) {
+                        radioInput.checked = true;
+                        // Apply feedback immediately if an answer was already chosen for this question
+                        applyFeedback(question.id, letter);
+                        disableOptions(question.id); // Disable options if already answered
+                    }
+
+                    // Manejar la selección de respuesta
+                    radioInput.addEventListener('change', () => {
+                        const selectedAnswer = radioInput.value;
+                        userAnswers[question.id] = selectedAnswer;
+                        saveState();
+                        applyFeedback(question.id, selectedAnswer);
+                        disableOptions(question.id);
+                    });
+
+                    optionDiv.appendChild(radioInput);
+                    optionDiv.appendChild(label);
+                    optionsContainer.appendChild(optionDiv);
+                }
+            });
+
+            // Actualizar estado de los botones de navegación
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.textContent = currentQuestionIndex === quizData.length - 1 ? 'Finalizar Test' : 'Siguiente';
+        }
+
+        // Función para aplicar feedback visual y de texto
+        function applyFeedback(questionId, selectedAnswer) {
+            const question = quizData.find(q => q.id === questionId);
+            if (!question) return;
+
+            const correctAnswer = question.correctAnswer;
+
+            optionsContainer.querySelectorAll('.option-label').forEach(label => {
+                const radioInput = document.getElementById(label.htmlFor);
+                const optionLetter = radioInput.value;
+
+                label.classList.remove('bg-blue-200', 'border-blue-500', 'option-correct', 'option-incorrect');
+
+                if (optionLetter === correctAnswer) {
+                    label.classList.add('option-correct');
+                } else if (optionLetter === selectedAnswer && selectedAnswer !== correctAnswer) {
+                    label.classList.add('option-incorrect');
+                }
+            });
+
+            // Mostrar mensaje de feedback
+            feedbackMessageDiv.classList.remove('hidden');
+            feedbackMessageDiv.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            if (selectedAnswer === correctAnswer) {
+                feedbackMessageDiv.classList.add('feedback-correct');
+                feedbackMessageDiv.textContent = '¡Correcto!';
+            } else {
+                feedbackMessageDiv.classList.add('feedback-incorrect');
+                feedbackMessageDiv.textContent = `Incorrecto. La respuesta correcta era la opción ${correctAnswer.toUpperCase()}.`;
+            }
+        }
+
+        // Función para deshabilitar las opciones de una pregunta
+        function disableOptions(questionId) {
+            optionsContainer.querySelectorAll(`input[name="question-${questionId}"]`).forEach(input => {
+                input.disabled = true;
+            });
+        }
+
+        // Función para habilitar las opciones de una pregunta (usado al reiniciar)
+        function enableOptions(questionId) {
+            optionsContainer.querySelectorAll(`input[name="question-${questionId}"]`).forEach(input => {
+                input.disabled = false;
+            });
+        }
+
+
+        // Navegación
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+                saveState();
+            } else {
+                // Última pregunta, finalizar test
+                showResults();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+                saveState();
+            }
+        }
+
+        // Reiniciar test
+        function resetQuiz() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el test? Se perderá tu progreso actual.')) {
+                localStorage.removeItem('currentQuestionIndex');
+                localStorage.removeItem('userAnswers');
+                currentQuestionIndex = 0;
+                userAnswers = {};
+                // Clear any lingering feedback classes from all options
+                optionsContainer.querySelectorAll('.option-label').forEach(label => {
+                    label.classList.remove('bg-blue-200', 'border-blue-500', 'option-correct', 'option-incorrect');
+                });
+                // Ensure all options are enabled on reset
+                quizData.forEach(q => enableOptions(q.id));
+                renderQuestion();
+                quizContainer.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                feedbackMessageDiv.classList.add('hidden'); // Ocultar mensaje al reiniciar
+                feedbackMessageDiv.classList.remove('feedback-correct', 'feedback-incorrect'); // Limpiar clases
+            }
+        }
+
+        // Mostrar resultados
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+            feedbackMessageDiv.classList.add('hidden'); // Ocultar mensaje al mostrar resultados
+
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            quizData.forEach(question => {
+                const userAnswer = userAnswers[question.id];
+                if (userAnswer === undefined) {
+                    unanswered++;
+                } else if (userAnswer === question.correctAnswer) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
+            });
+
+            correctCountSpan.textContent = correct;
+            incorrectCountSpan.textContent = incorrect;
+            unansweredCountSpan.textContent = unanswered;
+        }
+
+        // Event Listeners
+        nextButton.addEventListener('click', nextQuestion);
+        prevButton.addEventListener('click', previousQuestion);
+        resetButton.addEventListener('click', resetQuiz);
+        restartFromResultsButton.addEventListener('click', resetQuiz);
+
+        // Cargar el estado y renderizar la primera pregunta al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderQuestion();
+        });
+    </script>
+</body>
+</html>
