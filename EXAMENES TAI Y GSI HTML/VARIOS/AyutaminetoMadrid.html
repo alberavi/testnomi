@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AYUNTAMIENTO DE MADRID 2025</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to allow scrolling */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Max width for the container */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Slightly different background for question card */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Subtle border */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Light blue for selected option */
+            border-color: #3b82f6; /* Blue border */
+        }
+        input[type="radio"] {
+            display: none; /* Hide native radio button */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Light green */
+            border-color: #10b981; /* Green border */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gray */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Very light green background */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #047857;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">AYUNTAMIENTO DE MADRID 2025</h1>
+        <div id="quiz-questions">
+            <!-- Questions will be loaded here -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary" style="display: none;">Anterior</button>
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <button id="restart-current-page-btn" class="button-secondary w-full mt-4">Reiniciar Test (página actual)</button>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Correctas: <span id="correct-answers-display" class="text-green-700"></span></p>
+            <p>Incorrectas: <span id="incorrect-answers-display" class="text-red-700"></span></p>
+            <p>Sin contestar: <span id="unanswered-questions-display" class="text-gray-700"></span></p>
+            <button id="restart-full-test-btn" class="button-primary mt-6">Reiniciar Test Completo</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "1. De acuerdo con la Constitución Española, la protección social, económica y jurídica de la familia:",
+                options: {
+                    A: "Constituye un derecho fundamental por lo que cualquier ciudadano podrá recabar su tutela de ante los Tribunales ordinarios por un procedimiento basado en los principios de preferencia y sumariedad.",
+                    B: "Constituye uno de los principios rectores de la política social y económica, que corresponde asegurar a los poderes públicos.",
+                    C: "Cualquier ciudadano podrá recabar su tutela a través del recurso de amparo ante el Tribunal Constitucional."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "2. De conformidad con lo establecido en el artículo 53 de la Constitución Española, el reconocimiento, el respeto y la protección de los principios reconocidos en el Capítulo tercero:",
+                options: {
+                    A: "Informarán la legislación positiva, la práctica judicial y la actuación de los poderes públicos.",
+                    B: "No podrán ser alegados ante la Jurisdicción ordinaria, de acuerdo con lo que disponen las leyes que los desarrollan.",
+                    C: "Cualquier ciudadano podrá recabar su tutela ante los Tribunales ordinarios por un procedimiento basado en los principios de preferencia y sumariedad."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "3. De conformidad con lo establecido en el artículo 55 de la Constitución Española, podrá ser suspendido cuando se acuerde la declaración del estado de excepción o de sitio en los términos previstos en la Constitución:",
+                options: {
+                    A: "El derecho a la producción y creación literaria, artística, científica y técnica.",
+                    B: "El derecho de petición individual y colectiva, por escrito, en la forma y con los efectos que determine la ley.",
+                    C: "El derecho a elegir libremente su residencia y a circular por el territorio nacional."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "4. En el capítulo primero del Título VIII de la Constitución Española, se establece como uno de los principios generales de la Organización Territorial del Estado:",
+                options: {
+                    A: "El Estado se organiza territorialmente en municipios, en provincias y en las Comunidades Autónomas que se constituyan. Todas estas entidades gozan de autonomía para la gestión de sus respectivos intereses.",
+                    B: "No podrán existir en ningún caso diferencias entre los Estatutos de las distintas Comunidades Autónomas.",
+                    C: "Los derechos y obligaciones de los españoles en cualquier parte del territorio del Estado vendrán establecidos en su caso en los Estatutos de las distintas Comunidades Autónomas."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "5. Según establece la Constitución Española, las Cortes Generales, por motivos de interés nacional, no podrán:",
+                options: {
+                    A: "Autorizar la constitución de una comunidad autónoma cuando su ámbito territorial no supere el de una provincia y no reúna las condiciones del apartado 1 del artículo 143.",
+                    B: "Autorizar o acordar, en su caso, un Estatuto de autonomía para territorios que no estén integrados en la organización provincial.",
+                    C: "Autorizar la federación de Comunidades Autónomas."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "6. ¿Cuál de estas denominaciones de Áreas de Gobierno no es la correcta?",
+                options: {
+                    A: "Área de Gobierno de Economía, Hacienda y Personal.",
+                    B: "Área de Gobierno de Cultura, Turismo y Deporte.",
+                    C: "Área de Gobierno de Urbanismo, Medio Ambiente y Movilidad."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "7. En las Áreas de Gobierno podrá existir:",
+                options: {
+                    A: "Sólo un coordinador general en cada área.",
+                    B: "Uno o más coordinadores generales.",
+                    C: "Ninguna de las anteriores es correcta."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "8. Los distritos constituyen divisiones territoriales del municipio de Madrid, y están dotados para el impulso y desarrollo de la participación ciudadana en la gestión de los asuntos municipales y su mejora, de:",
+                options: {
+                    A: "Órganos de gestión descentralizada.",
+                    B: "Órganos de gestión ordinaria.",
+                    C: "Órganos de gestión desconcentrada."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "9. Las resoluciones administrativas que adopten los concejales-presidentes revestirán la forma de decreto y se denominarán:",
+                options: {
+                    A: "Decretos del concejal-presidente de la Junta Municipal de Distrito.",
+                    B: "Disposiciones del concejal-presidente de la Junta Municipal de Distrito.",
+                    C: "Resoluciones del concejal-presidente de la Junta Municipal de Distrito."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "10. Según establece el artículo 10 del Real Decreto Legislativo 5/2015, de 30 de octubre, por el que se aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público, son funcionarios interinos los que son nombrados como tales con carácter temporal para el desempeño de funciones propias de funcionarios de carrera, cuando se dé alguna de las siguientes circunstancias:",
+                options: {
+                    A: "La sustitución transitoria de los titulares por un máximo de tres años.",
+                    B: "La ejecución de programas de carácter temporal, que no podrán tener una duración superior a tres años, ampliable hasta doce meses más por las leyes de Función Pública que se dicten en desarrollo de este Estatuto.",
+                    C: "El exceso o acumulación de tareas por plazo máximo de seis meses, dentro de un periodo de dieciocho meses."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "11. El artículo 96 del Real Decreto Legislativo 5/2015, de 30 de octubre, por el que se aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público dispone que por razón de las faltas cometidas podrán imponerse la siguiente sanción:",
+                options: {
+                    A: "Separación del servicio de los funcionarios y que sólo podrá sancionar la comisión de faltas graves.",
+                    B: "Suspensión firme de funciones, o de empleo y sueldo en el caso del personal laboral, con una duración máxima de 5 años.",
+                    C: "Demérito, que consistirá en la penalización a efectos de carrera, promoción o movilidad voluntaria."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "12. Los poderes que se inscriban en los registros electrónicos generales y particulares de apoderamientos deberán corresponder a alguna de las siguientes tipologías:",
+                options: {
+                    A: "Un poder general para que el apoderado pueda actuar en nombre del poderdante en cualquier actuación administrativa y ante cualquier Administración.",
+                    B: "Un poder para que el apoderado pueda actuar en nombre del poderdante en cualquier actuación administrativa ante cualquier Organismo.",
+                    C: "Un poder para que el apoderado pueda actuar en nombre del poderdante para la realización de los trámites especificados en el poder."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "13. Señala la correcta:",
+                options: {
+                    A: "El derecho de acceso a la información pública puede ejercerse a partir de los catorce años.",
+                    B: "El derecho de acceso a la información pública puede ejercerse a partir de los dieciséis años.",
+                    C: "El derecho de acceso a la información pública puede ejercerse a partir de los dieciocho años."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "14. Según lo señalado en la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas, los procedimientos podrán iniciarse:",
+                options: {
+                    A: "Sólo de oficio.",
+                    B: "Sólo a solicitud del interesado.",
+                    C: "De oficio o a solicitud del interesado."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "15. ¿Qué recursos se pueden interponer en vía administrativa?",
+                options: {
+                    A: "Recurso de alzada y recurso contencioso administrativo.",
+                    B: "Recurso de alzada y recurso potestativo de reposición.",
+                    C: "Recurso de alzada, recurso potestativo de reposición y recurso contencioso administrativo."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "16. Las entidades locales podrán exigir tasas por los servicios siguientes:",
+                options: {
+                    A: "Celebración de los matrimonios en forma civil.",
+                    B: "Alumbrado de vías públicas.",
+                    C: "Limpieza de la vía pública."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "17. Las tasas podrán devengarse, según la naturaleza de su hecho imponible y conforme determine la respectiva ordenanza fiscal:",
+                options: {
+                    A: "Cuando se inicie el uso privativo o el aprovechamiento especial, o cuando se inicie la prestación del servicio o la realización de la actividad, aunque en ambos casos podrá exigirse el depósito previo de su importe total o parcial.",
+                    B: "Cuando se presente la solicitud que inicie la actuación o el expediente, que no se realizará o tramitará sin que se haya efectuado el pago correspondiente.",
+                    C: "a) y b) son correctas."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "18. Están exentos del Impuesto sobre Bienes Inmuebles:",
+                options: {
+                    A: "Los que sean propiedad del Estado, de las comunidades autónomas o de las entidades locales que no estén directamente afectos a la seguridad ciudadana, a los servicios educativos y penitenciarios, y a la defensa nacional.",
+                    B: "Los de la Cruz Roja Española.",
+                    C: "Los terrenos ocupados por las líneas de ferrocarriles y los edificios enclavados en los mismos terrenos, que estén dedicados a estaciones, almacenes o a cualquier otro servicio indispensable para la explotación de dichas líneas, así como los establecimientos de hostelería, espectáculos, comerciales y de esparcimiento, las casas destinadas a viviendas de los empleados, las oficinas de la dirección y las instalaciones fabriles."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "19. Según establece la Ley 31/1995, de 8 de noviembre de Prevención de Riesgos Laborales en su artículo 35, en relación a los Delegados de Prevención:",
+                options: {
+                    A: "En las empresas de hasta cincuenta trabajadores el Delegado de Prevención será el Delegado de Personal.",
+                    B: "En las empresas de hasta treinta trabajadores habrá un Delegado de Prevención que será elegido por y entre los Delegados de Personal.",
+                    C: "En las empresas de treinta y uno a cuarenta y nueve trabajadores habrá un Delegado de Prevención que será elegido por y entre los Delegados de Personal."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "20. El artículo 48 del Acuerdo Convenio en vigor sobre condiciones de trabajo comunes al personal funcionario y laboral del Ayuntamiento de Madrid y de sus Organismos Autónomos, con relación al Comité de Seguridad y Salud establece lo siguiente:",
+                options: {
+                    A: "Estará formado, de una parte, por quince delegados/as de prevención designados proporcionalmente entre quienes ostenten esta condición y, de otra, por igual número de representantes de la Administración.",
+                    B: "Estará formado, de una parte, por diez delegados/as de prevención designados proporcionalmente entre quienes ostenten esta condición y, de otra, por igual número de representantes de la Administración.",
+                    C: "Estará formado, de una parte, por doce delegados/as de prevención designados proporcionalmente entre quienes ostenten esta condición y, de otra, por igual número de representantes de la Administración."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "21. En cuanto a permisos por motivos de conciliación de la vida personal, familiar y laboral, el artículo 49 del Real Decreto Legislativo 5/2015, de 30 de octubre, por el que se aprueba el texto refundido de la Ley del Estatuto Básico del Empleado Público establece lo siguiente:",
+                options: {
+                    A: "Permiso parental para el cuidado de hijo, hija o menor acogido por tiempo superior a un año, hasta el momento en que el menor cumpla ocho años: tendrá una duración no superior a ocho semanas.",
+                    B: "Permiso por nacimiento para la madre biológica: tendrá una duración de dieciséis semanas, de las cuales las ocho semanas inmediatas posteriores al parto serán en todo caso de descanso obligatorio e ininterrumpidas.",
+                    C: "Permiso por adopción, por guarda con fines de adopción, o acogimiento, tanto temporal como permanente: tendrá una duración de seis semanas a jornada completa de forma obligatoria e ininterrumpida."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "22. Los ayuntamientos exigirán, de acuerdo con esta ley y las disposiciones que la desarrollan, los siguientes impuestos:",
+                options: {
+                    A: "Impuesto sobre Bienes Inmuebles.",
+                    B: "Impuesto sobre Construcciones, Instalaciones y Obras.",
+                    C: "Impuesto sobre el Incremento de Valor de los Terrenos de Naturaleza Urbana."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "23. El artículo 48.6 del Acuerdo Convenio en vigor sobre condiciones de trabajo comunes al personal funcionario y laboral del Ayuntamiento de Madrid y de sus Organismos Autónomos, en relación a las garantías de los/as delegados/as de prevención, establece lo siguiente:",
+                options: {
+                    A: "Cada delegado/a de prevención disfrutará de un crédito horario retribuido de 60 horas mensuales, para el desarrollo de las funciones que como tal tiene atribuidas, complementario y adicional al que pudiera corresponderle, si la tuviere, en su condición de representante unitario o sindical.",
+                    B: "La utilización del crédito horario por los delegados/as de prevención será comunicada a los órganos encargados de la gestión y seguimiento de este, siempre que sea posible, con una antelación mínima adecuada y suficiente.",
+                    C: "Será imputado al crédito de horas mensuales que les corresponde, el correspondiente a las reuniones de los Comités de Seguridad y Salud de los que forme parte u otras convocadas por la Administración en materia de prevención de riesgos laborales."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "24. El artículo 2 de la Ley Orgánica 3/2007, de 22 de marzo, para la igualdad efectiva de mujeres y hombres establece con relación a su ámbito de aplicación:",
+                options: {
+                    A: "Todas las personas gozarán de los derechos derivados del principio de igualdad de trato y de la prohibición de discriminación por razón de sexo.",
+                    B: "Todas las mujeres gozarán de los derechos derivados del principio de igualdad de trato y de la prohibición de discriminación por razón de sexo.",
+                    C: "Las obligaciones establecidas en esta Ley serán de aplicación a toda persona, fisica o jurídica, que se encuentre o actúe en territorio español o fuera de él, cualquiera que fuese su nacionalidad, domicilio o residencia."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "25. Entre los objetivos específicos de la línea 3 del III Plan de Igualdad entre mujeres y hombres del Ayuntamiento de Madrid y sus Organismos Autónomos denominada \"Las Personas\" se encuentra:",
+                options: {
+                    A: "Incorporar el principio de igualdad en la gestión y la organización.",
+                    B: "Utilizar un lenguaje inclusivo y no discriminatorio.",
+                    C: "Promover la igualdad salarial cuando se detecten disparidades."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "26. ¿Qué se entiende por representación de la información en un sistema informático?",
+                options: {
+                    A: "La transformación de los datos en información comprensible para las computadoras.",
+                    B: "La forma en que la información es presentada a los usuarios en pantalla.",
+                    C: "La conversión de datos a un formato compatible con diferentes sistemas operativos."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "27. ¿Cuál es la principal ventaja de la arquitectura Harvard en comparación con la arquitectura Von Neumann?",
+                options: {
+                    A: "Harvard tiene un conjunto de instrucciones más complejo, lo que aumenta el rendimiento.",
+                    B: "Harvard utiliza memorias separadas para datos e instrucciones, permitiendo el acceso simultáneo a ambas.",
+                    C: "Harvard es más económica, ya que utiliza una única memoria para instrucciones y datos."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "28. Los dispositivos periféricos se pueden clasificar según su función en periféricos de entrada, salida o mixtos. Cuál de los siguientes se considera mixto:",
+                options: {
+                    A: "Escáner.",
+                    B: "Memoria USB.",
+                    C: "Sensor biométrico de huella dactilar."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "29. ¿Por qué una impresora de matriz de puntos sigue siendo útil en ciertos entornos administrativos a pesar de su obsolescencia aparente?",
+                options: {
+                    A: "Permiten imprimir formularios multicopia gracias al impacto fisico de sus cabezales.",
+                    B: "Su resolución extremadamente alta permite la impresión de gráficos detallados a bajo coste.",
+                    C: "Son las únicas impresoras que permiten conexión directa con sistemas operativos modernos sin drivers."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "30. En una organización de ficheros secuencial, ¿cómo se almacenan y acceden los registros?",
+                options: {
+                    A: "Los registros se almacenan en bloques dispersos y se acceden mediante un índice.",
+                    B: "Los registros se almacenan en orden aleatorio y se acceden directamente por una clave.",
+                    C: "Los registros se almacenan en orden de inserción y se acceden recorriendo el fichero desde el inicio."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "31. En la digitalización de documentos oficiales para archivo histórico, ¿cuál es el formato de imagen más adecuado por su alta fidelidad y compatibilidad con requisitos de conservación a largo plazo?",
+                options: {
+                    A: "PDF comprimido con OCR, por ocupar poco espacio y permitir búsquedas.",
+                    B: "PNG, por ofrecer mejor representación de texto en blanco y negro.",
+                    C: "TIFF sin compresión, por conservar la información integra y ser apto para archivo."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "32. ¿Qué sucede en implementaciones estándar si intentas realizar una operación \"pop\" en una pila vacía?",
+                options: {
+                    A: "La operación devuelve un valor nulo y la pila permanece vacía.",
+                    B: "Se produce una excepción de tipo \"underflow\" o error de pila vacía.",
+                    C: "La pila automáticamente inserta un elemento por defecto antes de realizar el pop."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "33. Desde un punto de vista de mantenimiento y durabilidad en entornos de atención al público (ventanillas, oficinas de gestión, puntos de información), ¿cuál es la ventaja más relevante de las pantallas táctiles capacitivas frente a las resistivas?",
+                options: {
+                    A: "Resisten mejor el uso intensivo y permiten múltiples toques simultáneos con mayor precisión.",
+                    B: "Permiten escritura directa con lápices ópticos sin necesidad de calibración periódica.",
+                    C: "Son más adecuadas en ambientes con guantes o humedad, como archivos o almacenes."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "34. En un fichero CSV, ¿cómo se evita que una coma dentro de un campo sea interpretada como separador, según el estándar RFC 4180?",
+                options: {
+                    A: "Encerrando el campo completo entre comillas dobles.",
+                    B: "Reemplazando la coma por un carácter de escape.",
+                    C: "Dividiendo el campo en múltiples columnas."
+                },
+                correctAnswer: "A"
+            },
+            {
+                question: "35. De las siguientes ¿cuál es la versión más reciente de iOS y de iPadOS?",
+                options: {
+                    A: "18 para iOS y 15 para iPadOS.",
+                    B: "ambas en versión18.",
+                    C: "ambas en versión 15."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "36. ¿Cuál es el comando correcto para borrar el directorio tmp y todos sus subdirectorios y archivos en Windows?",
+                options: {
+                    A: "del -r tmp",
+                    B: "rmdir /s tmp",
+                    C: "rmdir -r tmp"
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "37. ¿Cuál de las siguientes no es una característica de las bases de datos NoSQL?",
+                options: {
+                    A: "Acostumbran a no garantizar las propiedades del modelo ACID.",
+                    B: "En general son distribuidas.",
+                    C: "Proporcionan una variedad de modelos de datos, como clave-valor, documentos, relacionales y columnas, que están optimizados para el rendimiento y la escala."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "38. ¿Cuál de los siguientes es un lenguaje que interactúa con los SGBD relacionales?",
+                options: {
+                    A: "DML Data Maniobration Language.",
+                    B: "DCL Data Control Language.",
+                    C: "TML Transaction Manipulation Language."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "39. ¿Cuál de los siguientes no es un estándar para la interoperabilidad entre gestores de bases de datos relacionales?",
+                options: {
+                    A: "ODBC.",
+                    B: "JDBC.",
+                    C: "PDBC."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "40. ¿Cuál de las siguientes afirmaciones es falsa respecto de Java EE?",
+                options: {
+                    A: "Oracle decidió dejar el control del desarrollo de Java EE, traspasándoselo a la comunidad.",
+                    B: "Java EE tiene sus raíces en el MIT, donde se desarrolló la especificación original J2EE.",
+                    C: "Jakarta EE tiene su origen en Java EE."
+                },
+                correctAnswer: "B"
+            },
+            {
+                question: "41. ¿Qué lenguaje de programación se utiliza principalmente para desarrollar aplicaciones iOS modernas?",
+                options: {
+                    A: "Objective-C",
+                    B: "Java",
+                    C: "Swift"
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "42. ¿Cuál es la última versión de Java EE antes de su traspaso a Jakarta EE?",
+                options: {
+                    A: "Java EE 6.",
+                    B: "Java EE 7.",
+                    C: "Java EE 8."
+                },
+                correctAnswer: "C"
+            },
+            {
+                question: "43. En que consiste la arquitectura de micro servicios",
+                options: {
+                    A: "La arquitectura de microservicios consiste en un único servidor central que maneja todas las solicitudes y respuestas de los clientes.",
+                    B: "Divide una aplicación en pequeños servicios independientes que se comunican entre sí. Cada microservicios se encarga de una funcionalidad específica, lo que facilita la escalabilidad y el mantenimiento.",
+                    C: "La arquitectura de microservicios consiste en utilizar un único lenguaje de programación para todos los servicios, asegurando así la uniformidad y la facilidad de mantenimiento."
+                },
+                correctAnswer: "B"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // To store user answers
+        let quizSubmitted = false;
+        let answeredQuestions = new Set(); // To keep track of answered questions
+
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const correctAnswersDisplay = document.getElementById('correct-answers-display');
+        const incorrectAnswersDisplay = document.getElementById('incorrect-answers-display');
+        const unansweredQuestionsDisplay = document.getElementById('unanswered-questions-display');
+        const restartFullTestBtn = document.getElementById('restart-full-test-btn');
+        const restartCurrentPageBtn = document.getElementById('restart-current-page-btn');
+
+        // Function to save quiz state to LocalStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizSubmitted', quizSubmitted);
+            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
+        }
+
+        // Function to load quiz state from LocalStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedSubmitted = localStorage.getItem('quizSubmitted');
+            const savedAnswered = localStorage.getItem('answeredQuestions');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedSubmitted !== null) {
+                quizSubmitted = savedSubmitted === 'true';
+            }
+            if (savedAnswered !== null) {
+                answeredQuestions = new Set(JSON.parse(savedAnswered));
+            }
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizQuestionsContainer.innerHTML = ''; // Clear the container
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-lg font-semibold text-gray-700 mb-4';
+            questionText.textContent = q.question;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = `options-q${currentQuestionIndex}`; // ID for the options container
+            
+            for (const key in q.options) {
+                const optionId = `q${currentQuestionIndex}-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = key;
+                input.className = 'hidden'; // Hide native radio button
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.textContent = `${key}) ${q.options[key]}`;
+
+                // If an answer is already saved, mark it
+                if (userAnswers[currentQuestionIndex] === key) {
+                    input.checked = true;
+                }
+
+                // If the question has already been answered (and not in final review mode),
+                // or if the quiz has been submitted, disable options and show feedback.
+                if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                    input.disabled = true;
+                    if (key === q.correctAnswer) {
+                        label.classList.add('correct-answer');
+                    } else if (userAnswers[currentQuestionIndex] === key && userAnswers[currentQuestionIndex] !== q.correctAnswer) {
+                        label.classList.add('incorrect-answer');
+                    }
+                }
+
+                // Handle selection change
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !answeredQuestions.has(currentQuestionIndex)) {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        answeredQuestions.add(currentQuestionIndex); // Mark as answered
+                        checkAnswerAndProvideFeedback(currentQuestionIndex, event.target.value, optionsDiv);
+                        saveQuizState(); // Save state after each answer
+                    }
+                });
+
+                optionsDiv.appendChild(input);
+                optionsDiv.appendChild(label);
+            }
+            questionCard.appendChild(optionsDiv);
+
+            // If the question has already been answered or the quiz has been submitted, show individual result
+            if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                const resultMessage = document.createElement('div');
+                resultMessage.className = 'result-message';
+                if (userAnswers[currentQuestionIndex] === q.correctAnswer) {
+                    resultMessage.classList.add('correct');
+                    resultMessage.textContent = '¡Correcto!';
+                } else if (userAnswers[currentQuestionIndex] !== undefined) { // Check if answered
+                    resultMessage.classList.add('incorrect');
+                    resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+                }
+                questionCard.appendChild(resultMessage);
+            }
+
+            quizQuestionsContainer.appendChild(questionCard);
+            updateNavigationButtons();
+            saveQuizState(); // Save state after loading question
+        }
+
+        function checkAnswerAndProvideFeedback(qIndex, selectedAnswer, optionsContainer) {
+            const q = questions[qIndex];
+            const radios = optionsContainer.querySelectorAll(`input[name="question-${qIndex}"]`);
+            const labels = optionsContainer.querySelectorAll('.option-label');
+            
+            // Disable all options for this question
+            radios.forEach(radio => radio.disabled = true);
+
+            // Highlight the selected and correct answers
+            labels.forEach(label => {
+                const input = document.getElementById(label.htmlFor);
+                if (input.value === q.correctAnswer) {
+                    label.classList.add('correct-answer');
+                } else if (input.value === selectedAnswer && selectedAnswer !== q.correctAnswer) {
+                    label.classList.add('incorrect-answer');
+                }
+            });
+
+            // Show feedback message
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (selectedAnswer === q.correctAnswer) {
+                resultMessage.classList.add('correct');
+                resultMessage.textContent = '¡Correcto!';
+            } else {
+                resultMessage.classList.add('incorrect');
+                resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+            }
+            optionsContainer.parentNode.appendChild(resultMessage); // Add it to the question card
+            saveQuizState(); // Save state after providing feedback
+        }
+
+
+        function updateNavigationButtons() {
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+            submitBtn.style.display = currentQuestionIndex === questions.length - 1 && !quizSubmitted ? 'inline-block' : 'none';
+            restartCurrentPageBtn.style.display = quizSubmitted ? 'none' : 'block'; // Show restart button on current page if not submitted
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                restartCurrentPageBtn.style.display = 'none';
+            }
+        }
+
+        function showResults() {
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] !== undefined) { // If the question was attempted
+                    if (userAnswers[i] === questions[i].correctAnswer) {
+                        correct++;
+                    } else {
+                        incorrect++;
+                    }
+                } else {
+                    unanswered++;
+                }
+            }
+            
+            correctAnswersDisplay.textContent = correct;
+            incorrectAnswersDisplay.textContent = incorrect;
+            unansweredQuestionsDisplay.textContent = unanswered;
+
+            document.getElementById('quiz-app').style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+            saveQuizState(); // Save state after showing final results
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            // Reload all questions to show individual results
+            currentQuestionIndex = 0; // Go back to the first question to review
+            loadQuestion(); // Load the first question with feedback
+            document.getElementById('quiz-app').style.display = 'block'; // Ensure quiz is visible
+            quizResultsDiv.style.display = 'none'; // Hide final results temporarily
+            showResults(); // Show the final summary
+            saveQuizState(); // Save state after submitting
+        });
+
+        restartFullTestBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            answeredQuestions.clear(); // Clear the record of answered questions
+            quizResultsDiv.style.display = 'none';
+            document.getElementById('quiz-app').style.display = 'block';
+            loadQuestion();
+            saveQuizState(); // Clear and save state
+        });
+
+        restartCurrentPageBtn.addEventListener('click', () => {
+            // Reset only the current question's answer and state
+            if (userAnswers[currentQuestionIndex] !== undefined) {
+                delete userAnswers[currentQuestionIndex];
+            }
+            answeredQuestions.delete(currentQuestionIndex);
+            loadQuestion(); // Reload the current question to clear feedback and enable options
+            saveQuizState(); // Save the updated state
+        });
+
+        // Initialize the quiz
+        loadQuizState(); // Load state on startup
+        loadQuestion();
+    </script>
+</body>
+</html>
