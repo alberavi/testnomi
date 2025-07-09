@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST SUPUESTO II IA</title> <!-- Título del navegador -->
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f4f8; /* Un color de fondo suave */
+        }
+        .question-container {
+            background-color: #ffffff;
+            border-radius: 1rem; /* Bordes redondeados */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            min-height: 400px; /* Altura mínima para mantener el diseño */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .option-button {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.75rem; /* Bordes más redondeados para botones */
+            text-align: left;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #e2e8f0; /* Borde sutil */
+        }
+        .option-button:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background-color: #e2e8f0;
+        }
+        .option-button.correct {
+            background-color: #d1fae5; /* Verde claro */
+            border-color: #34d399; /* Borde verde */
+            color: #065f46; /* Texto verde oscuro */
+            font-weight: bold;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2; /* Rojo claro */
+            border-color: #ef4444; /* Borde rojo */
+            color: #991b1b; /* Texto rojo oscuro */
+            font-weight: bold;
+        }
+        .option-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .navigation-buttons button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .navigation-buttons button:hover {
+            opacity: 0.9;
+        }
+        .results-container {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            text-align: center;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e7ff; /* Azul muy claro */
+            border-radius: 0.5rem;
+            height: 1rem;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #6366f1; /* Azul vibrante */
+            width: 0%;
+            border-radius: 0.5rem;
+            transition: width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div id="quiz-app" class="w-full">
+        <div class="question-container">
+            <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">TEST SUPUESTO II IA</h1> <!-- Título visible en la página -->
+            <div id="question-display">
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <h2 id="question-number" class="text-xl font-semibold text-gray-800 mb-4"></h2>
+                <p id="question-text" class="text-lg text-gray-700 mb-6"></p>
+                <div id="options-container" class="space-y-3">
+                    <!-- Opciones de respuesta se cargarán aquí -->
+                </div>
+                <div id="feedback-message" class="mt-4 text-center font-medium"></div>
+            </div>
+
+            <div id="results-summary" class="hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Resultados del Cuestionario</h2>
+                <p class="text-lg text-green-600 mb-2">Correctas: <span id="correct-count" class="font-bold">0</span></p>
+                <p class="text-lg text-red-600 mb-2">Incorrectas: <span id="incorrect-count" class="font-bold">0</span></p>
+                <p class="text-lg text-blue-600 mb-4">No Contestadas: <span id="unanswered-count" class="font-bold">0</span></p>
+                <!-- El botón de reiniciar se ha movido fuera de aquí -->
+            </div>
+
+            <div class="navigation-buttons flex justify-between mt-8">
+                <button id="prev-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                    Anterior
+                </button>
+                <button id="restart-quiz" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                    Reiniciar Test
+                </button>
+                <button id="next-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    Siguiente
+                </button>
+                <button id="finish-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 hidden">
+                    Finalizar Cuestionario
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de preguntas
+        const questions = [
+            {
+                question: "¿Cuál es el comando de Linux para ver la versión del kernel?",
+                options: ["`uname -o`", "`lsb_release -a`", "`cat /etc/os-release`", "`uname -r`"], // Corrected option
+                correct: "`uname -r`" // Corrected answer
+            },
+            {
+                question: "En redes, ¿qué protocolo se utiliza para resolver una dirección IP a una dirección MAC?",
+                options: ["ARP", "RARP", "ICMP", "DNS"],
+                correct: "ARP"
+            },
+            {
+                question: "¿Qué tipo de ataque de ingeniería social implica que un atacante sigue a una persona autorizada para entrar en una zona restringida?",
+                options: ["Phishing", "Tailgating", "Pretexting", "Vishing"],
+                correct: "Tailgating"
+            },
+            {
+                question: "Si una red tiene la dirección 192.168.1.0/27, ¿cuántas direcciones IP utilizables para hosts hay en esa subred?",
+                options: ["30", "32", "62", "64"],
+                correct: "30"
+            },
+            {
+                question: "¿Qué comando de Windows se usa para vaciar la caché de resolución DNS?",
+                options: ["`ipconfig /release`", "`ipconfig /renew`", "`ipconfig /flushdns`", "`ipconfig /displaydns`"],
+                correct: "`ipconfig /flushdns`"
+            },
+            {
+                question: "¿Qué protocolo de capa de aplicación es utilizado para la transferencia segura de archivos sobre SSH?",
+                options: ["FTP", "FTPS", "SFTP", "TFTP"],
+                correct: "SFTP"
+            },
+            {
+                question: "En el modelo OSI, ¿qué capa es responsable del enrutamiento de paquetes entre redes?",
+                options: ["Capa de Enlace de Datos", "Capa de Red", "Capa de Transporte", "Capa de Sesión"],
+                correct: "Capa de Red"
+            },
+            {
+                question: "¿Cuál de las siguientes es una característica principal de un sistema de almacenamiento NAS?",
+                options: ["Acceso a nivel de bloque", "Basado en archivos compartidos", "Requiere una SAN", "Utiliza Fibre Channel"],
+                correct: "Basado en archivos compartidos"
+            },
+            {
+                question: "¿Qué tipo de RAID distribuye datos a nivel de bloque con paridad dedicada y requiere un mínimo de 4 discos?",
+                options: ["RAID 0", "RAID 1", "RAID 5", "RAID 10 (1+0)"],
+                correct: "RAID 10 (1+0)"
+            },
+            {
+                question: "¿Qué comando de Linux se utiliza para verificar y reparar sistemas de archivos ext2/ext3/ext4?",
+                options: ["`chkdsk`", "`diskutil`", "`fsck`", "`fdisk`"],
+                correct: "`fsck`"
+            },
+            {
+                question: "Para la monitorización de servicios y servidores en Linux, ¿cuál de las siguientes herramientas es ampliamente utilizada y de código abierto?",
+                options: ["Zabbix", "Splunk", "Nagios", "PRTG"],
+                correct: "Nagios"
+            },
+            {
+                question: "¿Qué significa la regla 3-2-1 en las copias de seguridad?",
+                options: ["3 copias, 2 medios, 1 fuera de sitio", "3 copias, 2 ubicaciones, 1 en la nube", "3 tipos de backup, 2 veces al día, 1 semana de retención", "3 servidores, 2 discos, 1 backup"],
+                correct: "3 copias, 2 medios, 1 fuera de sitio"
+            },
+            {
+                question: "¿Qué puerto estándar utiliza el protocolo SSH?",
+                options: ["21", "23", "80", "22"],
+                correct: "22"
+            },
+            {
+                question: "¿Cuál es el propósito principal de un WAF (Web Application Firewall)?",
+                options: ["Filtrar tráfico de red a nivel de capa 3", "Proteger aplicaciones web de ataques específicos", "Balancear la carga de servidores web", "Gestionar certificados SSL/TLS"],
+                correct: "Proteger aplicaciones web de ataques específicos"
+            },
+            {
+                question: "En MySQL, ¿qué comando se usa para ver los usuarios y sus hosts de conexión?",
+                options: ["`SHOW USERS;`", "`SELECT user, host FROM mysql.user;`", "`LIST USERS;`", "`GET USERS;`"],
+                correct: "`SELECT user, host FROM mysql.user;`"
+            },
+            {
+                question: "¿Qué tecnología permite que los conmutadores de red transmitan energía y datos a través de un cable Ethernet simultáneamente?",
+                options: ["PoE", "USB-C", "HDMI", "Thunderbolt"],
+                correct: "PoE"
+            },
+            {
+                question: "¿Qué protocolo de correo electrónico permite a los usuarios ver y gestionar mensajes directamente en el servidor sin descargarlos?",
+                options: ["POP3", "SMTP", "IMAP", "MAPI"],
+                correct: "IMAP"
+            },
+            {
+                question: "Si un servidor web utiliza HTTPS, ¿qué puerto TCP se recomienda configurar para redirigir automáticamente el tráfico HTTP?",
+                options: ["21", "22", "80", "443"],
+                correct: "80"
+            },
+            {
+                question: "¿Qué comando de Linux se utiliza para capturar tráfico de red en una interfaz específica y guardarlo en un archivo?",
+                options: ["`netstat`", "`ifconfig`", "`tcpdump`", "`wireshark`"],
+                correct: "`tcpdump`"
+            },
+            {
+                question: "¿Cuál de los siguientes es un sistema de gestión de bases de datos orientado a objetos (SGDBOO)?",
+                options: ["MySQL", "PostgreSQL", "MongoDB", "Matisse"],
+                correct: "Matisse"
+            },
+            {
+                question: "¿Qué herramienta se utiliza para la automatización de pruebas en navegadores web?",
+                options: ["JMeter", "Selenium WebDriver", "Postman", "Swagger"],
+                correct: "Selenium WebDriver"
+            },
+            {
+                question: "En el contexto de la seguridad de red, ¿qué es un Honeypot?",
+                options: ["Un tipo de firewall", "Un sistema diseñado para atraer y detectar ataques", "Un software antivirus", "Un dispositivo de cifrado de red"],
+                correct: "Un sistema diseñado para atraer y detectar ataques"
+            },
+            {
+                question: "¿Qué tipo de cable Ethernet tiene un tope de velocidad de transferencia de 10.000 Mbps (10 Gbps) y es adecuado para redes de alta velocidad?",
+                options: ["Categoría 5e", "Categoría 6", "Categoría 6A", "Categoría 7"],
+                correct: "Categoría 6A"
+            },
+            {
+                question: "¿Qué tipo de ataques consiste en suplantar una entidad legítima por medio de llamadas telefónicas para obtener información sensible?",
+                options: ["Phishing", "Smishing", "Vishing", "Whaling"],
+                correct: "Vishing"
+            },
+            {
+                question: "¿Qué significa el código de respuesta HTTP 403?",
+                options: ["No autorizado", "Página no encontrada", "Prohibido", "Error interno del servidor"],
+                correct: "Prohibido"
+            },
+            {
+                question: "¿Cuál de las siguientes es una tecnología LPWAN (Low-Power Wide-Area Network)?",
+                options: ["Bluetooth", "Wi-Fi", "LoRaWAN", "Ethernet"],
+                correct: "LoRaWAN"
+            },
+            {
+                question: "¿Qué comando de Windows PowerShell se usa para ver información detallada sobre un usuario local?",
+                options: ["`get-localuser`", "`net user`", "`query user`", "`whoami`"],
+                correct: "`net user`"
+            },
+            {
+                question: "¿Qué tecnología de virtualización de almacenamiento permite asignar espacio de almacenamiento de forma flexible bajo demanda?",
+                options: ["RAID", "SAN", "Thin Provisioning", "NAS"],
+                correct: "Thin Provisioning"
+            },
+            {
+                question: "¿Qué herramienta de monitorización para Linux es conocida por su capacidad para generar gráficos y paneles de control?",
+                options: ["Nagios", "Zabbix", "Grafana", "Prometheus"],
+                correct: "Grafana"
+            },
+            {
+                question: "Si una red 172.16.0.0/20 necesita dividirse en 8 subredes, ¿cuál sería la nueva máscara de subred en notación CIDR?",
+                options: ["/21", "/22", "/23", "/24"],
+                correct: "/23"
+            },
+            {
+                question: "¿Qué comando se utiliza en sistemas Windows para reiniciar el servicio de Internet Information Services (IIS)?",
+                options: ["`iisreset`", "`restart-iis`", "`net stop iis && net start iis`", "`service iis restart`"],
+                correct: "`iisreset`"
+            },
+            {
+                question: "¿Qué tipo de autenticación se logra mediante el envío de un código por SMS al teléfono móvil del trabajador?",
+                options: ["Autenticación de un solo factor", "Autenticación de doble factor", "Autenticación biométrica", "Autenticación de contraseña"],
+                correct: "Autenticación de doble factor"
+            },
+            {
+                question: "¿Cuáles son los puertos seguros estándar para POP3, SMTP e IMAP, respectivamente?",
+                options: ["POP3: 110, SMTP: 25, IMAP: 143", "POP3: 995, SMTP: 465, IMAP: 993", "POP3: 993, SMTP: 587, IMAP: 995", "POP3: 995, SMTP: 587, IMAP: 143"],
+                correct: "POP3: 995, SMTP: 465, IMAP: 993"
+            },
+            {
+                question: "¿Qué algoritmo de huella digital (hash) se considera obsoleto y no seguro para firmas digitales?",
+                options: ["SHA-256", "SHA-512", "MD5", "SHA-3"],
+                correct: "MD5"
+            },
+            {
+                question: "¿Qué estándar Wi-Fi puede operar en las bandas de 2.4 GHz, 5 GHz y 6 GHz?",
+                options: ["802.11n", "802.11ac", "802.11ax (Wi-Fi 6)", "802.11be (Wi-Fi 7)"],
+                correct: "802.11be (Wi-Fi 7)"
+            },
+            {
+                question: "Para conectarse a un servidor Linux mediante SSH y transferir archivos con SCP, ¿qué puerto estándar debe estar abierto en el firewall?",
+                options: ["21", "23", "80", "22"],
+                correct: "22"
+            },
+            {
+                question: "¿Qué directiva de Apache se utiliza para alojar múltiples sitios web en un mismo servidor IP?",
+                options: ["`ServerName`", "`DocumentRoot`", "`VirtualHost`", "`Listen`"],
+                correct: "`VirtualHost`"
+            },
+            {
+                question: "¿Qué componente de seguridad se implementa en un clúster de Firewalls para filtrar y monitorear el tráfico HTTP/HTTPS a nivel de aplicación?",
+                options: ["IDS", "IPS", "WAF", "VPN"],
+                correct: "WAF"
+            },
+            {
+                question: "¿Qué comando de Windows se utiliza para mostrar la tabla de enrutamiento de un equipo?",
+                options: ["`netstat -r`", "`route print`", "`ip route show`", "`show ip route`"],
+                correct: "`route print`"
+            },
+            {
+                question: "¿Qué comando de MySQL se utiliza para crear una nueva tabla?",
+                options: ["`ADD TABLE`", "`NEW TABLE`", "`CREATE TABLE`", "`INSERT TABLE`"],
+                correct: "`CREATE TABLE`"
+            },
+            {
+                question: "¿Qué protocolo es utilizado por Nagios para monitorizar servicios en hosts remotos?",
+                options: ["SNMP", "HTTP", "NRPE", "SSH"],
+                correct: "NRPE"
+            },
+            {
+                question: "Según el CCN, ¿cuál es la versión mínima y recomendada de TLS a usar para proteger una conexión HTTPS?",
+                options: ["Mínima 1.0, Recomendada 1.1", "Mínima 1.1, Recomendada 1.1", "Mínima 1.2, Recomendada 1.3", "Mínima 1.1, Recomendada 1.3"],
+                correct: "Mínima 1.2, Recomendada 1.3"
+            },
+            {
+                question: "¿Qué tipo de medida de seguridad es un hash de comprobación proporcionado junto a una descarga de software?",
+                options: ["Antimalware", "Cifrado", "Integridad", "Autenticación"],
+                correct: "Integridad"
+            },
+            {
+                question: "Si una llamada VoIP que usa SIP se corta o congela al comunicarse con usuarios externos, pero no con internos, ¿cuál es la causa más probable?",
+                options: ["Códecs incorrectos", "Salida a Internet empleando NAT", "CPU insuficiente", "Firewall bloqueando el tráfico"],
+                correct: "Salida a Internet empleando NAT"
+            },
+            {
+                question: "¿Qué es una APT (Amenaza Persistente Avanzada) según el CCN?",
+                options: ["Un tipo de ransomware", "Un ataque de suplantación de identidad", "Un ataque selectivo de ciberespionaje/cibersabotaje", "Un ataque masivo por un fallo no advertido"],
+                correct: "Un ataque selectivo de ciberespionaje/cibersabotaje"
+            },
+            {
+                question: "¿Qué protocolos para servicios pueden utilizarse con Kubernetes?",
+                options: ["HTTP, HTTPS, FTP", "SSH, SFTP, UDP", "SCTP, TCP, UDP", "UDP, TCP, ICMP"],
+                correct: "SCTP, TCP, UDP"
+            },
+            {
+                question: "¿Qué significa el término 'enrolamiento de móviles' en un sistema MDM?",
+                options: ["Formatear el móvil de fábrica", "Insertar la tarjeta SIM", "Dar de alta el dispositivo en la base de datos de administración", "Emparejar al usuario con su móvil en el sistema MDM"],
+                correct: "Emparejar al usuario con su móvil en el sistema MDM"
+            },
+            {
+                question: "¿Cuál es la razón principal por la que no se aconseja usar una toma derivada de la climatización del edificio para un CPD?",
+                options: ["Humedad recomendada es menor", "Temperatura recomendada es mayor", "Filtro de impurezas es más sensible", "El aire acondicionado del CPD debe provenir del techo"],
+                correct: "El aire acondicionado del CPD debe provenir del techo"
+            },
+            {
+                question: "¿Qué comando de Postfix se edita para cambiar el mensaje HELO que aparece al establecer conexiones SMTP?",
+                options: ["`client`", "`smtp_helo`", "`helo_name`", "`mail_name`"],
+                correct: "`helo_name`"
+            },
+            {
+                question: "Para acceder a una red WiFi con protocolo WPA3-Enterprise, ¿qué se requiere típicamente?",
+                options: ["Una contraseña de 64 bits", "Una contraseña de 128 bits", "Un servidor RADIUS o EAP-TLS", "Una contraseña de 192 bits"],
+                correct: "Un servidor RADIUS o EAP-TLS"
+            },
+            {
+                question: "¿Qué comando SQL se utiliza para añadir una nueva tabla 'ProfesoresIngles' con id autoincremental, nombre y apellidos?",
+                options: ["`CREATE TABLE ProfesoresIngles (id INT PRIMARY KEY, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));`", "`CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));`", "`INSERT TABLE ProfesoresIngles (id, nombre, apellido1, apellido2);`", "`ADD TABLE ProfesoresIngles (id, nombre, apellido1, apellido2);`"],
+                correct: "`CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));`"
+            },
+            {
+                question: "¿Qué comando se utiliza para verificar la configuración de Nagios?",
+                options: ["`nagios -v /usr/local/nagios/etc/nagios.cfg`", "`systemctl status nagios`", "`nagios --check`", "`check_nagios_config`"],
+                correct: "`nagios -v /usr/local/nagios/etc/nagios.cfg`"
+            },
+            {
+                question: "¿Cuál de las siguientes categorías de cable Ethernet es la más reciente y soporta velocidades de hasta 40 Gbps?",
+                options: ["Categoría 6", "Categoría 6A", "Categoría 7", "Categoría 8"],
+                correct: "Categoría 8"
+            },
+            {
+                question: "¿Qué protocolo de capa de Internet es utilizado para enviar mensajes de error y control?",
+                options: ["TCP", "UDP", "ICMP", "ARP"],
+                correct: "ICMP"
+            },
+            {
+                question: "En el modelo TCP/IP, ¿a qué capa pertenece el protocolo Telnet?",
+                options: ["Acceso a red", "Internet", "Transporte", "Aplicación"],
+                correct: "Aplicación"
+            },
+            {
+                question: "Si una dirección IP es 172.16.52.63, ¿a qué clase de dirección IPv4 pertenece?",
+                options: ["Clase A", "Clase B", "Clase C", "Clase D"],
+                correct: "Clase B"
+            },
+            {
+                question: "¿Qué organismo es responsable de las funciones administrativas relacionadas con la raíz del sistema de nombres de dominio (DNS) y el direccionamiento IP?",
+                options: ["IETF", "ICANN", "IEEE", "W3C"],
+                correct: "ICANN"
+            },
+            {
+                question: "¿Qué tipo de transferencia de archivos en FTP es adecuado para texto plano?",
+                options: ["Binario", "ASCII", "Imagen", "Comprimido"],
+                correct: "ASCII"
+            },
+            {
+                question: "¿Qué herramienta del CCN proporciona visibilidad y control sobre la red?",
+                options: ["ATENEA", "CARMEN", "MONICA", "INES"],
+                correct: "CARMEN"
+            },
+            {
+                question: "¿Qué formato de firma digital es un fichero de texto XML y no es adecuado para ficheros muy grandes?",
+                options: ["CADES", "PADES", "XADES", "CMS"],
+                correct: "XADES"
+            },
+            {
+                question: "¿Qué tipo de ataque trata de obtener información básica sobre los servicios ofrecidos en un sistema escaneando sus puertos?",
+                options: ["Sniffing", "Spoofing", "Barrido de puertos", "DDoS"],
+                correct: "Barrido de puertos"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una tecnología LPWAN (Low-Power Wide-Area Network)?",
+                options: ["LoRaWAN", "SigFox", "NB-IoT", "Bluetooth LE"],
+                correct: "Bluetooth LE"
+            },
+            {
+                question: "En el modelo OSI, ¿qué capa se encarga de la comunicación de extremo a extremo y la segmentación de datos?",
+                options: ["Capa de Red", "Capa de Transporte", "Capa de Sesión", "Capa de Presentación"],
+                correct: "Capa de Transporte"
+            },
+            {
+                question: "¿Qué protocolo de la capa de Internet en TCP/IP es fundamental para la resolución de nombres de dominio?",
+                options: ["HTTP", "FTP", "DNS", "SMTP"],
+                correct: "DNS"
+            },
+            {
+                question: "Si una dirección IP de clase C tiene una máscara de subred predeterminada, ¿cuántos hosts permite direccionar como máximo?",
+                options: ["254", "255", "510", "65534"],
+                correct: "254"
+            },
+            {
+                question: "¿Qué código de respuesta HTTP indica que el servidor entiende la solicitud pero se niega a autorizarla?",
+                options: ["401 Unauthorized", "403 Forbidden", "404 Not Found", "500 Internal Server Error"],
+                correct: "403 Forbidden"
+            },
+            {
+                question: "¿Qué organización es un organismo creador de estándares en Internet?",
+                options: ["IEEE", "ITU", "IETF", "ICANN"],
+                correct: "IETF"
+            },
+            {
+                question: "¿Qué tipo de transferencia FTP es adecuada para archivos ejecutables?",
+                options: ["ASCII", "Binario", "Texto", "Automático"],
+                correct: "Binario"
+            },
+            {
+                question: "¿Qué herramienta del CCN-CERT es una plataforma de análisis avanzado de malware?",
+                options: ["NADA", "CADA", "ADA", "SADA"],
+                correct: "SADA"
+            },
+            {
+                question: "¿Qué es el 'sniffing' en el contexto de la seguridad de red?",
+                options: ["Generación de tráfico falseado", "Captura del tráfico de red", "Denegación de servicio", "Escaneo de puertos"],
+                correct: "Captura del tráfico de red"
+            },
+            {
+                question: "¿Qué resolución de pantalla es 7680x4320 píxeles?",
+                options: ["Full HD", "4K UHD", "8K UHD", "WQHD"],
+                correct: "8K UHD"
+            },
+            {
+                question: "¿Cuál de los siguientes es un tipo de panel de pantalla LCD?",
+                options: ["IPS", "OLED", "Plasma", "CRT"],
+                correct: "IPS"
+            },
+            {
+                question: "¿Qué protocolo IEEE se refiere a Rapid Spanning Tree Protocol (RSTP)?",
+                options: ["802.1D", "802.1Q", "802.1w", "802.1aq"],
+                correct: "802.1w"
+            },
+            {
+                question: "En CSS3, ¿cuál de las siguientes unidades de medida NO es relativa?",
+                options: ["em", "rem", "px", "vw"],
+                correct: "px"
+            },
+            {
+                question: "¿Qué framework de Apple facilita la creación de aplicaciones para cualquier dispositivo Apple (iOS, macOS, watchOS, tvOS)?",
+                options: ["UIKit", "AppKit", "SwiftUI", "Cocoa"],
+                correct: "SwiftUI"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un compromiso del IV Plan de Gobierno Abierto de España?",
+                options: ["Participación de los jóvenes en políticas públicas", "Protección de denunciantes", "Huella normativa", "Reforma del marco regulatorio"],
+                correct: "Reforma del marco regulatorio"
+            },
+            {
+                question: "¿Cuál es el plazo máximo para resolver y notificar una reclamación ante el Consejo de Transparencia y Buen Gobierno?",
+                options: ["1 mes (estimada)", "1 mes (desestimada)", "3 meses (estimada)", "3 meses (desestimada)"],
+                correct: "1 mes (desestimada)"
+            },
+            {
+                question: "Según la Ley 53/1984, ¿dónde se inscriben las resoluciones de compatibilidad para un segundo puesto en la Administración Pública?",
+                options: ["Registro Central de Personal", "Oficina de Conflicto de Intereses", "Unidad de Personal del Ministerio", "Registros de Personal correspondientes"],
+                correct: "Registro Central de Personal"
+            },
+            {
+                question: "Según la Ley 39/2006, ¿el grado de dependencia es revisable a instancia de quién?",
+                options: ["Del interesado", "De los representantes", "De oficio por las Administraciones", "Todas las anteriores son correctas"],
+                correct: "Todas las anteriores son correctas"
+            },
+            {
+                question: "¿Qué ley establece medidas de fomento para impulsar planes de igualdad en pequeñas y medianas empresas?",
+                options: ["Ley Orgánica 3/2007", "Ley 50/1997", "Ley 39/2015", "Ley 19/2013"],
+                correct: "Ley Orgánica 3/2007"
+            },
+            {
+                question: "¿Cuál es el periodo de validez del DNI para solicitantes menores de cinco años?",
+                options: ["2 años", "4 años", "5 años", "10 años"],
+                correct: "2 años"
+            },
+            {
+                question: "¿Cuál es el periodo de vigencia máximo de los certificados cualificados según la Ley 6/2020?",
+                options: ["3 años", "5 años", "6 años", "Ilimitado"],
+                correct: "5 años"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un derecho digital recogido en la Ley Orgánica 3/2018?",
+                options: ["Derecho al testamento digital", "Derecho a la desconexión digital", "Derecho al olvido en redes sociales", "Derecho a la propiedad intelectual de datos"],
+                correct: "Derecho a la propiedad intelectual de datos"
+            },
+            {
+                question: "¿Cuál es el plazo para comunicar a la AEPD las designaciones y ceses de los delegados de protección de datos?",
+                options: ["10 días", "15 días", "1 mes", "3 meses"],
+                correct: "1 mes"
+            },
+            {
+                question: "Según el ENS, ¿qué medida de seguridad afecta a la dimensión de Confidencialidad?",
+                options: ["Bloqueo de puesto de trabajo", "Firma electrónica", "Registro de la actividad", "Criptografía"],
+                correct: "Criptografía"
+            },
+            {
+                question: "¿Qué norma técnica de interoperabilidad establece que las tecnologías para intercambios de datos se implementarán en base a estándares?",
+                options: ["NTI de Catálogo de estándares", "NTI de Protocolos de Intermediación de Datos", "NTI de Esquema Nacional de Seguridad", "NTI de Reutilización de información"],
+                correct: "NTI de Protocolos de Intermediación de Datos"
+            },
+            {
+                question: "¿Qué solución de ciberseguridad del CCN se enfoca en la gestión de eventos e información de seguridad (SIEM)?",
+                options: ["CLARA", "ELENA", "GLORIA", "MONICA"],
+                correct: "GLORIA"
+            },
+            {
+                question: "¿Qué servicio común de administración electrónica permite el envío de ficheros de gran volumen entre usuarios?",
+                options: ["SERVINOMINA", "CIRCAB", "eVISOR", "ENVIA"],
+                correct: "ENVIA"
+            },
+            {
+                question: "¿Cómo se regula la institución del Defensor del Pueblo en la CE?",
+                options: ["Alto comisionado del Congreso", "Alto comisionado de las Cortes Generales", "Alto comisionado del Poder Judicial", "Alto comisionado del Gobierno"],
+                correct: "Alto comisionado de las Cortes Generales"
+            },
+            {
+                question: "¿Qué es WCAG?",
+                options: ["Pautas de accesibilidad web del W3C", "Librería Java EE", "Componente Hadoop", "Framework Javascript"],
+                correct: "Pautas de accesibilidad web del W3C"
+            },
+            {
+                question: "¿Cuál de los siguientes es un conector de carga y datos creado por Apple?",
+                options: ["USB-C", "iUSB", "iFire", "Lightning"],
+                correct: "Lightning"
+            },
+            {
+                question: "¿Qué sentencia SQL se utiliza para añadir uno o más registros a una tabla?",
+                options: ["`DELETE`", "`INSERT`", "`UPDATE`", "`GRANT`"],
+                correct: "`INSERT`"
+            },
+            {
+                question: "¿Cuáles son los objetos básicos de Kubernetes?",
+                options: ["Pod, State, Volume, Namespace", "Pod, Service, Volume, Namespace", "Job, Service, Volume, Namespace", "Job, Pod, Volume, Deployment"],
+                correct: "Pod, Service, Volume, Namespace"
+            },
+            {
+                question: "¿Qué componente de la CPU realiza las operaciones aritméticas y lógicas?",
+                options: ["Memoria", "ALU", "Bus de operaciones", "Multiplexor de entrada"],
+                correct: "ALU"
+            },
+            {
+                question: "¿Qué característica es esencial en el modelo de arquitectura CISC?",
+                options: ["Conjunto reducido de instrucciones", "Implementación directa en hardware", "Microprogramación", "Bajo consumo"],
+                correct: "Microprogramación"
+            },
+            {
+                question: "En relación con los sistemas RAID, ¿qué RAID 6 amplía al RAID 5 agregando un bloque de paridad?",
+                options: ["RAID 0", "RAID 1", "RAID 5", "RAID 6"],
+                correct: "RAID 6"
+            },
+            {
+                question: "¿Cuál de las siguientes es una tecnología de almacenamiento en disco mediante bus serie?",
+                options: ["SATA", "ATA", "SCSI", "DLT"],
+                correct: "SATA"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre USB es INCORRECTA?",
+                options: ["USB 3.1 Gen 1 y Gen 2 solo difieren en velocidad", "USB Type-C es lo mismo que USB 3.1", "USB 3.2 permite hasta 20 Gbps", "USB 2.0 hasta 480 Mbps"],
+                correct: "USB Type-C es lo mismo que USB 3.1"
+            },
+            {
+                question: "En teoría de grafos, ¿qué algoritmo determina el camino más corto desde un vértice origen al resto de los vértices en un grafo con pesos?",
+                options: ["Kruskal", "Prim", "Dijkstra", "Floyd-Warshall"],
+                correct: "Dijkstra"
+            },
+            {
+                question: "¿Qué estándar PDF está diseñado para la accesibilidad de documentos?",
+                options: ["PDF/A", "PDF/E", "PDF/UA", "PDF/X"],
+                correct: "PDF/UA"
+            },
+            {
+                question: "¿Cuál es la versión más reciente del sistema operativo macOS de las siguientes?",
+                options: ["macOS Sierra", "macOS Monterey", "macOS Ventura", "macOS Big Sur"],
+                correct: "macOS Ventura"
+            },
+            {
+                question: "Las propiedades ACID de las bases de datos relacionales se refieren a:",
+                options: ["Atomicidad, Coherencia, Integridad, Distribución", "Atomicidad, Consistencia, Aislamiento, Durabilidad", "Disponibilidad, Coherencia, Intensidad, Durabilidad", "Atomicidad, Consistencia, Aislamiento, Disponibilidad"],
+                correct: "Atomicidad, Consistencia, Aislamiento, Durabilidad"
+            },
+            {
+                question: "¿Qué es Machine Learning Services para SQL Server?",
+                options: ["Tecnología de copia de datos", "Ejecución de scripts de Python y R con datos relacionales", "Producto de calidad de datos", "Servicio principal de almacenamiento de datos"],
+                correct: "Ejecución de scripts de Python y R con datos relacionales"
+            },
+            {
+                question: "Según Métrica v3, ¿qué es la entidad en un Modelo Entidad/Relación Extendido?",
+                options: ["Un atributo sobre diversos dominios", "Un objeto real o abstracto del que se almacena información", "Un dominio sin existencia propia", "Una clave candidata"],
+                correct: "Un objeto real o abstracto del que se almacena información"
+            },
+            {
+                question: "¿Qué nivel de abstracción en la arquitectura ANSI/SPARC define cómo se almacenan los datos y los métodos de acceso?",
+                options: ["Nivel externo", "Nivel físico", "Nivel contextual", "Nivel interno"],
+                correct: "Nivel físico"
+            },
+            {
+                question: "¿Qué afirmación es FALSA sobre un transpilador?",
+                options: ["Programa que ejecuta instrucciones", "Transforma código fuente", "Hace de intérprete y compilador al mismo tiempo", "Crea código ejecutable para otra plataforma"],
+                correct: "Hace de intérprete y compilador al mismo tiempo"
+            },
+            {
+                question: "En C++, ¿cómo se denominan las funciones con el mismo nombre en el mismo ámbito?",
+                options: ["Funciones dobles", "Funciones repetidas", "Funciones sobrecargadas", "No se puede"],
+                correct: "Funciones sobrecargadas"
+            },
+            {
+                question: "¿Qué es un array o vector en programación?",
+                options: ["Tipo de dato no estructurado", "Conjunto de datos heterogéneos", "Almacena datos de forma consecutiva en memoria", "Tipo de dato que no permite acceso por índice"],
+                correct: "Almacena datos de forma consecutiva en memoria"
+            },
+            {
+                question: "¿Qué tipo de driver JDBC utiliza un protocolo de red y middleware para comunicarse con un servidor?",
+                options: ["Tipo 1", "Tipo 2", "Tipo 3", "Tipo 4"],
+                correct: "Tipo 3"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una anomalía común en bases de datos?",
+                options: ["Lecturas no repetibles", "Lecturas hundidas", "Lecturas sucias", "Lecturas fantasma"],
+                correct: "Lecturas hundidas"
+            },
+            {
+                question: "En SQL, ¿qué comando elimina los datos de una tabla pero mantiene su definición?",
+                options: ["`DROP TABLE`", "`DELETE`", "`REMOVE`", "`TRUNCATE TABLE`"],
+                correct: "`TRUNCATE TABLE`"
+            },
+            {
+                question: "¿Qué patrón de diseño orientado a objetos se refiere a principios generales de software para asignación de responsabilidades?",
+                options: ["OOD", "GRASP", "Booch", "Fan-In & Fan-Out"],
+                correct: "GRASP"
+            },
+            {
+                question: "Según Métrica v3, ¿qué tipo de relación entre clases representa la totalidad de un objeto y las partes que lo componen?",
+                options: ["Herencia", "Composición", "Asociación", "Agregación"],
+                correct: "Composición"
+            },
+            {
+                question: "Según Métrica v3, ¿qué diagrama describe en detalle un escenario específico de un caso de uso?",
+                options: ["Diagrama de Interacción", "Diagrama de flujo de datos", "Diagrama de representación", "Diagrama de casos de uso"],
+                correct: "Diagrama de Interacción"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una librería Java proporcionada por la Apache Foundation?",
+                options: ["Log4J", "httpclient", "commons-io", "Mockito"],
+                correct: "Mockito"
+            },
+            {
+                question: "¿Qué afirmación es correcta sobre .NET?",
+                options: [".NET es un marco multiplataforma de Google", ".NET es un proyecto de código abierto", ".NET solo para aplicaciones móviles", ".NET no admite C#"],
+                correct: ".NET es un proyecto de código abierto"
+            },
+            {
+                question: "¿Qué afirmación es INCORRECTA sobre el objeto POCO en .NET?",
+                options: ["Es una estructura de datos con propiedades/campos públicos", "Es el acrónimo de Plain Old CLR Object", "No hereda de otra clase/interfaz", "Puede contener métodos, eventos y delegados"],
+                correct: "Puede contener métodos, eventos y delegados"
+            },
+            {
+                question: "¿Qué afirmación sobre REST es FALSA?",
+                options: ["Es el acrónimo de Representational State Transfer", "Los objetos se manipulan a partir de la URI", "URI son las siglas de Unique Resource Identifier", "Utiliza un protocolo cliente/servidor con estado"],
+                correct: "Utiliza un protocolo cliente/servidor con estado"
+            },
+            {
+                question: "¿Cuál es un estándar OASIS que define mecanismos para establecer y compartir contextos de seguridad?",
+                options: ["WS-Addressing", "WS-Federation", "WS-SecureConversation", "WS-Policy"],
+                correct: "WS-SecureConversation"
+            },
+            {
+                question: "¿Qué afirmación es correcta con respecto a WSIL?",
+                options: ["Método alternativo al descubrimiento de servicios Web", "Define modelo de programación para Java EE", "Define un modo de publicar y encontrar información sobre servicios Web", "Organización para interoperabilidad de servicios Web"],
+                correct: "Define un modo de publicar y encontrar información sobre servicios Web"
+            },
+            {
+                question: "¿Cuál es el motor web desarrollado por The Mozilla Foundation?",
+                options: ["WebKit", "Firefox", "Gecko", "Edge"],
+                correct: "Gecko"
+            },
+            {
+                question: "¿Qué término está relacionado con XML-binary Optimized Packaging (XOP)?",
+                options: ["Reconstituted XML Infoset", "XOP Header", "XOP Package", "Optimized Document"],
+                correct: "XOP Package"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un framework para JavaScript?",
+                options: ["Angular", "Bootstrap", "React", "JDBC"],
+                correct: "JDBC"
+            },
+            {
+                question: "¿Qué análisis de seguridad NO se realiza durante el ciclo de vida del desarrollo de software?",
+                options: ["SAST", "S-SDLC", "DAST", "SCA"],
+                correct: "S-SDLC"
+            },
+            {
+                question: "¿Qué principio de accesibilidad web exige que los componentes y la navegación de la interfaz de usuario se puedan utilizar por cualquier persona?",
+                options: ["Perceptibilidad", "Comprensibilidad", "Robustez", "Operabilidad"],
+                correct: "Operabilidad"
+            },
+            {
+                question: "Según Métrica v3, ¿qué tipo de pruebas verifican el correcto ensamblaje entre componentes y que interactúan correctamente?",
+                options: ["Pruebas del sistema", "Pruebas de implantación", "Pruebas de regresión", "Pruebas de integración"],
+                correct: "Pruebas de integración"
+            },
+            {
+                question: "Según Métrica v3, ¿qué participantes están presentes en la tarea de 'Elaboración de los Manuales de Usuario'?",
+                options: ["Usuarios Expertos", "Consultor de Sistemas de Información", "Equipo de Formación", "Equipo de Proyecto"],
+                correct: "Equipo de Proyecto"
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas NO es un software para el control de versiones?",
+                options: ["JMeter", "Subversion", "Mercurial", "GIT"],
+                correct: "JMeter"
+            },
+            {
+                question: "¿Qué afirmación es INCORRECTA sobre el kernel de un Sistema Operativo?",
+                options: ["Controla funciones importantes del hardware", "Se encarga del multitasking", "Es el núcleo del procesador", "Recibe peticiones de servicio de los procesos"],
+                correct: "Es el núcleo del procesador"
+            },
+            {
+                question: "En un sistema UNIX, ¿qué afirmación es INCORRECTA?",
+                options: ["GID es el número de identificación de grupo", "UID es el número de identificación de usuario", "El administrador del sistema se denomina root", "El proceso init se refiere al proceso de arranque de un usuario"],
+                correct: "El proceso init se refiere al proceso de arranque de un usuario"
+            },
+            {
+                question: "¿Cuál de las siguientes es una afirmación FALSA sobre la virtualización de máquinas?",
+                options: ["Facilita el despliegue de entornos", "Requiere aumentar la inversión en hardware específico", "Permite mayor aprovechamiento del hardware", "Posibilita ejecución de varios SO en una máquina física"],
+                correct: "Requiere aumentar la inversión en hardware específico"
+            },
+            {
+                question: "¿Qué tipo de copia de seguridad realiza una copia de todos los datos modificados desde el último backup completo?",
+                options: ["Completa", "Diferencial", "Incremental", "Espejo"],
+                correct: "Diferencial"
+            },
+            {
+                question: "¿En qué campo del objeto de Kubernetes hay que incluir los valores que permiten identificar unívocamente al objeto?",
+                options: ["`kind`", "`spec`", "`apiVersion`", "`metadata`"],
+                correct: "`metadata`"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un protocolo de correo electrónico?",
+                options: ["IMAP", "SMTP", "Outlook", "POP3"],
+                correct: "Outlook"
+            },
+            {
+                question: "¿Qué protocolo se utiliza para administrar dispositivos de una red?",
+                options: ["SMTP", "DNS", "FTP", "SNMP"],
+                correct: "SNMP"
+            },
+            {
+                question: "¿Qué comando SNMP se utiliza para recuperar datos voluminosos de una tabla MIB grande?",
+                options: ["`GET`", "`GET NEXT`", "`GET BULK`", "`GET RESPONSE`"],
+                correct: "`GET BULK`"
+            },
+            {
+                question: "¿Qué es ECDSA?",
+                options: ["Un algoritmo de firma", "Un estándar de cableado", "Un organismo regulador", "Un protocolo de nivel de enlace"],
+                correct: "Un algoritmo de firma"
+            },
+            {
+                question: "¿Qué afirmación sobre la firma electrónica es INCORRECTA?",
+                options: ["Co-firma: firmantes al mismo nivel sin importar orden", "XAdES: resultado es XML", "PADES: formato propio de Microsoft Office", "Firmas despegadas/envolventes/envueltas en XAdES"],
+                correct: "PADES: formato propio de Microsoft Office"
+            },
+            {
+                question: "¿Qué equipo de interconexión trabaja a nivel de red (nivel 3 del modelo OSI)?",
+                options: ["Routers", "Switches", "Bridges", "Hubs"],
+                correct: "Routers"
+            },
+            {
+                question: "¿Qué afirmación es INCORRECTA acerca de la fibra óptica plástica (POF)?",
+                options: ["Hecha de plástico", "Permite aprovechar todo el ancho de banda sin pérdidas", "Ofrece un núcleo conductor menor que la fibra tradicional", "Muy flexible"],
+                correct: "Permite aprovechar todo el ancho de banda sin pérdidas"
+            },
+            {
+                question: "¿Cuál es el prefijo de dirección de Multicast en IPv6?",
+                options: ["::1/128", "224.0.0.0/4", "FF00::/8", "FC00::/7"],
+                correct: "FF00::/8"
+            },
+            {
+                question: "¿Qué afirmación es correcta sobre los niveles y servicios del modelo OSI?",
+                options: ["Se asimila a un modelo de 2 niveles (TCP e IP)", "Entidades N+1 ofrecen servicios a N", "Servicio confirmado usa 4 primitivas", "Servicio no confirmado usa 3 primitivas"],
+                correct: "Servicio confirmado usa 4 primitivas"
+            },
+            {
+                question: "¿Qué organismo de la ONU está encargado de regular las telecomunicaciones a nivel internacional?",
+                options: ["ICANN", "ITU", "IEEE", "TIA"],
+                correct: "ITU"
+            },
+            {
+                question: "¿Qué parte de un certificado de sitio web necesita un navegador para establecer una conexión HTTPS segura?",
+                options: ["Clave pública del certificado del sitio web", "Clave privada del certificado del sitio web", "Claves pública y privada del certificado del sitio web", "Ninguna"],
+                correct: "Clave pública del certificado del sitio web"
+            },
+            {
+                question: "¿Qué es un portal cautivo?",
+                options: ["Sitio web bloqueado por ransomware", "Página web con acceso limitado en pruebas", "Sitio web que no cumple WCAG", "Página web que gestiona acceso de usuarios a una red"],
+                correct: "Página web que gestiona acceso de usuarios a una red"
+            },
+            {
+                question: "¿Qué protocolo NO se usa en VPN para proporcionar cifrado?",
+                options: ["PPTP/MPPE", "IPSec", "L2TP/IPSec", "KSEC 1.1"],
+                correct: "KSEC 1.1"
+            },
+            {
+                question: "¿Qué significa CSMA/CD?",
+                options: ["Acceso múltiple por servicio de portadora y múltiples colisiones", "Acceso múltiple con detección de portadora y detección de colisiones", "Acceso único con múltiples colisiones y detección de portadora", "Acceso único de múltiples portadoras y detección de colisiones"],
+                correct: "Acceso múltiple con detección de portadora y detección de colisiones"
+            },
+            {
+                question: "¿Qué dispositivo filtra el tráfico de una LAN para que el tráfico local permanezca local pero permite conectividad a otros segmentos?",
+                options: ["Switch", "Hub", "Router", "Gateway"],
+                correct: "Router"
+            },
+            {
+                question: "¿A qué se corresponden las siglas de Red SOHO?",
+                options: ["Small Own, Home Own", "Small Office, Home Own", "Small Office, Home Office", "Small Office, House Office"],
+                correct: "Small Office, Home Office"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una capa de personalización de Android?",
+                options: ["MIUI", "One UI", "PenPoint OS", "OriginOS"],
+                correct: "PenPoint OS"
+            },
+            {
+                question: "¿Qué paquete R en SQL Server Machine Learning Services permite transformaciones y manipulaciones de datos, resúmenes estadísticos y visualizaciones?",
+                options: ["Revoscalepy", "Microsoftml", "Revoscaler", "SqlRutils"],
+                correct: "Revoscaler"
+            },
+            {
+                question: "¿Cuál de los siguientes lenguajes está relacionado con el desarrollo en backend?",
+                options: ["GO", "SASS", "XML", "ANGULAR"],
+                correct: "GO"
+            },
+            {
+                question: "¿Cuáles son los diferentes tipos de configuración contemplados para WPS?",
+                options: ["PIN, PBC, USB", "PIN, NFC, USB", "PIN, USB", "PIN, PBC, NFC, USB"],
+                correct: "PIN, PBC, USB"
+            },
+            {
+                question: "En JSON, ¿qué valor mostraría la consola si ejecutamos este código: `console.log(4*3**2)`?",
+                options: ["36", "-1", "24", "Null"],
+                correct: "36"
+            },
+            {
+                question: "¿Qué atributo de seguridad de las cookies permite que el navegador solo envíe la cookie al servidor si se originó en el mismo sitio web?",
+                options: ["Domain", "SameSite", "Secure", "HttpOnly"],
+                correct: "SameSite"
+            },
+            {
+                question: "En PHP, ¿qué variable de entorno se puede usar para almacenar datos del inicio de sesión de un usuario?",
+                options: ["`$_SESSION`", "`$SESSION`", "`$_GLOBAL`", "`$GLOBAL`"],
+                correct: "`$_SESSION`"
+            },
+            {
+                question: "¿Qué conjunto de herramientas de presentación y comportamiento ofrece componentes para trabajar en la parte dinámica del frontal web HTML?",
+                options: ["NumPy", "ActiveMQ", "Bootstrap", "TensorFlow"],
+                correct: "Bootstrap"
+            },
+            {
+                question: "¿Qué método estático usaría para convertir una cadena JSON en un valor u objeto JavaScript?",
+                options: ["`JSON.parse()`", "`JSON.stringify()`", "`let obj = JSON`", "`let obj = New JSON`"],
+                correct: "`JSON.parse()`"
+            },
+            {
+                question: "¿Qué elemento HTML se utiliza para impedir que un campo de texto exceda un número determinado de caracteres?",
+                options: ["`size`", "`maxlength`", "`length`", "`max`"],
+                correct: "`maxlength`"
+            },
+            {
+                question: "¿Qué ORM se podría usar con .NET para mapeo objeto-relacional?",
+                options: ["JPA", "Hibernate", "Entity Framework", "Spring Data"],
+                correct: "Entity Framework"
+            },
+            {
+                question: "¿Qué sentencia SQL se utiliza para añadir un nuevo registro a una tabla?",
+                options: ["`INSERT INTO`", "`ADD RECORD TO`", "`CREATE RECORD IN`", "`ADD ROW TO`"],
+                correct: "`INSERT INTO`"
+            },
+            {
+                question: "¿Qué tipo de correspondencia indica que un registro de una tabla puede tener N registros de otra tabla?",
+                options: ["Uno a uno", "Uno a muchos", "Muchos a uno", "Muchos a muchos"],
+                correct: "Uno a muchos"
+            },
+            {
+                question: "¿Qué herramienta automatizada se utilizaría para probar que una aplicación web cumple con los estándares de accesibilidad?",
+                options: ["QualWeb", "AccSite", "Equal Automatic Checker", "Shovel"],
+                correct: "QualWeb"
+            },
+            {
+                question: "¿Qué técnica se utiliza para renderizar páginas web en el servidor y enviar el HTML completo al cliente?",
+                options: ["Server Sent Events", "WebSocket", "Ajax", "Server Side Rendering"],
+                correct: "Server Side Rendering"
+            },
+            {
+                question: "¿Qué diagrama UML se utiliza para representar las acciones implicadas en un flujo de proceso, mostrando la secuencia de actividades?",
+                options: ["Diagrama de paquetes", "Diagrama de secuencia", "Diagrama de objetos", "Diagrama de actividades"],
+                correct: "Diagrama de actividades"
+            },
+            {
+                question: "En Java, ¿qué tecnología se puede utilizar para generar un cliente de servicios web SOAP?",
+                options: ["Apache Flink", "Apache Xalan", "Apache Xerces", "Apache CXF"],
+                correct: "Apache CXF"
+            },
+            {
+                question: "En un entorno de desarrollo Java, ¿qué se utiliza para mapear elementos XML a clases Java?",
+                options: ["JAXB", "JPA", "JAXR", "JAX-RS"],
+                correct: "JAXB"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una herramienta para analizar y mejorar la calidad del código?",
+                options: ["SonarQube", "PMD", "Un linter de JavaScript", "Mercurial"],
+                correct: "Mercurial"
+            },
+            {
+                question: "En Java, ¿qué clase nativa se utiliza para trabajar con una fecha y hora simultáneamente?",
+                options: ["`LocalDateTime`", "`LocalTime`", "`LocalDate`", "`OffsetTime`"],
+                correct: "`LocalDateTime`"
+            },
+            {
+                question: "¿Cuál de las siguientes opciones NO es válida para documentar servicios web RESTful?",
+                options: ["RAML", "REST", "WSDL", "OpenAPI/Swagger"],
+                correct: "REST"
+            },
+            {
+                question: "¿Qué nivel de aislamiento de base de datos permite lecturas sucias y no repetibles, pero evita lecturas fantasma?",
+                options: ["Serializable", "Read uncommitted", "Read committed", "Repeatable read"],
+                correct: "Repeatable read"
+            },
+            {
+                question: "¿Con qué estándar se firman las peticiones generadas por una aplicación que se integra con servicios web SOAP de GEISER?",
+                options: ["WS-Security", "SAML", "JWT", "XML-Encryption"],
+                correct: "WS-Security"
+            },
+            {
+                question: "¿Con qué comando se instalaría el paquete NuGet 'iText' en un proyecto .NET?",
+                options: ["`dotnet add package iText`", "`dotnet install package iText`", "`dotnet add iText`", "`dotnet install iText`"],
+                correct: "`dotnet add package iText`"
+            },
+            {
+                question: "Según Métrica v3, ¿qué acción se aplicaría para optimizar el modelo físico de datos y reducir el número de accesos a la base de datos?",
+                options: ["Combinar entidades", "Eliminar entidades", "Introducir elementos redundantes", "Normalizar las tablas en FNBC"],
+                correct: "Introducir elementos redundantes"
+            },
+            {
+                question: "En SCRUM, ¿en qué reunión se comenta una mala práctica para buscar la mejora continua y evitarla en futuros sprints?",
+                options: ["Daily Scrum", "Sprint Retrospective", "Sprint Planning", "Sprint Review"],
+                correct: "Sprint Retrospective"
+            },
+            {
+                question: "¿Cuáles son los componentes principales de una arquitectura orientada a servicios (SOA)?",
+                options: ["Servicio, Proveedor, Consumidor, Orquestador", "Servicio, Proveedor, Consumidor, Depurador", "Servicio, Proveedor, Consumidor, Comparador", "Servicio, Proveedor, Consumidor, Registro"],
+                correct: "Servicio, Proveedor, Consumidor, Registro"
+            },
+            {
+                question: "En .NET con C#, ¿cómo se puede indicar la opcionalidad de un tipo de dato (nullable type)?",
+                options: ["`int? Telefono`", "`int:null Telefono`", "`int null Telefono`", "`int ?? Telefono`"],
+                correct: "`int? Telefono`"
+            },
+            {
+                question: "¿Cuál es la especificidad CSS del selector `input:required`?",
+                options: ["1-1-0", "1-0-1", "0-1-1", "1-0-0"],
+                correct: "0-1-1"
+            },
+            {
+                question: "¿Qué atributo ARIA se utilizaría para indicar que un elemento se actualizará dinámicamente?",
+                options: ["`aria-live`", "`aria-flowto`", "`aria-checked`", "`aria-valuenow`"],
+                correct: "`aria-live`"
+            },
+            {
+                question: "En SQL, ¿qué cláusula se utiliza para filtrar resultados basados en un patrón de cadena, como `%.pdf`?",
+                options: ["`WHERE`", "`LIKE`", "`MATCH`", "`FILTER`"],
+                correct: "`LIKE`"
+            },
+            {
+                question: "¿Qué cabecera HTTP se utiliza para restringir que las peticiones de origen cruzado solo procedan de dominios específicos?",
+                options: ["HSTS", "TLS", "CSP", "CORS"],
+                correct: "CORS"
+            },
+            {
+                question: "¿Qué fichero en un repositorio de código se utiliza para incluir el propósito del proyecto y cómo arrancarlo localmente?",
+                options: ["`CODEOWNERS`", "`LICENSE`", "`README.md`", "`CITATION`"],
+                correct: "`README.md`"
+            },
+            {
+                question: "¿Qué protocolo de red se utiliza para la asignación dinámica de direcciones IP?",
+                options: ["DNS", "ARP", "DHCP", "ICMP"],
+                correct: "DHCP"
+            },
+            {
+                question: "¿Cuál es el propósito principal de un servidor LDAP?",
+                options: ["Servir páginas web", "Gestionar bases de datos", "Almacenar información de directorio (usuarios, grupos)", "Enviar correos electrónicos"],
+                correct: "Almacenar información de directorio (usuarios, grupos)"
+            },
+            {
+                question: "¿Qué tipo de ataque de seguridad implica la generación de tráfico utilizando un origen falseado (IP spoofing)?",
+                options: ["Sniffing", "Spoofing", "DDoS", "Phishing"],
+                correct: "Spoofing"
+            },
+            {
+                question: "En el contexto de la seguridad física de un CPD, ¿qué significa TIER III?",
+                options: ["Nivel básico de redundancia", "Mantenimiento concurrente y redundancia N+1", "Falla única sin interrupción", "Alta disponibilidad con múltiples rutas activas"],
+                correct: "Mantenimiento concurrente y redundancia N+1"
+            },
+            {
+                question: "¿Qué comando de Linux se utiliza para listar los procesos en ejecución?",
+                options: ["`netstat`", "`top`", "`ifconfig`", "`route`"],
+                correct: "`top`"
+            },
+            {
+                question: "¿Qué tipo de memoria es volátil y se utiliza para almacenar datos a corto plazo para que la CPU pueda acceder a ellos rápidamente?",
+                options: ["ROM", "SSD", "RAM", "HDD"],
+                correct: "RAM"
+            },
+            {
+                question: "¿Qué sistema de archivos es comúnmente utilizado en sistemas Linux?",
+                options: ["NTFS", "FAT32", "ext4", "HFS+"],
+                correct: "ext4"
+            },
+            {
+                question: "¿Qué es un 'trigger' en una base de datos?",
+                options: ["Un tipo de índice", "Un procedimiento que se ejecuta automáticamente ante un evento", "Una restricción de clave foránea", "Un comando DDL"],
+                correct: "Un procedimiento que se ejecuta automáticamente ante un evento"
+            },
+            {
+                question: "¿Cuál es el propósito de un 'linter' en el desarrollo de software?",
+                options: ["Compilar código", "Ejecutar pruebas unitarias", "Analizar código estáticamente para encontrar errores y problemas de estilo", "Gestionar dependencias de paquetes"],
+                correct: "Analizar código estáticamente para encontrar errores y problemas de estilo"
+            },
+            {
+                question: "¿Qué protocolo de red se utiliza para la comunicación entre un navegador web y un servidor web de forma segura?",
+                options: ["HTTP", "FTP", "HTTPS", "SMTP"],
+                correct: "HTTPS"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Array para almacenar las respuestas del usuario
+        let quizCompleted = false;
+
+        const questionNumberElement = document.getElementById('question-number');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const questionDisplay = document.getElementById('question-display');
+        const resultsSummary = document.getElementById('results-summary');
+        const correctCountElement = document.getElementById('correct-count');
+        const incorrectCountElement = document.getElementById('incorrect-count');
+        const unansweredCountElement = document.getElementById('unanswered-count');
+        const restartQuizBtn = document.getElementById('restart-quiz');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Función para cargar el estado del quiz desde LocalStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedCompleted = localStorage.getItem('quizCompleted');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Inicializar userAnswers si no hay nada guardado
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            if (savedCompleted === 'true') {
+                quizCompleted = true;
+            }
+        }
+
+        // Función para guardar el estado del quiz en LocalStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizCompleted', quizCompleted);
+        }
+
+        // Función para actualizar la barra de progreso
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Función para mostrar la pregunta actual
+        function displayQuestion() {
+            if (quizCompleted) {
+                showResults();
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            questionNumberElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionTextElement.textContent = question.question;
+            optionsContainer.innerHTML = '';
+            feedbackMessage.textContent = '';
+            updateProgressBar();
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button', 'bg-gray-100', 'text-gray-800', 'hover:bg-gray-200', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'focus:ring-opacity-50');
+                button.dataset.option = option;
+                button.addEventListener('click', () => selectAnswer(option, button));
+                optionsContainer.appendChild(button);
+            });
+
+            // Restablecer el estado de los botones si ya fue respondida
+            const answered = userAnswers[currentQuestionIndex];
+            if (answered !== null) {
+                disableOptions();
+                const selectedButton = Array.from(optionsContainer.children).find(btn => btn.dataset.option === answered);
+                if (selectedButton) {
+                    if (answered === question.correct) {
+                        selectedButton.classList.add('correct');
+                    } else {
+                        selectedButton.classList.add('incorrect');
+                        // Opcional: mostrar la correcta si la respuesta fue incorrecta
+                        const correctButton = Array.from(optionsContainer.children).find(btn => btn.dataset.option === question.correct);
+                        if (correctButton) {
+                            correctButton.classList.add('correct');
+                        }
+                    }
+                }
+                if (answered === question.correct) {
+                    feedbackMessage.textContent = '¡Correcto!';
+                    feedbackMessage.classList.remove('text-red-600');
+                    feedbackMessage.classList.add('text-green-600');
+                } else {
+                    feedbackMessage.textContent = `Incorrecto. La respuesta correcta era: ${question.correct}`;
+                    feedbackMessage.classList.remove('text-green-600');
+                    feedbackMessage.classList.add('text-red-600');
+                }
+            }
+
+            updateNavigationButtons();
+        }
+
+        // Función para manejar la selección de una respuesta
+        function selectAnswer(selectedOption, clickedButton) {
+            if (userAnswers[currentQuestionIndex] !== null) {
+                return; // Ya se ha respondido esta pregunta
+            }
+
+            const question = questions[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedOption;
+            saveQuizState(); // Guardar la respuesta inmediatamente
+
+            disableOptions(); // Deshabilitar todas las opciones después de la selección
+
+            if (selectedOption === question.correct) {
+                clickedButton.classList.add('correct');
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.remove('text-red-600');
+                feedbackMessage.classList.add('text-green-600');
+            } else {
+                clickedButton.classList.add('incorrect');
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta era: ${question.correct}`;
+                feedbackMessage.classList.remove('text-green-600');
+                feedbackMessage.classList.add('text-red-600');
+
+                // Resaltar la respuesta correcta
+                const correctButton = Array.from(optionsContainer.children).find(btn => btn.dataset.option === question.correct);
+                if (correctButton) {
+                    correctButton.classList.add('correct');
+                }
+            }
+        }
+
+        // Función para deshabilitar los botones de opción
+        function disableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.classList.add('disabled');
+                button.disabled = true;
+            });
+        }
+
+        // Función para habilitar los botones de opción
+        function enableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.classList.remove('disabled', 'correct', 'incorrect');
+                button.disabled = false;
+            });
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = false; // Siempre habilitado para avanzar o finalizar
+            finishBtn.classList.add('hidden');
+
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Event Listeners para los botones de navegación
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+                saveQuizState();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+                saveQuizState();
+            }
+        });
+
+        finishBtn.addEventListener('click', () => {
+            quizCompleted = true;
+            saveQuizState();
+            showResults();
+        });
+
+        restartQuizBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            quizCompleted = false;
+            saveQuizState();
+            questionDisplay.classList.remove('hidden');
+            resultsSummary.classList.add('hidden');
+            displayQuestion();
+        });
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            questionDisplay.classList.add('hidden');
+            resultsSummary.classList.remove('hidden');
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach((answer, index) => {
+                if (answer === null) {
+                    unansweredCount++;
+                } else if (answer === questions[index].correct) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            correctCountElement.textContent = correctCount;
+            incorrectCountElement.textContent = incorrectCount;
+            unansweredCountElement.textContent = unansweredCount;
+        }
+
+        // Inicializar el quiz al cargar la página
+        window.onload = () => {
+            loadQuizState();
+            displayQuestion();
+        };
+    </script>
+</body>
+</html>
