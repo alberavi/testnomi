@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Sistemas de Numeración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .question-card {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .question-card:hover {
+            background-color: #edf2f7;
+            border-color: #cbd5e0;
+            transform: translateY(-2px);
+        }
+        .question-card.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+        .question-card.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+        .question-card.answered {
+            pointer-events: none; /* Disable clicks after answering */
+        }
+        .feedback {
+            margin-top: 0.5rem;
+            font-weight: bold;
+        }
+        .feedback.correct-text {
+            color: #28a745;
+        }
+        .feedback.incorrect-text {
+            color: #dc3545;
+        }
+        .button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .button-primary {
+            background-color: #4299e1;
+            color: white;
+        }
+        .button-primary:hover {
+            background-color: #3182ce;
+        }
+        .button-secondary {
+            background-color: #e2e8f0;
+            color: #2d3748;
+            border: 1px solid #cbd5e0;
+        }
+        .button-secondary:hover {
+            background-color: #cbd5e0;
+        }
+        .results-section {
+            background-color: #e0f2fe;
+            border: 1px solid #90cdf4;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            font-size: 1.1rem;
+        }
+        .results-section p {
+            margin-bottom: 0.5rem;
+        }
+        .hidden {
+            display: none;
+        }
+        /* Estilos para las opciones en columna */
+        .options-column {
+            display: flex;
+            flex-direction: column; /* Apila los elementos verticalmente */
+            gap: 0.5rem; /* Espacio entre las opciones */
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Test de Sistemas de Numeración</h1>
+        <div id="quiz-container">
+            <!-- La pregunta actual se cargará aquí -->
+        </div>
+        <div class="flex justify-center mt-8 space-x-4">
+            <button id="prev-button" class="button button-secondary">Anterior</button>
+            <button id="next-button" class="button button-primary">Siguiente</button>
+            <button id="show-results-button" class="button button-primary hidden">Mostrar Resultados</button>
+            <button id="reset-button" class="button button-secondary">Reiniciar Test</button>
+        </div>
+        <div id="results" class="results-section hidden">
+            <h2 class="text-2xl font-bold mb-4 text-gray-700">Resultados del Test</h2>
+            <p><strong>Preguntas Correctas:</strong> <span id="correct-count">0</span></p>
+            <p><strong>Preguntas Incorrectas:</strong> <span id="incorrect-count">0</span></p>
+            <p><strong>Preguntas Sin Contestar:</strong> <span id="unanswered-count">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos de preguntas y respuestas originales (nunca se modifica)
+        const originalQuestions = [
+            {
+                question: "¿Cuál es el equivalente decimal del número binario 000011?",
+                answer: "3",
+                options: ["1", "2", "3", "4"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario 100001?",
+                answer: "33",
+                options: ["31", "32", "33", "34"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario 111000?",
+                answer: "56",
+                options: ["55", "56", "57", "58"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario 111111?",
+                answer: "63",
+                options: ["60", "61", "62", "63"]
+            },
+            {
+                question: "¿Cuál es el equivalente binario de 64 en decimal?",
+                answer: "1000000",
+                options: ["1000000", "1000001", "1000010", "1000100"]
+            },
+            {
+                question: "¿Cuál es el equivalente binario de 100 en decimal?",
+                answer: "1100100",
+                options: ["1100100", "1100101", "1100110", "1101000"]
+            },
+            {
+                question: "¿Cuál es el equivalente binario de 145 en decimal?",
+                answer: "10010001",
+                options: ["10010000", "10010001", "10010010", "10010100"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal C?",
+                answer: "12",
+                options: ["10", "11", "12", "13"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal 9F?",
+                answer: "159",
+                options: ["150", "159", "160", "169"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal D52?",
+                answer: "3410",
+                options: ["3400", "3410", "3420", "3430"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal 67E?",
+                answer: "1662",
+                options: ["1650", "1660", "1662", "1670"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal ABCD?",
+                answer: "43981",
+                options: ["43981", "43982", "43983", "43984"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 100110?",
+                answer: "38",
+                options: ["36", "37", "38", "39"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 110011?",
+                answer: "51",
+                options: ["49", "50", "51", "52"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 010111?",
+                answer: "23",
+                options: ["21", "22", "23", "24"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 101110?",
+                answer: "46",
+                options: ["44", "45", "46", "47"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 110111?",
+                answer: "55",
+                options: ["53", "54", "55", "56"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 01100110?",
+                answer: "102",
+                options: ["100", "101", "102", "103"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario puro 10110011?",
+                answer: "179",
+                options: ["177", "178", "179", "180"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario 0101,11?",
+                answer: "5,75",
+                options: ["5,25", "5,5", "5,75", "6,0"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número binario 1001,10?",
+                answer: "9,5",
+                options: ["9,0", "9,25", "9,5", "9,75"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal 13?",
+                answer: "19",
+                options: ["16", "17", "18", "19"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal 65?",
+                answer: "101",
+                options: ["99", "100", "101", "102"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal 3F0?",
+                answer: "1008",
+                options: ["1000", "1008", "1010", "1012"]
+            },
+            {
+                question: "¿Cuál es el equivalente decimal del número hexadecimal DOCE?",
+                answer: "53454",
+                options: ["53450", "53452", "53454", "53456"]
+            },
+            {
+                question: "Según el documento, ¿cuántos bits tiene el campo 'Código de Operación' en una instrucción de 32 bits con R1, R2 y Operando Inmediato?",
+                answer: "6",
+                options: ["4", "5", "6", "7"]
+            },
+            {
+                question: "Según el documento, ¿cuántos registros pueden direccionarse con un campo de registro de 6 bits?",
+                answer: "64",
+                options: ["16", "32", "64", "128"]
+            },
+            {
+                question: "Si una memoria de semiconductor es 2Kx8, ¿cuántas palabras almacena?",
+                answer: "2048",
+                options: ["1024", "2048", "4096", "8192"]
+            },
+            {
+                question: "Si una memoria de semiconductor es 2Kx8, ¿cuál es el tamaño de la palabra en bits?",
+                answer: "8",
+                options: ["4", "8", "16", "32"]
+            },
+            {
+                question: "Si una memoria de semiconductor es 2Kx8, ¿cuántos bits almacena en total?",
+                answer: "16384",
+                options: ["8192", "16384", "32768", "65536"]
+            },
+            {
+                question: "¿Cuántas líneas de dirección son necesarias para una memoria de 12M bits a la que se accede en palabras de 16 bits?",
+                answer: "20",
+                options: ["18", "19", "20", "21"]
+            },
+            {
+                question: "¿Cuántas líneas de dirección son necesarias para una memoria de 4.194.304 bits a la que se accede en palabras de 8 bits?",
+                answer: "19",
+                options: ["18", "19", "20", "21"]
+            },
+            {
+                question: "Un CI de memoria tiene una capacidad de 32Kx16. ¿Cuántas líneas de dirección tiene?",
+                answer: "15",
+                options: ["14", "15", "16", "17"]
+            },
+            {
+                question: "Un CI de memoria tiene una capacidad de 32Kx16. ¿Cuál es su capacidad en bytes?",
+                answer: "65536",
+                options: ["32768", "65536", "131072", "262144"]
+            },
+            {
+                question: "Un CI de memoria tiene una capacidad de 32Kx16. ¿Cuántas líneas de datos tiene?",
+                answer: "16",
+                options: ["8", "16", "24", "32"]
+            },
+            {
+                question: "¿Cuántas líneas de dirección tendrá una memoria con la misma capacidad que una 32Kx16 si se direcciona a byte?",
+                answer: "16",
+                options: ["15", "16", "17", "18"]
+            },
+            {
+                question: "¿Cuántos terminales requiere un CI de memoria de 1Mx8 si emplea líneas de E/S de datos comunes, R/W, /CS y GND?",
+                answer: "32",
+                options: ["20", "28", "30", "32"]
+            },
+            {
+                question: "¿Cuál es el resultado de la suma binaria 11+11?",
+                answer: "110",
+                options: ["100", "101", "110", "111"]
+            },
+            {
+                question: "¿Cuál es el resultado de la suma binaria 100+10?",
+                answer: "110",
+                options: ["100", "101", "110", "111"]
+            },
+            {
+                question: "¿Cuál es el resultado de la suma binaria 111+11?",
+                answer: "1010",
+                options: ["1000", "1001", "1010", "1011"]
+            },
+            {
+                question: "¿Cuál es el resultado de la suma binaria 110+100?",
+                answer: "1010",
+                options: ["1000", "1001", "1010", "1011"]
+            },
+            {
+                question: "¿Cuál es el resultado del producto binario 11*1?",
+                answer: "11",
+                options: ["01", "10", "11", "100"]
+            },
+            {
+                question: "¿Cuál es el resultado del producto binario 11*11?",
+                answer: "1001",
+                options: ["1000", "1001", "1010", "1011"]
+            },
+            {
+                question: "¿Cuál es el resultado del producto binario 111*101?",
+                answer: "100011",
+                options: ["100010", "100011", "100100", "100101"]
+            },
+            {
+                question: "¿Cuál es el resultado de la resta binaria 11-01?",
+                answer: "10",
+                options: ["00", "01", "10", "11"]
+            },
+            {
+                question: "¿Cuál es el resultado de la resta binaria 11-10?",
+                answer: "01",
+                options: ["00", "01", "10", "11"]
+            },
+            {
+                question: "¿Cuál es el resultado de la resta binaria 111-100?",
+                answer: "011",
+                options: ["001", "010", "011", "100"]
+            },
+            {
+                question: "¿Cuál es el resultado de la resta binaria 110-101?",
+                answer: "001",
+                options: ["000", "001", "010", "011"]
+            },
+            {
+                question: "¿Cuál es el resultado de la división binaria 110:11?",
+                answer: "10",
+                options: ["01", "10", "11", "100"]
+            }
+        ];
+
+        let displayQuestions = []; // Array que contendrá las preguntas en el orden actual (mezclado o cargado)
+        let userAnswers = []; // Almacena las respuestas del usuario
+        let currentQuestionIndex = 0; // Para rastrear el progreso del usuario
+
+        // Función para mezclar un array (algoritmo de Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Cargar el estado del test desde LocalStorage
+        function loadQuizState() {
+            const savedAnswers = localStorage.getItem('quizUserAnswers');
+            const savedIndex = localStorage.getItem('quizCurrentQuestionIndex');
+            const savedDisplayQuestions = localStorage.getItem('quizDisplayQuestions');
+            
+            // Si falta CUALQUIERA de los elementos guardados, o si displayQuestions está vacío, reinicializar completamente
+            if (!savedAnswers || !savedIndex || !savedDisplayQuestions || JSON.parse(savedDisplayQuestions).length === 0) {
+                console.log("Estado de quiz incompleto o no encontrado en localStorage, o displayQuestions vacío. Reinicializando.");
+                displayQuestions = shuffleArray([...originalQuestions]); // Mezclar una copia de las preguntas originales
+                userAnswers = new Array(displayQuestions.length).fill(null); // Resetear respuestas
+                currentQuestionIndex = 0; // Volver a la primera pregunta
+                saveQuizState(); // Guardar el estado inicial mezclado
+            } else {
+                console.log("Estado de quiz encontrado en localStorage. Cargando.");
+                userAnswers = JSON.parse(savedAnswers);
+                currentQuestionIndex = parseInt(savedIndex, 10);
+                displayQuestions = JSON.parse(savedDisplayQuestions);
+            }
+            console.log("Estado actual después de loadQuizState:", { displayQuestions, userAnswers, currentQuestionIndex });
+        }
+
+        // Guardar el estado del test en LocalStorage
+        function saveQuizState() {
+            localStorage.setItem('quizUserAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizCurrentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('quizDisplayQuestions', JSON.stringify(displayQuestions)); // Guardar el orden de las preguntas
+            console.log("Estado guardado en localStorage.");
+        }
+
+        // Renderizar la pregunta actual
+        function renderCurrentQuestion() {
+            const quizContainer = document.getElementById('quiz-container');
+            quizContainer.innerHTML = ''; // Limpiar pregunta anterior
+            document.getElementById('results').classList.add('hidden'); // Ocultar resultados
+
+            if (currentQuestionIndex >= 0 && currentQuestionIndex < displayQuestions.length) {
+                const q = displayQuestions[currentQuestionIndex]; // Usar displayQuestions
+                const index = currentQuestionIndex;
+
+                const questionCard = document.createElement('div');
+                questionCard.className = 'question-card';
+                questionCard.dataset.index = index;
+
+                const questionText = document.createElement('p');
+                questionText.className = 'font-semibold text-lg mb-2';
+                questionText.textContent = `${index + 1}. ${q.question}`;
+                questionCard.appendChild(questionText);
+
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'options-column'; // Clase para mostrar en columna
+
+                // Clonar las opciones para mezclarlas sin modificar el original
+                const optionsToShuffle = [...q.options]; 
+                const shuffledOptions = Array.isArray(optionsToShuffle) ? shuffleArray(optionsToShuffle) : [];
+                
+                const optionLetters = ['a', 'b', 'c', 'd']; // Letras para las opciones
+                shuffledOptions.forEach((option, i) => {
+                    const optionButton = document.createElement('button');
+                    // Añadir la letra de la opción
+                    optionButton.className = 'button button-secondary text-sm px-3 py-1 rounded-md text-left'; // Alineación a la izquierda
+                    optionButton.textContent = `${optionLetters[i]}. ${option}`;
+                    optionButton.dataset.option = option;
+                    optionsContainer.appendChild(optionButton);
+
+                    optionButton.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        handleAnswer(index, option, questionCard);
+                    });
+                });
+                questionCard.appendChild(optionsContainer);
+
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback hidden';
+                questionCard.appendChild(feedbackDiv);
+
+                quizContainer.appendChild(questionCard);
+
+                // Restaurar estado si ya fue respondida
+                if (userAnswers[index] !== null) {
+                    const selectedOption = userAnswers[index];
+                    const isCorrect = (selectedOption === q.answer);
+                    
+                    if (isCorrect) {
+                        questionCard.classList.add('correct');
+                        feedbackDiv.textContent = '¡Correcto!';
+                        feedbackDiv.classList.add('correct-text');
+                    } else {
+                        questionCard.classList.add('incorrect');
+                        feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${q.answer}`;
+                        feedbackDiv.classList.add('incorrect-text');
+                    }
+                    feedbackDiv.classList.remove('hidden');
+                    questionCard.classList.add('answered');
+                    
+                    Array.from(optionsContainer.children).forEach(btn => {
+                        btn.disabled = true;
+                        if (btn.dataset.option === selectedOption) {
+                            btn.classList.add('bg-blue-200');
+                        }
+                    });
+                }
+            } else {
+                // Si no hay más preguntas, mostrar un mensaje o los resultados finales
+                quizContainer.innerHTML = '<p class="text-center text-xl font-semibold">¡Has completado todas las preguntas!</p>';
+                document.getElementById('show-results-button').classList.remove('hidden');
+            }
+            updateNavigationButtons();
+            console.log("Pregunta renderizada:", currentQuestionIndex + 1);
+        }
+
+        // Manejar la respuesta del usuario
+        function handleAnswer(questionIndex, selectedOption, questionCardElement) {
+            if (userAnswers[questionIndex] !== null) {
+                console.log("Pregunta ya respondida.");
+                return;
+            }
+
+            const question = displayQuestions[questionIndex]; // Usar displayQuestions
+            userAnswers[questionIndex] = selectedOption;
+            saveQuizState();
+            console.log(`Respuesta guardada para pregunta ${questionIndex + 1}: ${selectedOption}`);
+
+            const feedbackDiv = questionCardElement.querySelector('.feedback');
+            const optionsContainer = questionCardElement.querySelector('.options-column'); // Usar la clase correcta
+
+            if (selectedOption === question.answer) {
+                questionCardElement.classList.add('correct');
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.classList.add('correct-text');
+                console.log("Respuesta Correcta.");
+            } else {
+                questionCardElement.classList.add('incorrect');
+                feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${question.answer}`;
+                feedbackDiv.classList.add('incorrect-text');
+                console.log("Respuesta Incorrecta.");
+            }
+            feedbackDiv.classList.remove('hidden');
+            questionCardElement.classList.add('answered');
+
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.disabled = true;
+                if (btn.dataset.option === selectedOption) {
+                    btn.classList.add('bg-blue-200');
+                }
+            });
+            updateNavigationButtons();
+        }
+
+        // Actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            const prevButton = document.getElementById('prev-button');
+            const nextButton = document.getElementById('next-button');
+            const showResultsButton = document.getElementById('show-results-button');
+
+            prevButton.disabled = (currentQuestionIndex === 0);
+            
+            if (currentQuestionIndex >= displayQuestions.length -1) { // Última pregunta o ya completado
+                nextButton.classList.add('hidden');
+                showResultsButton.classList.remove('hidden');
+            } else {
+                nextButton.classList.remove('hidden');
+                showResultsButton.classList.add('hidden');
+            }
+
+            // Si todas las preguntas están respondidas, mostrar el botón de resultados
+            const allAnswered = userAnswers.every(answer => answer !== null);
+            if (allAnswered) {
+                showResultsButton.classList.remove('hidden');
+                nextButton.classList.add('hidden'); // Ocultar siguiente si ya está todo respondido
+            }
+            console.log("Botones de navegación actualizados.");
+        }
+
+        // Navegar a la pregunta anterior
+        document.getElementById('prev-button').addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveQuizState();
+                renderCurrentQuestion();
+                console.log("Navegando a pregunta anterior:", currentQuestionIndex + 1);
+            }
+        });
+
+        // Navegar a la pregunta siguiente
+        document.getElementById('next-button').addEventListener('click', () => {
+            if (currentQuestionIndex < displayQuestions.length - 1) {
+                currentQuestionIndex++;
+                saveQuizState();
+                renderCurrentQuestion();
+                console.log("Navegando a pregunta siguiente:", currentQuestionIndex + 1);
+            }
+        });
+
+        // Reiniciar el test
+        document.getElementById('reset-button').addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres reiniciar el test? Se borrarán todas tus respuestas.')) {
+                console.log("Confirmación de reinicio aceptada.");
+                // 1. Limpiar LocalStorage
+                localStorage.removeItem('quizUserAnswers');
+                localStorage.removeItem('quizCurrentQuestionIndex');
+                localStorage.removeItem('quizDisplayQuestions'); 
+                console.log("LocalStorage limpiado.");
+                
+                // 2. Reinicializar las variables de estado en memoria
+                displayQuestions = shuffleArray([...originalQuestions]); // Crear un nuevo orden mezclado
+                userAnswers = new Array(displayQuestions.length).fill(null); // Resetear respuestas
+                currentQuestionIndex = 0; // Volver a la primera pregunta
+                console.log("Variables de estado en memoria reinicializadas.");
+                
+                // 3. Guardar el nuevo estado inicial en LocalStorage
+                saveQuizState(); // Esto guardará el nuevo displayQuestions
+                
+                // 4. Renderizar la primera pregunta del nuevo test
+                renderCurrentQuestion(); 
+                console.log("Primera pregunta renderizada después del reinicio.");
+                
+                // 5. Ocultar resultados y actualizar botones de navegación
+                document.getElementById('results').classList.add('hidden');
+                updateNavigationButtons();
+                console.log("Resultados ocultos y botones de navegación actualizados después del reinicio.");
+
+                console.log("Test reiniciado. Nuevo estado:", { displayQuestions, userAnswers, currentQuestionIndex });
+                console.log("Primeras 5 preguntas después del reinicio:", displayQuestions.slice(0, 5).map(q => q.question));
+            } else {
+                console.log("Reinicio cancelado.");
+            }
+        });
+
+        // Mostrar resultados
+        document.getElementById('show-results-button').addEventListener('click', () => {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            displayQuestions.forEach((q, index) => { // Iterar sobre displayQuestions
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === q.answer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('incorrect-count').textContent = incorrectCount;
+            document.getElementById('unanswered-count').textContent = unansweredCount;
+            document.getElementById('results').classList.remove('hidden');
+            console.log("Resultados mostrados.");
+        });
+
+        // Inicializar el test al cargar la página
+        window.onload = () => {
+            loadQuizState();
+            renderCurrentQuestion();
+            console.log("Página cargada y test inicializado.");
+        };
+    </script>
+</body>
+</html>
