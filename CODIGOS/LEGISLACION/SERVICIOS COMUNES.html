@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Servicios Comunes</title>
+    <!-- Carga de Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos generales del cuerpo y el contenedor del quiz */
+        body {
+            font-family: 'Inter', sans-serif; /* Fuente Inter para una mejor legibilidad */
+            background-color: #f0f4f8; /* Color de fondo suave */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alineación superior para el contenido */
+            min-height: 100vh; /* Altura mínima para ocupar toda la pantalla */
+            padding: 20px; /* Espaciado alrededor del contenido */
+            box-sizing: border-box; /* Incluye padding y border en el tamaño total */
+        }
+        .quiz-container {
+            background-color: #ffffff; /* Fondo blanco para el contenedor del quiz */
+            border-radius: 15px; /* Bordes redondeados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra suave */
+            padding: 30px; /* Espaciado interno */
+            width: 100%; /* Ancho completo */
+            max-width: 800px; /* Ancho máximo para evitar que se extienda demasiado */
+            display: flex;
+            flex-direction: column; /* Elementos apilados verticalmente */
+            gap: 20px; /* Espacio entre elementos */
+        }
+        .question-text {
+            font-size: 1.5rem; /* Tamaño de fuente para la pregunta */
+            font-weight: bold; /* Texto en negrita */
+            color: #334155; /* Color de texto oscuro */
+            margin-bottom: 20px; /* Margen inferior */
+            text-align: center; /* Texto centrado */
+        }
+        .options-container button {
+            width: 100%; /* Botones de opción ocupan todo el ancho */
+            padding: 15px 20px; /* Espaciado interno */
+            margin-bottom: 10px; /* Margen inferior */
+            border-radius: 10px; /* Bordes redondeados */
+            background-color: #e2e8f0; /* Color de fondo de los botones */
+            color: #475569; /* Color de texto de los botones */
+            font-size: 1.1rem; /* Tamaño de fuente */
+            text-align: left; /* Alineación de texto a la izquierda */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Transiciones suaves */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra ligera */
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #cbd5e1; /* Cambio de color al pasar el ratón */
+            transform: translateY(-2px); /* Efecto de elevación */
+        }
+        .options-container button.correct {
+            background-color: #d1fae5; /* Verde para la respuesta correcta */
+            color: #065f46; /* Texto verde oscuro */
+            border: 2px solid #34d399; /* Borde verde */
+            font-weight: bold; /* Texto en negrita */
+        }
+        .options-container button.incorrect {
+            background-color: #fee2e2; /* Rojo para la respuesta incorrecta */
+            color: #991b1b; /* Texto rojo oscuro */
+            border: 2px solid #ef4444; /* Borde rojo */
+            font-weight: bold; /* Texto en negrita */
+        }
+        .feedback-message {
+            margin-top: 15px; /* Margen superior */
+            font-size: 1.1rem; /* Tamaño de fuente */
+            text-align: center; /* Texto centrado */
+            font-weight: bold; /* Texto en negrita */
+        }
+        .feedback-message.correct-feedback {
+            color: #065f46; /* Color verde para el feedback correcto */
+        }
+        .feedback-message.incorrect-feedback {
+            color: #991b1b; /* Color rojo para el feedback incorrecto */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between; /* Botones distribuidos en los extremos */
+            margin-top: 20px; /* Margen superior */
+        }
+        .navigation-buttons button {
+            padding: 12px 25px; /* Espaciado interno */
+            border-radius: 10px; /* Bordes redondeados */
+            font-size: 1.1rem; /* Tamaño de fuente */
+            font-weight: bold; /* Texto en negrita */
+            cursor: pointer; /* Cursor de puntero */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Transiciones suaves */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra */
+        }
+        .navigation-buttons button.next-button {
+            background-color: #3b82f6; /* Azul para el botón Siguiente */
+            color: #ffffff; /* Texto blanco */
+        }
+        .navigation-buttons button.next-button:hover {
+            background-color: #2563eb; /* Azul más oscuro al pasar el ratón */
+            transform: translateY(-2px); /* Efecto de elevación */
+        }
+        .navigation-buttons button.prev-button {
+            background-color: #64748b; /* Gris para el botón Anterior */
+            color: #ffffff; /* Texto blanco */
+        }
+        .navigation-buttons button.prev-button:hover {
+            background-color: #475569; /* Gris más oscuro al pasar el ratón */
+            transform: translateY(-2px); /* Efecto de elevación */
+        }
+        .navigation-buttons button:disabled {
+            background-color: #94a3b8; /* Color gris para botones deshabilitados */
+            cursor: not-allowed; /* Cursor de no permitido */
+            box-shadow: none; /* Sin sombra */
+            transform: none; /* Sin transformación */
+        }
+        .progress-indicator {
+            text-align: center; /* Texto centrado */
+            font-size: 1rem; /* Tamaño de fuente */
+            color: #64748b; /* Color de texto gris */
+            margin-top: 10px; /* Margen superior */
+        }
+        .restart-button {
+            background-color: #ef4444; /* Rojo para el botón de reiniciar */
+            color: #ffffff; /* Texto blanco */
+            padding: 10px 20px; /* Espaciado interno */
+            border-radius: 10px; /* Bordes redondeados */
+            font-size: 1rem; /* Tamaño de fuente */
+            font-weight: bold; /* Texto en negrita */
+            cursor: pointer; /* Cursor de puntero */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Transiciones suaves */
+            margin-top: 20px; /* Margen superior */
+            align-self: center; /* Centrar el botón */
+        }
+        .restart-button:hover {
+            background-color: #dc2626; /* Rojo más oscuro al pasar el ratón */
+            transform: translateY(-2px); /* Efecto de elevación */
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div id="question-display" class="question-text"></div>
+        <div id="options-container" class="options-container"></div>
+        <div id="feedback-message" class="feedback-message"></div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="prev-button" disabled>Anterior</button>
+            <button id="next-button" class="next-button" disabled>Siguiente</button>
+        </div>
+        <div id="progress-indicator" class="progress-indicator"></div>
+        <button id="restart-button" class="restart-button">Reiniciar Test</button>
+    </div>
+
+    <script>
+        // Datos del quiz extraídos del documento
+        const quizData = [
+            {
+                question: "¿Qué tipo de recursos son los \"Servicios Comunes\" puestos a disposición de las Administraciones Públicas (AAPP)?",
+                options: {
+                    a: "Recursos de carácter vertical o elementos específicos.",
+                    b: "Recursos de carácter horizontal o elementos comunes.",
+                    c: "Recursos exclusivos para la Administración General del Estado (AGE).",
+                    d: "Recursos que solo incluyen soluciones on-premise."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué tipo de soluciones se incluyen dentro de los Servicios Comunes, según la información proporcionada?",
+                options: {
+                    a: "Únicamente soluciones locales.",
+                    b: "Soluciones de hardware.",
+                    c: "Soluciones cloud.",
+                    d: "Soluciones sectoriales."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Cuál de los siguientes planes es anterior al Plan de Digitalización de las AAPP (2021-2025)?",
+                options: {
+                    a: "Plan de Recuperación de la UE.",
+                    b: "Plan de Transformación Digital de la AGE y sus OOPP (2016-2020).",
+                    c: "Plan de Modernización Administrativa (2010-2015).",
+                    d: "Plan de Impulso a la e-Administración (2006-2009)."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿De dónde proviene el dinero para el Plan de Digitalización de las AAPP (2021-2025)?",
+                options: {
+                    a: "De los presupuestos generales del Estado.",
+                    b: "De fondos propios de cada Ministerio.",
+                    c: "Del Plan de Recuperación de la UE.",
+                    d: "De la Comisión Europea, excluyendo el Plan de Recuperación."
+                },
+                answer: "c"
+            },
+            {
+                question: "Según el esquema de gobernanza, ¿quién preside la Comisión de Estrategia TIC (CETIC) en su Pleno?",
+                options: {
+                    a: "El Secretario General.",
+                    b: "El Presidente de la SGAD.",
+                    c: "El Ministro MAETD.",
+                    d: "El Comité de Dirección TIC."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Quién preside el Comité Ejecutivo de la Comisión de Estrategia TIC?",
+                options: {
+                    a: "El Secretario General.",
+                    b: "El Presidente de la SGAD.",
+                    c: "El Ministro MAETD.",
+                    d: "El Secretario de Estado de Digitalización e Inteligencia Artificial."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué informe reconoció el papel fundamental de las TIC y aconsejó el impulso de los servicios comunes?",
+                options: {
+                    a: "El informe del Plan de Digitalización de las AAPP.",
+                    b: "El informe de la Comisión para la Reforma de las AAPP (CORA).",
+                    c: "El informe de la Secretaría General de Administración Digital (SGAD).",
+                    d: "El informe del Real Instituto y Observatorio de la Armada."
+                },
+                answer: "b"
+            },
+            {
+                question: "El informe CORA dio lugar a un Real Decreto que establece la organización e instrumentos operativos de las TIC en la AGE. ¿Cuál es ese Real Decreto?",
+                options: {
+                    a: "RD 3/2010.",
+                    b: "RD 806/2014.",
+                    c: "RD 4/2010.",
+                    d: "RD 2/2020."
+                },
+                answer: "b"
+            },
+            {
+                question: "Según el RD 806/2014, ¿qué debe confeccionarse en relación con los servicios comunes?",
+                options: {
+                    a: "Un inventario de aplicaciones sectoriales.",
+                    b: "Un catálogo de servicios comunes, el Catálogo de Servicios de la Administración Digital.",
+                    c: "Un registro de organismos públicos.",
+                    d: "Un listado de proveedores TIC."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué organismos dio lugar el RD 806/2014, relacionados con la gobernanza de las TIC?",
+                options: {
+                    a: "La Dirección General de la Policía y el Real Instituto y Observatorio de la Armada.",
+                    b: "La CETIC y la SGAD (antes DTIC).",
+                    c: "La CORA y el Ministerio MAETD.",
+                    d: "La CMAD y el Plan de Transformación Digital."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Quién dirige la Secretaría General de Administración Digital (SGAD)?",
+                options: {
+                    a: "El Ministro MAETD.",
+                    b: "El Secretario General.",
+                    c: "El Presidente de la Comisión de Estrategia TIC.",
+                    d: "El Subsecretario de Política Territorial y Función Pública."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué órgano se encarga de elaborar el plan de acción para la transformación digital de cada Ministerio?",
+                options: {
+                    a: "La Secretaría General de Administración Digital (SGAD).",
+                    b: "La Comisión de Estrategia TIC (CETIC).",
+                    c: "La Comisión Ministerial para la Administración Digital (CMAD).",
+                    d: "El Comité Ejecutivo de la SGAD."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Cuál es la denominación anterior de la actual Agencia Estatal de Administración Digital, según el documento?",
+                options: {
+                    a: "SGAD.",
+                    b: "CETIC.",
+                    c: "DTIC.",
+                    d: "CORA."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué establece el artículo 10 del RD 806/2014 sobre los medios y servicios compartidos?",
+                options: {
+                    a: "Su uso es opcional y complementario a los medios particulares.",
+                    b: "Su uso es obligatorio y sustitutivo respecto a los medios y servicios particulares.",
+                    c: "Solo son de uso compartido si son de carácter sectorial.",
+                    d: "Su declaración de uso compartido depende del interés particular de cada unidad."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué característica principal tienen los medios y servicios TIC de la AGE y sus OOPP para ser declarados de uso compartido?",
+                options: {
+                    a: "Deben ser específicos para una unidad administrativa.",
+                    b: "Deben responder a necesidades transversales de un número significativo de unidades administrativas.",
+                    c: "Deben ser desarrollados por empresas privadas.",
+                    d: "Deben ser de bajo coste."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un servicio común de infraestructuras, según el listado proporcionado?",
+                options: {
+                    a: "Servicio unificado de telecomunicaciones.",
+                    b: "Servicio de seguridad gestionada.",
+                    c: "Servicio de gestión de nómina.",
+                    d: "Servicio de alojamiento de infraestructuras TIC."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Cuál de los siguientes es un servicio común de infraestructuras relacionado con el alojamiento?",
+                options: {
+                    a: "Servicio de gestión del registro.",
+                    b: "Servicio de nube híbrida (NubeSARA).",
+                    c: "Servicio multicanal de atención al ciudadano.",
+                    d: "Servicio de gestión de notificaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio común está relacionado con la gestión de personal, según la información proporcionada?",
+                options: {
+                    a: "Servicio de gestión de nómina.",
+                    b: "Servicio de correo electrónico unificado.",
+                    c: "Servicio de gestión del registro.",
+                    d: "Servicio de gestión de notificaciones."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué servicio común se encarga de la gestión económico-presupuestaria?",
+                options: {
+                    a: "Servicio integrado de gestión de personal.",
+                    b: "Servicio común de gestión económico-presupuestaria.",
+                    c: "Servicio multicanal de atención al ciudadano.",
+                    d: "Servicio de seguridad gestionada."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio común se relaciona con la generación y validación de firmas electrónicas?",
+                options: {
+                    a: "Servicio de gestión de expediente y documento electrónico.",
+                    b: "Servicio común de generación y validación de firmas electrónicas.",
+                    c: "Servicio de gestión de archivo electrónico.",
+                    d: "Servicio de alojamiento de infraestructuras TIC."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es el objetivo principal del Catálogo de Servicios de Administración Digital de la SGAD?",
+                options: {
+                    a: "Restringir el acceso a los servicios comunes a determinadas AAPP.",
+                    b: "Difundir los servicios comunes, infraestructuras y otras soluciones disponibles para las AAPP.",
+                    c: "Centralizar la contratación de servicios TIC para toda la AGE.",
+                    d: "Evaluar la eficiencia de los servicios sectoriales."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicios presta la Red Corporativa Nacional Multiservicio?",
+                options: {
+                    a: "Únicamente servicio de voz.",
+                    b: "Servicio de voz, datos y multimedia.",
+                    c: "Solo servicios de datos.",
+                    d: "Solo servicios de telefonía móvil."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué incluye el Servicio Unificado de Telecomunicaciones en relación con las comunicaciones móviles?",
+                options: {
+                    a: "Únicamente dispositivos móviles.",
+                    b: "Dispositivos móviles y plataforma corporativa de gestión de dispositivos móviles.",
+                    c: "Redes WAN de la AGE.",
+                    d: "Servicios de acceso a Internet."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es la Red SARA?",
+                options: {
+                    a: "Una red de comunicaciones interna de un solo Ministerio.",
+                    b: "Un conjunto de infraestructuras de comunicaciones y servicios básicos que conecta las redes de las AAPP Españolas e Instituciones Europeas.",
+                    c: "Un sistema de gestión de archivos electrónicos.",
+                    d: "Una plataforma de firma electrónica."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cómo se efectúa el acceso a la Red SARA?",
+                options: {
+                    a: "Directamente desde cualquier oficina pública.",
+                    b: "A través de los Puntos de Presencia (PdP).",
+                    c: "Mediante un acceso web público sin autenticación.",
+                    d: "Exclusivamente a través de la Red Internacional."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es un Punto de Presencia (PdP) en el contexto de la Red SARA?",
+                options: {
+                    a: "Una sede sin conexión directa a SARA.",
+                    b: "Una sede con conexión directa a SARA.",
+                    c: "Un servidor DNS.",
+                    d: "Un Centro de Soporte Red SARA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cómo se realiza la conexión a la Red SARA a través de los Proveedores de Acceso a la Red SARA (PAS)?",
+                options: {
+                    a: "Mediante una conexión VPN directa sin intermediarios.",
+                    b: "Mediante la instalación de un Área de Conexión (AC) en sus dependencias.",
+                    c: "Exclusivamente a través de la Red IRIS.",
+                    d: "Conectando directamente al MPTAP."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué contiene el Área de Conexión (AC) para la integración en la Red SARA?",
+                options: {
+                    a: "Únicamente un servidor de correo (SMTP).",
+                    b: "Un RAC con un DNS, Proxy, Switch, SMTP, IDS, IPS, Firewall, Proxy Inverso, etc. Es una DMZ.",
+                    c: "Solo el software de gestión de usuarios.",
+                    d: "Unicamente un cortafuegos externo."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué red ofrece una infraestructura que protege las transmisiones entre administraciones nacionales y europeas?",
+                options: {
+                    a: "Red SARA.",
+                    b: "Red IRIS.",
+                    c: "Red s-TESTA.",
+                    d: "Red Corporativa Nacional Multiservicio."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Cómo se conectan las universidades públicas a la Red SARA?",
+                options: {
+                    a: "Directamente.",
+                    b: "A través de la red IRIS.",
+                    c: "Mediante un proveedor de acceso genérico.",
+                    d: "No tienen conexión a la Red SARA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué característica de SARA garantiza la encriptación de las comunicaciones?",
+                options: {
+                    a: "Fiabilidad.",
+                    b: "Seguridad, estableciendo VPN hacia el resto de sedes, cifrando las comunicaciones con túneles.",
+                    c: "Capacidad.",
+                    d: "Calidad de Servicio."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Con qué se sincronizan los servicios electrónicos públicos, según el ENI, para garantizar la certidumbre de los plazos administrativos?",
+                options: {
+                    a: "Con la hora estándar internacional.",
+                    b: "Con la hora oficial.",
+                    c: "Con la hora del servidor local.",
+                    d: "Con la hora del operador de telecomunicaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Quién distribuye la Hora Oficial Española a las AAPP conectadas a SARA?",
+                options: {
+                    a: "El Real Instituto y Observatorio de la Armada directamente.",
+                    b: "SARA, mediante el protocolo NTP.",
+                    c: "La SGAD.",
+                    d: "La Comisión de Estrategia TIC."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es Cl@ve?",
+                options: {
+                    a: "Un sistema de firma en la nube.",
+                    b: "Una plataforma de validación de certificados.",
+                    c: "Una identificación digital del ciudadano frente a las AAPP.",
+                    d: "Un servicio de atención al ciudadano."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué plataforma permite la firma en la nube utilizando certificados centralizados generados por la Dirección General de la Policía?",
+                options: {
+                    a: "@Firma.",
+                    b: "AutoFirma.",
+                    c: "Cl@ve firma.",
+                    d: "FIRe."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué plataforma de validación de certificados y firmas es de uso interno y ofrece un servicio Web API SOAP?",
+                options: {
+                    a: "Valide.",
+                    b: "@Firma.",
+                    c: "Cl@ve.",
+                    d: "FIRe."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué solución integral de firma abarca entornos de escritorio (AutoFirma), aplicaciones móviles y la nube (a través de Cl@ve firma)?",
+                options: {
+                    a: "Portafirmas.",
+                    b: "Valide.",
+                    c: "FIRe.",
+                    d: "Integr@."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué es Portafirmas?",
+                options: {
+                    a: "Una aplicación para generar copias auténticas.",
+                    b: "Una solución de firma electrónica para la Administración en los flujos de trabajo.",
+                    c: "Un servicio de sellado de tiempo.",
+                    d: "Un portal de validación de firmas."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué entidad es la autoridad de sellado electrónico de tiempo?",
+                options: {
+                    a: "SGAD.",
+                    b: "TS@.",
+                    c: "AEAT.",
+                    d: "Dirección General de la Policía."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué portal permite la validación de firmas y certificados electrónicos para el usuario final?",
+                options: {
+                    a: "@Firma.",
+                    b: "Valide.",
+                    c: "Cl@ve.",
+                    d: "FIRe."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué librería y servicio se utiliza para la integración con @firma y la firma en servidor?",
+                options: {
+                    a: "AutoFirma.",
+                    b: "eVisor.",
+                    c: "Integr@.",
+                    d: "TS@."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué aplicación de escritorio es utilizada por el ciudadano para firmar documentos?",
+                options: {
+                    a: "Portafirmas.",
+                    b: "AutoFirma.",
+                    c: "eVisor.",
+                    d: "Valide."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué aplicación web genera copias auténticas e informes de firma en PDF?",
+                options: {
+                    a: "AutoFirma.",
+                    b: "eVisor.",
+                    c: "Portafirmas.",
+                    d: "Valide."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema europeo se encarga del reconocimiento de identidades electrónicas?",
+                options: {
+                    a: "STORK.",
+                    b: "eIDAS.",
+                    c: "Cl@ve.",
+                    d: "@Firma."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la infraestructura relacionada con el Sistema de Interconexión de Registros?",
+                options: {
+                    a: "REC.",
+                    b: "GEISER.",
+                    c: "SIR.",
+                    d: "ORVE."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué registro es usable por el ciudadano y se conoce como Registro Electrónico Común?",
+                options: {
+                    a: "GEISER.",
+                    b: "ORVE.",
+                    c: "REC.",
+                    d: "REGAGE."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué sistema de gestión integral de servicios de registro permite tramitar asientos registrales de entrada?",
+                options: {
+                    a: "ORVE.",
+                    b: "REGAGE.",
+                    c: "GEISER.",
+                    d: "REC."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué Oficina de Registro Virtual (ORVE) se menciona que tiene menos funcionalidad que GEISER y es usada por las EELL?",
+                options: {
+                    a: "REGAGE.",
+                    b: "REC.",
+                    c: "ORVE.",
+                    d: "SIR."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Dónde descansan todos los asientos registrales generados por GEISER, ORVE, REC y otras aplicaciones?",
+                options: {
+                    a: "En el SIR.",
+                    b: "En el Registro Electrónico de la AGE (REGAGE).",
+                    c: "En Apodera.",
+                    d: "En Habilita."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué registro electrónico permite apoderamientos a terceros para trámites administrativos?",
+                options: {
+                    a: "Habilita.",
+                    b: "Notaría.",
+                    c: "Apodera (Registro electrónico de Apoderamientos - REA).",
+                    d: "Representa."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué registro de funcionarios habilitados sirve para que ayuden a ciudadanos en trámites electrónicos?",
+                options: {
+                    a: "Apodera.",
+                    b: "Notaría.",
+                    c: "Habilita (Registro de Funcionarios Habilitados - RFH).",
+                    d: "Representa."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué punto de acceso general es la puerta de entrada digital de los ciudadanos a las AAPP?",
+                options: {
+                    a: "Red 060.",
+                    b: "PAG.",
+                    c: "Portal 060.es.",
+                    d: "Carpeta Ciudadana."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué característica tiene la Red 060 en cuanto a su alcance?",
+                options: {
+                    a: "Es exclusiva de la AGE.",
+                    b: "Es multinivel (información, registro y tramitación) y multiadministrativa (AGE, CCAA y EELL).",
+                    c: "Se limita a la atención telefónica.",
+                    d: "Es únicamente para información."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un canal de la Red 060?",
+                options: {
+                    a: "Oficinas 060.",
+                    b: "Teléfono 060.",
+                    c: "@060gobes (cuenta de Twitter).",
+                    d: "Correo electrónico personal del ciudadano."
+                },
+                answer: "d"
+            },
+            {
+                question: "¿Qué portal web de la Red 060 ofrece acceso a procedimientos y servicios electrónicos agrupados por materias?",
+                options: {
+                    a: "www.060.es.",
+                    b: "www.pag.gob.es.",
+                    c: "www.redsara.es.",
+                    d: "www.aeat.es."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿A qué pertenece la Carpeta Ciudadana y qué facilita?",
+                options: {
+                    a: "A la Red 060 y facilita el acceso a información general.",
+                    b: "Al PAG y facilita la relación del ciudadano con las AAPP.",
+                    c: "Al SIR y permite el intercambio de registros.",
+                    d: "Al FACE y centraliza facturas electrónicas."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué permite la Carpeta Ciudadana en relación con los datos del ciudadano en poder de la Administración?",
+                options: {
+                    a: "Solo consultarlos.",
+                    b: "Conocer y acceder a ellos, pudiendo obtener justificante con CSV.",
+                    c: "Modificarlos directamente.",
+                    d: "No permite el acceso a datos personales."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué punto de entrada centralizado se usa para facturas electrónicas de proveedores a las AAPP?",
+                options: {
+                    a: "CIR.",
+                    b: "FACE.",
+                    c: "ORVE.",
+                    d: "REGAGE."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio facilita a las EELL la infraestructura para el cumplimiento de la Ley 19/2013 de transparencia?",
+                options: {
+                    a: "Transparencia Local.",
+                    b: "PAG.",
+                    c: "Red 060.",
+                    d: "Carpeta Ciudadana."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué servicio permite un trámite único para comunicar el cambio de domicilio de ciudadanos a varias EEPP?",
+                options: {
+                    a: "IPS.",
+                    b: "SCCD - Servicio de Comunicación de Cambio de Domicilio.",
+                    c: "Cita Previa.",
+                    d: "RED 060."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué herramienta para organismos de la AGE permite a los ciudadanos inscribirse en pruebas selectivas?",
+                options: {
+                    a: "Cita Previa.",
+                    b: "SCCD.",
+                    c: "IPS - Inscripción de Pruebas Selectivas.",
+                    d: "ORVE."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué permite la Plataforma de Intermediación de Datos (PID)?",
+                options: {
+                    a: "La firma electrónica de documentos.",
+                    b: "El intercambio de datos de ciudadanos necesarios para trámites administrativos.",
+                    c: "La gestión de notificaciones.",
+                    d: "La publicación de datos abiertos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué soluciones permiten a las AAPP solicitar o proporcionar datos a otros organismos, según la NTI, y son usadas por la PID?",
+                options: {
+                    a: "Corinto.",
+                    b: "Portfolio SCSPv3 (Sustitución de Certificados en Soporte Papel).",
+                    c: "SIA.",
+                    d: "DIR3."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema es una relación de procedimientos y servicios de la AGE y las diferentes AAPP participantes?",
+                options: {
+                    a: "DIR3.",
+                    b: "SIA - Sistema de Información Administrativa.",
+                    c: "Corinto.",
+                    d: "PID."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el Directorio Común de Unidades (DIR3)?",
+                options: {
+                    a: "Un inventario unificado y común a toda la Administración de unidades/OOPP, oficinas asociadas, etc.",
+                    b: "Un registro de personal.",
+                    c: "Un sistema de gestión de expedientes.",
+                    d: "Una plataforma de firma electrónica."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué es la Dirección Electrónica Habilitada única (DEHú)?",
+                options: {
+                    a: "Un sistema de envío de SMS.",
+                    b: "Un punto único de notificaciones para todas las AAPP.",
+                    c: "Una herramienta de gestión de citas.",
+                    d: "Un portal de datos abiertos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué plataforma de mensajería permite integrar en la tramitación avisos a ciudadanos por SMS o correo electrónico?",
+                options: {
+                    a: "Notifica.",
+                    b: "SIM.",
+                    c: "DEHú.",
+                    d: "DEH."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué sistema se encarga de la generación y custodia de documentos y expedientes electrónicos según el ENI?",
+                options: {
+                    a: "G-InSiDe.",
+                    b: "InSiDe - Infraestructura y Sistemas de Documentación Electrónica.",
+                    c: "Archive.",
+                    d: "ACCEDA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema genera documentos y expedientes, pero no los almacena, y convierte expedientes electrónicos a otro formato?",
+                options: {
+                    a: "InSiDe.",
+                    b: "G-InSiDe.",
+                    c: "Archive.",
+                    d: "ACCEDA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio se encarga del archivado definitivo de expedientes y documentos electrónicos cerrados?",
+                options: {
+                    a: "InSiDe.",
+                    b: "G-InSiDe.",
+                    c: "Archive - Archivo definitivo de expedientes y documentos.",
+                    d: "ACCEDA."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué plataforma ofrece una Sede Electrónica básica con diseñador de formularios y tramitador de expedientes?",
+                options: {
+                    a: "PAGOS.",
+                    b: "ACCEDA - Sede y gestión electrónica de procedimientos.",
+                    c: "PAe.",
+                    d: "OBSAE."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué pasarela permite incorporar el pago de tasas en la implementación digital de trámites administrativos?",
+                options: {
+                    a: "AEAT.",
+                    b: "PAGOS - Pasarela de pagos.",
+                    c: "ACCEDA.",
+                    d: "DIR3."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué portal es un punto centralizado para acceder a información sobre Administración Electrónica?",
+                options: {
+                    a: "OBSAE.",
+                    b: "PAe - Portal de Administración Electrónica.",
+                    c: "CTT.",
+                    d: "datos.gob.es."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué observatorio se dedica al análisis y difusión de la situación de la Administración Electrónica en España?",
+                options: {
+                    a: "CTT.",
+                    b: "CISE.",
+                    c: "OBSAE - Observatorio de Administración Electrónica.",
+                    d: "PAe."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué publica el Centro de Transferencia de Tecnología (CTT)?",
+                options: {
+                    a: "El Catálogo Nacional de datos abiertos.",
+                    b: "El directorio general de aplicaciones y soluciones para su reutilización.",
+                    c: "Los modelos de datos de intercambio.",
+                    d: "Informes sobre accesibilidad web."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué publica el Centro de Interoperabilidad Semántica (CISE)?",
+                options: {
+                    a: "El directorio general de aplicaciones.",
+                    b: "Los modelos de datos de intercambio según el ENI.",
+                    c: "El Catálogo Nacional de datos abiertos.",
+                    d: "Estadísticas de reutilización."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué portal alberga el Catálogo Nacional de datos abiertos?",
+                options: {
+                    a: "CTT.",
+                    b: "CISE.",
+                    c: "Portal datos.gob.es.",
+                    d: "PAe."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué utilidad se encarga de la traducción automática de portales a idiomas cooficiales, inglés, francés y portugués a partir del castellano?",
+                options: {
+                    a: "EGEO.",
+                    b: "OAW.",
+                    c: "PLATA - Plataforma de Traducción Automática.",
+                    d: "FORMA."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué utilidad permite la creación de mapas interactivos para su presentación en portales web?",
+                options: {
+                    a: "PLATA.",
+                    b: "EGEO - España en Georreferenciación.",
+                    c: "OAW.",
+                    d: "FORMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio de diagnóstico en línea realiza análisis automáticos de accesibilidad basados en la norma UNE-EN 301549:2022?",
+                options: {
+                    a: "EGEO.",
+                    b: "OAW.",
+                    c: "PLATA.",
+                    d: "FORMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué utilidad permite la generación de formularios y encuestas para su publicación en portales web?",
+                options: {
+                    a: "OAW.",
+                    b: "FORMA - Formularios para publicación web.",
+                    c: "BUSCADORAGE.",
+                    d: "RUN."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué herramienta se encarga de la gestión de identidades de los empleados públicos de las entidades locales o autonómicas?",
+                options: {
+                    a: "Portales AGE, EELL y CCAA.",
+                    b: "BUSCADORAGE.",
+                    c: "RUN.",
+                    d: "FORMA."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué utilidad permite la generación de URLs cortas para su uso en mensajería instantánea, redes sociales, correos electrónicos, etc.?",
+                options: {
+                    a: "BUSCADORAGE.",
+                    b: "RUN.",
+                    c: "OAW.",
+                    d: "FORMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio de correo y agenda electrónica centralizado evita la infraestructura propia?",
+                options: {
+                    a: "REÚNETE.",
+                    b: "ALMACÉN.",
+                    c: "Correo electrónico multidominio - correo.gob.es.",
+                    d: "NEDAES."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué servicio común se encarga de las reuniones virtuales y herramientas colaborativas para el trabajo en equipo?",
+                options: {
+                    a: "ALMACÉN.",
+                    b: "REÚNETE.",
+                    c: "Correo electrónico multidominio.",
+                    d: "NEDAES."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio permite el envío y recepción de ficheros de gran tamaño?",
+                options: {
+                    a: "Correo electrónico multidominio.",
+                    b: "REÚNETE.",
+                    c: "ALMACÉN.",
+                    d: "NEDAES."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué sistema se encarga de la gestión completa de nómina, antes conocido como Baradal y RCP?",
+                options: {
+                    a: "SIGP.",
+                    b: "NEDAES - Nómina Estándar Descentralizada de la Administración del Estado.",
+                    c: "FUNCIONA.",
+                    d: "SERVINÓMINA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema gestiona los procedimientos de Recursos Humanos y está basado en Meta4?",
+                options: {
+                    a: "NEDAES.",
+                    b: "SIGP - Sistema Integrado de Gestión de Personal.",
+                    c: "FUNCIONA.",
+                    d: "TRAMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué portal es del empleado público y está especializado en asuntos de recursos humanos?",
+                options: {
+                    a: "SIGP.",
+                    b: "FUNCIONA.",
+                    c: "NEDAES.",
+                    d: "SERVINÓMINA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio permite la visualización de nóminas en PDF desde Funciona?",
+                options: {
+                    a: "NEDAES.",
+                    b: "SIGP.",
+                    c: "SERVINÓMINA.",
+                    d: "TRAMA."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué sistema realiza la inscripción y anotación de los actos relevantes de la vida administrativa de los empleados públicos?",
+                options: {
+                    a: "NEDAES.",
+                    b: "SIGP.",
+                    c: "Registro Central de Personal (RCP).",
+                    d: "TRAMA."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué sistema se encarga del control de presencia, gestión de permisos e incidencias (olvido de fichaje, visita médica, etc.)?",
+                options: {
+                    a: "NEDAES.",
+                    b: "SIGP.",
+                    c: "TRAMA.",
+                    d: "RCP."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué portal es un espacio de trabajo electrónico para los gestores de RRHH y gestiona las Relaciones de Puestos de Trabajo (RPT)?",
+                options: {
+                    a: "Portal SIRES.",
+                    b: "Portal CECIR.",
+                    c: "FUNCIONA.",
+                    d: "SERVINÓMINA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué portal está ubicado dentro de FUNCIONA y se usa para la transferencia de ficheros entre organismos y RRHH u obtener datos del RCP?",
+                options: {
+                    a: "Portal CECIR.",
+                    b: "Portal SIRES.",
+                    c: "NEDAES.",
+                    d: "TRAMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Quién impulsa y coordina el proceso de racionalización y transformación digital de la AGE y trabaja con el resto de AAPP para garantizar la interoperabilidad, eficacia y eficiencia?",
+                options: {
+                    a: "La Comisión de Estrategia TIC.",
+                    b: "El Secretario General.",
+                    c: "La Secretaría General de Administración Digital (SGAD).",
+                    d: "Los Ministerios."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué función tiene la S.G. de Infraestructuras y Operaciones dentro de la SGAD?",
+                options: {
+                    a: "Dirige la contratación TIC.",
+                    b: "Impulsa la digitalización de la Administración.",
+                    c: "Gestiona las infraestructuras y operaciones.",
+                    d: "Se encarga de la planificación y gobernanza."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Cuál es la función de la S.G. de Servicios Digitales para la Gestión dentro de la SGAD?",
+                options: {
+                    a: "Planificación y gobernanza de la Administración Digital.",
+                    b: "Presupuestos y Contratación TIC.",
+                    c: "Ciberseguridad.",
+                    d: "Servicios Digitales para la Gestión."
+                },
+                answer: "d"
+            },
+            {
+                question: "¿Qué supervisa la División de Planificación y Coordinación de Ciberseguridad?",
+                options: {
+                    a: "Los presupuestos.",
+                    b: "La ciberseguridad.",
+                    c: "La gobernanza.",
+                    d: "Las infraestructuras."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Recursos de carácter horizontal o elementos comunes\"?",
+                options: {
+                    a: "Recursos específicos para un Ministerio.",
+                    b: "Elementos comunes a disposición de las AAPP para su integración.",
+                    c: "Soluciones únicamente para la AGE.",
+                    d: "Recursos que no incluyen la nube."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es el rango de la Secretaría General de Administración Digital (SGAD)?",
+                options: {
+                    a: "Dirección General.",
+                    b: "Subsecretaría.",
+                    c: "Secretaría de Estado.",
+                    d: "Presidencia."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué tipo de red es la Red Corporativa Nacional Multiservicio?",
+                options: {
+                    a: "LAN.",
+                    b: "WAN.",
+                    c: "PAN.",
+                    d: "MAN."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué protocolo utiliza SARA para distribuir la Hora Oficial Española a las AAPP?",
+                options: {
+                    a: "HTTP.",
+                    b: "FTP.",
+                    c: "NTP.",
+                    d: "SMTP."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué se puede obtener a través de la Autoridad de Sellado de Tiempo, TS@?",
+                options: {
+                    a: "Acceso a la Carpeta Ciudadana.",
+                    b: "Prueba fehaciente de la existencia de un documento en la hora oficial.",
+                    c: "La firma electrónica de documentos.",
+                    d: "La validación de certificados."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es un IdP en el contexto de Cl@ve?",
+                options: {
+                    a: "Intercambiador de Documentos Públicos.",
+                    b: "Proveedor de identificación y autenticación.",
+                    c: "Integrador de Datos Personales.",
+                    d: "Interfaz de Programación de Aplicaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio permite la consulta de Poderes Notariales?",
+                options: {
+                    a: "Apodera.",
+                    b: "Habilita.",
+                    c: "Notaría.",
+                    d: "Representa."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un servicio de atención al ciudadano y empresa, según el documento?",
+                options: {
+                    a: "PAG.",
+                    b: "Red 060.",
+                    c: "Carpeta Ciudadana.",
+                    d: "SIGP."
+                },
+                answer: "d"
+            },
+            {
+                question: "¿Qué significa CORA?",
+                options: {
+                    a: "Comisión de Organización y Redes Administrativas.",
+                    b: "Comisión para la Reforma de las AAPP.",
+                    c: "Comité de Ordenación de Recursos Administrativos.",
+                    d: "Coordinadora de Redes y Aplicaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué son los \"servicios sectoriales\" en el contexto de las Entidades, Agencias y Organismos Públicos?",
+                options: {
+                    a: "Servicios comunes que utilizan todas las AAPP.",
+                    b: "Servicios específicos de cada entidad o sector.",
+                    c: "Servicios gestionados directamente por la SGAD.",
+                    d: "Servicios de infraestructuras comunes."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Quién delega en el Comité Ejecutivo, presidido por la SGAD?",
+                options: {
+                    a: "El Ministro MAETD.",
+                    b: "El Presidente de la CETIC.",
+                    c: "La CETIC.",
+                    d: "El Secretario General."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué tipo de comunicaciones ofrece la Red Internacional del Servicio Unificado de Telecomunicaciones?",
+                options: {
+                    a: "Solo comunicaciones de voz.",
+                    b: "Servicios de telecomunicaciones a las sedes de la AGE ubicadas fuera de España y sedes móviles.",
+                    c: "Acceso a Internet para sedes nacionales.",
+                    d: "Redes locales para Ministerios."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Buzón REC (AGRE)\" en el diagrama de Registros?",
+                options: {
+                    a: "Un sistema de gestión de expedientes.",
+                    b: "Un punto de conexión para el Registro Electrónico Común (REC).",
+                    c: "Una aplicación certificada.",
+                    d: "Una base de datos de personal."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa ENI en el contexto del documento?",
+                options: {
+                    a: "Esquema Nacional de Interoperabilidad.",
+                    b: "Estándar Nacional de Infraestructuras.",
+                    c: "Entidad Nacional de Identificación.",
+                    d: "Estructura Normalizada de Información."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué es un \"RAC\" en el contexto del Área de Conexión (AC) de la Red SARA?",
+                options: {
+                    a: "Router de Acceso a Conexión.",
+                    b: "Registro de Actividad Continua.",
+                    c: "Recurso de Alta Capacidad.",
+                    d: "Red de Acceso Centralizado."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Cuál es el propósito de la \"DMZ\" en el Área de Conexión (AC)?",
+                options: {
+                    a: "Almacenar datos confidenciales.",
+                    b: "Proporcionar una zona desmilitarizada para la seguridad de la red.",
+                    c: "Acelerar el acceso a Internet.",
+                    d: "Gestionar los servicios de impresión."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué funcionalidad proporciona CIR en el diagrama de SIR?",
+                options: {
+                    a: "Certificación de Información Registrada.",
+                    b: "Componente de Interconexión de Registros.",
+                    c: "Centro de Información y Registro.",
+                    d: "Control de Integridad de Registros."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa REC en el contexto de los registros?",
+                options: {
+                    a: "Registro Electrónico Central.",
+                    b: "Registro de Expedientes Compartidos.",
+                    c: "Registro Electrónico Común.",
+                    d: "Registro de Entidades Certificadoras."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué papel juega REGAGE en el esquema de registros?",
+                options: {
+                    a: "Es una aplicación certificada del SIR.",
+                    b: "Es el Libro del Registro Electrónico General de la AGE.",
+                    c: "Es un servicio de atención al ciudadano.",
+                    d: "Es un sistema de gestión de poderes."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa CSV en el contexto de la Carpeta Ciudadana?",
+                options: {
+                    a: "Código de Seguridad Verificado.",
+                    b: "Certificado de Servicio Validado.",
+                    c: "Control de Seguridad de Visitas.",
+                    d: "Clave de Seguridad Volátil."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué sistema de información transversal se encarga de unificar y commonar las unidades, oficinas y OOPP?",
+                options: {
+                    a: "SIA.",
+                    b: "DIR3.",
+                    c: "PID.",
+                    d: "Corinto."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué ley se menciona en relación con el servicio Notifica para la emisión de notificaciones?",
+                options: {
+                    a: "Ley 11/2007.",
+                    b: "Ley 39/2015.",
+                    c: "Ley 40/2015.",
+                    d: "Ley 9/2017."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema de Recursos Humanos era conocido anteriormente como Baradal y RCP?",
+                options: {
+                    a: "SIGP.",
+                    b: "NEDAES.",
+                    c: "TRAMA.",
+                    d: "SERVINÓMINA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema gestiona las Relaciones de Puestos de Trabajo (RPT)?",
+                options: {
+                    a: "Portal SIRES.",
+                    b: "Portal CECIR.",
+                    c: "FUNCIONA.",
+                    d: "TRAMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué tipo de información se puede obtener del RCP a través del Portal SIRES?",
+                options: {
+                    a: "Nóminas de personal.",
+                    b: "Datos del personal.",
+                    c: "Permisos y ausencias.",
+                    d: "Evaluaciones de desempeño."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es una \"declaración de servicios compartidos\"?",
+                options: {
+                    a: "Un documento que define servicios comunes pero no su obligatoriedad.",
+                    b: "Un acto administrativo que establece la obligatoriedad y sustitución de medios y servicios TIC.",
+                    c: "Un catálogo de servicios ofrecidos por un Ministerio.",
+                    d: "Un informe de consultoría sobre infraestructuras."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la función del \"Comité de Dirección TIC\" en el esquema de gobernanza?",
+                options: {
+                    a: "Presidir la Comisión de Estrategia TIC.",
+                    b: "Definir la estrategia TIC.",
+                    c: "Participar en la gobernanza, sin especificar una función directa en el diagrama.",
+                    d: "Aprobar los presupuestos TIC."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué se entiende por \"GOBERNANZA TIC\" en el diagrama?",
+                options: {
+                    a: "El proceso de contratación de servicios.",
+                    b: "La recepción de propuestas de expedientes.",
+                    c: "El marco de dirección y control de las TIC.",
+                    d: "La infraestructura de comunicaciones."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué servicio unificado de telecomunicaciones se refiere a la Red Corporativa Nacional Multiservicio y telefonía fija?",
+                options: {
+                    a: "Comunicaciones Móviles.",
+                    b: "Internet.",
+                    c: "Red Corporativa Nacional Multiservicio y servicio de telefonía fija.",
+                    d: "Red Internacional."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué tipo de entidades se conectan a la Red SARA, además de las AAPP Españolas?",
+                options: {
+                    a: "Empresas privadas.",
+                    b: "Instituciones Europeas.",
+                    c: "Organizaciones no gubernamentales.",
+                    d: "Ciudadanos individuales."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"MPTAP - Centro de Soporte Red SARA\"?",
+                options: {
+                    a: "Un proveedor de acceso.",
+                    b: "Un centro de soporte para la red SARA.",
+                    c: "Un punto de presencia.",
+                    d: "Un organismo independiente."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué son los \"Otros Puntos de Presencia\" en el diagrama de Red SARA?",
+                options: {
+                    a: "Servidores internos.",
+                    b: "Sedes con conexión directa a SARA.",
+                    c: "Centros de procesamiento de datos.",
+                    d: "Organismos proveedores de acceso."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Cortafuegos interna\" y \"Cortafuegos exterior\" en el diagrama de la AC?",
+                options: {
+                    a: "Barreras físicas.",
+                    b: "Elementos de seguridad para proteger la red.",
+                    c: "Dispositivos de almacenamiento.",
+                    d: "Servidores de aplicaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa SSO en el contexto del servicio Autentica?",
+                options: {
+                    a: "Sistema de Seguridad Operativa.",
+                    b: "Single Sign-On (Inicio de sesión único).",
+                    c: "Servicio de Soporte Online.",
+                    d: "Software de Seguridad Obligatorio."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio permite la autenticación SSO de empleados (internos y externos) en la Administración?",
+                options: {
+                    a: "Cl@ve.",
+                    b: "@Firma.",
+                    c: "Autentica.",
+                    d: "Valide."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué significa NTI en el contexto de Portfolio SCSPv3?",
+                options: {
+                    a: "Norma Técnica de Interoperabilidad.",
+                    b: "Nueva Tecnología de Información.",
+                    c: "Notificación de Trámites e Intercambios.",
+                    d: "Nivel de Transparencia de la Información."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Cuál es el objetivo principal de Corinto - Comunicaciones Electrónicas Seguras?",
+                options: {
+                    a: "Realizar pagos electrónicos.",
+                    b: "Establecer comunicaciones seguras entre organismos, incluyendo documentos anexos.",
+                    c: "Publicar datos abiertos.",
+                    d: "Generar informes estadísticos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué son los \"Sistemas de Información Transversales\"?",
+                options: {
+                    a: "Sistemas específicos de un área funcional.",
+                    b: "Sistemas que abarcan varias áreas o departamentos de la administración.",
+                    c: "Sistemas para la comunicación interna.",
+                    d: "Sistemas de gestión documental."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la finalidad de la plataforma Notifica?",
+                options: {
+                    a: "Gestionar la firma electrónica.",
+                    b: "Gestionar notificaciones y su emisión por las vías de la Ley 39/2015.",
+                    c: "Realizar el intercambio de datos.",
+                    d: "Consultar expedientes."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"EXPEDIENTE, DOCUMENTO Y ARCHIVO ELECTRÓNICO\" como servicios comunes?",
+                options: {
+                    a: "La gestión de la presencia de empleados.",
+                    b: "Los sistemas relacionados con la creación, gestión y custodia de documentos y expedientes digitales.",
+                    c: "Los servicios de correo electrónico.",
+                    d: "Los sistemas de recursos humanos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué permite la funcionalidad de \"APOYO A LA TRAMITACIÓN ADMINISTRATIVA\"?",
+                options: {
+                    a: "La creación de portales web.",
+                    b: "La automatización de procesos y el pago de tasas en trámites administrativos.",
+                    c: "La traducción de documentos.",
+                    d: "La gestión de citas."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la finalidad de los servicios de \"COMUNICACIÓN Y DIFUSIÓN\"?",
+                options: {
+                    a: "Facilitar el intercambio de información entre administraciones.",
+                    b: "Proporcionar información sobre la Administración Electrónica y su situación.",
+                    c: "Gestionar las nóminas.",
+                    d: "Publicar datos abiertos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"REUTILIZACIÓN\" en el contexto de los servicios comunes?",
+                options: {
+                    a: "La posibilidad de usar software comercial.",
+                    b: "La promoción y publicación de aplicaciones y soluciones para que otras AAPP las utilicen.",
+                    c: "El reciclaje de equipos informáticos.",
+                    d: "La copia de datos entre sistemas."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"UTILIDADES PARA PORTALES Y SERVICIOS PÚBLICOS\"?",
+                options: {
+                    a: "Herramientas para la gestión interna de los Ministerios.",
+                    b: "Herramientas para mejorar la funcionalidad y el acceso de los portales web públicos.",
+                    c: "Aplicaciones de mensajería instantánea.",
+                    d: "Soluciones de seguridad."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué incluye la sección de \"GESTIÓN INTERNA\" en el documento?",
+                options: {
+                    a: "Servicios de atención al ciudadano.",
+                    b: "Sistemas para la gestión de personal y comunicaciones internas de los empleados públicos.",
+                    c: "Plataformas de intermediación de datos.",
+                    d: "Herramientas de análisis de transparencia."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Servicio de correo electrónico unificado\"?",
+                options: {
+                    a: "Un servicio de correo sectorial.",
+                    b: "Un servicio común de correo electrónico para la AGE.",
+                    c: "Un servicio de mensajería instantánea.",
+                    d: "Un servicio de correo para ciudadanos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la relación entre Nedaes, Servinómina y Funciona?",
+                options: {
+                    a: "Nedaes almacena, Servinómina calcula, Funciona muestra.",
+                    b: "Nedaes calcula, Servinómina almacena, Funciona muestra.",
+                    c: "Nedaes muestra, Servinómina calcula, Funciona almacena.",
+                    d: "Los tres sistemas son independientes."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué tipo de información proporcionan las \"Estadísticas TRAMA\"?",
+                options: {
+                    a: "Sobre el uso de la Red SARA.",
+                    b: "Sobre el cumplimiento de horarios de los empleados públicos.",
+                    c: "Sobre la eficiencia de la Administración Electrónica.",
+                    d: "Sobre el número de trámites electrónicos realizados."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué función tiene el \"Preside Ministro MAETD\" en el Pleno de la Comisión de Estrategia TIC?",
+                options: {
+                    a: "Asistir a las reuniones.",
+                    b: "Dirigir la comisión.",
+                    c: "Aprobar la delegación.",
+                    d: "Ejecutar las decisiones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa \"Declaración de Servicios Compartidos\"?",
+                options: {
+                    a: "Una lista de servicios recomendados.",
+                    b: "La normativa que regula el uso obligatorio de ciertos medios y servicios TIC.",
+                    c: "Un acuerdo entre Ministerios para compartir aplicaciones.",
+                    d: "Un inventario de servicios sectoriales."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué entidad fue la predecesora de la SGAD y de la Agencia Estatal de Administración Digital?",
+                options: {
+                    a: "CETIC.",
+                    b: "DTIC.",
+                    c: "CORA.",
+                    d: "MAETD."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Organismos independientes\" en el diagrama de la Red SARA?",
+                options: {
+                    a: "Organismos que no se conectan a SARA.",
+                    b: "Organismos que se conectan a través de su propia red.",
+                    c: "Proveedores de acceso a SARA.",
+                    d: "Centros de procesamiento de datos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Red organismo\" en el diagrama de la Red SARA?",
+                options: {
+                    a: "La red interna de un organismo.",
+                    b: "La Red SARA en sí misma.",
+                    c: "Un punto de presencia.",
+                    d: "Una red europea."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué garantiza la \"Capacidad\" como característica de SARA?",
+                options: {
+                    a: "La seguridad de las comunicaciones.",
+                    b: "La posibilidad de soportar un alto volumen de tráfico y servicios.",
+                    c: "La interoperabilidad con otras redes.",
+                    d: "La fiabilidad de la conexión."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué garantiza la \"Calidad de Servicio\" como característica de SARA?",
+                options: {
+                    a: "Que los servicios sean gratuitos.",
+                    b: "Que se cumplan los niveles de servicio establecidos para el tráfico y las aplicaciones.",
+                    c: "Que solo se utilicen servicios comunes.",
+                    d: "Que la red sea accesible desde cualquier dispositivo."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué garantiza la \"Interoperabilidad\" como característica de SARA?",
+                options: {
+                    a: "La capacidad de interactuar con diferentes sistemas y redes.",
+                    b: "La conexión exclusiva con la AGE.",
+                    c: "La seguridad de los datos.",
+                    d: "La gestión centralizada de usuarios."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Cuál es el propósito del servicio \"Registro electrónico de Apoderamientos (REA)\"?",
+                options: {
+                    a: "Registrar la identidad de los ciudadanos.",
+                    b: "Registrar los apoderamientos a terceros para trámites administrativos.",
+                    c: "Registrar la entrada de documentos.",
+                    d: "Registrar los funcionarios habilitados."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué función tiene \"Representa\" en la sección de Registros y Representación del Ciudadano?",
+                options: {
+                    a: "Registrar apoderamientos.",
+                    b: "Consultar si alguien es capaz de actuar en nombre de otro.",
+                    c: "Habilitar a funcionarios.",
+                    d: "Consultar poderes notariales."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué implica que la Carpeta Ciudadana \"No requiere registro previo\"?",
+                options: {
+                    a: "Que cualquier persona puede acceder sin identificación.",
+                    b: "Que el ciudadano accede con sus medios de identificación habituales (Cl@ve, certificado electrónico).",
+                    c: "Que se necesita un registro físico en una oficina.",
+                    d: "Que solo está disponible para empleados públicos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué tipo de información puede visualizar el ciudadano en la Carpeta Ciudadana sobre el uso de sus datos?",
+                options: {
+                    a: "Solo el estado de sus expedientes.",
+                    b: "La información que se transmite entre administraciones.",
+                    c: "Únicamente sus datos personales.",
+                    d: "No se puede visualizar el uso de los datos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la diferencia principal entre GEISER y ORVE?",
+                options: {
+                    a: "GEISER solo tramita salida, ORVE tramita entrada.",
+                    b: "GEISER tiene más funcionalidad que ORVE.",
+                    c: "ORVE es usada por la AGE, GEISER por las EELL.",
+                    d: "No hay diferencia, son sinónimos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Quiénes son los \"20 miembros (mas.)\" del Comité Ejecutivo de la SGAD?",
+                options: {
+                    a: "Representantes de los Ministerios.",
+                    b: "Miembros con voz y voto en las decisiones del comité.",
+                    c: "Personal técnico de la SGAD.",
+                    d: "Delegados de la CETIC."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"SERVICIOS SECTORIALES\" en el diagrama?",
+                options: {
+                    a: "Servicios transversales a todas las AAPP.",
+                    b: "Servicios específicos de una entidad, agencia u organismo público.",
+                    c: "Servicios gestionados por la SGAD.",
+                    d: "Servicios de infraestructuras básicas."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Estrategia TIC\" en el diagrama de gobernanza?",
+                options: {
+                    a: "Un plan de acción para un Ministerio.",
+                    b: "La dirección global para las tecnologías de la información y comunicación.",
+                    c: "La contratación de servicios.",
+                    d: "La gestión de presupuestos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio unificado de telecomunicaciones se refiere a los \"dispositivos móviles y plataforma corporativa de gestión de dispositivos móviles\"?",
+                options: {
+                    a: "Red Corporativa Nacional Multiservicio.",
+                    b: "Comunicaciones Móviles.",
+                    c: "Internet.",
+                    d: "Red Internacional."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio unificado de telecomunicaciones se refiere a los \"servicios de acceso a Internet a los centros de la AGE\"?",
+                options: {
+                    a: "Comunicaciones Móviles.",
+                    b: "Red Internacional.",
+                    c: "Internet.",
+                    d: "Red Corporativa Nacional Multiservicio."
+                },
+                answer: "c"
+            },
+            {
+                question: "¿Qué significa \"APLICACIÓN CERTIFICADA\" en el diagrama del SIR?",
+                options: {
+                    a: "Una aplicación que ha superado un proceso de certificación.",
+                    b: "Una aplicación que requiere certificado digital para su uso.",
+                    c: "Una aplicación para emitir certificados.",
+                    d: "Una aplicación de gestión de copias."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Cuál es la función del servicio \"Cita Previa\"?",
+                options: {
+                    a: "Gestionar inscripciones en pruebas selectivas.",
+                    b: "Gestionar citas en oficinas de atención al ciudadano.",
+                    c: "Comunicar cambios de domicilio.",
+                    d: "Enviar notificaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Portal CECIR\"?",
+                options: {
+                    a: "Un portal de datos abiertos.",
+                    b: "Un espacio de trabajo electrónico para gestores de RRHH.",
+                    c: "Un portal del empleado público.",
+                    d: "Un portal de transparencia."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué rol tiene el \"Secretario General\" en el esquema de gobernanza?",
+                options: {
+                    a: "Preside la CETIC.",
+                    b: "Dirige la SGAD.",
+                    c: "Delega la Estrategia TIC.",
+                    d: "Reporta al Comité de Dirección TIC."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema gestiona los procedimientos de Recursos Humanos basado en Meta4?",
+                options: {
+                    a: "NEDAES.",
+                    b: "SIGP.",
+                    c: "FUNCIONA.",
+                    d: "TRAMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Gobernanza de los Planes de Digitalización\"?",
+                options: {
+                    a: "La forma en que se financian los planes.",
+                    b: "La estructura y el proceso para dirigir y controlar los planes de digitalización.",
+                    c: "La implementación técnica de los planes.",
+                    d: "La evaluación de los resultados."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la función de la S.G. de Planificación y Gobernanza de la Administración Digital?",
+                options: {
+                    a: "Gestionar los presupuestos.",
+                    b: "Planificar y gobernar la Administración Digital.",
+                    c: "Impulsar la digitalización.",
+                    d: "Gestionar infraestructuras."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es la S.G. de Presupuestos y Contratación TIC?",
+                options: {
+                    a: "Una subdirección que gestiona la ciberseguridad.",
+                    b: "Una subdirección que gestiona los presupuestos y la contratación TIC.",
+                    c: "Una subdirección que gestiona los servicios digitales.",
+                    d: "Una subdirección que impulsa la digitalización."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es el papel del Secretario General en el diagrama general?",
+                options: {
+                    a: "Preside la CETIC.",
+                    b: "Dirige la SGAD.",
+                    c: "Delega la Estrategia TIC.",
+                    d: "Reporta al Comité de Dirección TIC."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Catálogo de Servicios Comunes\"?",
+                options: {
+                    a: "Un listado interno para la SGAD.",
+                    b: "Un catálogo para difundir los servicios comunes disponibles.",
+                    c: "Un registro de organismos públicos.",
+                    d: "Un inventario de software sectorial."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"INFRAESTRUCTURAS COMUNES\"?",
+                options: {
+                    a: "Hardware específico para cada Ministerio.",
+                    b: "Recursos tecnológicos compartidos por las AAPP.",
+                    c: "Soluciones de software.",
+                    d: "Servicios de consultoría."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la relación de la SGAD con las AAPP para garantizar la interoperabilidad, eficacia y eficiencia?",
+                options: {
+                    a: "Impulsa y coordina el proceso de racionalización y transformación digital de la AGE.",
+                    b: "Solo ofrece servicios a la AGE.",
+                    c: "Regula las tarifas de los servicios.",
+                    d: "Desarrolla software a medida para cada AAPP."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué significa \"NubeSARA\"?",
+                options: {
+                    a: "Una nube privada de un Ministerio.",
+                    b: "El servicio de nube híbrida ofrecido por SARA.",
+                    c: "Un centro de datos de la AGE.",
+                    d: "Una red de acceso."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué tipo de red es \"Red SARA\" en términos de su función?",
+                options: {
+                    a: "Una red local.",
+                    b: "Una red de interconexión entre AAPP y organismos europeos.",
+                    c: "Una red de acceso a Internet.",
+                    d: "Una red de telefonía."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"FIABILIDAD\" como característica de SARA?",
+                options: {
+                    a: "La capacidad de la red para estar disponible y funcionar correctamente de forma consistente.",
+                    b: "La velocidad de la conexión.",
+                    c: "La facilidad de uso.",
+                    d: "El bajo coste."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Qué se entiende por \"SEGURIDAD\" como característica de SARA?",
+                options: {
+                    a: "La protección de los datos y las comunicaciones frente a accesos no autorizados o ataques.",
+                    b: "La compatibilidad con diferentes sistemas operativos.",
+                    c: "La facilidad de instalación.",
+                    d: "La integración con redes sociales."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Cuál es la función del \"Registro Central de Personal (RCP)\"?",
+                options: {
+                    a: "Gestionar las nóminas.",
+                    b: "Realizar la inscripción y anotación de actos relevantes de la vida administrativa de los empleados públicos.",
+                    c: "Controlar la presencia.",
+                    d: "Gestionar los permisos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Portal datos.gob.es\"?",
+                options: {
+                    a: "Un portal para trámites administrativos.",
+                    b: "Un portal que alberga el Catálogo Nacional de datos abiertos.",
+                    c: "Un portal de noticias.",
+                    d: "Un portal de servicios comunes."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué incluye la \"S.G. de impulso de la Digitalización de la Administración\"?",
+                options: {
+                    a: "La gestión de infraestructuras.",
+                    b: "Las iniciativas para la transformación digital de la administración.",
+                    c: "Los servicios digitales para la gestión.",
+                    d: "La ciberseguridad."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"SERVICIOS COMPARTIDOS\" en el diagrama?",
+                options: {
+                    a: "Servicios que cada Ministerio desarrolla de forma independiente.",
+                    b: "Servicios que se utilizan de forma obligatoria y sustitutiva en diferentes unidades.",
+                    c: "Servicios para uso exclusivo de la SGAD.",
+                    d: "Servicios sectoriales."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Quién elabora el \"Plan de acción para la transformación digital\" de cada Ministerio?",
+                options: {
+                    a: "La SGAD.",
+                    b: "La Comisión Ministerial de Administración Digital (CMAD).",
+                    c: "La CETIC.",
+                    d: "El Secretario General."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué servicio común es la Red 060?",
+                options: {
+                    a: "Un servicio de intercambio de información.",
+                    b: "Una red integrada multicanal de atención al ciudadano.",
+                    c: "Un servicio de gestión de expedientes.",
+                    d: "Un servicio de seguridad."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué ofrece el Portal 060.es?",
+                options: {
+                    a: "Acceso a trámites solo de la AGE.",
+                    b: "Acceso a los procedimientos y servicios electrónicos de las AAPP agrupados por materias.",
+                    c: "Información sobre la Red SARA.",
+                    d: "Un directorio de funcionarios."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa \"OO.PP.\" en el contexto del \"Plan de Transformación Digital de la AGE y sus OO.PP.\"?",
+                options: {
+                    a: "Organizaciones de Países.",
+                    b: "Organismos Públicos.",
+                    c: "Operaciones de Proceso.",
+                    d: "Oficinas Permanentes."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema se utiliza para la creación de mapas interactivos en portales web?",
+                options: {
+                    a: "PLATA.",
+                    b: "EGEO.",
+                    c: "OAW.",
+                    d: "FORMA."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"AUTORIDAD DE SELLADO DE TIEMPO\" (TS@)?",
+                options: {
+                    a: "Un organismo que emite certificados digitales.",
+                    b: "Un servicio que proporciona una prueba fehaciente de la existencia de un documento en un momento dado.",
+                    c: "Una herramienta para sincronizar relojes.",
+                    d: "Un registro de actividades."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Servicio de gestión del registro\"?",
+                options: {
+                    a: "Un servicio para registrar el personal.",
+                    b: "Un servicio para gestionar los asientos registrales.",
+                    c: "Un servicio de atención al ciudadano.",
+                    d: "Un servicio de comunicación interna."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Servicio de gestión de notificaciones\"?",
+                options: {
+                    a: "Un servicio para el envío de correos electrónicos internos.",
+                    b: "Un servicio para gestionar las comunicaciones y notificaciones a los ciudadanos.",
+                    c: "Un servicio para la gestión de nóminas.",
+                    d: "Un servicio de seguridad."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Servicio multicanal de atención al ciudadano\"?",
+                options: {
+                    a: "Un servicio de atención presencial únicamente.",
+                    b: "Un servicio que permite la atención al ciudadano a través de diversos canales (teléfono, web, oficinas).",
+                    c: "Un servicio de información interna.",
+                    d: "Un servicio de gestión de reclamaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Servicio de gestión de expediente y documento electrónico\"?",
+                options: {
+                    a: "Un servicio de archivo físico.",
+                    b: "Un servicio que gestiona los expedientes y documentos en formato electrónico.",
+                    c: "Un servicio de atención al público.",
+                    d: "Un servicio de comunicaciones."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué es el \"Servicio de gestión de archivo electrónico\"?",
+                options: {
+                    a: "Un servicio para archivar documentos en papel.",
+                    b: "Un servicio para la custodia definitiva de documentos electrónicos.",
+                    c: "Un servicio de gestión de la información.",
+                    d: "Un servicio de seguridad de datos."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Cuál es la relación del \"Plan de Recuperación de la UE\" con los planes de digitalización?",
+                options: {
+                    a: "Es el origen de la financiación del Plan de Digitalización de las AAPP (2021-2025).",
+                    b: "Es un plan de digitalización anterior.",
+                    c: "No tiene relación.",
+                    d: "Es un plan exclusivo para las instituciones europeas."
+                },
+                answer: "a"
+            },
+            {
+                question: "¿Cuál es el objetivo de \"Red 060\" en relación con su alcance administrativo?",
+                options: {
+                    a: "Solo informa sobre trámites de la AGE.",
+                    b: "Es multiadministrativa (AGE, CCAA y EELL).",
+                    c: "Es solo para información.",
+                    d: "No incluye a las CCAA ni EELL."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué significa \"Registro electrónico de la AGE donde descansan todos los asientos registrales generados por GEISER, ORVE, REC y otras\"?",
+                options: {
+                    a: "Es una aplicación certificada.",
+                    b: "Es la base de datos central de registros de la AGE.",
+                    c: "Es un servicio de intermediación de datos.",
+                    d: "Es una plataforma de firma."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué sistema se encarga de la generación de URLs cortas?",
+                options: {
+                    a: "BUSCADORAGE.",
+                    b: "RUN.",
+                    c: "PLATA.",
+                    d: "EGEO."
+                },
+                answer: "b"
+            },
+            {
+                question: "¿Qué se entiende por \"Regulación de los medios y servicios compartidos\"?",
+                options: {
+                    a: "Un listado de precios.",
+                    b: "La normativa que establece cómo deben utilizarse los servicios comunes.",
+                    c: "Un acuerdo voluntario entre organismos.",
+                    d: "Una guía de buenas prácticas."
+                },
+                answer: "b"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let answeredQuestions = new Set(); // Para rastrear si una pregunta ha sido respondida
+
+        // Obtener referencias a los elementos del DOM
+        const questionDisplay = document.getElementById('question-display');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const progressIndicator = document.getElementById('progress-indicator');
+        const restartButton = document.getElementById('restart-button');
+
+        /**
+         * Carga el progreso del quiz desde el almacenamiento local.
+         * @returns {number} El índice de la última pregunta guardada o 0 si no se encuentra progreso.
+         */
+        function loadProgress() {
+            const savedIndex = localStorage.getItem('quizProgress');
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+        }
+
+        /**
+         * Guarda el progreso actual del quiz en el almacenamiento local.
+         */
+        function saveProgress() {
+            localStorage.setItem('quizProgress', currentQuestionIndex);
+        }
+
+        /**
+         * Muestra la pregunta actual y sus opciones.
+         */
+        function displayQuestion() {
+            // Limpiar contenido previo
+            optionsContainer.innerHTML = '';
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message'; // Restablecer clases CSS
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionDisplay.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+            // Crear botones para cada opción
+            for (const key in currentQuestion.options) {
+                const button = document.createElement('button');
+                button.textContent = `${key.toUpperCase()}) ${currentQuestion.options[key]}`;
+                button.dataset.option = key; // Almacenar la clave de la opción (a, b, c, d)
+                button.addEventListener('click', handleOptionClick);
+                optionsContainer.appendChild(button);
+            }
+
+            updateNavigationButtons();
+            updateProgressIndicator();
+        }
+
+        /**
+         * Maneja el evento de clic en un botón de opción.
+         * @param {Event} event El evento de clic.
+         */
+        function handleOptionClick(event) {
+            const selectedOption = event.target.dataset.option;
+            const currentQuestion = quizData[currentQuestionIndex];
+            const correctOption = currentQuestion.answer;
+
+            // Deshabilitar todos los botones de opción después de una selección
+            Array.from(optionsContainer.children).forEach(button => {
+                button.removeEventListener('click', handleOptionClick); // Eliminar listener para evitar múltiples clics
+                button.disabled = true; // Deshabilitar el botón
+                if (button.dataset.option === correctOption) {
+                    button.classList.add('correct');
+                } else if (button.dataset.option === selectedOption) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            // Proporcionar feedback al usuario
+            if (selectedOption === correctOption) {
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.add('correct-feedback');
+            } else {
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta es ${correctOption.toUpperCase()}) ${currentQuestion.options[correctOption]}.`;
+                feedbackMessage.classList.add('incorrect-feedback');
+            }
+
+            answeredQuestions.add(currentQuestionIndex); // Marcar la pregunta como respondida
+            updateNavigationButtons(); // Habilitar el botón siguiente si no está al final
+        }
+
+        /**
+         * Actualiza el estado de los botones de navegación (Anterior y Siguiente).
+         */
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            // El botón siguiente se habilita si la pregunta actual ha sido respondida o si es la última pregunta
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+        }
+
+        /**
+         * Actualiza el texto del indicador de progreso.
+         */
+        function updateProgressIndicator() {
+            progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        /**
+         * Avanza a la siguiente pregunta.
+         */
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                saveProgress(); // Guardar progreso al avanzar
+                displayQuestion();
+            }
+        }
+
+        /**
+         * Retrocede a la pregunta anterior.
+         */
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveProgress(); // Guardar progreso al retroceder
+                displayQuestion();
+            }
+        }
+
+        /**
+         * Reinicia el quiz desde el principio.
+         */
+        function restartQuiz() {
+            // Usar una ventana de confirmación personalizada en lugar de alert/confirm
+            const confirmRestart = document.createElement('div');
+            confirmRestart.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            const confirmBox = document.createElement('div');
+            confirmBox.style.cssText = `
+                background-color: white;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+            `;
+            const message = document.createElement('p');
+            message.textContent = '¿Estás seguro de que quieres reiniciar el test? Se perderá tu progreso actual.';
+            message.style.cssText = 'margin-bottom: 20px; font-size: 1.1rem; color: #334155;';
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = 'display: flex; justify-content: space-around;';
+
+            const yesButton = document.createElement('button');
+            yesButton.textContent = 'Sí, reiniciar';
+            yesButton.style.cssText = `
+                background-color: #ef4444;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            `;
+            yesButton.onmouseover = () => yesButton.style.backgroundColor = '#dc2626';
+            yesButton.onmouseout = () => yesButton.style.backgroundColor = '#ef4444';
+            yesButton.onclick = () => {
+                currentQuestionIndex = 0;
+                answeredQuestions.clear();
+                localStorage.removeItem('quizProgress'); // Borrar progreso guardado
+                displayQuestion();
+                document.body.removeChild(confirmRestart);
+            };
+
+            const noButton = document.createElement('button');
+            noButton.textContent = 'No, cancelar';
+            noButton.style.cssText = `
+                background-color: #64748b;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            `;
+            noButton.onmouseover = () => noButton.style.backgroundColor = '#475569';
+            noButton.onmouseout = () => noButton.style.backgroundColor = '#64748b';
+            noButton.onclick = () => {
+                document.body.removeChild(confirmRestart);
+            };
+
+            buttonContainer.appendChild(yesButton);
+            buttonContainer.appendChild(noButton);
+            confirmBox.appendChild(message);
+            confirmBox.appendChild(buttonContainer);
+            confirmRestart.appendChild(confirmBox);
+            document.body.appendChild(confirmRestart);
+        }
+
+
+        // Escuchadores de eventos para los botones de navegación
+        nextButton.addEventListener('click', nextQuestion);
+        prevButton.addEventListener('click', prevQuestion);
+        restartButton.addEventListener('click', restartQuiz);
+
+        // Inicializar el quiz cuando la página se carga
+        window.onload = () => {
+            loadProgress();
+            displayQuestion();
+        };
+    </script>
+</body>
+</html>

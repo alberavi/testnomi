@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+        .question-card {
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #ffffff;
+            text-align: left;
+            font-size: 1rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #edf2f7;
+            border-color: #a0aec0;
+        }
+        .option-button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .feedback.correct-text {
+            color: #065f46;
+        }
+        .feedback.incorrect-text {
+            color: #991b1b;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button.prev {
+            background-color: #a0aec0;
+            color: #ffffff;
+        }
+        .nav-button.prev:hover {
+            background-color: #718096;
+            transform: translateY(-2px);
+        }
+        .nav-button.next {
+            background-color: #4299e1;
+            color: #ffffff;
+        }
+        .nav-button.next:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .score-card {
+            background-color: #dbeafe;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2b6cb0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="quiz-container">
+            <!-- Preguntas se cargarán aquí -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button prev" disabled>Anterior</button>
+            <button id="next-button" class="nav-button next">Siguiente</button>
+        </div>
+        <div id="score-display" class="score-card hidden">
+            <!-- Puntuación se mostrará aquí -->
+        </div>
+    </div>
+
+    <script>
+        // Definición de las preguntas y respuestas
+        const quizData = [
+            {
+                question: '¿Cuál de las siguientes metodologías se clasifica como "estructurada" y "orientada a proceso"?',
+                options: ['a) RUP', 'b) Booch Method', 'c) Merise', 'd) SCRUM'],
+                correctAnswer: 'c) Merise'
+            },
+            {
+                question: '¿Qué tipo de metodologías de desarrollo se caracterizan por ser "orientadas a objetos"?',
+                options: ['a) XP', 'b) OMT', 'c) Kanban', 'd) Métrica 3'],
+                correctAnswer: 'b) OMT'
+            },
+            {
+                question: 'El Rational Unified Process (RUP) se describe como:',
+                options: ['a) Un proceso en cascada.', 'b) Un proceso iterativo e incremental.', 'c) Una metodología orientada a objetos pura.', 'd) Un conjunto de principios ágiles.'],
+                correctAnswer: 'b) Un proceso iterativo e incremental.'
+            },
+            {
+                question: 'Según el Manifiesto Ágil, ¿cuál es uno de los principios clave en relación con la entrega al cliente?',
+                options: ['a) Satisfacer al cliente con entregas continuas y tempranas.', 'b) Minimizar los cambios en los requisitos.', 'c) Entregar software solo al final del proyecto.', 'd) Priorizar la documentación exhaustiva.'],
+                correctAnswer: 'a) Satisfacer al cliente con entregas continuas y tempranas.'
+            },
+            {
+                question: 'Una de las características del Manifiesto Ágil es que:',
+                options: ['a) Se desaconseja la comunicación cara a cara.', 'b) Se da la bienvenida a los requisitos cambiantes.', 'c) El negocio y el desarrollo deben trabajar de forma independiente.', 'd) Se valora la complejidad sobre la simplicidad.'],
+                correctAnswer: 'b) Se da la bienvenida a los requisitos cambiantes.'
+            },
+            {
+                question: 'En RUP, un elemento vital del desarrollo que debe fijarse al inicio del proyecto es:',
+                options: ['a) La interfaz de usuario.', 'b) La arquitectura.', 'c) Los casos de prueba.', 'd) El plan de marketing.'],
+                correctAnswer: 'b) La arquitectura.'
+            },
+            {
+                question: '¿Cuál de las siguientes no es una fase del Rational Unified Process (RUP)?',
+                options: ['a) Inicio (Incepción)', 'b) Elaboración', 'c) Pruebas', 'd) Transición'],
+                correctAnswer: 'c) Pruebas'
+            },
+            {
+                question: 'Métrica 3 se estructura en tres grandes procesos. ¿Cuál de los siguientes no es uno de ellos?',
+                options: ['a) Planificación de Sistemas de Información', 'b) Desarrollo', 'c) Implementación', 'd) Mantenimiento de Sistemas de Información'],
+                correctAnswer: 'c) Implementación'
+            },
+            {
+                question: 'En Métrica 3, el manual técnico que explica los casos de uso y guía según el enfoque (orientado a objetos o estructurado) se denomina:',
+                options: ['a) Plan de Proyecto.', 'b) Guía de Técnicas.', 'c) Manual de Usuario.', 'd) Especificación de Requisitos.'],
+                correctAnswer: 'b) Guía de Técnicas.'
+            },
+            {
+                question: 'Los elementos de Métrica 3 que "afectan a todo el ciclo de los procesos" y se consideran "Procesos Transversales" incluyen:',
+                options: ['a) Procesos y Actividades.', 'b) Tareas y Guía de técnicas.', 'c) Interfaces y Gestión de Proyectos.', 'd) Planificación y Desarrollo.'],
+                correctAnswer: 'c) Interfaces y Gestión de Proyectos.'
+            },
+            {
+                question: 'Dentro de las Sesiones de Trabajo en Métrica 3, la sesión técnica donde se involucra a la alta dirección es:',
+                options: ['a) Entrevista.', 'b) Reunión.', 'c) JAD (Joint Application Development).', 'd) JRP (Joint Requirements Planning).'],
+                correctAnswer: 'd) JRP (Joint Requirements Planning).'
+            },
+            {
+                question: 'En Scrum, el rol que representa la voz del cliente y gestiona el Product Backlog es el:',
+                options: ['a) Scrum Master.', 'b) Desarrollador.', 'c) Product Owner.', 'd) Stakeholder.'],
+                correctAnswer: 'c) Product Owner.'
+            },
+            {
+                question: '¿Cuál de las siguientes afirmaciones sobre el Scrum Master es correcta?',
+                options: ['a) Es el director del proyecto.', 'b) Su función principal es representar la voz del cliente.', 'c) Es un facilitador que hace que Scrum se cumpla.', 'd) Se encarga de programar.'],
+                correctAnswer: 'c) Es un facilitador que hace que Scrum se cumpla.'
+            },
+            {
+                question: 'El Scrum Team, compuesto por el Product Owner, Scrum Master y desarrolladores, idealmente debe tener:',
+                options: ['a) Más de 10 miembros.', 'b) Exactamente 15 miembros.', 'c) Menos de 10 miembros con habilidades transversales.', 'd) Cualquier número de miembros, siempre que sean especializados.'],
+                correctAnswer: 'c) Menos de 10 miembros con habilidades transversales.'
+            },
+            {
+                question: 'El Product Backlog en Scrum es:',
+                options: ['a) Un catálogo de tareas técnicas no priorizadas.', 'b) Un catálogo de requisitos priorizado que alimenta y gestiona el Product Owner.', 'c) El resultado final de un Sprint.', 'd) Una lista de impedimentos del equipo.'],
+                correctAnswer: 'b) Un catálogo de requisitos priorizado que alimenta y gestiona el Product Owner.'
+            },
+            {
+                question: 'La duración típica de un Sprint en Scrum puede ser:',
+                options: ['a) De 1 a 3 días.', 'b) Fija, generalmente entre 7 y 30 días.', 'c) Variable, dependiendo de la complejidad de las tareas.', 'd) Hasta 60 días.'],
+                correctAnswer: 'b) Fija, generalmente entre 7 y 30 días.'
+            },
+            {
+                question: '¿Qué evento de Scrum tiene una duración máxima de 15 minutos?',
+                options: ['a) Sprint Planning Meeting.', 'b) Sprint Review.', 'c) Daily Scrum.', 'd) Sprint Retrospective.'],
+                correctAnswer: 'c) Daily Scrum.'
+            },
+            {
+                question: 'En Scrum, la gráfica que mide la cantidad de requisitos pendientes en el backlog del proyecto al comienzo de cada sprint se denomina:',
+                options: ['a) Gantt chart.', 'b) Burn down chart.', 'c) Velocity chart.', 'd) Flow diagram.'],
+                correctAnswer: 'b) Burn down chart.'
+            },
+            {
+                question: 'Una de las prácticas clave de Extreme Programming (XP) es:',
+                options: ['a) La documentación extensiva.', 'b) La programación en cascada.', 'c) La programación en parejas (pair programming).', 'd) La entrega única al final del proyecto.'],
+                correctAnswer: 'c) La programación en parejas (pair programming).'
+            },
+            {
+                question: 'En XP, la técnica utilizada para especificar requisitos es:',
+                options: ['a) Casos de Uso detallados.', 'b) Historias de Usuario.', 'c) Diagramas de flujo.', 'd) Especificaciones de Requisitos Software (ERS).'],
+                correctAnswer: 'b) Historias de Usuario.'
+            },
+            {
+                question: '¿Qué se entiende por "Refactoring" en XP?',
+                options: ['a) La redefinición completa de la arquitectura.', 'b) Rehacer y mejorar el código.', 'c) La creación de nuevas funcionalidades.', 'd) La eliminación de código obsoleto.'],
+                correctAnswer: 'b) Rehacer y mejorar el código.'
+            },
+            {
+                question: '¿Qué herramienta se menciona como motor de integración continua y que incluye Maven?',
+                options: ['a) SonarQube.', 'b) JBoss.', 'c) Jenkins.', 'd) Artifactory.'],
+                correctAnswer: 'c) Jenkins.'
+            },
+            {
+                question: 'En el contexto de Integración Continua (CI/CD), ¿qué incluye el concepto de "CI" (Integración Continua)?',
+                options: ['a) Solo el despliegue del desarrollo.', 'b) Hasta los test.', 'c) Hasta el análisis de calidad de código estático.', 'd) Solo la compilación del código fuente.'],
+                correctAnswer: 'b) Hasta los test.'
+            },
+            {
+                question: '¿Qué herramienta se encarga del análisis de calidad de código estático en un pipeline de integración continua, rechazando el código si no cumple el estándar?',
+                options: ['a) Junit.', 'b) Jboss.', 'c) SonarQube.', 'd) Jenkins.'],
+                correctAnswer: 'c) SonarQube.'
+            },
+            {
+                question: 'Las pruebas unitarias se caracterizan por:',
+                options: ['a) Probar varios componentes de forma conjunta.', 'b) Probar cada componente individualmente.', 'c) Simular lo que hace el usuario.', 'd) Evaluar el rendimiento del sistema.'],
+                correctAnswer: 'b) Probar cada componente individualmente.'
+            },
+            {
+                question: 'Si se desea probar el ensamblaje entre componentes, se deben realizar pruebas de:',
+                options: ['a) Unitarias.', 'b) Aceptación.', 'c) Integración.', 'd) Regresión.'],
+                correctAnswer: 'c) Integración.'
+            },
+            {
+                question: '¿Qué tipo de pruebas se realizan para comprobar que ante un cambio, todo sigue funcionando y no se crean errores en otros componentes no modificados?',
+                options: ['a) Pruebas funcionales.', 'b) Pruebas de sistema.', 'c) Pruebas de regresión.', 'd) Pruebas de carga.'],
+                correctAnswer: 'c) Pruebas de regresión.'
+            },
+            {
+                question: '¿Cuál es el propósito principal de las herramientas CASE (Computer-Aided Software Engineering)?',
+                options: ['a) Facilitar la gestión de proyectos ágiles.', 'b) Ayudar al desarrollo de software, principalmente en las fases de análisis y diseño.', 'c) Realizar pruebas de rendimiento.', 'd) Gestionar los repositorios de código.'],
+                correctAnswer: 'b) Ayudar al desarrollo de software, principalmente en las fases de análisis y diseño.'
+            },
+            {
+                question: '¿Qué lenguaje se utiliza para la comunicación entre varias herramientas CASE integradas (entornos i-Case)?',
+                options: ['a) XML.', 'b) SQL.', 'c) XMI (XML Metadata Interchange).', 'd) JSON.'],
+                correctAnswer: 'c) XMI (XML Metadata Interchange).'
+            },
+            {
+                question: 'En los sistemas de control de versiones centralizados, el desarrollador está:',
+                options: ['a) Permanentemente desconectado del repositorio.', 'b) Permanentemente conectado al repositorio.', 'c) Conectado solo para subir los cambios.', 'd) Trabajando con un repositorio local.'],
+                correctAnswer: 'b) Permanentemente conectado al repositorio.'
+            },
+            {
+                question: '¿Cuál de los siguientes es un ejemplo de sistema de control de versiones distribuido?',
+                options: ['a) SVN (Subversion).', 'b) TFS (Team Foundation Server).', 'c) CVS.', 'd) Git.'],
+                correctAnswer: 'd) Git.'
+            },
+            {
+                question: '¿Quién es el creador de Git?',
+                options: ['a) Bill Gates.', 'b) Linus Torvalds.', 'c) James Gosling.', 'd) Richard Stallman.'],
+                correctAnswer: 'b) Linus Torvalds.'
+            },
+            {
+                question: 'Una característica clave de Git es su:',
+                options: ['a) Dependencia de una conexión a internet constante.', 'b) Soporte avanzado de ramas y mezclas de código.', 'c) Historial lineal sin posibilidad de reescritura.', 'd) Enfoque en un único repositorio remoto.'],
+                correctAnswer: 'b) Soporte avanzado de ramas y mezclas de código.'
+            },
+            {
+                question: 'En Git, la operación que pasa el repositorio de la nube a local se denomina:',
+                options: ['a) git add.', 'b) git commit.', 'c) git clone.', 'd) git push.'],
+                correctAnswer: 'c) git clone.'
+            },
+            {
+                question: 'El archivo .gitignore en Git se utiliza para:',
+                options: ['a) Definir las credenciales de usuario.', 'b) Especificar los archivos que se ignorarán al hacer commit y no se subirán.', 'c) Configurar el nombre de la rama principal.', 'd) Almacenar el historial de commits.'],
+                correctAnswer: 'b) Especificar los archivos que se ignorarán al hacer commit y no se subirán.'
+            },
+            {
+                question: 'En un repositorio local de Git, el área donde se tienen los ficheros con los que se trabaja antes de ser añadidos al commit se llama:',
+                options: ['a) Staging area.', 'b) Local repo.', 'c) Working directory.', 'd) Remote repo.'],
+                correctAnswer: 'c) Working directory.'
+            },
+            {
+                question: 'Para mover los cambios del "Working directory" al "Staging area" en Git, se usa el comando:',
+                options: ['a) git commit.', 'b) git push.', 'c) git add.', 'd) git status.'],
+                correctAnswer: 'c) git add.'
+            },
+            {
+                question: 'El comando Git que se utiliza para guardar los cambios en el "Local repo" es:',
+                options: ['a) git add.', 'b) git push.', 'c) git commit.', 'd) git pull.'],
+                correctAnswer: 'c) git commit.'
+            },
+            {
+                question: 'Si queremos traer a local los ficheros del repositorio remoto para dejarlos sincronizados, utilizamos el comando Git:',
+                options: ['a) git fetch.', 'b) git pull.', 'c) git push.', 'd) git checkout.'],
+                correctAnswer: 'b) git pull.'
+            },
+            {
+                question: 'El comando git checkout -b hotfix tiene la función de:',
+                options: ['a) Borrar la rama "hotfix".', 'b) Moverse a una rama existente llamada "hotfix".', 'c) Crear una nueva rama llamada "hotfix" y moverse a ella.', 'd) Deshacer los cambios en la rama actual.'],
+                correctAnswer: 'c) Crear una nueva rama llamada "hotfix" y moverse a ella.'
+            },
+            {
+                question: '¿Qué comando Git deshace los cambios realizados sobre un fichero y lo deja como en el último commit?',
+                options: ['a) git reset --hard.', 'b) git revert.', 'c) git checkout <fichero>.', 'd) git clean.'],
+                correctAnswer: 'c) git checkout <fichero>.'
+            },
+            {
+                question: '¿Qué comando Git permite reescribir la historia y se puede usar para consolidar múltiples commits en uno solo de forma interactiva?',
+                options: ['a) git merge.', 'b) git rebase.', 'c) git pull.', 'd) git log.'],
+                correctAnswer: 'b) git rebase.'
+            },
+            {
+                question: 'Si deseamos deshacer el último commit y dejar el cambio de nuevo en "Staging area", pendiente de commit, ¿qué comando Git usaríamos?',
+                options: ['a) git reset --mixed HEAD.', 'b) git reset --hard HEAD.', 'c) git reset --soft HEAD.', 'd) git revert HEAD.'],
+                correctAnswer: 'c) git reset --soft HEAD.'
+            },
+            {
+                question: '¿Qué tipo de git reset deshace el commit, deshace el add y borra físicamente los cambios y/o ficheros asociados al commit?',
+                options: ['a) --soft.', 'b) --mixed.', 'c) --hard.', 'd) --interactive.'],
+                correctAnswer: 'c) --hard.'
+            },
+            {
+                question: 'El patrón SAGA de Git, que introduce un commit nuevo para anular lo hecho en el último commit sin borrar nada de la historia, se implementa con:',
+                options: ['a) git reset.', 'b) git cherry-pick.', 'c) git revert.', 'd) git clean.'],
+                correctAnswer: 'c) git revert.'
+            },
+            {
+                question: '¿Cuál de las siguientes plataformas es un ejemplo de "Forja" (Forge) para el desarrollo de software colaborativo?',
+                options: ['a) Heroku.', 'b) GitHub.', 'c) Digital Ocean.', 'd) AWS Elastic Beanstalk.'],
+                correctAnswer: 'b) GitHub.'
+            },
+            {
+                question: 'En GitHub, ¿qué operación consiste en hacer una copia de un proyecto en tu propia cuenta (en la nube) para poder trabajar sobre ella?',
+                options: ['a) Pull Request.', 'b) Merge.', 'c) Fork.', 'd) Clone.'],
+                correctAnswer: 'c) Fork.'
+            },
+            {
+                question: 'Cuando realizas modificaciones en un proyecto "forkeado" en GitHub y deseas que el creador del repositorio original las incorpore, envías un/a:',
+                options: ['a) Commit.', 'b) Push.', 'c) Pull Request.', 'd) Issue.'],
+                correctAnswer: 'c) Pull Request.'
+            },
+            {
+                question: '¿Cuál de las siguientes es una plataforma de despliegue tipo PaaS (Platform as a Service)?',
+                options: ['a) Digital Ocean (IaaS).', 'b) Heroku.', 'c) Windows Azure (Puede ser IaaS o PaaS, pero en el contexto específico, se nombra PaaS).', 'd) Git.'],
+                correctAnswer: 'b) Heroku.'
+            },
+            {
+                question: 'En RUP, el proceso de desarrollo está dirigido por:',
+                options: ['a) Los diagramas de clase.', 'b) Los casos de uso.', 'c) Los planes de prueba.', 'd) Los modelos de datos.'],
+                correctAnswer: 'b) Los casos de uso.'
+            },
+            {
+                question: 'La Métrica 3 divide un proceso en actividades y una actividad en:',
+                options: ['a) Roles.', 'b) Fases.', 'c) Tareas.', 'd) Artefactos.'],
+                correctAnswer: 'c) Tareas.'
+            },
+            {
+                question: '¿Qué participante en Métrica 3 se clasifica como "Gallina" en la terminología Scrum?',
+                options: ['a) Product Owner.', 'b) Scrum Master.', 'c) Stakeholders.', 'd) Desarrolladores.'],
+                correctAnswer: 'c) Stakeholders.'
+            },
+            {
+                question: 'Las "Pruebas de bifurcación" y "Caminos básicos" son ejemplos de pruebas de:',
+                options: ['a) Caja Negra.', 'b) Caja Blanca.', 'c) Aceptación.', 'd) Integración.'],
+                correctAnswer: 'b) Caja Blanca.'
+            },
+            {
+                question: 'Para moquear datos en pruebas unitarias, se utiliza la herramienta:',
+                options: ['a) Junit.', 'b) Mokito.', 'c) Selenium.', 'd) Sonar Qube.'],
+                correctAnswer: 'b) Mokito.'
+            },
+            {
+                question: '¿Cuál de las siguientes herramientas NO es para análisis de código estático?',
+                options: ['a) Sonar Qube.', 'b) PMD.', 'c) Jmeter.', 'd) CheckStyle.'],
+                correctAnswer: 'c) Jmeter.'
+            },
+            {
+                question: '¿Qué comando SVN es equivalente a git clone?',
+                options: ['a) svn commit.', 'b) svn update.', 'c) svn checkout.', 'd) svn add.'],
+                correctAnswer: 'c) svn checkout.'
+            },
+            {
+                question: '¿Qué nombre común puede tener la rama inicial de un repositorio Git además de "master"?',
+                options: ['a) "develop".', 'b) "release".', 'c) "main".', 'd) "feature".'],
+                correctAnswer: 'c) "main".'
+            },
+            {
+                question: 'En Git, el comando git status indica, entre otras cosas:',
+                options: ['a) Si tienes algún commit pendiente de subir al remoto.', 'b) En qué rama estás.', 'c) El historial de cambios.', 'd) Los conflictos de fusión.'],
+                correctAnswer: 'b) En qué rama estás.'
+            },
+            {
+                question: 'El comando git diff se utiliza para:',
+                options: ['a) Aplicar parches.', 'b) Listar diferencias entre, por ejemplo, commits.', 'c) Deshacer cambios.', 'd) Fusionar ramas.'],
+                correctAnswer: 'b) Listar diferencias entre, por ejemplo, commits.'
+            },
+            {
+                question: '¿Qué comando se utiliza en Git para mostrar un historial de commits más resumido, intuitivo y visual?',
+                options: ['a) git log --oneline.', 'b) git log --graph --oneline --all.', 'c) git log -p.', 'd) git log --stat.'],
+                correctAnswer: 'b) git log --graph --oneline --all.'
+            },
+            {
+                question: 'En Git, ¿qué significa "HEAD"?',
+                options: ['a) El primer commit del repositorio.', 'b) Un puntero al último commit.', 'c) El nombre de la rama remota.', 'd) Un tag para una release.'],
+                correctAnswer: 'b) Un puntero al último commit.'
+            },
+            {
+                question: 'Si tu rama local está "adelantada" con respecto a la remota, significa que:',
+                options: ['a) La rama remota tiene más commits.', 'b) La rama local tiene más commits que la remota.', 'c) No hay conexión con el repositorio remoto.', 'd) Hay conflictos pendientes de resolver.'],
+                correctAnswer: 'b) La rama local tiene más commits que la remota.'
+            },
+            {
+                question: 'El comando git fetch en Git:',
+                options: ['a) Trae los ficheros de remoto a local.', 'b) Actualiza el estado de tu repositorio local para saber si está o no actualizado, pero no trae los ficheros.', 'c) Envía los cambios locales al repositorio remoto.', 'd) Fusiona ramas.'],
+                correctAnswer: 'b) Actualiza el estado de tu repositorio local para saber si está o no actualizado, pero no trae los ficheros.'
+            },
+            {
+                question: 'Para hacer el fetch de todas las ramas de un repositorio remoto, se usa el comando:',
+                options: ['a) git fetch.', 'b) git fetch origin.', 'c) git fetch --all.', 'd) git pull --all.'],
+                correctAnswer: 'c) git fetch --all.'
+            },
+            {
+                question: 'Si al intentar hacer un git merge entre dos ramas (ej. master y hotfix) se detectan cambios en los mismos ficheros, ¿qué ocurre?',
+                options: ['a) El merge se completa automáticamente.', 'b) Se genera un conflicto a resolver.', 'c) Se sobrescriben los cambios de una rama sobre la otra.', 'd) Se crea una nueva rama automáticamente.'],
+                correctAnswer: 'b) Se genera un conflicto a resolver.'
+            },
+            {
+                question: '¿Cuál de las siguientes afirmaciones es correcta con respecto a la creación de ramas en Git versus SVN?',
+                options: ['a) SVN y Git crean directorios físicamente para las ramas.', 'b) Git crea el directorio físicamente, SVN no.', 'c) SVN crea el directorio físicamente, Git lo crea internamente (.git).', 'd) Ninguna de las anteriores es correcta.'],
+                correctAnswer: 'c) SVN crea el directorio físicamente, Git lo crea internamente (.git).'
+            },
+            {
+                question: 'La "Integración Continua" (CI) se define en el documento como el proceso que abarca desde la lectura del código hasta:',
+                options: ['a) El despliegue continuo.', 'b) Los test.', 'c) La implantación final.', 'd) La aceptación del sistema.'],
+                correctAnswer: 'b) Los test.'
+            },
+            {
+                question: '¿Qué herramienta se menciona como ejemplo de repositorio de artefactos JAR/WAR/etc. en un pipeline de integración continua?',
+                options: ['a) GIT/SVN/TFS.', 'b) Artifactory/Nexus/Archiva/JFrog.', 'c) Junit.', 'd) Sonar Qube.'],
+                correctAnswer: 'b) Artifactory/Nexus/Archiva/JFrog.'
+            },
+            {
+                question: 'En el contexto de pruebas, ¿qué tipo de prueba nos interesa solo las entradas y las salidas, es decir, la interfaz?',
+                options: ['a) Caja Blanca.', 'b) Caja Negra.', 'c) Unitaria.', 'd) Sistema.'],
+                correctAnswer: 'b) Caja Negra.'
+            },
+            {
+                question: 'Las pruebas de "Implantación" se definen como:',
+                options: ['a) Pruebas de cada componente individualmente.', 'b) Pruebas de ensamblaje entre componentes.', 'c) Pruebas del sistema integrado de hardware y software en el entorno de operación.', 'd) Pruebas orientadas al usuario.'],
+                correctAnswer: 'c) Pruebas del sistema integrado de hardware y software en el entorno de operación.'
+            },
+            {
+                question: '¿Cuál de las siguientes herramientas de control de versiones es un cliente para SVN?',
+                options: ['a) Git.', 'b) Mercurial.', 'c) TortoiseSVN.', 'd) SourceTree.'],
+                correctAnswer: 'c) TortoiseSVN.'
+            },
+            {
+                question: 'Un "Blob" en Git representa:',
+                options: ['a) Un directorio.', 'b) Un fichero.', 'c) Un commit.', 'd) Una rama.'],
+                correctAnswer: 'b) Un fichero.'
+            },
+            {
+                question: '¿Cuál de los siguientes no es un estado de un repositorio local Git?',
+                options: ['a) Working directory.', 'b) Staging area.', 'c) Local repo.', 'd) Remote repo (es un repositorio, no un estado del local).'],
+                correctAnswer: 'd) Remote repo (es un repositorio, no un estado del local).'
+            },
+            {
+                question: 'El comando git commit --amend se utiliza para:',
+                options: ['a) Crear un nuevo commit.', 'b) No generar commits que no aportan, acumulándose sobre el último commit.', 'c) Deshacer un commit.', 'd) Revertir un commit específico.'],
+                correctAnswer: 'b) No generar commits que no aportan, acumulándose sobre el último commit.'
+            },
+            {
+                question: 'La plataforma colaborativa de software "Forja" se asocia al concepto de:',
+                options: ['a) PaaS (Platform as a Service).', 'b) FOSS (Free and Open Source Software).', 'c) IaaS (Infrastructure as a Service).', 'd) SaaS (Software as a Service).'],
+                correctAnswer: 'b) FOSS (Free and Open Source Software).'
+            },
+            {
+                question: '¿Qué se entiende por "Epics" en el contexto de XP?',
+                options: ['a) Requisitos pequeños y específicos.', 'b) Historias de usuario que se agrupan.', 'c) Tareas individuales.', 'd) Casos de uso detallados.'],
+                correctAnswer: 'b) Historias de usuario que se agrupan.'
+            },
+            {
+                question: 'Según el Manifiesto Ágil, el software que funciona se entrega:',
+                options: ['a) Anualmente.', 'b) Con poca frecuencia.', 'c) Con frecuencia.', 'd) Al final del proyecto.'],
+                correctAnswer: 'c) Con frecuencia.'
+            },
+            {
+                question: 'Una de las "prácticas o productos" que maneja Scrum son los "Eventos Scrum". ¿Cuál de los siguientes no es un Evento Scrum?',
+                options: ['a) Sprint Planning.', 'b) Daily Scrum.', 'c) Product Goal.', 'd) Sprint Review.'],
+                correctAnswer: 'c) Product Goal.'
+            },
+            {
+                question: 'En Métrica 3, un participante del tipo "Jefe de Proyecto" es también un:',
+                options: ['a) Consultor XX.', 'b) Responsable de XX.', 'c) Usuario experto.', 'd) Programador.'],
+                correctAnswer: 'b) Responsable de XX.'
+            },
+            {
+                question: '¿Qué se hace en la Sprint Retrospective en Scrum?',
+                options: ['a) Se planifican los ítems del próximo sprint.', 'b) Se revisa el incremento del producto.', 'c) Se busca mejoras para el equipo y el proceso.', 'd) Se sincroniza el equipo diariamente.'],
+                correctAnswer: 'c) Se busca mejoras para el equipo y el proceso.'
+            },
+            {
+                question: 'En XP, los requisitos se definen mediante:',
+                options: ['a) Diagramas UML.', 'b) Historias de Usuario.', 'c) Documentos de diseño técnico.', 'd) Hojas de cálculo.'],
+                correctAnswer: 'b) Historias de Usuario.'
+            },
+            {
+                question: '¿Qué significa "CD" en el contexto de CI/CD?',
+                options: ['a) Continuous Design.', 'b) Continuous Delivery.', 'c) Continuous Deployment.', 'd) Continuous Development.'],
+                correctAnswer: 'c) Continuous Deployment.'
+            },
+            {
+                question: 'En el ejemplo de Integración Continua, la herramienta JBoss se utiliza como:',
+                options: ['a) Repositorio de código.', 'b) Motor de integración.', 'c) Runtime para el despliegue.', 'd) Herramienta de pruebas unitarias.'],
+                correctAnswer: 'c) Runtime para el despliegue.'
+            },
+            {
+                question: '¿Qué tipo de pruebas de integración ensamblan varios componentes/subsistemas?',
+                options: ['a) Unitarias.', 'b) Sistema.', 'c) Integración.', 'd) Aceptación.'],
+                correctAnswer: 'c) Integración.'
+            },
+            {
+                question: 'Las pruebas Alpha y Beta se diferencian principalmente en:',
+                options: ['a) El tipo de funcionalidad probada.', 'b) Quién las realiza y el entorno de ejecución.', 'c) Si son funcionales o no funcionales.', 'd) La fase del ciclo de vida en que se realizan.'],
+                correctAnswer: 'b) Quién las realiza y el entorno de ejecución.'
+            },
+            {
+                question: '¿Cuál de los siguientes es un sistema de control de versiones centralizado?',
+                options: ['a) Git.', 'b) Mercurial.', 'c) Subversion (SVN).', 'd) Bazaar.'],
+                correctAnswer: 'c) Subversion (SVN).'
+            },
+            {
+                question: 'Git utiliza SHA-1 para realizar un hash sobre objetos como:',
+                options: ['a) Branches y Tags.', 'b) Tree y Blob.', 'c) Commits y Remote.', 'd) Working directory y Staging area.'],
+                correctAnswer: 'b) Tree y Blob.'
+            },
+            {
+                question: 'El comando git log se utiliza para:',
+                options: ['a) Mostrar el estado actual del repositorio.', 'b) Mostrar el historial de commits.', 'c) Configurar el repositorio.', 'd) Deshacer cambios.'],
+                correctAnswer: 'b) Mostrar el historial de commits.'
+            },
+            {
+                question: 'Si queremos que git fetch actualice el estado de todas las ramas del repositorio local, sin traer los ficheros, usamos:',
+                options: ['a) git fetch origin.', 'b) git fetch <rama>.', 'c) git fetch --all.', 'd) git pull --all.'],
+                correctAnswer: 'c) git fetch --all.'
+            },
+            {
+                question: '¿Cuál de las siguientes plataformas es de tipo IaaS (Infrastructure as a Service)?',
+                options: ['a) Heroku (PaaS).', 'b) Digital Ocean.', 'c) AWS Elastic Beanstalk (PaaS).', 'd) OpenShift (PaaS).'],
+                correctAnswer: 'b) Digital Ocean.'
+            },
+            {
+                question: 'Según Métrica 3, las "Sesiones de Trabajo" incluyen:',
+                options: ['a) Solo entrevistas.', 'b) Entrevistas, Reuniones y JAD/JRP.', 'c) Planificación de Sistemas.', 'd) Aseguramiento de Calidad.'],
+                correctAnswer: 'b) Entrevistas, Reuniones y JAD/JRP.'
+            },
+            {
+                question: '¿Qué característica distingue a los roles "Principales" o "Cerdos" en Scrum?',
+                options: ['a) Son tangenciales al proyecto.', 'b) Están más involucrados en el proyecto.', 'c) Solo participan en la Sprint Review.', 'd) Son responsables únicamente de la documentación.'],
+                correctAnswer: 'b) Están más involucrados en el proyecto.'
+            },
+            {
+                question: '¿Qué artefacto de Scrum es gestionado y priorizado por el Product Owner?',
+                options: ['a) Sprint Backlog.', 'b) Definition of Done.', 'c) Product Backlog.', 'd) Burn down chart.'],
+                correctAnswer: 'c) Product Backlog.'
+            },
+            {
+                question: 'En XP, la práctica de "Cliente in-situ" implica:',
+                options: ['a) Que el cliente esté siempre en la oficina del desarrollador.', 'b) Una retroalimentación continua entre cliente y equipo de desarrollo.', 'c) Que el cliente solo participa en las fases finales.', 'd) Que el cliente solo proporciona requisitos al inicio.'],
+                correctAnswer: 'b) Una retroalimentación continua entre cliente y equipo de desarrollo.'
+            },
+            {
+                question: '¿Qué tipo de pruebas se centran en la funcionalidad del proyecto ejecutándose y son realizadas por Junit?',
+                options: ['a) Pruebas de calidad de código estático.', 'b) Pruebas de integración.', 'c) Pruebas unitarias (de código dinámico).', 'd) Pruebas de aceptación.'],
+                correctAnswer: 'c) Pruebas unitarias (de código dinámico).'
+            },
+            {
+                question: '¿Cuál de las siguientes afirmaciones sobre el directorio .git es incorrecta?',
+                options: ['a) Es un directorio oculto.', 'b) Contiene la metainformación del repositorio.', 'c) Mantiene la estructura física de directorios para cada rama.', 'd) Contiene el index (staging area), objects (commits, etc) y refs (branches, tags, etc).'],
+                correctAnswer: 'c) Mantiene la estructura física de directorios para cada rama.'
+            },
+            {
+                question: 'El comando git push <remote> <branch> se utiliza para:',
+                options: ['a) Traer cambios del remoto.', 'b) Subir los commits de local a remoto.', 'c) Crear una nueva rama en el remoto.', 'd) Fusionar ramas en el remoto.'],
+                correctAnswer: 'b) Subir los commits de local a remoto.'
+            },
+            {
+                question: '¿Cuál es el comando por defecto al usar git reset?',
+                options: ['a) --soft.', 'b) --mixed.', 'c) --hard.', 'd) --keep.'],
+                correctAnswer: 'b) --mixed.'
+            },
+            {
+                question: '¿Qué herramienta gráfica se menciona como una opción para trabajar con Git, creada por Atlassian?',
+                options: ['a) GitHub Desktop.', 'b) GitKraken.', 'c) SourceTree.', 'd) TortoiseGit.'],
+                correctAnswer: 'c) SourceTree.'
+            },
+            {
+                question: 'En el contexto de GitHub, el "Pull Request" es el mecanismo por el cual:',
+                options: ['a) Se clona un repositorio.', 'b) Se solicita al creador del repositorio original que incorpore tus modificaciones.', 'c) Se crea una copia del proyecto en tu cuenta.', 'd) Se sincroniza tu repositorio local con el remoto.'],
+                correctAnswer: 'b) Se solicita al creador del repositorio original que incorpore tus modificaciones.'
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userAnswers = new Array(quizData.length).fill(null); // Para almacenar las respuestas del usuario
+        const quizContainer = document.getElementById('quiz-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const scoreDisplay = document.getElementById('score-display');
+
+        function loadQuestion() {
+            const questionData = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <div class="question-text">${currentQuestionIndex + 1}. ${questionData.question}</div>
+                    <div id="options-container">
+                        ${questionData.options.map((option, index) => `
+                            <button class="option-button" data-option="${option}" data-index="${index}">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="feedback-${currentQuestionIndex}" class="feedback"></div>
+                </div>
+            `;
+
+            const optionButtons = quizContainer.querySelectorAll('.option-button');
+            optionButtons.forEach(button => {
+                button.addEventListener('click', handleOptionClick);
+                // Si el usuario ya respondió esta pregunta, resalta la opción seleccionada
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    if (button.dataset.option === userAnswers[currentQuestionIndex]) {
+                        button.classList.add(button.dataset.option === questionData.correctAnswer ? 'correct' : 'incorrect');
+                    }
+                    // Deshabilitar todos los botones una vez que se ha respondido
+                    button.disabled = true;
+                    // Mostrar feedback si ya se respondió
+                    const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+                    if (userAnswers[currentQuestionIndex] === questionData.correctAnswer) {
+                        feedbackDiv.textContent = '¡Correcto!';
+                        feedbackDiv.classList.add('correct-text');
+                    } else {
+                        feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${questionData.correctAnswer}`;
+                        feedbackDiv.classList.add('incorrect-text');
+                    }
+                }
+            });
+
+            updateNavigationButtons();
+        }
+
+        function handleOptionClick(event) {
+            const selectedOption = event.target.dataset.option;
+            const questionData = quizData[currentQuestionIndex];
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const optionButtons = quizContainer.querySelectorAll('.option-button');
+
+            // Deshabilitar todos los botones después de una selección
+            optionButtons.forEach(button => {
+                button.disabled = true;
+                if (button.dataset.option === questionData.correctAnswer) {
+                    button.classList.add('correct');
+                }
+            });
+
+            // Marcar la respuesta del usuario
+            event.target.classList.add(selectedOption === questionData.correctAnswer ? 'correct' : 'incorrect');
+
+            // Almacenar la respuesta del usuario
+            userAnswers[currentQuestionIndex] = selectedOption;
+
+            if (selectedOption === questionData.correctAnswer) {
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.classList.add('correct-text');
+                score++;
+            } else {
+                feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${questionData.correctAnswer}`;
+                feedbackDiv.classList.add('incorrect-text');
+            }
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+
+            if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                displayScore();
+            } else {
+                scoreDisplay.classList.add('hidden');
+            }
+        }
+
+        function displayScore() {
+            scoreDisplay.classList.remove('hidden');
+            scoreDisplay.textContent = `Has respondido ${score} de ${quizData.length} preguntas correctamente.`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                displayScore();
+            }
+        });
+
+        // Cargar la primera pregunta al iniciar
+        loadQuestion();
+    </script>
+</body>
+</html>

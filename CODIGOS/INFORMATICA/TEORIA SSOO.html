@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Sistemas Operativos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        .question-number {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 15px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        .answers-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .answer-button {
+            background-color: #e2e8f0;
+            color: #2d3748;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            border: 2px solid transparent;
+        }
+        .answer-button:hover {
+            background-color: #cbd5e0;
+        }
+        .answer-button.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #28a745;
+            font-weight: 600;
+        }
+        .answer-button.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+            font-weight: 600;
+        }
+        .feedback-message {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 20px;
+            min-height: 30px; /* Ensure space for message */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            background-color: #4299e1;
+            color: #ffffff;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .nav-button:hover {
+            background-color: #3182ce;
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h2 {
+            font-size: 1.8rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .modal-content p {
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 25px;
+        }
+        .modal-button {
+            background-color: #4299e1;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .modal-button:hover {
+            background-color: #3182ce;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="question-number" id="question-number"></div>
+        <div class="question-text" id="question-text"></div>
+        <div class="answers-grid" id="answers-grid"></div>
+        <div class="feedback-message" id="feedback-message"></div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+    </div>
+
+    <div id="quiz-completion-modal" class="modal">
+        <div class="modal-content">
+            <h2>¡Test Completado!</h2>
+            <p id="final-score"></p>
+            <button class="modal-button" onclick="restartQuiz()">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos para las preguntas y respuestas
+        const questions = [
+            {
+                question: "¿Cuál es el objetivo principal de un sistema operativo?",
+                options: [
+                    "a) Ejecutar programas de usuario.",
+                    "b) Gestionar el hardware de forma segura y eficiente.",
+                    "c) Proporcionar una interfaz gráfica.",
+                    "d) Conectar a internet."
+                ],
+                correctAnswer: "b) Gestionar el hardware de forma segura y eficiente."
+            },
+            {
+                question: "Una de las funciones básicas de un sistema operativo es actuar como:",
+                options: [
+                    "a) Un gestor de bases de datos.",
+                    "b) Una capa de abstracción.",
+                    "c) Un navegador web.",
+                    "d) Un editor de texto."
+                ],
+                correctAnswer: "b) Una capa de abstracción."
+            },
+            {
+                question: "¿Qué componente del sistema operativo se encarga de la gestión de memoria utilizando técnicas de paginación o segmentación?",
+                options: [
+                    "a) Gestión de Procesos.",
+                    "b) Gestión de Memoria.",
+                    "c) Gestión de Entrada/Salida.",
+                    "d) Gestión de Archivos."
+                ],
+                correctAnswer: "b) Gestión de Memoria."
+            },
+            {
+                question: "La gestión de procesos en un sistema operativo incluye:",
+                options: [
+                    "a) Controladores de dispositivos.",
+                    "b) Sistemas de ficheros.",
+                    "c) Planificadores.",
+                    "d) Niveles de seguridad."
+                ],
+                correctAnswer: "c) Planificadores."
+            },
+            {
+                question: "¿Qué tipo de sistema operativo permite a varios usuarios trabajar simultáneamente en la misma máquina?",
+                options: [
+                    "a) Monousuario.",
+                    "b) Monotarea.",
+                    "c) Multiusuario.",
+                    "d) Monoproceso."
+                ],
+                correctAnswer: "c) Multiusuario."
+            },
+            {
+                question: "En la clasificación de sistemas operativos por tiempo de respuesta, ¿qué significa 'Concurrentemente'?",
+                options: [
+                    "a) Varios procesos se ejecutan al mismo tiempo en un único procesador.",
+                    "b) Varios procesos compiten por el uso del procesador.",
+                    "c) Requiere varios procesadores para su ejecución.",
+                    "d) Ejecución secuencial sin interacción."
+                ],
+                correctAnswer: "b) Varios procesos compiten por el uso del procesador."
+            },
+            {
+                question: "¿Qué característica define un sistema operativo de 'Tiempo real'?",
+                options: [
+                    "a) Alto tiempo de respuesta.",
+                    "b) No interacción con el usuario.",
+                    "c) Tiempo de respuesta muy bajo o inmediato.",
+                    "d) División del tiempo del procesador entre todos los procesos."
+                ],
+                correctAnswer: "c) Tiempo de respuesta muy bajo o inmediato."
+            },
+            {
+                question: "POSIX es una API para funcionalidades de sistemas operativos que busca la:",
+                options: [
+                    "a) Optimización de gráficos.",
+                    "b) Estandarización.",
+                    "c) Gestión de redes.",
+                    "d) Seguridad avanzada."
+                ],
+                correctAnswer: "b) Estandarización."
+            },
+            {
+                question: "En la estructura de los sistemas operativos, ¿qué caracteriza a los sistemas 'Monolíticos'?",
+                options: [
+                    "a) Implementan todos los servicios en módulos independientes.",
+                    "b) Permiten instalar otro SO sobre ellos.",
+                    "c) Implementan en el núcleo todos los servicios (procesos, memoria, E/S y gestión de archivos).",
+                    "d) Las peticiones de un subsistema a otro van a través de una capa de microkernel."
+                ],
+                correctAnswer: "c) Implementan en el núcleo todos los servicios (procesos, memoria, E/S y gestión de archivos)."
+            },
+            {
+                question: "Un sistema operativo 'Modular' o 'de capas' se caracteriza por:",
+                options: [
+                    "a) Tener una única capa para todos los servicios.",
+                    "b) Que cada servicio es un módulo independiente del kernel que se puede cargar o descargar.",
+                    "c) Requerir un microkernel para la comunicación.",
+                    "d) La ejecución de un único proceso a la vez."
+                ],
+                correctAnswer: "b) Que cada servicio es un módulo independiente del kernel que se puede cargar o descargar."
+            },
+            {
+                question: "¿Qué es una 'Máquina Virtual' según la clasificación por estructura de SOs?",
+                options: [
+                    "a) Un sistema que implementa todos los servicios en el núcleo.",
+                    "b) Un sistema que permite instalar otro SO sobre él.",
+                    "c) Un sistema con una capa de kernel que gestiona las peticiones.",
+                    "d) Una variación de microkernel con capas de cliente y servidor."
+                ],
+                correctAnswer: "b) Un sistema que permite instalar otro SO sobre él."
+            },
+            {
+                question: "En un sistema 'Microkernel', ¿qué es la capa del kernel?",
+                options: [
+                    "a) El lugar donde se implementan todos los servicios del SO.",
+                    "b) Un módulo independiente que se carga y descarga.",
+                    "c) La capa por donde van las peticiones de un subsistema a otro.",
+                    "d) La interfaz entre el usuario y la computadora."
+                ],
+                correctAnswer: "c) La capa por donde van las peticiones de un subsistema a otro."
+            },
+            {
+                question: "Un sistema operativo 'Multitarea' permite:",
+                options: [
+                    "a) La ejecución de una única tarea a la vez.",
+                    "b) Varias tareas ejecutándose concurrentemente.",
+                    "c) La gestión de un único procesador.",
+                    "d) El procesamiento por lotes sin interacción."
+                ],
+                correctAnswer: "b) Varias tareas ejecutándose concurrentemente."
+            },
+            {
+                question: "Si un sistema operativo solo puede gestionar un procesador, aunque tenga varios programas en memoria, se clasifica como:",
+                options: [
+                    "a) Multiproceso.",
+                    "b) Multiprogramación.",
+                    "c) Monoproceso / Monoprocesador.",
+                    "d) Multitarea."
+                ],
+                correctAnswer: "c) Monoproceso / Monoprocesador."
+            },
+            {
+                question: "¿Qué significa 'Multiprogramación'?",
+                options: [
+                    "a) Capacidad de tener varios programas en memoria.",
+                    "b) Capacidad de usar varios procesadores simultáneamente.",
+                    "c) Que cada procesador realiza tareas de un tipo.",
+                    "d) Que los procesos se ejecutan indistintamente."
+                ],
+                correctAnswer: "a) Capacidad de tener varios programas en memoria."
+            },
+            {
+                question: "La gestión de memoria tiene como objetivo principal:",
+                options: [
+                    "a) Reducir el número de procesos en memoria.",
+                    "b) Ubicar procesos en memoria, aprovecharla al máximo y separar direccionamiento físico y virtual.",
+                    "c) Aumentar la fragmentación externa.",
+                    "d) Desactivar la memoria virtual."
+                ],
+                correctAnswer: "b) Ubicar procesos en memoria, aprovecharla al máximo y separar direccionamiento físico y virtual."
+            },
+            {
+                question: "Una aplicación, principalmente, consta de tres elementos. ¿Cuáles son?",
+                options: [
+                    "a) CPU, RAM y Disco.",
+                    "b) Código, Datos y Pila.",
+                    "c) Teclado, Ratón y Monitor.",
+                    "d) Kernel, Shell y Aplicaciones."
+                ],
+                correctAnswer: "b) Código, Datos y Pila."
+            },
+            {
+                question: "En la segmentación de memoria, ¿qué tipo de fragmentación se produce?",
+                options: [
+                    "a) Interna.",
+                    "b) Externa.",
+                    "c) Lógica.",
+                    "d) Física."
+                ],
+                correctAnswer: "b) Externa."
+            },
+            {
+                question: "Todas las direcciones de memoria que maneja una aplicación en un esquema de segmentación son:",
+                options: [
+                    "a) Físicas.",
+                    "b) Absolutas.",
+                    "c) Lógicas.",
+                    "d) Relativas."
+                ],
+                correctAnswer: "c) Lógicas."
+            },
+            {
+                question: "En la paginación, ¿cómo se divide el programa?",
+                options: [
+                    "a) En segmentos variables.",
+                    "b) En bloques de tamaño fijo (páginas).",
+                    "c) En secciones contiguas.",
+                    "d) En direcciones lógicas y físicas."
+                ],
+                correctAnswer: "b) En bloques de tamaño fijo (páginas)."
+            },
+            {
+                question: "¿Qué tipo de fragmentación no produce la paginación?",
+                options: [
+                    "a) Interna.",
+                    "b) Externa.",
+                    "c) Lógica.",
+                    "d) De pila."
+                ],
+                correctAnswer: "b) Externa."
+            },
+            {
+                question: "¿Qué es la MMU (Unidad de Gestión de Memoria)?",
+                options: [
+                    "a) Un componente de software para la paginación.",
+                    "b) Parte de la circuitería de la CPU que traduce direcciones lógicas a físicas.",
+                    "c) Una caché para la tabla de páginas.",
+                    "d) Un algoritmo de reemplazo de páginas."
+                ],
+                correctAnswer: "b) Parte de la circuitería de la CPU que traduce direcciones lógicas a físicas."
+            },
+            {
+                question: "¿Qué es la TLB (Translation Lookaside Buffer)?",
+                options: [
+                    "a) Una tabla de segmentos en memoria.",
+                    "b) Una caché dentro de la MMU para la tabla de páginas.",
+                    "c) Un registro de la CPU.",
+                    "d) Un tipo de algoritmo de paginación."
+                ],
+                correctAnswer: "b) Una caché dentro de la MMU para la tabla de páginas."
+            },
+            {
+                question: "La memoria virtual es una mejora de la paginación que permite:",
+                options: [
+                    "a) Ejecutar solo procesos que caben completamente en la memoria principal.",
+                    "b) Ejecutar procesos que requieren más memoria que la disponible, manteniendo solo la memoria utilizada en principal.",
+                    "c) Eliminar la necesidad de disco duro.",
+                    "d) Aumentar el tamaño de los segmentos."
+                ],
+                correctAnswer: "b) Ejecutar procesos que requieren más memoria que la disponible, manteniendo solo la memoria utilizada en principal."
+            },
+            {
+                question: "¿Qué ocurre cuando una página solicitada no está en memoria principal?",
+                options: [
+                    "a) Se produce un 'fallo de segmentación'.",
+                    "b) Se detecta un 'fallo de página'.",
+                    "c) Se reinicia el sistema.",
+                    "d) La MMU desactiva la memoria virtual."
+                ],
+                correctAnswer: "b) Se detecta un 'fallo de página'."
+            },
+            {
+                question: "El 'Fallo de página' genera un trap/interrupción a nivel del SO que activa una rutina de atención para:",
+                options: [
+                    "a) Terminar el proceso.",
+                    "b) Cargar la página en memoria principal.",
+                    "c) Desactivar el disco.",
+                    "d) Modificar la tabla de segmentos."
+                ],
+                correctAnswer: "b) Cargar la página en memoria principal."
+            },
+            {
+                question: "¿Qué es la Hiperpaginación?",
+                options: [
+                    "a) Un proceso de optimización de la memoria.",
+                    "b) Cuando hay un excesivo número de intercambios con el almacenamiento secundario.",
+                    "c) Un algoritmo de reemplazo de páginas.",
+                    "d) Una técnica para evitar la fragmentación interna."
+                ],
+                correctAnswer: "b) Cuando hay un excesivo número de intercambios con el almacenamiento secundario."
+            },
+            {
+                question: "¿Qué sistema operativo utiliza 'pagefile.sys' para la memoria virtual?",
+                options: [
+                    "a) Linux.",
+                    "b) macOS.",
+                    "c) Windows.",
+                    "d) Unix."
+                ],
+                correctAnswer: "c) Windows."
+            },
+            {
+                question: "¿Qué algoritmo de reemplazo de páginas sustituye la página que lleva más tiempo en memoria principal?",
+                options: [
+                    "a) LRU (Least Recently Used).",
+                    "b) NRU (Not Recently Used).",
+                    "c) FIFO (First In, First Out).",
+                    "d) Optimal."
+                ],
+                correctAnswer: "c) FIFO (First In, First Out)."
+            },
+            {
+                question: "El algoritmo LRU (Least Recently Used) elige la página que:",
+                options: [
+                    "a) Fue accedida hace más tiempo.",
+                    "b) Fue modificada recientemente.",
+                    "c) Tiene el bit de referencia activado.",
+                    "d) Entró primero en memoria."
+                ],
+                correctAnswer: "a) Fue accedida hace más tiempo."
+            },
+            {
+                question: "En el algoritmo NRU (Not Recently Used), ¿cuál es la categoría de páginas que el sistema operativo considera 'mejores' para cambiar?",
+                options: [
+                    "a) Categoría 3: Sí referenciada, Sí modificada.",
+                    "b) Categoría 2: Sí referenciada, No modificada.",
+                    "c) Categoría 1: No referenciada, Sí modificada.",
+                    "d) Categoría 0: No referenciada, No modificada."
+                ],
+                correctAnswer: "d) Categoría 0: No referenciada, No modificada."
+            },
+            {
+                question: "Un proceso es un programa en ejecución que necesita estar cargado en memoria y disponer de:",
+                options: [
+                    "a) Solo código.",
+                    "b) Solo datos.",
+                    "c) Recursos (CPU, memoria, archivos, dispositivos E/S).",
+                    "d) Únicamente la pila."
+                ],
+                correctAnswer: "c) Recursos (CPU, memoria, archivos, dispositivos E/S)."
+            },
+            {
+                question: "¿Qué sección de un proceso en memoria almacena las instrucciones del proceso?",
+                options: [
+                    "a) Memoria dinámica (Heap).",
+                    "b) Datos (Data).",
+                    "c) Pila (Stack).",
+                    "d) Código (Text)."
+                ],
+                correctAnswer: "d) Código (Text)."
+            },
+            {
+                question: "La Pila (Stack) en un proceso se utiliza para:",
+                options: [
+                    "a) Almacenar variables globales.",
+                    "b) Preservar el estado en la invocación anidada de procedimientos y funciones.",
+                    "c) Generar memoria dinámica.",
+                    "d) Contener las instrucciones del proceso."
+                ],
+                correctAnswer: "b) Preservar el estado en la invocación anidada de procedimientos y funciones."
+            },
+            {
+                question: "Cuando un proceso se ejecuta, el SO le asigna un espacio de direcciones de memoria y lo añade a la:",
+                options: [
+                    "a) Tabla de interrupciones.",
+                    "b) Tabla de procesos.",
+                    "c) Cola de entrada/salida.",
+                    "d) Tabla de segmentos."
+                ],
+                correctAnswer: "b) Tabla de procesos."
+            },
+            {
+                question: "La estructura de datos que almacena información sobre un proceso en la tabla de procesos se llama:",
+                options: [
+                    "a) TCB (Thread Control Block).",
+                    "b) MMU (Memory Management Unit).",
+                    "c) PCB (Process Control Block).",
+                    "d) TLB (Translation Lookaside Buffer)."
+                ],
+                correctAnswer: "c) PCB (Process Control Block)."
+            },
+            {
+                question: "¿Qué información no se guarda en el PCB (Bloque de Control de Proceso)?",
+                options: [
+                    "a) Identificación de proceso (PID, PPID, usuario).",
+                    "b) Información de estado del proceso.",
+                    "c) Contenido de los ficheros del proceso.",
+                    "d) Dirección de memoria donde se ha cargado el proceso."
+                ],
+                correctAnswer: "c) Contenido de los ficheros del proceso."
+            },
+            {
+                question: "¿Qué estado de un proceso indica que está listo para ejecutar y esperando procesador?",
+                options: [
+                    "a) Nuevo.",
+                    "b) En Ejecución.",
+                    "c) Bloqueado.",
+                    "d) Preparado."
+                ],
+                correctAnswer: "d) Preparado."
+            },
+            {
+                question: "Si un proceso está esperando un evento (como una petición de E/S o una señal), su estado es:",
+                options: [
+                    "a) Nuevo.",
+                    "b) Preparado.",
+                    "c) Bloqueado.",
+                    "d) Suspendido."
+                ],
+                correctAnswer: "c) Bloqueado."
+            },
+            {
+                question: "¿Qué transición de estado significa que el planificador escoge un proceso para la ejecución?",
+                options: [
+                    "a) Nuevo -> Preparado.",
+                    "b) Preparado -> Ejecución.",
+                    "c) Ejecución -> Bloqueado.",
+                    "d) Bloqueado -> Preparado."
+                ],
+                correctAnswer: "b) Preparado -> Ejecución."
+            },
+            {
+                question: "Cuando un proceso en ejecución es interrumpido y expulsado del procesador porque ha consumido su tiempo asignado, pasa del estado 'Ejecución' a:",
+                options: [
+                    "a) Bloqueado.",
+                    "b) Terminado.",
+                    "c) Preparado.",
+                    "d) Suspendido."
+                ],
+                correctAnswer: "c) Preparado."
+            },
+            {
+                question: "¿Qué es el 'Cambio de contexto' en la gestión de procesos?",
+                options: [
+                    "a) El proceso de cambiar la interfaz de usuario.",
+                    "b) Sacar un proceso de la CPU y guardar su estado para restaurar otro.",
+                    "c) La asignación de memoria a un nuevo proceso.",
+                    "d) La gestión de archivos en el disco."
+                ],
+                correctAnswer: "b) Sacar un proceso de la CPU y guardar su estado para restaurar otro."
+            },
+            {
+                question: "¿Qué planificador de procesos controla el grado de multiprogramación y se ejecuta con poca frecuencia?",
+                options: [
+                    "a) Planificador a corto plazo.",
+                    "b) Planificador a medio plazo.",
+                    "c) Planificador a largo plazo.",
+                    "d) Distpacher."
+                ],
+                correctAnswer: "c) Planificador a largo plazo."
+            },
+            {
+                question: "El 'Distpacher' es un componente de la CPU que:",
+                options: [
+                    "a) Selecciona procesos de la cola de esperando ejecución y los carga en memoria.",
+                    "b) Decide qué proceso pasa de la memoria principal a la secundaria.",
+                    "c) Selecciona entre los procesos preparados y les asigna la CPU, sacando el proceso del procesador y metiendo el siguiente.",
+                    "d) Guarda el contexto de un proceso saliente en la TLB."
+                ],
+                correctAnswer: "c) Selecciona entre los procesos preparados y les asigna la CPU, sacando el proceso del procesador y metiendo el siguiente."
+            },
+            {
+                question: "¿Qué tipo de planificación permite que los procesos puedan ser expulsados de la CPU?",
+                options: [
+                    "a) No apropiativa.",
+                    "b) Apropiativa.",
+                    "c) FCFS.",
+                    "d) SJF."
+                ],
+                correctAnswer: "b) Apropiativa."
+            },
+            {
+                question: "¿Qué algoritmo de planificación no apropiativo asigna la CPU a los procesos en el mismo orden que lo solicitan?",
+                options: [
+                    "a) SJF (Shortest Job First).",
+                    "b) Round Robin.",
+                    "c) FCFS (First Come First Served).",
+                    "d) SRTF (Shortest Remaining Time First)."
+                ],
+                correctAnswer: "c) FCFS (First Come First Served)."
+            },
+            {
+                question: "El algoritmo FCFS (First Come First Served) puede sufrir de 'efecto convoy', que implica:",
+                options: [
+                    "a) Que los procesos con rachas cortas de CPU retrasan a los procesos con rachas largas.",
+                    "b) Que los procesos con rachas largas de CPU retrasan a los procesos con rachas cortas.",
+                    "c) Que todos los procesos tienen el mismo tiempo de CPU.",
+                    "d) Que la CPU no se asigna en el orden de llegada."
+                ],
+                correctAnswer: "b) Que los procesos con rachas largas de CPU retrasan a los procesos con rachas cortas."
+            },
+            {
+                question: "¿Qué algoritmo de planificación da prioridad al proceso que menos tiempo total de CPU requiere?",
+                options: [
+                    "a) FCFS.",
+                    "b) SJF (Shortest Job First).",
+                    "c) Round Robin.",
+                    "d) Planificación por prioridades."
+                ],
+                correctAnswer: "b) SJF (Shortest Job First)."
+            },
+            {
+                question: "¿Cuál es la versión apropiativa de SJF (Shortest Job First)?",
+                options: [
+                    "a) FCFS.",
+                    "b) Round Robin.",
+                    "c) SRTF (Shortest Remaining Time First).",
+                    "d) Multilevel Queue."
+                ],
+                correctAnswer: "c) SRTF (Shortest Remaining Time First)."
+            },
+            {
+                question: "En la planificación por prioridades, si varios procesos tienen la misma prioridad, ¿qué algoritmo se utiliza para seleccionarlos?",
+                options: [
+                    "a) SJF.",
+                    "b) Round Robin.",
+                    "c) FCFS.",
+                    "d) SRTF."
+                ],
+                correctAnswer: "c) FCFS."
+            },
+            {
+                question: "En el algoritmo Round Robin, cada proceso tiene una cantidad de tiempo de CPU llamada:",
+                options: [
+                    "a) Quantum.",
+                    "b) Burst.",
+                    "c) Slice.",
+                    "d) Turno."
+                ],
+                correctAnswer: "a) Quantum."
+            },
+            {
+                question: "Si en Round Robin el quantum es muy grande, el algoritmo degenera en:",
+                options: [
+                    "a) SJF.",
+                    "b) SRTF.",
+                    "c) FCFS.",
+                    "d) Planificación por prioridades."
+                ],
+                correctAnswer: "c) FCFS."
+            },
+            {
+                question: "¿Qué algoritmo de planificación divide la lista de procesos listos en varias colas, una para cada tipo de proceso?",
+                options: [
+                    "a) Round Robin.",
+                    "b) FCFS.",
+                    "c) Multilevel Queue.",
+                    "d) SJF."
+                ],
+                correctAnswer: "c) Multilevel Queue."
+            },
+            {
+                question: "Un hilo es una unidad básica de utilización de CPU que contiene su propio:",
+                options: [
+                    "a) Espacio de direcciones de memoria completo.",
+                    "b) Archivos y recursos del proceso.",
+                    "c) Program counter, conjunto de registros y pila.",
+                    "d) Tabla de procesos independiente."
+                ],
+                correctAnswer: "c) Program counter, conjunto de registros y pila."
+            },
+            {
+                question: "¿Qué estructura de datos representa un hilo a nivel del SO?",
+                options: [
+                    "a) PCB (Process Control Block).",
+                    "b) TCB (Thread Control Block).",
+                    "c) MMU (Memory Management Unit).",
+                    "d) TLB (Translation Lookaside Buffer)."
+                ],
+                correctAnswer: "b) TCB (Thread Control Block)."
+            },
+            {
+                question: "Los hilos de un mismo proceso comparten con otros hilos del mismo proceso:",
+                options: [
+                    "a) Su propio program counter.",
+                    "b) Su propia pila.",
+                    "c) La sección de código y la sección de datos.",
+                    "d) Sus propios registros."
+                ],
+                correctAnswer: "c) La sección de código y la sección de datos."
+            },
+            {
+                question: "Si un proceso tiene múltiples hilos, ¿qué mejora se puede observar en el tiempo de respuesta?",
+                options: [
+                    "a) El programa se bloquea completamente.",
+                    "b) El programa puede continuar ejecutándose, aunque parte de él esté bloqueado.",
+                    "c) Solo se puede ejecutar una tarea a la vez.",
+                    "d) El SO deja de gestionar la CPU."
+                ],
+                correctAnswer: "b) El programa puede continuar ejecutándose, aunque parte de él esté bloqueado."
+            },
+            {
+                question: "¿Qué tipo de hilos son implementados en alguna librería y se gestionan sin soporte del SO?",
+                options: [
+                    "a) Hilos a nivel de kernel.",
+                    "b) Hilos a nivel de usuario.",
+                    "c) Hilos de sistema.",
+                    "d) Hilos de proceso."
+                ],
+                correctAnswer: "b) Hilos a nivel de usuario."
+            },
+            {
+                question: "El cambio de contexto es más sencillo entre hilos de:",
+                options: [
+                    "a) Kernel.",
+                    "b) Usuario.",
+                    "c) Sistema.",
+                    "d) Proceso."
+                ],
+                correctAnswer: "b) Usuario."
+            },
+            {
+                question: "Para la comunicación y sincronización de procesos, ¿qué mecanismo requiere un mecanismo de sincronización externo (como semáforos) y la responsabilidad recae en los procesos?",
+                options: [
+                    "a) Paso de mensajes.",
+                    "b) Canalizaciones.",
+                    "c) Memoria compartida.",
+                    "d) Monitores."
+                ],
+                correctAnswer: "c) Memoria compartida."
+            },
+            {
+                question: "En el paso de mensajes, ¿quién tiene la responsabilidad de la comunicación y sincronización?",
+                options: [
+                    "a) Los procesos.",
+                    "b) El SO.",
+                    "c) Los semáforos.",
+                    "d) Los monitores."
+                ],
+                correctAnswer: "b) El SO."
+            },
+            {
+                question: "¿Qué mecanismo de sincronización se describe como un 'semáforo avanzado, con información adicional'?",
+                options: [
+                    "a) Monitores.",
+                    "b) Semáforos.",
+                    "c) Algoritmo de Dekker.",
+                    "d) Paso de mensajes."
+                ],
+                correctAnswer: "a) Monitores."
+            },
+            {
+                question: "Los algoritmos como Dekker, Peterson, Eisenberg-McGuire y la panadería de Lamport se utilizan para garantizar:",
+                options: [
+                    "a) La comunicación entre procesos.",
+                    "b) El acceso concurrente con exclusión mutua.",
+                    "c) La gestión de memoria virtual.",
+                    "d) La planificación de procesos."
+                ],
+                correctAnswer: "b) El acceso concurrente con exclusión mutua."
+            },
+            {
+                question: "¿Qué es un 'fichero o archivo'?",
+                options: [
+                    "a) Un programa en ejecución.",
+                    "b) Una carpeta que organiza otros ficheros.",
+                    "c) Información de un tipo almacenada en un dispositivo de almacenamiento.",
+                    "d) Un proceso del sistema operativo."
+                ],
+                correctAnswer: "c) Información de un tipo almacenada en un dispositivo de almacenamiento."
+            },
+            {
+                question: "Un 'directorio o carpeta' es un tipo especial de fichero que se utiliza para:",
+                options: [
+                    "a) Almacenar datos.",
+                    "b) Ejecutar instrucciones.",
+                    "c) Organizar ficheros (u otras carpetas).",
+                    "d) Representar dispositivos de E/S."
+                ],
+                correctAnswer: "c) Organizar ficheros (u otras carpetas)."
+            },
+            {
+                question: "Uno de los objetivos del sistema de ficheros es:",
+                options: [
+                    "a) Desactivar el acceso a los ficheros.",
+                    "b) Controlar el acceso a los ficheros mediante permisos.",
+                    "c) Reducir el almacenamiento secundario.",
+                    "d) Ejecutar programas de aplicación."
+                ],
+                correctAnswer: "b) Controlar el acceso a los ficheros mediante permisos."
+            },
+            {
+                question: "¿Qué tipo de fichero contiene datos o información?",
+                options: [
+                    "a) Directorios.",
+                    "b) Ficheros especiales de dispositivos.",
+                    "c) Ficheros normales o regulares.",
+                    "d) Ficheros de sistema."
+                ],
+                correctAnswer: "c) Ficheros normales o regulares."
+            },
+            {
+                question: "¿Qué información NO suele contener un fichero?",
+                options: [
+                    "a) Nombre y Tamaño.",
+                    "b) Fechas de creación y modificación.",
+                    "c) Contenido del disco duro completo.",
+                    "d) Permisos (lectura, escritura, ejecución)."
+                ],
+                correctAnswer: "c) Contenido del disco duro completo."
+            },
+            {
+                question: "La asignación 'enlazada' de espacio para ficheros es utilizada por:",
+                options: [
+                    "a) NTFS.",
+                    "b) EXT4.",
+                    "c) FAT, FAT32.",
+                    "d) HFS+."
+                ],
+                correctAnswer: "c) FAT, FAT32."
+            },
+            {
+                question: "¿Qué tipo de dispositivo de E/S almacena la información en bloques de tamaño fijo y permite leer o escribir en un bloque de forma independiente?",
+                options: [
+                    "a) Dispositivos de caracter.",
+                    "b) Impresoras de línea.",
+                    "c) Dispositivos de bloque.",
+                    "d) Cintas de papel."
+                ],
+                correctAnswer: "c) Dispositivos de bloque."
+            },
+            {
+                question: "Los discos duros son ejemplos de:",
+                options: [
+                    "a) Dispositivos de caracter.",
+                    "b) Dispositivos de bloque.",
+                    "c) Dispositivos de flujo.",
+                    "d) Dispositivos de red."
+                ],
+                correctAnswer: "b) Dispositivos de bloque."
+            },
+            {
+                question: "Un 'Dispositivo de caracter' se caracteriza por:",
+                options: [
+                    "a) Almacenar información en bloques.",
+                    "b) Enviar o recibir un flujo de caracteres.",
+                    "c) Tener operaciones de búsqueda.",
+                    "d) Utilizar direcciones para acceder a la información."
+                ],
+                correctAnswer: "b) Enviar o recibir un flujo de caracteres."
+            },
+            {
+                question: "¿Qué son los 'Drivers o Controladores'?",
+                options: [
+                    "a) Programas de usuario para interactuar con dispositivos.",
+                    "b) Rutinas de servicio de interrupción (ISR) que gestionan dispositivos de E/S.",
+                    "c) Componentes de hardware del sistema operativo.",
+                    "d) Algoritmos de planificación de la CPU."
+                ],
+                correctAnswer: "b) Rutinas de servicio de interrupción (ISR) que gestionan dispositivos de E/S."
+            },
+            {
+                question: "El PIC (Controlador Programable de Interrupciones) tiene como función:",
+                options: [
+                    "a) Gestionar la memoria virtual.",
+                    "b) Detectar la interrupción, buscar la rutina (ISR) asociada y decirle a la CPU lo que debe ejecutar.",
+                    "c) Controlar el acceso a los ficheros.",
+                    "d) Realizar la traducción de direcciones lógicas a físicas."
+                ],
+                correctAnswer: "b) Detectar la interrupción, buscar la rutina (ISR) asociada y decirle a la CPU lo que debe ejecutar."
+            },
+            {
+                question: "Un sistema operativo es un conjunto de programas integrados que tienen como objetivo:",
+                options: [
+                    "a) Exclusivamente ejecutar videojuegos.",
+                    "b) Aprovechar el hardware de una computadora y utilizarlo de forma segura y eficiente.",
+                    "c) Solo proporcionar una interfaz gráfica al usuario.",
+                    "d) Gestionar únicamente la conexión a internet."
+                ],
+                correctAnswer: "b) Aprovechar el hardware de una computadora y utilizarlo de forma segura y eficiente."
+            },
+            {
+                question: "Además de gestionar el hardware, el SO actúa como:",
+                options: [
+                    "a) Una base de datos.",
+                    "b) Interfaz entre el usuario y la computadora.",
+                    "c) Una aplicación de procesamiento de texto.",
+                    "d) Un antivirus."
+                ],
+                correctAnswer: "b) Interfaz entre el usuario y la computadora."
+            },
+            {
+                question: "La gestión de Entrada/Salida en el SO incluye:",
+                options: [
+                    "a) Técnicas de paginación.",
+                    "b) Controladores de dispositivos.",
+                    "c) Planificadores de procesos.",
+                    "d) Sistemas de ficheros."
+                ],
+                correctAnswer: "b) Controladores de dispositivos."
+            },
+            {
+                question: "¿Qué clasificación de SOs se refiere al número de procesos que compiten por la CPU sin que sea necesario más de un procesador?",
+                options: [
+                    "a) Simultáneamente.",
+                    "b) Concurrentemente.",
+                    "c) Tiempo real.",
+                    "d) Procesamiento por lotes."
+                ],
+                correctAnswer: "b) Concurrentemente."
+            },
+            {
+                question: "Un sistema operativo que ejecuta procesos de forma secuencial sin interacción, como las copias de seguridad, se denomina:",
+                options: [
+                    "a) Tiempo compartido.",
+                    "b) Tiempo real.",
+                    "c) Procesamiento por lotes.",
+                    "d) Multitarea."
+                ],
+                correctAnswer: "c) Procesamiento por lotes."
+            },
+            {
+                question: "¿Qué tipo de estructura de SO se describe como una variación de microkernel donde unas capas hacen de Cliente y otras de Servidor, pasándose peticiones?",
+                options: [
+                    "a) Monolíticos.",
+                    "b) Modulares.",
+                    "c) Máquina Virtual.",
+                    "d) Cliente-Servidor."
+                ],
+                correctAnswer: "d) Cliente-Servidor."
+            },
+            {
+                question: "Si un sistema operativo puede usar varios procesadores simultáneamente para distribuir la carga de trabajo, se clasifica como:",
+                options: [
+                    "a) Monoproceso.",
+                    "b) Multiproceso / Multiprocesador.",
+                    "c) Monotarea.",
+                    "d) Multiprogramación."
+                ],
+                correctAnswer: "b) Multiproceso / Multiprocesador."
+            },
+            {
+                question: "La 'Segmentación Paginada' se refiere a:",
+                options: [
+                    "a) La división de la memoria en segmentos de tamaño fijo.",
+                    "b) La división de cada segmento en páginas.",
+                    "c) La técnica para evitar la fragmentación interna.",
+                    "d) El proceso de traducir direcciones físicas a lógicas."
+                ],
+                correctAnswer: "b) La división de cada segmento en páginas."
+            },
+            {
+                question: "En la memoria virtual, cuando hay un 'Fallo de página', lo detecta:",
+                options: [
+                    "a) La CPU.",
+                    "b) El disco.",
+                    "c) La MMU.",
+                    "d) La TLB."
+                ],
+                correctAnswer: "c) La MMU."
+            },
+            {
+                question: "Si la memoria está llena y se produce hiperpaginación, se ejecuta un algoritmo de reemplazo para tener en memoria principal las páginas más:",
+                options: [
+                    "a) Antiguas.",
+                    "b) 'Importantes'.",
+                    "c) Pequeñas.",
+                    "d) Grandes."
+                ],
+                correctAnswer: "b) 'Importantes'."
+            },
+            {
+                question: "El algoritmo NRU (Not Recently Used) asigna a las páginas un bit de:",
+                options: [
+                    "a) Ubicación y tamaño.",
+                    "b) Creación y modificación.",
+                    "c) Referencia (lectura) y modificación (escritura).",
+                    "d) Prioridad y ejecución."
+                ],
+                correctAnswer: "c) Referencia (lectura) y modificación (escritura)."
+            },
+            {
+                question: "¿Qué sección de un proceso almacena las variables globales del proceso?",
+                options: [
+                    "a) Código (Text).",
+                    "b) Memoria dinámica (Heap).",
+                    "c) Datos (Data).",
+                    "d) Pila (Stack)."
+                ],
+                correctAnswer: "c) Datos (Data)."
+            },
+            {
+                question: "El estado 'Suspendido' de un proceso significa:",
+                options: [
+                    "a) Que está esperando un evento.",
+                    "b) Que ha finalizado su ejecución.",
+                    "c) Que está en memoria virtual y debe pasar a principal.",
+                    "d) Que está listo para ejecutar."
+                ],
+                correctAnswer: "c) Que está en memoria virtual y debe pasar a principal."
+            },
+            {
+                question: "¿Cuál es la principal función del planificador a corto plazo / Distpacher?",
+                options: [
+                    "a) Cargar procesos en memoria.",
+                    "b) Seleccionar procesos preparados y asignarles la CPU.",
+                    "c) Decidir qué procesos van a memoria secundaria.",
+                    "d) Controlar el grado de multiprogramación."
+                ],
+                correctAnswer: "b) Seleccionar procesos preparados y asignarles la CPU."
+            },
+            {
+                question: "Una ventaja de la planificación apropiativa (preemtive) es que:",
+                options: [
+                    "a) Es más sencilla de implementar.",
+                    "b) No necesita soporte hardware adicional.",
+                    "c) Mejora el servicio y evita la monopolización de la CPU.",
+                    "d) Los procesos se ejecutan hasta que terminan o se bloquean."
+                ],
+                correctAnswer: "c) Mejora el servicio y evita la monopolización de la CPU."
+            },
+            {
+                question: "En el algoritmo SJF (Shortest Job First), ¿cuál es una de sus desventajas?",
+                options: [
+                    "a) Favorece los procesos orientados a CPU.",
+                    "b) Es costoso saber cuánto dura la siguiente racha de CPU.",
+                    "c) Mal tiempo de espera.",
+                    "d) Genera efecto convoy."
+                ],
+                correctAnswer: "b) Es costoso saber cuánto dura la siguiente racha de CPU."
+            },
+            {
+                question: "¿Qué característica tienen los hilos a nivel de kernel?",
+                options: [
+                    "a) Son implementados en librerías de usuario.",
+                    "b) Se gestionan sin soporte del SO.",
+                    "c) El SO es quien los crea, planifica y gestiona.",
+                    "d) El SO solo reconoce un hilo de ejecución."
+                ],
+                correctAnswer: "c) El SO es quien los crea, planifica y gestiona."
+            },
+            {
+                question: "¿Qué mecanismo de comunicación interprocesos permite hacer uso de 'send' y 'receive' (bloqueantes o no)?",
+                options: [
+                    "a) Memoria compartida.",
+                    "b) Canalizaciones.",
+                    "c) Paso de mensajes.",
+                    "d) Monitores."
+                ],
+                correctAnswer: "c) Paso de mensajes."
+            },
+            {
+                question: "Para garantizar el acceso concurrente con exclusión mutua, ¿qué se busca evitar con algoritmos como Dekker o Peterson?",
+                options: [
+                    "a) La inanición y los interbloqueos.",
+                    "b) La sobrecarga de la CPU.",
+                    "c) La fragmentación de memoria.",
+                    "d) Los fallos de página."
+                ],
+                correctAnswer: "a) La inanición y los interbloqueos."
+            },
+            {
+                question: "El sistema de ficheros es parte del SO que permite:",
+                options: [
+                    "a) Ejecutar directamente los programas.",
+                    "b) 'Administrar' la información almacenada de los dispositivos de E/S en forma de ficheros.",
+                    "c) Gestionar la red.",
+                    "d) Controlar las interrupciones de la CPU."
+                ],
+                correctAnswer: "b) 'Administrar' la información almacenada de los dispositivos de E/S en forma de ficheros."
+            },
+            {
+                question: "¿Qué información de un fichero indica desde qué puntos se puede acceder a él?",
+                options: [
+                    "a) Nombre.",
+                    "b) Tamaño.",
+                    "c) Ubicación.",
+                    "d) Enlaces."
+                ],
+                correctAnswer: "d) Enlaces."
+            },
+            {
+                question: "¿Cuál es una característica de la asignación contigua de espacio para ficheros?",
+                options: [
+                    "a) Los bloques de datos están dispersos por la memoria.",
+                    "b) Puede generar fragmentación externa. (Aunque el texto se refiere a la segmentación, la asignación contigua sufre de fragmentación externa por naturaleza)",
+                    "c) Es usada por FAT32.",
+                    "d) Se basa en i-nodos."
+                ],
+                correctAnswer: "b) Puede generar fragmentación externa. (Aunque el texto se refiere a la segmentación, la asignación contigua sufre de fragmentación externa por naturaleza)"
+            },
+            {
+                question: "Los ratones y las impresoras de línea son ejemplos de:",
+                options: [
+                    "a) Dispositivos de bloque.",
+                    "b) Dispositivos de caracter.",
+                    "c) Dispositivos de red.",
+                    "d) Dispositivos de almacenamiento."
+                ],
+                correctAnswer: "b) Dispositivos de caracter."
+            },
+            {
+                question: "¿Qué es una IRQ (Interrupt ReQuest)?",
+                options: [
+                    "a) Una solicitud de memoria.",
+                    "b) Una rutina de servicio.",
+                    "c) Una interrupción.",
+                    "d) Un controlador de dispositivo."
+                ],
+                correctAnswer: "c) Una interrupción."
+            },
+            {
+                question: "¿Qué permite un proceso multiproceso/multiprocesador?",
+                options: [
+                    "a) Solo gestionar un procesador a la vez.",
+                    "b) Usar varios procesadores simultáneamente para distribuir la carga de trabajo.",
+                    "c) Tener varios programas en memoria sin ejecutar.",
+                    "d) Que la CPU no pare esperando el siguiente programa."
+                ],
+                correctAnswer: "b) Usar varios procesadores simultáneamente para distribuir la carga de trabajo."
+            },
+            {
+                question: "En la gestión de memoria, ¿qué elemento de la aplicación se refiere al espacio de almacenamiento?",
+                options: [
+                    "a) Código (CS).",
+                    "b) Pila (SS).",
+                    "c) Datos (DS).",
+                    "d) MMU."
+                ],
+                correctAnswer: "c) Datos (DS)."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null); // To store user's selected answer index for each question
+        let answeredQuestions = new Array(questions.length).fill(false); // To track if a question has been answered
+
+        const questionNumberElement = document.getElementById('question-number');
+        const questionTextElement = document.getElementById('question-text');
+        const answersGridElement = document.getElementById('answers-grid');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const quizCompletionModal = document.getElementById('quiz-completion-modal');
+        const finalScoreElement = document.getElementById('final-score');
+
+        function loadQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            questionNumberElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionTextElement.textContent = currentQuestion.question;
+            answersGridElement.innerHTML = '';
+            feedbackMessageElement.textContent = '';
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('answer-button');
+                button.textContent = option;
+                button.dataset.index = index; // Store original index
+                button.addEventListener('click', () => selectAnswer(option, index));
+                answersGridElement.appendChild(button);
+
+                // If the question was already answered, show the selected answer and correct/incorrect styling
+                if (answeredQuestions[currentQuestionIndex]) {
+                    disableAnswerButtons();
+                    const selectedAnswerIndex = userAnswers[currentQuestionIndex];
+                    const correctAnswerIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+
+                    if (index === selectedAnswerIndex) {
+                        if (option === currentQuestion.correctAnswer) {
+                            button.classList.add('correct');
+                            feedbackMessageElement.textContent = '¡Correcto!';
+                            feedbackMessageElement.style.color = '#28a745';
+                        } else {
+                            button.classList.add('incorrect');
+                            feedbackMessageElement.textContent = 'Incorrecto. La respuesta correcta es: ' + currentQuestion.correctAnswer;
+                            feedbackMessageElement.style.color = '#dc3545';
+                            // Also highlight the correct answer if it's different from the selected one
+                            const correctButton = Array.from(answersGridElement.children).find(btn => btn.textContent === currentQuestion.correctAnswer);
+                            if (correctButton) {
+                                correctButton.classList.add('correct');
+                            }
+                        }
+                    } else if (index === correctAnswerIndex) {
+                        // If it's the correct answer and it wasn't selected, highlight it
+                        button.classList.add('correct');
+                    }
+                }
+            });
+
+            updateNavigationButtons();
+        }
+
+        function selectAnswer(selectedOption, selectedIndex) {
+            // Only allow answering if the question hasn't been answered yet
+            if (answeredQuestions[currentQuestionIndex]) {
+                return;
+            }
+
+            answeredQuestions[currentQuestionIndex] = true;
+            userAnswers[currentQuestionIndex] = selectedIndex; // Store the index of the selected answer
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const buttons = answersGridElement.children;
+
+            disableAnswerButtons(); // Disable all buttons after selection
+
+            if (selectedOption === currentQuestion.correctAnswer) {
+                score++;
+                feedbackMessageElement.textContent = '¡Correcto!';
+                feedbackMessageElement.style.color = '#28a745';
+                buttons[selectedIndex].classList.add('correct');
+            } else {
+                feedbackMessageElement.textContent = 'Incorrecto. La respuesta correcta es: ' + currentQuestion.correctAnswer;
+                feedbackMessageElement.style.color = '#dc3545';
+                buttons[selectedIndex].classList.add('incorrect');
+
+                // Highlight the correct answer
+                const correctAnswerIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+                if (correctAnswerIndex !== -1) {
+                    buttons[correctAnswerIndex].classList.add('correct');
+                }
+            }
+        }
+
+        function disableAnswerButtons() {
+            const buttons = answersGridElement.children;
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                buttons[i].style.cursor = 'not-allowed';
+            }
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]; // Disable next if last question and answered
+            if (currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                nextButton.textContent = 'Ver Resultados';
+            } else {
+                nextButton.textContent = 'Siguiente';
+            }
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                // Ensure the current question has been answered before moving to the next
+                if (answeredQuestions[currentQuestionIndex]) {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                } else {
+                    // Optionally, show a message to the user to answer the current question
+                    feedbackMessageElement.textContent = 'Por favor, selecciona una respuesta antes de avanzar.';
+                    feedbackMessageElement.style.color = '#ffc107'; // Yellow for warning
+                }
+            } else if (currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                showResults();
+            }
+        });
+
+        function showResults() {
+            finalScoreElement.textContent = `Has respondido correctamente ${score} de ${questions.length} preguntas.`;
+            quizCompletionModal.classList.add('show');
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            answeredQuestions = new Array(questions.length).fill(false);
+            quizCompletionModal.classList.remove('show');
+            loadQuestion();
+        }
+
+        // Load the first question when the page loads
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>

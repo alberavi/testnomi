@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Administración de Bases de Datos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .options-grid {
+            display: grid;
+            gap: 15px;
+        }
+        .option-button {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 8px;
+            background-color: #edf2f7;
+            color: #4a5568;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #e2e8f0;
+            border-color: #cbd5e0;
+        }
+        .option-button.correct {
+            background-color: #d4edda; /* Light green */
+            color: #155724; /* Dark green */
+            border-color: #28a745;
+            font-weight: 600;
+            pointer-events: none; /* Disable clicks after selection */
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da; /* Light red */
+            color: #721c24; /* Dark red */
+            border-color: #dc3545;
+            font-weight: 600;
+            pointer-events: none; /* Disable clicks after selection */
+        }
+        .solution-text {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: none; /* Hidden by default */
+        }
+        .solution-text.correct-solution {
+            background-color: #e6ffed; /* Even lighter green */
+            color: #1a6e3a;
+            border: 1px solid #48bb78;
+        }
+        .solution-text.incorrect-solution {
+            background-color: #ffe6e6; /* Even lighter red */
+            color: #993a3a;
+            border: 1px solid #ef4444;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            background-color: #4299e1;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.2);
+        }
+        .nav-button:hover {
+            background-color: #3182ce;
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress-indicator" id="progressIndicator"></div>
+        <div id="quizContainer"></div>
+        <div class="navigation-buttons">
+            <button id="prevButton" class="nav-button" disabled>Anterior</button>
+            <button id="nextButton" class="nav-button">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        // Array de preguntas y respuestas
+        const questions = [
+            {
+                question: "¿Qué puerto es el que utiliza una instancia de Oracle por defecto para las conexiones de usuario no TLS?",
+                options: ["a) 2483", "b) 1521", "c) 3306", "d) 5432"],
+                correctAnswer: "b) 1521"
+            },
+            {
+                question: "En Oracle, ¿qué proceso es el encargado de atender las peticiones de los procesos de usuario?",
+                options: ["a) LGWR", "b) DBWn", "c) PGA", "d) SGA"],
+                correctAnswer: "c) PGA" // Corrected from SGA to PGA
+            },
+            {
+                question: "¿Cuál es el proceso en Oracle responsable de escribir los logs en los archivos redo log?",
+                options: ["a) DBWn", "b) PGA", "c) LGWR", "d) Listener"],
+                correctAnswer: "c) LGWR"
+            },
+            {
+                question: "En la estructura lógica de Oracle, ¿qué elemento agrupa segmentos u objetos?",
+                options: ["a) Base de datos", "b) Extensión", "c) Tablespace", "d) Bloque"],
+                correctAnswer: "c) Tablespace"
+            },
+            {
+                question: "¿Qué comando SQL se utiliza en Oracle para permitir el crecimiento automático de un tablespace?",
+                options: ["a) AUTOEXTEND TRUE", "b) AUTOEXTEND ON", "c) ENABLE AUTOGROW", "d) SIZE AUTO"],
+                correctAnswer: "b) AUTOEXTEND ON"
+            },
+            {
+                question: "Para que un usuario recién creado en Oracle pueda conectarse a la base de datos, ¿qué permiso fundamental se le debe otorgar?",
+                options: ["a) CREATE TABLE", "b) SELECT ANY TABLE", "c) CONNECT", "d) DBA"],
+                correctAnswer: "c) CONNECT"
+            },
+            {
+                question: "¿Qué tecnología de Oracle permite ejecutar una sola base de datos en múltiples servidores para maximizar la disponibilidad y escalabilidad horizontal?",
+                options: ["a) Exadata", "b) Data Pump", "c) RMAN", "d) RAC"],
+                correctAnswer: "d) RAC"
+            },
+            {
+                question: "¿Qué es NLS_LANG en el contexto de Oracle?",
+                options: ["a) Un lenguaje de programación para procedimientos almacenados.", "b) El nombre de un tablespace del sistema.", "c) El conjunto de caracteres usado en el lado del cliente.", "d) Una herramienta de backup."],
+                correctAnswer: "c) El conjunto de caracteres usado en el lado del cliente."
+            },
+            {
+                question: "¿Cuál es la característica principal de las vistas materializadas en Oracle respecto a la actualización de datos?",
+                options: ["a) Se actualizan en tiempo real con cada consulta.", "b) Son una foto de los datos en el momento de su creación y pueden refrescarse.", "c) Son dinámicas y no almacenan datos físicos.", "d) Solo se usan para agregar datos."],
+                correctAnswer: "b) Son una foto de los datos en el momento de su creación y pueden refrescarse."
+            },
+            {
+                question: "¿Qué tipo de licencia utiliza MariaDB?",
+                options: ["a) Propietaria", "b) Apache", "c) GPL", "d) MIT"],
+                correctAnswer: "c) GPL"
+            },
+            {
+                question: "¿Qué puerto utiliza por defecto una instancia de MySQL/MariaDB?",
+                options: ["a) 1521", "b) 1433", "c) 5432", "d) 3306"],
+                correctAnswer: "d) 3306"
+            },
+            {
+                question: "En MySQL, si se utiliza el motor de almacenamiento MyISAM, ¿qué característica de ACID no se asegura?",
+                options: ["a) Atomicity", "b) Consistency", "c) Isolation", "d) Durability"],
+                correctAnswer: "d) Durability" // Corrected from Atomicity to Durability
+            },
+            {
+                question: "¿Cuál de los siguientes motores de almacenamiento de MySQL/MariaDB soporta transacciones y cumple con ACID?",
+                options: ["a) MyISAM", "b) Memory", "c) InnoDB", "d) CSV"],
+                correctAnswer: "c) InnoDB"
+            },
+            {
+                question: "¿Cuál es el nombre del nuevo MyISAM?",
+                options: ["a) XtraDB", "b) NDB Cluster", "c) Aria", "d) Spider"],
+                correctAnswer: "c) Aria"
+            },
+            {
+                question: "En MySQL, al realizar una copia de seguridad con mysqldump, ¿qué opción se utiliza para generar solo las sentencias DDL (sin datos)?",
+                options: ["a) --no-data", "b) --data-only", "c) --schema-only", "d) --skip-data"],
+                correctAnswer: "a) --no-data"
+            },
+            {
+                question: "¿Qué comando se utiliza para restaurar una base de datos desde un fichero SQL en MySQL?",
+                options: ["a) mysqlimport", "b) mysqlrestore", "c) mysql -u [usuario] -p [db_name] < fichero.sql", "d) mysqldump -u [usuario] -p [db_name] < fichero.sql"],
+                correctAnswer: "c) mysql -u [usuario] -p [db_name] < fichero.sql"
+            },
+            {
+                question: "¿Qué comando de administración de MySQL se utiliza para verificar si el servidor está en funcionamiento?",
+                options: ["a) mysqladmin status", "b) mysqladmin ping", "c) mysqladmin health", "d) mysqladmin check"],
+                correctAnswer: "b) mysqladmin ping"
+            },
+            {
+                question: "¿Qué puerto utiliza por defecto una instancia de PostgreSQL?",
+                options: ["a) 3306", "b) 1433", "c) 5432", "d) 1521"],
+                correctAnswer: "c) 5432"
+            },
+            {
+                question: "En PostgreSQL, ¿en qué se basa la seguridad de usuarios?",
+                options: ["a) Esquemas", "b) Roles", "c) Permisos directos", "d) Grupos de usuarios"],
+                correctAnswer: "b) Roles"
+            },
+            {
+                question: "¿Qué comando se utiliza en PostgreSQL para crear un rol con capacidad de login?",
+                options: ["a) CREATE USER", "b) CREATE ROLE con la opción LOGIN", "c) ADD USER", "d) GRANT LOGIN"],
+                correctAnswer: "b) CREATE ROLE con la opción LOGIN"
+            },
+            {
+                question: "¿Qué es RLS en PostgreSQL?",
+                options: ["a) Read Lock System", "b) Row Level Security", "c) Recovery Log System", "d) Remote Login Service"],
+                correctAnswer: "b) Row Level Security"
+            },
+            {
+                question: "¿Qué archivo guarda la información de las transacciones y los cambios para la replicación Master-Slave en PostgreSQL?",
+                options: ["a) pg_log", "b) pg_replog", "c) WAL (Write Ahead Log)", "d) redo.log"],
+                correctAnswer: "c) WAL (Write Ahead Log)"
+            },
+            {
+                question: "¿Qué modelo de concurrencia avanzada utiliza PostgreSQL?",
+                options: ["a) OCC (Optimistic Concurrency Control)", "b) MCC (Multi-Version Concurrency Control)", "c) MVCC (Multi-Version Concurrency Control)", "d) LCC (Lock-Based Concurrency Control)"],
+                correctAnswer: "c) MVCC (Multi-Version Concurrency Control)"
+            },
+            {
+                question: "¿Qué comando se utiliza en PostgreSQL para realizar una copia de seguridad de todas las bases de datos?",
+                options: ["a) pg_dumpall", "b) pg_dump --all", "c) pg_backup_all", "d) pg_exportall"],
+                correctAnswer: "a) pg_dumpall"
+            },
+            {
+                question: "¿Qué comando en PostgreSQL se utiliza para limpiar y analizar una base de datos, recuperando almacenamiento de tuplas muertas?",
+                options: ["a) reindexdb", "b) pg_clean", "c) vacuumdb", "d) analyze"],
+                correctAnswer: "c) vacuumdb"
+            },
+            {
+                question: "¿Qué puerto utiliza por defecto una instancia de SQL Server?",
+                options: ["a) 3306", "b) 5432", "c) 1433", "d) 1521"],
+                correctAnswer: "c) 1433"
+            },
+            {
+                question: "¿Cuál es el lenguaje de procedimientos almacenados en SQL Server?",
+                options: ["a) PL/SQL", "b) Transact-SQL", "c) T-SQL", "d) SQL/PSM"],
+                correctAnswer: "b) Transact-SQL"
+            },
+            {
+                question: "Una de las funciones del DBA es la monitorización y optimización del rendimiento. ¿Qué herramienta se menciona para este propósito en Oracle?",
+                options: ["a) SQL Analyzer", "b) Query Optimizer", "c) Explain Plan", "d) Performance Monitor"],
+                correctAnswer: "c) Explain Plan"
+            },
+            {
+                question: "En Oracle, ¿cuál es el propósito de un 'Listener'?",
+                options: ["a) Gestionar las cachés de datos.", "b) Atender a los procesos de usuario.", "c) Escribir en los archivos de datos.", "d) Escuchar constantemente las peticiones."],
+                correctAnswer: "d) Escuchar constantemente las peticiones."
+            },
+            {
+                question: "¿Qué es un 'Segmento' en la estructura de almacenamiento de Oracle?",
+                options: ["a) Un fichero físico en el sistema operativo.", "b) Una parte de un tablespace que puede ser una Tabla, Índice, Undo, LOB, etc.", "c) Un conjunto de bloques contiguos.", "d) El área de memoria dedicada a un usuario."],
+                correctAnswer: "b) Una parte de un tablespace que puede ser una Tabla, Índice, Undo, LOB, etc."
+            },
+            {
+                question: "¿Qué utilidad de Oracle se utiliza para la importación y exportación de datos y metadatos?",
+                options: ["a) RMAN", "b) Data Pump", "c) SQL Loader", "d) Exp/Imp"],
+                correctAnswer: "b) Data Pump"
+            },
+            {
+                question: "¿Qué es un SYNONYM en Oracle?",
+                options: ["a) Un tipo de restricción de integridad.", "b) Un alias para un objeto de base de datos.", "c) Un procedimiento almacenado.", "d) Un tipo de índice."],
+                correctAnswer: "b) Un alias para un objeto de base de datos."
+            },
+            {
+                question: "¿Cuál es la principal diferencia de licencia entre MySQL y MariaDB?",
+                options: ["a) MySQL es siempre de pago, MariaDB es siempre gratuita.", "b) MySQL se ofrece bajo licencia GPL o propietaria, mientras la licencia de MariaDB es GPL.", "c) MySQL es de código abierto, MariaDB es propietaria.", "d) No hay diferencia de licencia."],
+                correctAnswer: "b) MySQL se ofrece bajo licencia GPL o propietaria, mientras la licencia de MariaDB es GPL."
+            },
+            {
+                question: "MyISAM tiene ficheros para la estructura de una tabla, datos e índices. ¿Qué extensión corresponde a los datos?",
+                options: ["a) .frm", "b) .myi", "c) .myd", "d) .dbf"],
+                correctAnswer: "c) .myd"
+            },
+            {
+                question: "En la replicación Master-Slave de MySQL, ¿dónde se guardan las sentencias ejecutadas sobre el Master antes de pasarse a los esclavos?",
+                options: ["a) RelayLog", "b) ErrorLog", "c) BinLog", "d) SlowQueryLog"],
+                correctAnswer: "c) BinLog"
+            },
+            {
+                question: "¿Qué comando de MySQL se utiliza para mostrar qué se está ejecutando actualmente en la base de datos?",
+                options: ["a) show databases", "b) processlist", "c) show tables", "d) show status"],
+                correctAnswer: "b) processlist"
+            },
+            {
+                question: "¿Qué script de MariaDB/MySQL permite poner una nueva contraseña a usuarios root, borrar cuentas root, etc.?",
+                options: ["a) mysql_configure", "b) mariadb-secure-installation", "c) mysql_setup", "d) mariadb_config"],
+                correctAnswer: "b) mariadb-secure-installation"
+            },
+            {
+                question: "En PostgreSQL, ¿se pueden definir tablespaces?",
+                options: ["a) No, PostgreSQL no soporta tablespaces.", "b) Sí, para organizar físicamente las tablas, índices, etc.", "c) Solo para datos temporales.", "d) Únicamente en la versión Enterprise."],
+                correctAnswer: "b) Sí, para organizar físicamente las tablas, índices, etc."
+            },
+            {
+                question: "¿Qué comando se utiliza en PostgreSQL para que una tabla herede los campos de otra?",
+                options: ["a) CREATE TABLE ... INHERITS (...)", "b) ALTER TABLE ... ADD INHERITS (...)", "c) COPY TABLE ... FROM ...", "d) EXTEND TABLE ... WITH ..."],
+                correctAnswer: "a) CREATE TABLE ... INHERITS (...)"
+            },
+            {
+                question: "En PostgreSQL, ¿qué concepto describe que cada transacción tiene su propia 'foto' de los datos, reduciendo bloqueos?",
+                options: ["a) Snapshot Isolation", "b) Pessimistic Locking", "c) Multi-Version Concurrency Control (MVCC)", "d) Serializability"],
+                correctAnswer: "c) Multi-Version Concurrency Control (MVCC)"
+            },
+            {
+                question: "¿Qué comando se utiliza en PostgreSQL para crear una base de datos?",
+                options: ["a) create database", "b) createbd", "c) createdb", "d) new database"],
+                correctAnswer: "c) createdb"
+            },
+            {
+                question: "¿Qué archivo de configuración en PostgreSQL define las opciones de usuario y sus métodos de autenticación?",
+                options: ["a) postgresql.conf", "b) pg_hba.conf", "c) pg_ident.conf", "d) pg_service.conf"],
+                correctAnswer: "b) pg_hba.conf"
+            },
+            {
+                question: "¿Qué extensión de fichero corresponde a los datos primarios en SQL Server?",
+                options: ["a) .ndf", "b) .ldf", "c) .mdf", "d) .bak"],
+                correctAnswer: "c) .mdf"
+            },
+            {
+                question: "¿Qué es un DBA (Administrador de Bases de Datos)?",
+                options: ["a) Un desarrollador de aplicaciones que usa bases de datos.", "b) Un profesional encargado de la gestión, mantenimiento y optimización de bases de datos.", "c) Un experto en seguridad informática.", "d) Un analista de datos."],
+                correctAnswer: "b) Un profesional encargado de la gestión, mantenimiento y optimización de bases de datos."
+            },
+            {
+                question: "¿Cuál es una de las principales responsabilidades de un DBA en relación con la seguridad?",
+                options: ["a) Diseñar la interfaz de usuario de la base de datos.", "b) Implementar mecanismos de seguridad que aplican a datos y servicios.", "c) Desarrollar nuevas funcionalidades para la base de datos.", "d) Crear informes de datos."],
+                correctAnswer: "b) Implementar mecanismos de seguridad que aplican a datos y servicios."
+            },
+            {
+                question: "En Oracle, ¿cómo se diferencia la estructura física de la estructura lógica de la base de datos?",
+                options: ["a) La estructura física está dentro del SO, la lógica es el diseño de tablas.", "b) La estructura lógica son los ficheros del sistema, la física es el esquema.", "c) La estructura física son los tablespaces, la lógica son los data files.", "d) La estructura lógica se refiere a los data files, la física a los segmentos."],
+                correctAnswer: "a) La estructura física está dentro del SO, la lógica es el diseño de tablas."
+            },
+            {
+                question: "¿Qué es una 'Extensión' en el contexto de la estructura de almacenamiento de Oracle?",
+                options: ["a) Un bloque de datos.", "b) Una unidad lógica de almacenamiento compuesta por bloques contiguos.", "c) Un archivo de datos.", "d) Un segmento."],
+                correctAnswer: "b) Una unidad lógica de almacenamiento compuesta por bloques contiguos."
+            },
+            {
+                question: "Si al crear una tabla en Oracle, se especifica TABLESPACE ts_data, ¿qué se está indicando?",
+                options: ["a) Que la tabla se almacenará en el tablespace ts_data.", "b) Que el tablespace ts_data contendrá la definición de la tabla.", "c) Que ts_data es el propietario de la tabla.", "d) Que se creará un nuevo tablespace llamado ts_data."],
+                correctAnswer: "a) Que la tabla se almacenará en el tablespace ts_data."
+            },
+            {
+                question: "¿Qué comando se utiliza en RMAN para realizar una copia de seguridad específica de un tablespace en Oracle?",
+                options: ["a) BACKUP TABLESPACE ts_data", "b) CREATE BACKUP ts_data", "c) EXPORT TABLESPACE ts_data", "d) DUMP TABLESPACE ts_data"],
+                correctAnswer: "a) BACKUP TABLESPACE ts_data"
+            },
+            {
+                question: "En el contexto de MySQL/MariaDB, ¿qué es MyISAM en relación con las transacciones?",
+                options: ["a) Un motor de almacenamiento transaccional.", "b) Un motor de almacenamiento que soporta ACID.", "c) Un motor de almacenamiento no transaccional.", "d) Un motor de almacenamiento que soporta transacciones distribuidas."],
+                correctAnswer: "c) Un motor de almacenamiento no transaccional."
+            },
+            {
+                question: "¿Qué tipos de ficheros son generados por MyISAM para almacenar la estructura de una tabla, los datos y los índices?",
+                options: ["a) .dbf, .log, .ctl", "b) .frm, .myd, .myi", "c) .dat, .idx, .sch", "d) .tbl, .rec, .idx"],
+                correctAnswer: "b) .frm, .myd, .myi"
+            },
+            {
+                question: "¿Qué motor de almacenamiento de MySQL está diseñado para clústeres distribuidos?",
+                options: ["a) InnoDB", "b) Memory", "c) NDB Cluster", "d) MyISAM"],
+                correctAnswer: "c) NDB Cluster"
+            },
+            {
+                question: "¿Qué demonio es el encargado de forzar las transacciones distribuidas en NDB Cluster?",
+                options: ["a) mysqld", "b) ndbd", "c) mysqlrouter", "d) mcc"],
+                correctAnswer: "b) ndbd"
+            },
+            {
+                question: "¿Qué comando de MySQL se utiliza para realizar una copia de seguridad de una base de datos y generar un script con sentencias DDL y DML?",
+                options: ["a) mysqlbackup", "b) mysqldump", "c) mysqlcopy", "d) mysqlsave"],
+                correctAnswer: "b) mysqldump"
+            },
+            {
+                question: "En la restauración de una base de datos MySQL desde un fichero SQL, ¿qué debe contener el fichero o realizarse previamente?",
+                options: ["a) Solo las sentencias DML.", "b) La creación de la base de datos y un USE de la misma, o crearla por fuera.", "c) Solo las sentencias DDL.", "d) Un listado de usuarios autorizados."],
+                correctAnswer: "b) La creación de la base de datos y un USE de la misma, o crearla por fuera."
+            },
+            {
+                question: "¿Qué herramienta se utiliza para el mantenimiento y posible reparación de tablas MyISAM?",
+                options: ["a) innodb_tools", "b) myisamchk", "c) mysqloptimize", "d) mysqlrepair"],
+                correctAnswer: "b) myisamchk"
+            },
+            {
+                question: "¿Qué significa 'Consistency' en el contexto de ACID?",
+                options: ["a) Que las transacciones se ejecutan de forma independiente.", "b) Que una transacción es atómica.", "c) Que los datos permanecen válidos y cumplen con las reglas de integridad.", "d) Que los cambios persisten en el tiempo."],
+                correctAnswer: "c) Que los datos permanecen válidos y cumplen con las reglas de integridad."
+            },
+            {
+                question: "¿Qué significa bind-address = 127.0.0.1 en la configuración de MySQL/MariaDB?",
+                options: ["a) Que el servidor solo escucha conexiones desde localhost.", "b) Que el servidor escucha conexiones desde cualquier dirección IP.", "c) Que el servidor utiliza el puerto 127.0.0.1.", "d) Que el servidor está en modo de depuración."],
+                correctAnswer: "a) Que el servidor solo escucha conexiones desde localhost."
+            },
+            {
+                question: "¿Se pueden particionar tablas en PostgreSQL?",
+                options: ["a) No, PostgreSQL no soporta particionamiento de tablas.", "b) Sí, principalmente para tablas muy grandes.", "c) Solo para índices.", "d) Únicamente en la versión Enterprise."],
+                correctAnswer: "b) Sí, principalmente para tablas muy grandes."
+            },
+            {
+                question: "¿Qué se entiende por 'tablas heredadas' en PostgreSQL?",
+                options: ["a) Tablas que se crean a partir de una plantilla.", "b) Tablas que heredan los campos de otra tabla existente.", "c) Tablas que almacenan datos históricos.", "d) Tablas creadas por un usuario con permisos heredados."],
+                correctAnswer: "b) Tablas que heredan los campos de otra tabla existente."
+            },
+            {
+                question: "¿Qué comando se utiliza para activar una política de seguridad a nivel de fila (RLS) en PostgreSQL?",
+                options: ["a) ENABLE RLS ON nom_tabla", "b) ALTER TABLE nom_tabla ENABLE ROW LEVEL SECURITY", "c) SET RLS ON FOR nom_tabla", "d) GRANT RLS ON nom_tabla TO PUBLIC"],
+                correctAnswer: "b) ALTER TABLE nom_tabla ENABLE ROW LEVEL SECURITY"
+            },
+            {
+                question: "¿En cuántos lenguajes diferentes se pueden implementar procedimientos almacenados en PostgreSQL según el documento?",
+                options: ["a) 1", "b) 2", "c) 3", "d) 4"],
+                correctAnswer: "d) 4"
+            },
+            {
+                question: "En PostgreSQL, ¿cómo se reduce mucho los bloqueos al utilizar MVCC?",
+                options: ["a) Bloqueando toda la tabla durante la transacción.", "b) Al aislar a las transacciones con fotos de los datos en diferentes tiempos.", "c) Forzando la serialización de todas las transacciones.", "d) Reduciendo el número de transacciones concurrentes."],
+                correctAnswer: "b) Al aislar a las transacciones con fotos de los datos en diferentes tiempos."
+            },
+            {
+                question: "¿Qué comando en PostgreSQL es el equivalente a pg_restore para restaurar desde un formato SQL dump?",
+                options: ["a) pg_load", "b) psql", "c) pg_import", "d) pg_restore_sql"],
+                correctAnswer: "b) psql"
+            },
+            {
+                question: "¿Qué comando se utiliza en PostgreSQL para iniciar o detener el servidor?",
+                options: ["a) pg_service", "b) pg_control", "c) pg_ctl", "d) pg_daemon"],
+                correctAnswer: "c) pg_ctl"
+            },
+            {
+                question: "¿Qué propósito tiene el comando reindexdb en PostgreSQL?",
+                options: ["a) Reorganizar los datos de la base de datos.", "b) Recuperar espacio de tuplas muertas.", "c) Reconstruir índices que se han degradado.", "d) Analizar el rendimiento de la base de datos."],
+                correctAnswer: "c) Reconstruir índices que se han degradado."
+            },
+            {
+                question: "¿Qué extensión de fichero corresponde al Transaction Log en SQL Server?",
+                options: ["a) .mdf", "b) .ndf", "c) .ldf", "d) .log"],
+                correctAnswer: "c) .ldf"
+            },
+            {
+                question: "En SQL Server, ¿qué concepto de concurrencia avanzada es similar a MVCC de Postgres?",
+                options: ["a) Snapshot", "b) Read Committed", "c) Serializable", "d) Repeatable Read"],
+                correctAnswer: "a) Snapshot"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un puerto TCP de base de datos mencionado en el documento?",
+                options: ["a) Oracle: 1521", "b) SQL Server: 1433", "c) MySQL: 3306", "d) MongoDB: 27017"],
+                correctAnswer: "d) MongoDB: 27017"
+            },
+            {
+                question: "Una de las funciones del DBA es la instalación y actualización/mantenimiento del SGBD. ¿Es esto correcto?",
+                options: ["a) No, esa es una función del administrador de sistemas.", "b) Sí, es una función clave del DBA.", "c) Solo es una función del DBA si es un SGBD de código abierto.", "d) Depende del tipo de SGBD."],
+                correctAnswer: "b) Sí, es una función clave del DBA."
+            },
+            {
+                question: "¿A qué se refiere la política de almacenamiento que debe definir un DBA?",
+                options: ["a) Al tipo de hardware de almacenamiento a utilizar.", "b) A la gestión del espacio en disco y el particionamiento.", "c) A la política de cifrado de los datos.", "d) Al número de backups a realizar."],
+                correctAnswer: "b) A la gestión del espacio en disco y el particionamiento."
+            },
+            {
+                question: "En Oracle, ¿la Base de Datos es propiedad del usuario o del producto cuando se instala?",
+                options: ["a) Es propiedad del usuario que la instala.", "b) Es propiedad del producto.", "c) Depende de la licencia adquirida.", "d) Es compartida entre el usuario y el producto."],
+                correctAnswer: "b) Es propiedad del producto."
+            },
+            {
+                question: "¿Qué representa PGA en el contexto de una instancia de Oracle?",
+                options: ["a) Un área de memoria compartida para todos los usuarios.", "b) Un proceso del servidor que atiende a un proceso de usuario.", "c) Un gestor de procesos globales.", "d) Un componente de la gestión de transacciones."],
+                correctAnswer: "b) Un proceso del servidor que atiende a un proceso de usuario." // Corrected from "Un componente de la gestión de transacciones." to "Un proceso del servidor que atiende a un proceso de usuario."
+            },
+            {
+                question: "En la estructura física de Oracle, ¿los archivos de datos pertenecen al sistema operativo o a Oracle?",
+                options: ["a) Pertenecen al sistema operativo.", "b) Pertenecen a Oracle, aunque estén dentro del SO.", "c) Son compartidos entre el SO y Oracle.", "d) Son propiedad exclusiva del hardware."],
+                correctAnswer: "b) Pertenecen a Oracle, aunque estén dentro del SO."
+            },
+            {
+                question: "¿Qué significa AUTOEXTEND ON NEXT 20M MAXSIZE 2G al crear un tablespace en Oracle?",
+                options: ["a) Que el tablespace se extenderá 20MB cada vez hasta un máximo de 2GB.", "b) Que el tamaño inicial es 20MB y el máximo 2GB.", "c) Que se creará una extensión de 20MB y el tamaño máximo de la tabla será 2GB.", "d) Que el tablespace solo puede crecer 20MB una vez y luego no más de 2GB."],
+                correctAnswer: "a) Que el tablespace se extenderá 20MB cada vez hasta un máximo de 2GB."
+            },
+            {
+                question: "¿Qué se indica al especificar DEFAULT TABLESPACE ts_data al crear un usuario en Oracle?",
+                options: ["a) Que el usuario solo puede crear tablas en ts_data.", "b) Que las tablas que cree el usuario por defecto se guardarán en ts_data.", "c) Que el usuario tiene permisos de administrador sobre ts_data.", "d) Que ts_data es el tablespace temporal del usuario."],
+                correctAnswer: "b) Que las tablas que cree el usuario por defecto se guardarán en ts_data."
+            },
+            {
+                question: "¿Cuál es el propósito principal de RAC en Oracle?",
+                options: ["a) Aumentar la capacidad de almacenamiento de la base de datos.", "b) Permite la ejecución de una sola BD Oracle en varios servidores.", "c) Simplificar la administración de bases de datos.", "d) Mejorar la seguridad de los datos."],
+                correctAnswer: "b) Permite la ejecución de una sola BD Oracle en varios servidores."
+            },
+            {
+                question: "¿Para qué es útil una vista materializada si los datos son poco cambiantes?",
+                options: ["a) Para permitir modificaciones directas en los datos.", "b) Para realizar copias de seguridad incrementales.", "c) Para mejorar el rendimiento de consultas sobre datos estáticos.", "d) Para aplicar restricciones de integridad."],
+                correctAnswer: "c) Para mejorar el rendimiento de consultas sobre datos estáticos."
+            },
+            {
+                question: "¿Qué motores de almacenamiento se mencionan para MySQL/MariaDB en el documento?",
+                options: ["a) Oracle, SQL Server, PostgreSQL", "b) MyISAM, InnoDB, Memory, NDB Cluster", "c) Mongo, Cassandra, Redis", "d) DB2, Sybase, Informix"],
+                correctAnswer: "b) MyISAM, InnoDB, Memory, NDB Cluster"
+            },
+            {
+                question: "¿Cómo se define el motor de almacenamiento de una tabla en MySQL durante su creación?",
+                options: ["a) Mediante un ALTER TABLE posterior.", "b) Con la cláusula ENGINE o TYPE en la sentencia CREATE TABLE.", "c) Automáticamente por el sistema.", "d) Siempre es InnoDB por defecto."],
+                correctAnswer: "b) Con la cláusula ENGINE o TYPE en la sentencia CREATE TABLE."
+            },
+            {
+                question: "En la replicación Master-Slave asíncrona de MySQL, ¿dónde se pasa el BinLog para que se ejecuten las sentencias en los esclavos?",
+                options: ["a) ErrorLog", "b) General Query Log", "c) RelayLog", "d) Audit Log"],
+                correctAnswer: "c) RelayLog"
+            },
+            {
+                question: "¿Qué comando de MySQL se utiliza para mostrar las bases de datos de nuestro servidor?",
+                options: ["a) list databases", "b) show dbs", "c) show databases", "d) select * from databases"],
+                correctAnswer: "c) show databases"
+            },
+            {
+                question: "¿Qué sentencia SQL se utiliza en MySQL para realizar mantenimiento en tablas, como optimización, análisis, verificación y reparación?",
+                options: ["a) MAINTAIN TABLE", "b) EXECUTE TABLE", "c) OPTIMIZE TABLE, ANALYZE TABLE, CHECK TABLE, REPAIR TABLE", "d) TUNE TABLE"],
+                correctAnswer: "c) OPTIMIZE TABLE, ANALYZE TABLE, CHECK TABLE, REPAIR TABLE"
+            },
+            {
+                question: "¿Qué es 'Atomicity' en el contexto de ACID?",
+                options: ["a) Que las transacciones son persistentes.", "b) Que las transacciones se completan en su totalidad o no se completan en absoluto.", "c) Que los datos son consistentes.", "d) Que las transacciones están aisladas."],
+                correctAnswer: "b) Que las transacciones se completan en su totalidad o no se completan en absoluto."
+            },
+            {
+                question: "¿Cuál es la ruta típica del fichero de configuración principal de MySQL/MariaDB?",
+                options: ["a) /etc/mysql/mysql.conf", "b) /var/lib/mysql/my.cnf", "c) /etc/mysql/my.cnf", "d) /usr/local/mysql/my.cnf"],
+                correctAnswer: "c) /etc/mysql/my.cnf"
+            },
+            {
+                question: "¿Qué función de PostgreSQL permite a los usuarios con rol de LOGIN crear bases de datos?",
+                options: ["a) CREATEDB", "b) CREATE DATABASE", "c) DB_CREATOR", "d) OWNER_DB"],
+                correctAnswer: "a) CREATEDB"
+            },
+            {
+                question: "Si se particiona una tabla en PostgreSQL con PARTITION BY RANGE (campo), ¿qué tipo de particionamiento se está realizando?",
+                options: ["a) Por lista", "b) Por hash", "c) Por rango", "d) Por valor"],
+                correctAnswer: "c) Por rango"
+            },
+            {
+                question: "En PostgreSQL, ¿qué significa que la seguridad se base en roles?",
+                options: ["a) Los permisos se asignan directamente a los usuarios.", "b) Los usuarios se agrupan en roles y los permisos se asignan a los roles.", "c) Solo el superusuario tiene permisos.", "d) La seguridad se gestiona a través de esquemas."],
+                correctAnswer: "b) Los usuarios se agrupan en roles y los permisos se asignan a los roles."
+            },
+            {
+                question: "¿Qué comando se utiliza para copiar una base de datos remota en PostgreSQL?",
+                options: ["a) pg_dump -U user -h host -p port nombre_bd > fichero.bkp", "b) pg_remote_copy", "c) psql -c \"COPY DATABASE\"", "d) pg_transfer"],
+                correctAnswer: "a) pg_dump -U user -h host -p port nombre_bd > fichero.bkp"
+            },
+            {
+                question: "¿Qué se recupera con vacuumdb en PostgreSQL?",
+                options: ["a) Espacio de tuplas muertas.", "b) Datos eliminados accidentalmente.", "c) El rendimiento del disco.", "d) La estructura de la base de datos."],
+                correctAnswer: "a) Espacio de tuplas muertas."
+            },
+            {
+                question: "¿Qué extensión de fichero es opcional en SQL Server para los datos secundarios?",
+                options: ["a) .mdf", "b) .ldf", "c) .ndf", "d) .dbf"],
+                correctAnswer: "c) .ndf"
+            },
+            {
+                question: "¿Qué es Transact-SQL?",
+                options: ["a) Un lenguaje de scripting para sistemas operativos.", "b) El lenguaje de procedimientos almacenados de SQL Server.", "c) Un protocolo de red.", "d) Una herramienta de backup de SQL Server."],
+                correctAnswer: "b) El lenguaje de procedimientos almacenados de SQL Server."
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre las funciones del DBA es incorrecta?",
+                options: ["a) Creación de BBDD.", "b) Diseño de interfaces gráficas para aplicaciones.", "c) Creación de políticas de backup y restauración.", "d) Monitorización y optimización del rendimiento."],
+                correctAnswer: "b) Diseño de interfaces gráficas para aplicaciones."
+            },
+            {
+                question: "Si un usuario de aplicación (nominas_lector) necesita ver las tablas de otro (nominas_owner) en Oracle, ¿qué se recomienda hacer?",
+                options: ["a) Cambiar el propietario de las tablas.", "b) Crear un SYNONYM y otorgar GRANT SELECT.", "c) Replicar las tablas.", "d) Crear vistas normales sin más."],
+                correctAnswer: "b) Crear un SYNONYM y otorgar GRANT SELECT."
+            },
+            {
+                question: "¿Qué significa 'No transaccional' en el contexto de MyISAM?",
+                options: ["a) Que no puede almacenar grandes volúmenes de datos.", "b) Que no soporta la agrupación de operaciones en unidades atómicas.", "c) Que no se puede acceder a él a través de la red.", "d) Que no es compatible con SQL."],
+                correctAnswer: "b) Que no soporta la agrupación de operaciones en unidades atómicas."
+            },
+            {
+                question: "¿Cuál es el motor de almacenamiento de MySQL que es muy rápido porque guarda los datos en memoria?",
+                options: ["a) InnoDB", "b) MyISAM", "c) Memory", "d) NDB Cluster"],
+                correctAnswer: "c) Memory"
+            },
+            {
+                question: "Si necesitamos solo los datos sin la estructura de las tablas en una copia de seguridad de MySQL, ¿qué opción de mysqldump sería relevante?",
+                options: ["a) --no-create-info", "b) --data-only", "c) --no-data (pero esta es para solo DDL)", "d) No existe una opción específica para \"solo datos\" sin estructura."],
+                correctAnswer: "a) --no-create-info"
+            },
+            {
+                question: "¿Qué tipo de fichero contiene el binlog en la replicación de MySQL?",
+                options: ["a) Es un fichero de texto simple.", "b) Es un log binario que registra los cambios en la base de datos.", "c) Es un fichero XML.", "d) Es un fichero de configuración."],
+                correctAnswer: "b) Es un log binario que registra los cambios en la base de datos."
+            },
+            {
+                question: "En PostgreSQL, ¿qué son los 'Bloques' en la estructura de almacenamiento?",
+                options: ["a) Unidades de datos contiguas.", "b) La unidad más pequeña de almacenamiento lógico y físico.", "c) Los ficheros del sistema operativo donde se guardan los datos.", "d) Los índices de las tablas."],
+                correctAnswer: "b) La unidad más pequeña de almacenamiento lógico y físico."
+            },
+            {
+                question: "¿Qué comando se utiliza en PostgreSQL para crear un usuario, que en realidad crea un rol con capacidad de login?",
+                options: ["a) create_user", "b) adduser", "c) createuser", "d) newuser"],
+                correctAnswer: "c) createuser"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        const quizContainer = document.getElementById('quizContainer');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressIndicator = document.getElementById('progressIndicator');
+
+        // Función para renderizar la pregunta actual
+        function renderQuestion() {
+            const questionData = questions[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text">${questionData.question}</p>
+                    <div class="options-grid">
+                        ${questionData.options.map((option, index) => `
+                            <button class="option-button" data-option="${option}" data-index="${index}">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="solution-text" id="solutionText"></div>
+                </div>
+            `;
+
+            // Añadir event listeners a los botones de opción
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.addEventListener('click', handleOptionClick);
+            });
+
+            updateNavigationButtons();
+            updateProgressIndicator();
+        }
+
+        // Función para manejar el click en una opción
+        function handleOptionClick(event) {
+            const selectedOption = event.target.dataset.option;
+            const questionData = questions[currentQuestionIndex];
+            const solutionTextElement = document.getElementById('solutionText');
+
+            // Deshabilitar todos los botones de opción después de la selección
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.disabled = true;
+            });
+
+            if (selectedOption === questionData.correctAnswer) {
+                event.target.classList.add('correct');
+                solutionTextElement.classList.add('correct-solution');
+                solutionTextElement.innerHTML = `¡Correcto! La respuesta es: <strong>${questionData.correctAnswer}</strong>`;
+            } else {
+                event.target.classList.add('incorrect');
+                // Encontrar y resaltar la respuesta correcta
+                document.querySelectorAll('.option-button').forEach(button => {
+                    if (button.dataset.option === questionData.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+                solutionTextElement.classList.add('incorrect-solution');
+                solutionTextElement.innerHTML = `Incorrecto. La respuesta correcta es: <strong>${questionData.correctAnswer}</strong>`;
+            }
+            solutionTextElement.style.display = 'block'; // Mostrar la solución
+        }
+
+        // Función para actualizar los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+        }
+
+        // Función para actualizar el indicador de progreso
+        function updateProgressIndicator() {
+            progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+        }
+
+        // Event listeners para los botones de navegación
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        // Renderizar la primera pregunta al cargar la página
+        document.addEventListener('DOMContentLoaded', renderQuestion);
+    </script>
+</body>
+</html>

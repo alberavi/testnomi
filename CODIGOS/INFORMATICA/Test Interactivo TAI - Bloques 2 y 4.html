@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo TAI - Bloques 2 y 4</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light gray-blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff; /* White background for the quiz card */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 2.5rem;
+            max-width: 700px; /* Slightly wider for more complex questions */
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .question-text {
+            font-size: 1.3rem; /* Slightly larger font size for questions */
+            font-weight: 700; /* Bold font weight */
+            color: #334155; /* Darker text color */
+            margin-bottom: 1.5rem;
+            text-align: left; /* Align question text to the left */
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem; /* Slightly less gap for more options */
+            margin-bottom: 1.5rem;
+        }
+        .option-button {
+            background-color: #e0e7ff; /* Light blue */
+            color: #4338ca; /* Darker blue text */
+            padding: 0.8rem 1.2rem; /* Slightly smaller padding */
+            border-radius: 0.75rem; /* Rounded corners for buttons */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 0.95rem; /* Slightly smaller font size */
+            font-weight: 500;
+            border: 2px solid transparent; /* Default transparent border */
+        }
+        .option-button:hover:not(.disabled) {
+            background-color: #c7d2fe; /* Lighter blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        .option-button.selected {
+            border-color: #4f46e5; /* Highlight selected option with a border */
+            background-color: #a5b4fc; /* Slightly darker background when selected */
+        }
+        .option-button.correct {
+            background-color: #d1fae5; /* Green for correct answer */
+            color: #065f46; /* Dark green text */
+            border-color: #10b981; /* Green border */
+            animation: pulseCorrect 0.5s ease-in-out;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2; /* Red for incorrect answer */
+            color: #991b1b; /* Dark red text */
+            border-color: #ef4444; /* Red border */
+            animation: shakeIncorrect 0.3s ease-in-out;
+        }
+        .option-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .feedback-container {
+            background-color: #f1f5f9; /* Light gray background for feedback */
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            margin-top: 1rem;
+            text-align: left;
+            border-left: 5px solid #6b7280; /* Gray border on left */
+        }
+        .feedback-container.correct {
+            border-left-color: #10b981; /* Green border for correct feedback */
+        }
+        .feedback-container.incorrect {
+            border-left-color: #ef4444; /* Red border for incorrect feedback */
+        }
+        .feedback-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        .explanation-text {
+            color: #4b5563;
+            font-size: 0.9rem; /* Slightly smaller font size */
+            line-height: 1.5;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .nav-button {
+            background-color: #4f46e5; /* Primary blue button */
+            color: white;
+            padding: 0.75rem 1.75rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 600;
+            border: none;
+        }
+        .nav-button:hover:not(:disabled) {
+            background-color: #4338ca; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        .nav-button:disabled {
+            background-color: #cbd5e1; /* Gray for disabled button */
+            cursor: not-allowed;
+        }
+
+        /* Animations */
+        @keyframes pulseCorrect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shakeIncorrect {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .quiz-container {
+                padding: 1.5rem;
+                border-radius: 1rem;
+                margin: 0.5rem;
+            }
+            .question-text {
+                font-size: 1.1rem;
+            }
+            .option-button {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.85rem;
+            }
+            .feedback-container {
+                padding: 0.75rem 1rem;
+            }
+            .explanation-text {
+                font-size: 0.8rem;
+            }
+            .navigation-buttons {
+                flex-direction: column;
+            }
+            .nav-button {
+                width: 100%;
+                padding: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Test Interactivo TAI - Bloques 2 y 4 (100 Preguntas)</h1>
+        <div id="question-area">
+            <!-- Question will be loaded here by JavaScript -->
+            <p class="question-text" id="question-text"></p>
+            <div id="options-container" class="options-container">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+            <div id="feedback-container" class="feedback-container hidden">
+                <p class="feedback-title" id="feedback-title"></p>
+                <p class="explanation-text" id="explanation-text"></p>
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button id="check-answer-btn" class="nav-button">Comprobar Respuesta</button>
+            <button id="next-question-btn" class="nav-button hidden">Siguiente Pregunta</button>
+            <button id="restart-quiz-btn" class="nav-button hidden">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const questions = [
+                {
+                    question: '1. ¿Cuántas direcciones hay disponibles para hosts en la subred del organismo, si la red asignada es 10.9.0.0/16 y se ha dividido en 16 subredes iguales?',
+                    options: ['a) 4094', 'b) 65534', 'c) 4096', 'd) 65536'],
+                    correctAnswer: 'a) 4094',
+                    explanation: 'La red 10.9.0.0/16 tiene 16 bits para la red y 16 bits para hosts. Si se divide en 16 subredes, se utilizan 4 bits adicionales para las subredes (2^4 = 16). Esto deja 12 bits para hosts (16 - 4 = 12). El número total de direcciones por subred es 2^12 = 4096. Restando la dirección de red y la dirección de broadcast, quedan 4096 - 2 = 4094 direcciones disponibles para hosts.'
+                },
+                {
+                    question: '2. Al arrancar un servidor Linux Ubuntu donde se aloja la web de profesores, aparecen errores en la partición sda8. ¿Qué comando hay que usar para reparar de forma automática los errores en el sistema de ficheros correspondiente, que no ha podido montarse?',
+                    options: ['a) mount –T /dev/sda8', 'b) fsck -y /dev/sda8', 'c) fsck -m /dev/sda8', 'd) checkdisk /dev/sda8'],
+                    correctAnswer: 'b) fsck -y /dev/sda8',
+                    explanation: 'El comando `fsck` (file system check) se utiliza para comprobar y reparar sistemas de ficheros en Linux. La opción `-y` responde automáticamente "sí" a todas las preguntas, lo que permite una reparación automática.'
+                },
+                {
+                    question: '3. Analizando la seguridad del sistema, surge la duda de si abrir o no el puerto 80 en un servidor web expuesto mediante HTTPS. El Centro Criptológico Nacional recomienda:',
+                    options: [
+                        'a) Exhibir una web estática en el puerto 80 indicando que esa no es la web actual.',
+                        'b) Cambiar el puerto HTTPS al 8892.',
+                        'c) Utilizar un analizador de peticiones en las cabeceras HTTP en el puerto 80.',
+                        'd) Disponer del puerto TCP/80, configurando el servidor web para que lleve a cabo una redirección automática de HTTP a HTTPS.'
+                    ],
+                    correctAnswer: 'd) Disponer del puerto TCP/80, configurando el servidor web para que lleve a cabo una redirección automática de HTTP a HTTPS.',
+                    explanation: 'La práctica recomendada por el CCN (y en general en seguridad web) es permitir el acceso al puerto 80 (HTTP) pero configurar el servidor para que automáticamente redirija todo el tráfico hacia el puerto 443 (HTTPS), garantizando que las comunicaciones siempre viajen cifradas.'
+                },
+                {
+                    question: '4. El CPD donde está alojado el sistema tiene una puerta cuyo control de acceso es con tarjeta inteligente y PIN. Hace dos días, se supo que alguien no autorizado había entrado esperando agazapado a que alguien autorizado entrase, pasando detrás de él sin que éste advirtiera que tenía a un intruso detrás. Este incidente de ingeniería social en seguridad física se conoce con el nombre de:',
+                    options: ['a) Tailgating o piggybacking.', 'b) Quid pro quo.', 'c) Pretexto.', 'd) Disrupción.'],
+                    correctAnswer: 'a) Tailgating o piggybacking.',
+                    explanation: 'El "tailgating" o "piggybacking" se produce cuando una persona no autorizada sigue de cerca a una persona autorizada para entrar en un área restringida sin usar su propia autenticación.'
+                },
+                {
+                    question: '5. El organismo tiene, para controlar la seguridad física del CPD, un circuito cerrado de televisión con cámaras que usa una red coaxial y se necesita interconectar esta red a la red local Ethernet para poder monitorizarlas. ¿Con qué dispositivo de red puede hacerlo?',
+                    options: ['a) Un cortafuegos (firewall).', 'b) Una pasarela (gateway).', 'c) Un conmutador (switch).', 'd) Un repetidor (repeater).'],
+                    correctAnswer: 'b) Una pasarela (gateway).',
+                    explanation: 'Una pasarela (gateway) es el dispositivo adecuado para interconectar dos redes con protocolos o tecnologías diferentes, como una red coaxial y una red Ethernet.'
+                },
+                {
+                    question: '6. En el sistema se utilizan los protocolos DNS y FTP seguro. De acuerdo con el modelo TCP/IP, estos protocolos se diferencian en que:',
+                    options: [
+                        'a) DNS es un protocolo de usuario y FTP es un protocolo de soporte.',
+                        'b) DNS es siempre un protocolo orientado a la conexión mientras que FTP no.',
+                        'c) No existe diferencia entre ambos protocolos, ambos son protocolos de soporte.',
+                        'd) FTP es un protocolo de usuario y DNS es un protocolo de soporte.'
+                    ],
+                    correctAnswer: 'd) FTP es un protocolo de usuario y DNS es un protocolo de soporte.',
+                    explanation: 'En el modelo TCP/IP, los protocolos de la capa de aplicación se dividen en protocolos de usuario (que interactúan directamente con el usuario, como FTP para transferencia de archivos) y protocolos de soporte (que brindan servicios a la red o a otras aplicaciones, como DNS para resolución de nombres).'
+                },
+                {
+                    question: '7. En un switch Cisco que hay en la organización, se ejecuta el comando “switchport access vlan 1”. Esto permitirá:',
+                    options: [
+                        'a) Asignar un puerto a la VLAN 1.',
+                        'b) Asignar el puerto 1 del switch a la VLAN donde estamos situados en la consola del switch.',
+                        'c) Visualizar todos los hosts asignados a la VLAN 1.',
+                        'd) Asignar todos los hosts conectados a cualquier puerto del switch a la VLAN 1.'
+                    ],
+                    correctAnswer: 'a) Asignar un puerto a la VLAN 1.',
+                    explanation: 'El comando `switchport access vlan X` en un switch Cisco se utiliza para configurar un puerto de acceso para que pertenezca a la VLAN especificada (en este caso, VLAN 1).'
+                },
+                {
+                    question: '8. La base de datos se ha corrompido y además, los usuarios no pueden acceder a la información. Se tiene toda la información de cómo se produjo el incidente y cuál es la persona que lo ha causado y por qué, pero, este incidente, ¿a qué dimensión o dimensiones de la seguridad afecta?',
+                    options: [
+                        'a) A la disponibilidad porque no está accesible la base de datos y la integridad porque el fichero de la base de datos está corrupto.',
+                        'b) A la confidencialidad porque los datos, una vez dañados, pueden ser accesibles por cualquiera.',
+                        'c) Sólo a la disponibilidad porque la base de datos está temporalmente fuera de servicio hasta que se repare si es posible el fichero donde se aloja.',
+                        'd) A la trazabilidad, porque no podremos averiguar lo que ha pasado por mucho que nos esforcemos, la seguridad es así.'
+                    ],
+                    correctAnswer: 'a) A la disponibilidad porque no está accesible la base de datos y la integridad porque el fichero de la base de datos está corrupto.',
+                    explanation: 'La corrupción de la base de datos afecta a la integridad (los datos no son correctos o consistentes) y la inaccesibilidad para los usuarios afecta a la disponibilidad (el servicio no está disponible). La trazabilidad no se ve afectada si se sabe quién y por qué.'
+                },
+                {
+                    question: '9. La red de área local está implementada con Gigabit Ethernet y, al conectar un nuevo dispositivo a la red, en su tarjeta, parpadea una luz de color naranja. ¿A qué puede deberse?',
+                    options: [
+                        'a) A que está mal configurada la VLAN donde está ubicado el dispositivo.',
+                        'b) A que la tarjeta de red del dispositivo transmite a menor velocidad de la que permite la red.',
+                        'c) A que la tarjeta de red está estropeada y no hay conexión entre el dispositivo y la red.',
+                        'd) A que el cable del dispositivo es coaxial y no Ethernet.'
+                    ],
+                    correctAnswer: 'b) A que la tarjeta de red del dispositivo transmite a menor velocidad de la que permite la red.',
+                    explanation: 'En muchas tarjetas de red y switches, una luz naranja (o un color diferente al verde/azul que indica la velocidad máxima) suele indicar que la conexión se ha establecido a una velocidad inferior a la máxima soportada (por ejemplo, 100 Mbps en lugar de 1 Gbps).'
+                },
+                {
+                    question: '10. Nos anuncian que hay una vulnerabilidad que afecta a una determinada versión del kernel de Linux Ubuntu. ¿Con qué comando podemos saber qué versión del kernel tiene nuestro sistema operativo Ubuntu?',
+                    options: ['a) sudo dpkg -i linux*.deb', 'b) uname -r', 'c) uname -o', 'd) kexec -l'],
+                    correctAnswer: 'b) uname -r',
+                    explanation: 'El comando `uname -r` se utiliza en sistemas Unix/Linux para mostrar la versión del kernel que se está ejecutando.'
+                },
+                {
+                    question: '11. Para descargar algunos ficheros del servidor BIBLIOTECA, los administradores están sopesando entre el uso de SFTP y FTPS. Indique, de las siguientes afirmaciones, la INCORRECTA:',
+                    options: [
+                        'a) SFTP usa típicamente el puerto 22 de SSH mientras que FTPS usa el puerto en el que tengamos definido el protocolo SSL/TLS.',
+                        'b) SFTP usa autenticación con certificado (clave pública) mientras que FTPS usa autenticación con usuario y contraseña.',
+                        'c) FTPS usa dos puertos, uno para los comandos y otro para descargarse los datos mientras que SFTP usa el mismo puerto para ambas tareas.',
+                        'd) FTPS no contiene comandos estandarizados para manipular directorios o listar atributos, mientras que SFTP sí.'
+                    ],
+                    correctAnswer: 'd) FTPS no contiene comandos estandarizados para manipular directorios o listar atributos, mientras que SFTP sí.',
+                    explanation: 'La afirmación incorrecta es la d). SFTP (SSH File Transfer Protocol) es un protocolo de transferencia de archivos basado en SSH que sí incluye capacidades para manipulación de directorios y listado de atributos. FTPS (FTP Secure) es simplemente FTP sobre SSL/TLS, y aunque utiliza FTP subyacente (que sí tiene comandos para directorios), no es una característica distintiva que FTPS carezca de ellos mientras SFTP sí los tenga.'
+                },
+                {
+                    question: '12. Para la detección de malware complejo y movimiento lateral relacionado con APTs (Advanced Persistent Threats), se ha instalado en los PC de los profesores, la solución del CCN, CLAUDIA. ¿Cómo define el Centro Criptológico Nacional una APT?',
+                    options: [
+                        'a) Es un tipo de ransomware como, por ejemplo, WannaCry, que te cifra los archivos del PC y se requiere la clave de descifrado a cambio del pago de un rescate.',
+                        'b) Es un ataque de suplantación de identidad de un usuario corriente en un organismo para después mediante escalada de privilegios obtener las credenciales de un alto cargo de la empresa u organización.',
+                        'c) Es un ataque selectivo de ciberespionaje o cibersabotaje llevado a cabo bajo el auspicio o la dirección de un país u organización adversaria, por razones que van más allá de las meramente financieras/delictivas o de protesta política.',
+                        'd) Es un ataque masivo a una organización ocurrido por un fallo que no se había advertido hasta ese momento y, por tanto, no se cuenta con la salvaguarda o parche para prevenirlo.'
+                    ],
+                    correctAnswer: 'c) Es un ataque selectivo de ciberespionaje o cibersabotaje llevado a cabo bajo el auspicio o la dirección de un país u organización adversaria, por razones que van más allá de las meramente financieras/delictivas o de protesta política.',
+                    explanation: 'La definición proporcionada en la opción c) es la descripción estándar de una Amenaza Persistente Avanzada (APT) según el CCN-CERT y la comunidad de ciberseguridad. Se caracterizan por ser ataques dirigidos y persistentes con objetivos específicos (espionaje, sabotaje) y a menudo respaldados por estados o grupos organizados.'
+                },
+                {
+                    question: '13. Para mejorar la escalabilidad del sistema, está estudiando implantar una arquitectura de microservicios con Kubernetes. ¿Qué protocolos para servicios pueden utilizarse con Kubernetes?',
+                    options: ['a) SCTP, TCP (por defecto) y UDP.', 'b) HTTP (por defecto), HTTPS y FTP.', 'c) SSH, SFTP (por defecto) y UDP.', 'd) UDP (por defecto) y TCP.'],
+                    correctAnswer: 'a) SCTP, TCP (por defecto) y UDP.',
+                    explanation: 'Kubernetes soporta principalmente los protocolos de capa de transporte TCP (por defecto) y UDP para la comunicación de servicios. SCTP (Stream Control Transmission Protocol) también es un protocolo de capa de transporte que puede ser utilizado.'
+                },
+                {
+                    question: '14. Para poder atender las llamadas de las guardias de sistemas, se han comprado veinte móviles. Su responsable le pide realizar el enrolamiento de estos móviles, pero, ¿en qué consiste esta tarea?',
+                    options: [
+                        'a) Emparejar, en el sistema MDM (Mobile Device Management) de la organización, a cada usuario con su móvil.',
+                        'b) Dar de alta en una base de datos de administración todos los dispositivos móviles.',
+                        'c) Insertar la tarjeta SIM correspondiente a cada móvil.',
+                        'd) Formatear a fábrica todos los dispositivos móviles.'
+                    ],
+                    correctAnswer: 'a) Emparejar, en el sistema MDM (Mobile Device Management) de la organización, a cada usuario con su móvil.',
+                    explanation: 'El enrolamiento de dispositivos móviles en un contexto empresarial se refiere al proceso de registrar los dispositivos en un sistema de Gestión de Dispositivos Móviles (MDM) para aplicar políticas, configurar ajustes y gestionar el dispositivo de forma centralizada, a menudo asociándolo a un usuario específico.'
+                },
+                {
+                    question: '15. Se está instalando la nueva climatización del CPD y se plantea utilizar una toma derivada de la climatización del resto del edificio. ¿Cuál es la razón principal por la que NO se aconseja hacer eso?',
+                    options: [
+                        'a) Porque la humedad recomendada para un CPD es mucho menor que la recomendada para las personas.',
+                        'b) Porque la temperatura recomendada para un CPD es mucho mayor que la recomendada para las personas.',
+                        'c) Porque el filtro de impurezas y polvo para las personas es mucho más sensible que lo que se recomienda para un CPD.',
+                        'd) Porque el aire acondicionado para un CPD siempre debe provenir del techo y para las personas puede provenir lateralmente.'
+                    ],
+                    correctAnswer: 'a) Porque la humedad recomendada para un CPD es mucho menor que la recomendada para las personas.',
+                    explanation: 'Los CPDs (Centros de Procesamiento de Datos) requieren un control de temperatura y humedad muy preciso y específico para garantizar el correcto funcionamiento y la longevidad de los equipos, que es diferente al ambiente de confort para personas. La humedad en particular es crítica para evitar la electricidad estática y la condensación.'
+                },
+                {
+                    question: '16. Se ha descargado del sitio web del CCN-CERT una herramienta de antimalware y justo debajo aparece un hash de comprobación. ¿Qué tipo de medida de seguridad es este hash en este contexto?',
+                    options: [
+                        'a) Una medida antimalware, pues el hash aplicado al fichero descargado nos sanitiza el fichero y ya se puede usar sin problemas, pues está limpio de malware, lo cual en una herramienta antimalware es altamente necesario.',
+                        'b) Una medida para asegurar la integridad del fichero de descarga, pues si al calcular nosotros el hash del fichero descargado no coincide con el que nos aparece en la página del CCN, el fichero descargado no sería válido para su uso.',
+                        'c) El hash es la firma del CCN como autoridad de certificación de productos que garantiza que el software descargado es apto para ser usado en sistemas categorizados como de nivel ALTO o incluso en sistemas clasificados como reservado nacional.',
+                        'd) El hash es la firma del CCN de la página web donde se presenta la herramienta que estamos intentando descargar y es una medida para evitar que los hackers puedan manipular la página y subir otro fichero en vez del que se pretende descargar.'
+                    ],
+                    correctAnswer: 'b) Una medida para asegurar la integridad del fichero de descarga, pues si al calcular nosotros el hash del fichero descargado no coincide con el que nos aparece en la página del CCN, el fichero descargado no sería válido para su uso.',
+                    explanation: 'Un hash (o suma de verificación) en este contexto se utiliza para verificar la integridad del archivo. Si el hash calculado del archivo descargado coincide con el proporcionado por el CCN, se tiene la seguridad de que el archivo no ha sido alterado durante la descarga.'
+                },
+                {
+                    question: '17. Se ha implantado una solución VoIP que usa el protocolo SIP pero, al establecer sesiones con usuarios de fuera del organismo, la llamada se corta o congela y después, se restablece. Este problema no sucede en sesiones entre usuarios internos del organismo, ¿por qué puede ser?',
+                    options: [
+                        'a) Se están usando incorrectamente los códecs.',
+                        'b) La salida a Internet está empleando NAT.',
+                        'c) El tráfico entre origen y destino está interceptado en el cortafuegos de Internet.',
+                        'd) La CPU del ordenador es insuficiente y provoca estos problemas.'
+                    ],
+                    correctAnswer: 'b) La salida a Internet está empleando NAT.',
+                    explanation: 'Los problemas con SIP y NAT (Network Address Translation) son muy comunes. NAT modifica las direcciones IP de los paquetes, lo que puede confundir a los dispositivos SIP que esperan ver la dirección IP pública en el encabezado SIP. Esto a menudo causa problemas con el establecimiento y mantenimiento de las llamadas VoIP a través de Internet.'
+                },
+                {
+                    question: '18. Se ha instalado un servidor de correo con Postfix y se está decidiendo si utilizar POP3 o IMAP en los clientes de correo. ¿Cuál de las siguientes opciones es INCORRECTA?',
+                    options: [
+                        'a) Con IMAP, los mensajes se almacenan en un servidor remoto y los usuarios pueden iniciar sesión en varios clientes de correo electrónico y leer los mismos mensajes.',
+                        'b) POP3 solo admite la sincronización de correo unidireccional, lo que solo permite a los usuarios descargar correos electrónicos desde un servidor a un cliente.',
+                        'c) Con IMAP, el correo enviado y recibido se almacena en el servidor hasta que el usuario lo elimina permanentemente.',
+                        'd) Con POP3, si los usuarios organizan sus correos electrónicos en un dispositivo mediante carpetas, ya no tendrán que hacerlo en el resto de dispositivos porque se replica la organización en carpetas.'
+                    ],
+                    correctAnswer: 'd) Con POP3, si los usuarios organizan sus correos electrónicos en un dispositivo mediante carpetas, ya no tendrán que hacerlo en el resto de dispositivos porque se replica la organización en carpetas.',
+                    explanation: 'La afirmación incorrecta es la d). POP3 (Post Office Protocol version 3) está diseñado para descargar los correos electrónicos del servidor a un único cliente, eliminándolos del servidor. No sincroniza carpetas ni estados entre múltiples dispositivos, lo que sí es una característica principal de IMAP (Internet Message Access Protocol).'
+                },
+                {
+                    question: '19. Se necesita saber los usuarios que acceden a la base de datos de la biblioteca y desde qué host o IP. Para averiguarlo, en la consola de administración de la base de datos MySQL, ejecutará el comando:',
+                    options: ['a) SELECT * FROM all_users', 'b) mysql> SELECT user FROM mysql.user', 'c) mysql> SELECT user,host FROM mysql.user', 'd) sudo mysql -u root -p'],
+                    correctAnswer: 'c) mysql> SELECT user,host FROM mysql.user',
+                    explanation: 'En MySQL, la tabla `mysql.user` contiene información sobre los usuarios y los hosts desde los que pueden conectarse. La consulta `SELECT user, host FROM mysql.user` mostrará esta información de manera directa.'
+                },
+                {
+                    question: '20. Se quiere aplicar políticas de seguridad al grupo de usuarios Profesores utilizando Directorio Activo y GPOs. Una buena práctica es definir primero:',
+                    options: [
+                        'a) Una Unidad Organizativa (OU) para el grupo de usuarios Profesores.',
+                        'b) Las ACLs (Access Control Lists) que tendrán las GPO del grupo de usuarios Profesores.',
+                        'c) Un nuevo bosque de Directorio Activo.',
+                        'd) Relaciones de confianza entre el Directorio Activo actual y el dominio de seguridad del grupo de usuarios Profesores.'
+                    ],
+                    correctAnswer: 'a) Una Unidad Organizativa (OU) para el grupo de usuarios Profesores.',
+                    explanation: 'En Active Directory, las GPOs (Group Policy Objects) se vinculan a Unidades Organizativas (OUs), dominios o sitios. La mejor práctica para aplicar políticas específicas a un grupo de usuarios es crear una OU para ese grupo y vincular la GPO a esa OU, lo que permite una gestión granular y organizada.'
+                },
+                {
+                    question: '21. Como administrador de correo, quiere cambiar el mensaje HELO que aparece cuando se establecen conexiones al servidor SMTP. Actualmente aparece el nombre del servidor, pero quiere que muestre "CORREOBIBLIOTECA" y además, que el cambio se aplique en todos los servidores SMTP que existan, no solo en aquel en el que está trabajando. ¿Cómo lo haría?',
+                    options: [
+                        'a) Editando el parámetro $client en el fichero /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix.',
+                        'b) Accediendo al servidor SMTP y ejecutando EHLO -name CORREOBIBLIOTECA en la consola.',
+                        'c) Editando el parámetro smtp_helo en el fichero /etc/postfix/master.cf y reiniciando posteriormente el servidor Postfix.',
+                        'd) Editando el parámetro $helo_name en /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix.'
+                    ],
+                    correctAnswer: 'd) Editando el parámetro $helo_name en /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix.',
+                    explanation: 'En Postfix, el parámetro `myhostname` (que afecta al valor HELO/EHLO) se configura en el archivo `main.cf`. Sin embargo, para un `helo_name` específico y global, el parámetro más adecuado es `smtp_helo_name` o simplemente configurar `myhostname` correctamente, y luego reiniciar el servicio Postfix para que los cambios surtan efecto. La opción `d` se acerca más a la configuración correcta en Postfix para el nombre que se presenta en el HELO/EHLO.'
+                },
+                {
+                    question: '22. Como no hay suficientes tomas Ethernet en la zona física donde están los profesores, se va a instalar una red WiFi con protocolo WPA3-Enterprise. En este caso, para acceder a la red WiFi habrá que utilizar:',
+                    options: [
+                        'a) Una contraseña de 64 bits.',
+                        'b) Una contraseña de 128 bits.',
+                        'c) Un servidor RADIUS o cualquier solución que permita EAP-TLS.',
+                        'd) Una contraseña de 192 bits usando el algoritmo GMCP-256.'
+                    ],
+                    correctAnswer: 'c) Un servidor RADIUS o cualquier solución que permita EAP-TLS.',
+                    explanation: 'WPA3-Enterprise, al igual que WPA2-Enterprise, se basa en el estándar 802.1X para autenticación. Esto significa que la autenticación de los usuarios se realiza a través de un servidor externo, comúnmente un servidor RADIUS, que puede utilizar diversos métodos EAP (Extensible Authentication Protocol), como EAP-TLS, para validar las credenciales de los usuarios.'
+                },
+                {
+                    question: '23. En la base de datos MySQL de Profesores, nos piden que añadamos una tabla de los profesores para el curso de INGLES BASICO, que se llamará "ProfesoresIngles" con sus nombres y apellidos. Para ello, y tras acceder como root a MYSQL, ingresaremos el comando:',
+                    options: [
+                        'a) CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));',
+                        'b) CREATE TABLE ProfesoresIngles KEY id, nombre, apellidos;',
+                        'c) CREAR TABLA ProfesoresIngles KEY apellidos, nombre;',
+                        'd) CREATE TABLE ProfesoresIngles (nombre, apellido);'
+                    ],
+                    correctAnswer: 'a) CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));',
+                    explanation: 'La sintaxis correcta para crear una tabla en MySQL con un ID autoincremental como clave primaria y campos de texto para nombres y apellidos es la opción a). Las otras opciones presentan errores de sintaxis o de concepto.'
+                },
+                {
+                    question: '24. Ha instalado el servicio Nagios para monitorizar los servidores y servicios en su sistema y quiere monitorizar, además, la URL de profesores (https://profesores.es), pero antes quiere comprobar que este servicio está configurado correctamente. Para ello, utilizará el comando:',
+                    options: ['a) nagios –v /usr/local/nagios/etc/nagios.cfg', 'b) /mnt/nagios –check', 'c) systemctl status nagios', 'd) https://profesores.es nagios'],
+                    correctAnswer: 'a) nagios –v /usr/local/nagios/etc/nagios.cfg',
+                    explanation: 'Para verificar la configuración de Nagios, el comando `nagios -v` seguido de la ruta al archivo de configuración principal (típicamente `/usr/local/nagios/etc/nagios.cfg`) se utiliza para verificar la sintaxis de los archivos de configuración y si hay errores lógicos antes de recargar el servicio.'
+                },
+                {
+                    question: '25. Se ha instalado un servidor web con HTTPS y certificado SSL de servidor para proteger la conexión entre los clientes y el servidor, para lo cual la conexión usará TLS. Según las recomendaciones del Centro Criptológico Nacional, ¿cuál es la versión mínima y la recomendada a usar en TLS?',
+                    options: [
+                        'a) La versión mínima aceptable es la 1.1 y se recomienda usar esa misma versión 1.1',
+                        'b) La versión mínima aceptable es la 1.0 y se recomienda usar 1.1',
+                        'c) La versión mínima aceptable es la 1.2 y se recomienda usar la 1.3',
+                        'd) La versión mínima aceptable es la 1.1 y se recomienda usar la 1.3'
+                    ],
+                    correctAnswer: 'c) La versión mínima aceptable es la 1.2 y se recomienda usar la 1.3',
+                    explanation: 'El Centro Criptológico Nacional (CCN) y las principales organizaciones de seguridad recomiendan el uso de TLS 1.2 como mínimo y priorizar TLS 1.3, ya que las versiones anteriores (TLS 1.0 y 1.1) tienen vulnerabilidades conocidas y se consideran obsoletas.'
+                },
+                {
+                    question: '26. ¿Qué elemento HTML utilizaría para impedir que el e-mail exceda los 100 caracteres cuando el interesado lo cumplimente?',
+                    options: [
+                        'a) <input type="email" id="email" name="email" size="100">',
+                        'b) <input type="email" id="email" name="email" max="100">',
+                        'c) <input type="email" id="email" name="email" maxlength="100">',
+                        'd) <input type="email" id="email" name="email" length="100">'
+                    ],
+                    correctAnswer: 'c) <input type="email" id="email" name="email" maxlength="100">',
+                    explanation: 'El atributo `maxlength` en HTML se utiliza para especificar el número máximo de caracteres que un usuario puede introducir en un campo de texto o email.'
+                },
+                {
+                    question: '27. ¿Qué ORM podría utilizar, en función de la solución de backend escogida (.NET o Java)?',
+                    options: [
+                        'a) JPA en .NET e Hibernate en Java.',
+                        'b) Hibernate en .NET y Entity Framework en Java.',
+                        'c) Entity Framework en .NET e Hibernate en Java.',
+                        'd) Spring Data en.NET e Hibernate en Java.'
+                    ],
+                    correctAnswer: 'c) Entity Framework en .NET e Hibernate en Java.',
+                    explanation: 'Entity Framework es el ORM (Object-Relational Mapper) principal y más común para el ecosistema .NET, mientras que Hibernate es el ORM de facto y más popular en el ecosistema Java.'
+                },
+                {
+                    question: '28. ¿Qué sentencia habría que ejecutar si se quiere añadir un nuevo registro a la tabla "Cuerpo Becado" con los valores "TAI" y "Técnico Auxiliar de Informática"?',
+                    options: [
+                        'a) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES (\'TAI\', \'Técnico Auxiliar de Informática\');',
+                        'b) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES (TAI, Técnico Auxiliar de Informática);',
+                        'c) INSERT TO CuerpoBecado (Codigo, Denominacion) VALUES (\'TAI\', \'Técnico Auxiliar de Informática\');',
+                        'd) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES (\'TAI\', \'Técnico Auxiliar de Informática\');'
+                    ],
+                    correctAnswer: 'a) INSERT INTO CuerpoBecado (Codigo, Denominacion) VALUES (\'TAI\', \'Técnico Auxiliar de Informática\');',
+                    explanation: 'La sintaxis correcta para insertar datos en SQL es `INSERT INTO table_name (column1, column2) VALUES (value1, value2);`. Las comillas simples son necesarias para los valores de tipo cadena.'
+                },
+                {
+                    question: '29. ¿Qué tipo de correspondencia hay entre las tablas "SolicitudBeca" y "FicheroAdjunto" según el diagrama adjunto?',
+                    options: [
+                        'a) Un registro de SolicitudBeca puede tener N registros de FicheroAdjunto.',
+                        'b) Un registro de SolicitudBeca puede tener como máximo un registro de FicheroAdjunto.',
+                        'c) N registros de SolicitudBeca pueden tener M registros de FicheroAdjunto.',
+                        'd) Un registro de SolicitudBeca puede tener cero o como máximo un registro de FicheroAdjunto.'
+                    ],
+                    correctAnswer: 'a) Un registro de SolicitudBeca puede tener N registros de FicheroAdjunto.',
+                    explanation: 'El diagrama Entidad/Relación muestra una relación uno a muchos entre SolicitudBeca y FicheroAdjunto (simbolizada por la "pata de gallo" en el lado de FicheroAdjunto), lo que significa que una SolicitudBeca puede tener múltiples FicheroAdjuntos.'
+                },
+                {
+                    question: '30. A este sistema le es de aplicación la normativa vigente de accesibilidad de sitios web. ¿Qué herramienta automatizada utilizaría para probar que la aplicación cumple con los estándares de accesibilidad?',
+                    options: ['a) QualWeb.', 'b) Equal Automatic Checker.', 'c) AccSite.', 'd) Shovel.'],
+                    correctAnswer: 'a) QualWeb.',
+                    explanation: 'QualWeb es una herramienta de evaluación de accesibilidad web que permite verificar el cumplimiento de los sitios web con las normas de accesibilidad (WCAG).'
+                },
+                {
+                    question: '31. El formulario de solicitud será extenso y tendrá muchas consultas de datos. ¿Qué utilizaría para renderizar la página en el servidor?',
+                    options: ['a) Server Sent Events.', 'b) Ajax.', 'c) WebSocket.', 'd) Server Side Rendering.'],
+                    correctAnswer: 'd) Server Side Rendering.',
+                    explanation: 'Server Side Rendering (SSR) es la técnica de renderizar páginas web en el servidor, generando el HTML completo antes de enviarlo al navegador. Esto es especialmente útil para formularios extensos y muchas consultas de datos, ya que mejora el rendimiento inicial y el SEO.'
+                },
+                {
+                    question: '32. El proceso de presentación de solicitud implica la autenticación del usuario, la firma de la solicitud, el guardado en base de datos, la generación de un asiento registral y la generación de un justificante de presentación. ¿Qué diagrama UML utilizaría para representar las acciones implicadas en este flujo?',
+                    options: ['a) Diagrama de paquetes.', 'b) Diagrama de secuencia.', 'c) Diagrama de objetos.', 'd) Diagrama de Entidad/Relación.'],
+                    correctAnswer: 'b) Diagrama de secuencia.',
+                    explanation: 'Un diagrama de secuencia es un tipo de diagrama UML que muestra las interacciones entre objetos en un orden cronológico. Es ideal para representar flujos de trabajo que involucran múltiples pasos y la interacción entre diferentes componentes, como el proceso de presentación de una solicitud.'
+                },
+                {
+                    question: '33. En caso de utilizar Java para el backend, ¿qué tecnología puede utilizar para generar un cliente de servicios web?',
+                    options: ['a) Apache Flink.', 'b) Apache Xalan.', 'c) Apache Xerces.', 'd) Apache CXF.'],
+                    correctAnswer: 'd) Apache CXF.',
+                    explanation: 'Apache CXF es un framework de servicios web de código abierto que permite crear y consumir servicios web (tanto SOAP como RESTful) en Java. Es una opción común para generar clientes de servicios web.'
+                },
+                {
+                    question: '34. En un entorno de desarrollo Java, ¿qué utilizaría para mapear elementos XML a clases?',
+                    options: ['a) JAXB.', 'b) JPA.', 'c) JAXR.', 'd) JAX-RS.'],
+                    correctAnswer: 'a) JAXB.',
+                    explanation: 'JAXB (Java Architecture for XML Binding) es un API de Java que permite el mapeo entre objetos Java y XML. Se utiliza para serializar objetos Java en XML y deserializar XML de vuelta a objetos Java.'
+                },
+                {
+                    question: '35. Está escogiendo herramientas que le permitan analizar y mejorar la calidad del código. ¿Cuál de las siguientes NO le será de ayuda?',
+                    options: ['a) SonarQube.', 'b) Un linter de JavaScript.', 'c) PMD.', 'd) Mercurial.'],
+                    correctAnswer: 'd) Mercurial.',
+                    explanation: 'SonarQube, un linter de JavaScript y PMD son herramientas de análisis de calidad de código que identifican errores, vulnerabilidades y malas prácticas. Mercurial, sin embargo, es un sistema de control de versiones distribuido, no una herramienta de análisis de calidad de código.'
+                },
+                {
+                    question: '36. Necesita controlar el plazo de presentación de solicitudes. Suponiendo que utiliza Java en el backend, ¿qué clase nativa de Java puede utilizar para trabajar con una fecha y hora simultáneamente?',
+                    options: ['a) LocalDateTime.', 'b) LocalDate.', 'c) LocalTime.', 'd) Offset Time.'],
+                    correctAnswer: 'a) LocalDateTime.',
+                    explanation: 'La clase `LocalDateTime` de la API de fecha y hora de Java 8+ se utiliza para representar una fecha y una hora sin información de zona horaria, lo que la hace ideal para trabajar con fechas y horas simultáneamente cuando la zona horaria no es una preocupación.'
+                },
+                {
+                    question: '37. Para que la aplicación de gestión pueda interactuar con esta aplicación, se va a exponer una capa de servicios web. ¿Cuál de las siguientes opciones NO es válida para documentar dichos servicios?',
+                    options: ['a) RAML.', 'b) REST.', 'c) WSDL.', 'd) OpenAPI/Swagger.'],
+                    correctAnswer: 'b) REST.',
+                    explanation: 'REST (Representational State Transfer) es un estilo arquitectónico para el desarrollo de servicios web, no una herramienta o formato para documentar servicios. RAML, WSDL y OpenAPI/Swagger son formatos o herramientas utilizadas para describir y documentar APIs y servicios web.'
+                },
+                {
+                    question: '38. Se desea añadir una tabla "Subsanacion" con las columnas numéricas IdSubsanacion e IdSolicitudBeca y la columna alfanumérica de 2000 caracteres TextoFundamento. ¿Cuál de las siguientes sentencias sería la correcta?',
+                    options: [
+                        'a) CREATE TABLE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));',
+                        'b) CREATE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));',
+                        'c) CREATE NEW TABLE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));',
+                        'd) CREATE TABLE Subsanacion AS (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));'
+                    ],
+                    correctAnswer: 'a) CREATE TABLE Subsanacion (IdSubsanacion bigint, IdSolicitudBeca bigint, TextoFundamento varchar(2000));',
+                    explanation: 'La sintaxis correcta para crear una tabla en SQL es `CREATE TABLE table_name (column1 datatype, column2 datatype, ...);`. `bigint` es un tipo de dato numérico para enteros grandes, y `varchar(2000)` para cadenas de caracteres de hasta 2000.'
+                },
+                {
+                    question: '39. Se espera un alto volumen de concurrencia en el sistema. ¿Qué nivel de aislamiento de base de datos debería configurar para que no se produzcan lecturas sucias ni lecturas no repetibles, pero sí lecturas fantasmas?',
+                    options: ['a) Serializable.', 'b) Read committed.', 'c) Read uncommitted.', 'd) Repeatable read.'],
+                    correctAnswer: 'd) Repeatable read.',
+                    explanation: 'El nivel de aislamiento `Repeatable Read` garantiza que una fila leída por una transacción no pueda ser modificada o eliminada por otra transacción hasta que la primera transacción se complete. Esto previene lecturas sucias y lecturas no repetibles. Sin embargo, no evita el problema de las lecturas fantasmas (Phantom Reads), donde nuevas filas que cumplen la condición de una consulta previa pueden ser insertadas por otra transacción y aparecer en una segunda lectura dentro de la misma transacción.'
+                },
+                {
+                    question: '40. Se ha determinado que es necesaria la integración de la aplicación con GEISER, cuyos servicios web son de naturaleza SOAP. ¿Con qué firmará las peticiones generadas por la aplicación?',
+                    options: ['a) WS-Security.', 'b) SAML.', 'c) JWT.', 'd) XML-Encryption.'],
+                    correctAnswer: 'a) WS-Security.',
+                    explanation: 'WS-Security (Web Services Security) es una extensión de la especificación SOAP que proporciona mecanismos para asegurar los mensajes SOAP, incluyendo la firma digital de los mensajes. Es el estándar para seguridad en servicios web SOAP.'
+                },
+                {
+                    question: '41. Se quiere utilizar la librería iText de .NET para generar un documento PDF que sirva como justificante de presentación al interesado. ¿Con qué comando instalaría el paquete NuGet?',
+                    options: ['a) dotnet add package iText.', 'b) dotnet install package iText.', 'c) dotnet add iText.', 'd) dotnet install iText.'],
+                    correctAnswer: 'a) dotnet add package iText.',
+                    explanation: 'El comando correcto para añadir un paquete NuGet a un proyecto .NET es `dotnet add package <PackageName>`. En este caso, sería `dotnet add package iText` (o la versión específica de iText para .NET, como iText7).'
+                },
+                {
+                    question: '42. Según "Técnicas y Prácticas" de Métrica v3, si se quisiera optimizar el modelo físico de datos para reducir o simplificar el número de accesos a la base de datos, ¿cuál de las siguientes acciones se aplicaría?',
+                    options: ['a) Combinar entidades si los accesos son frecuentes en transacciones distintas.', 'b) Eliminar entidades.', 'c) Introducir elementos redundantes.', 'd) Normalizar las tablas en Forma Normal de Boyce-Codd (FNBC).'],
+                    correctAnswer: 'c) Introducir elementos redundantes.',
+                    explanation: 'La desnormalización, que implica la introducción de elementos redundantes, es una técnica de optimización del modelo físico de datos que se utiliza para reducir el número de uniones (joins) y, por lo tanto, el número de accesos a la base de datos, a expensas de un posible aumento de la redundancia y de la complejidad en la actualización de los datos.'
+                },
+                {
+                    question: '43. Suponiendo que se utilizara la metodología ágil SCRUM, si durante un sprint, se da cuenta de que se está aplicando una mala práctica que puede enlentecer el proyecto, ¿en qué reunión comentará esa mala práctica, para buscar la mejora continua y evitar aplicarla en los siguientes sprints?',
+                    options: ['a) En la Daily Scrum.', 'b) En la Sprint Retrospective.', 'c) En la Sprint Planning.', 'd) En la Sprint Review.'],
+                    correctAnswer: 'b) En la Sprint Retrospective.',
+                    explanation: 'La Sprint Retrospective (Retrospectiva del Sprint) es la reunión de Scrum dedicada a la inspección y adaptación del proceso. Es el momento para que el equipo Scrum discuta qué salió bien, qué se puede mejorar y qué compromisos se pueden hacer para el próximo sprint en términos de procesos y prácticas.'
+                },
+                {
+                    question: '44. También el sistema se integrará con la PID (Plataforma de Intermediación de Datos), cuya plataforma actual se define como una arquitectura orientada a servicios (SOA). ¿Cuáles son los componentes principales de esta arquitectura?',
+                    options: [
+                        'a) Servicio, Proveedor de servicios, Consumidor de servicios y Orquestador de servicios.',
+                        'b) Servicio, Proveedor de servicios, Consumidor de servicios y Depurador de servicios.',
+                        'c) Servicio, Proveedor de servicios, Consumidor de servicios y Comparador de servicios.',
+                        'd) Servicio, Proveedor de servicios, Consumidor de servicios y Registro de servicios.'
+                    ],
+                    correctAnswer: 'd) Servicio, Proveedor de servicios, Consumidor de servicios y Registro de servicios.',
+                    explanation: 'Los componentes principales de una arquitectura SOA (Service-Oriented Architecture) son el Servicio (la funcionalidad expuesta), el Proveedor de Servicios (quien ofrece el servicio), el Consumidor de Servicios (quien utiliza el servicio) y el Registro de Servicios (un directorio donde los servicios pueden ser descubiertos por los consumidores).'
+                },
+                {
+                    question: '45. Tras estudiar varias opciones se ha decidido utilizar .NET con C# para desarrollar el backend, ¿cómo puede indicar la opcionalidad de un tipo de dato entero?',
+                    options: ['a) int? Telefono', 'b) int null Telefono', 'c) int:null Telefono', 'd) int ?? Telefono'],
+                    correctAnswer: 'a) int? Telefono',
+                    explanation: 'En C#, un tipo de valor como `int` no puede ser nulo por defecto. Para hacer que un tipo de valor sea nullable (que pueda aceptar un valor nulo), se utiliza el sufijo `?`. Por ejemplo, `int?` declara una variable entera que puede ser nula.'
+                },
+                {
+                    question: '46. Para diseñar el estilo de los campos de entrada obligatorios del formulario de solicitud se va a hacer uso del siguiente selector CSS: "input:required". ¿Cuál es su especificidad?',
+                    options: ['a) 1-1-0.', 'b) 0-1-1.', 'c) 1-0-1.', 'd) 1-0-0.'],
+                    correctAnswer: 'b) 0-1-1.',
+                    explanation: 'La especificidad de CSS se calcula: un selector de tipo (`input`) tiene una especificidad de 0-0-1, y una pseudo-clase (`:required`) tiene una especificidad de 0-1-0. Al combinarlos, se suman, dando 0-1-1.'
+                },
+                {
+                    question: '47. Se quiere facilitar el uso de herramientas de asistencia en la página. ¿Qué atributo ARIA utilizaría para indicar que un elemento se actualizará (su contenido es dinámico)?',
+                    options: ['a) aria-live.', 'b) aria-checked.', 'c) aria-flowto.', 'd) aria-valuenow.'],
+                    correctAnswer: 'a) aria-live.',
+                    explanation: 'El atributo `aria-live` se utiliza para indicar a las tecnologías de asistencia (como los lectores de pantalla) que un área de la página se actualizará dinámicamente y que deben notificar al usuario sobre los cambios. Los valores comunes son "off", "polite" y "assertive".'
+                },
+                {
+                    question: '48. Para resolver una incidencia, necesita saber qué ficheros adjuntos de la solicitud del interesado con DNI 00000000T para el año 2024 no son PDF. ¿Cómo los obtendría?',
+                    options: [
+                        'a) SELECT FROM FicheroAdjunto WHERE Denominacion LIKE \'%.pdf\' AND IdSolicitudBeca = (SELECT IdSolicitudBeca FROM SolicitudBeca WHERE AñoConvocatoria = 2024 AND IdInteresado = (SELECT Idinteresado WHERE Documentoidentidad = \'000000T\'));',
+                        'b) SELECT FROM FicheroAdjunto WHERE Denominacion NOT LIKE \'%.pdf\' AND IdSolicitudBeca = (SELECT IdSolicitudBeca FROM SolicitudBeca WHERE AñoConvocatoria = 2024 AND IdInteresado = (SELECT Idinteresado FROM Interesado));',
+                        'c) SELECT FROM FicheroAdjunto WHERE Denominacion NOT LIKE \'%.pdf\' AND IdSolicitudBeca = (SELECT IdSolicitudBeca FROM SolicitudBeca WHERE AñoConvocatoria = 2024 AND IdInteresado = (SELECT IdInteresado FROM Interesado WHERE Documentoidentidad = \'00000000T\'))',
+                        'd) SELECT FROM FicheroAdjunto WHERE Denominacion NOT LIKE \'pdf\' AND IdSolicitudBeca = (SELECT IdSolicitudBeca FROM SolicitudBeca WHERE AñoConvocatoria = 2024 AND IdInteresado = (SELECT IdInteresado FROM Interesado WHERE Documentoidentidad = \'0000000T\'));'
+                    ],
+                    correctAnswer: 'c) SELECT FROM FicheroAdjunto WHERE Denominacion NOT LIKE \'%.pdf\' AND IdSolicitudBeca = (SELECT IdSolicitudBeca FROM SolicitudBeca WHERE AñoConvocatoria = 2024 AND IdInteresado = (SELECT IdInteresado FROM Interesado WHERE Documentoidentidad = \'00000000T\'))',
+                    explanation: 'La consulta SQL correcta utiliza subconsultas anidadas para filtrar por DNI del interesado, año de la convocatoria y luego seleccionar los ficheros adjuntos que NO tienen la extensión ".pdf". Es crucial que el `LIKE` utilice `NOT LIKE` y el patrón `%.pdf` para excluir los PDF, y que la búsqueda de `Documentoidentidad` sea exacta.'
+                },
+                {
+                    question: '49. ¿Qué tendrá que configurar en el backend si quiere restringir que las únicas peticiones HTTP de origen cruzado iniciadas desde scripts que se acepten procedan del frontend?',
+                    options: ['a) HSTS.', 'b) CSP.', 'c) TLS.', 'd) CORS.'],
+                    correctAnswer: 'd) CORS.',
+                    explanation: 'CORS (Cross-Origin Resource Sharing) es un mecanismo que permite a un servidor indicar a qué orígenes (dominios, protocolos o puertos) se les permite acceder a sus recursos fuera del mismo origen desde el que se sirvió el documento original.'
+                },
+                {
+                    question: '50. Quiere facilitar la incorporación de otros desarrolladores al proyecto y para ello, en el repositorio de código, va a crear un fichero en el que incluirá, entre otra información, el propósito del proyecto y cómo arrancarlo localmente. Esa información se incluirá en el fichero:',
+                    options: ['a) CODEOWNERS.', 'b) README.MD.', 'c) LICENSE.', 'd) CITATION.'],
+                    correctAnswer: 'b) README.MD.',
+                    explanation: 'El archivo `README.md` (o `README.txt`, `README.rst`, etc.) es un archivo de texto que se encuentra en el directorio raíz de un repositorio de software y que contiene información general sobre el proyecto, su propósito, cómo instalarlo, cómo usarlo, etc. Es el primer archivo que los nuevos colaboradores y usuarios suelen ver.'
+                },
+                {
+                    question: '51. ¿Cuál es el significado de las siglas CLI en el contexto de sistemas operativos?',
+                    options: [
+                        'a) Common Language Infrastructure',
+                        'b) Command Line Interface',
+                        'c) Centralized Logic Integration',
+                        'd) Client-side Language Interpreter'
+                    ],
+                    correctAnswer: 'b) Command Line Interface',
+                    explanation: 'CLI son las siglas de Command Line Interface (Interfaz de Línea de Comandos), un método para interactuar con un programa de computadora o un sistema operativo escribiendo líneas de comandos de texto.'
+                },
+                {
+                    question: '52. ¿Qué protocolo se utiliza para la resolución de nombres de dominio a direcciones IP?',
+                    options: [
+                        'a) HTTP',
+                        'b) FTP',
+                        'c) DNS',
+                        'd) SMTP'
+                    ],
+                    correctAnswer: 'c) DNS',
+                    explanation: 'DNS (Domain Name System) es un sistema de nombres distribuido que traduce los nombres de dominio legibles para humanos (como "google.com") a direcciones IP numéricas que las computadoras pueden entender.'
+                },
+                {
+                    question: '53. ¿Qué herramienta utilizaría para gestionar y orquestar contenedores Docker a gran escala?',
+                    options: [
+                        'a) Vagrant',
+                        'b) Ansible',
+                        'c) Kubernetes',
+                        'd) Jenkins'
+                    ],
+                    correctAnswer: 'c) Kubernetes',
+                    explanation: 'Kubernetes es una plataforma de código abierto diseñada para automatizar el despliegue, escalado y gestión de aplicaciones en contenedores.'
+                },
+                {
+                    question: '54. ¿Cuál de los siguientes es un sistema de gestión de bases de datos NoSQL de tipo documento?',
+                    options: [
+                        'a) MySQL',
+                        'b) PostgreSQL',
+                        'c) MongoDB',
+                        'd) Oracle'
+                    ],
+                    correctAnswer: 'c) MongoDB',
+                    explanation: 'MongoDB es un sistema de gestión de bases de datos NoSQL de tipo documento, lo que significa que almacena los datos en documentos similares a JSON (BSON).'
+                },
+                {
+                    question: '55. ¿Qué es un hypervisor de Tipo 1 (Bare-Metal)?',
+                    options: [
+                        'a) Un software que se ejecuta sobre un sistema operativo anfitrión.',
+                        'b) Un sistema operativo completo con capacidades de virtualización integradas.',
+                        'c) Un software que se instala directamente sobre el hardware físico, controlando los recursos del hardware y gestionando las máquinas virtuales.',
+                        'd) Un tipo de software de emulación de hardware.'
+                    ],
+                    correctAnswer: 'c) Un software que se instala directamente sobre el hardware físico, controlando los recursos del hardware y gestionando las máquinas virtuales.',
+                    explanation: 'Un hypervisor de Tipo 1 (también llamado bare-metal o nativo) es un software de virtualización que se instala directamente sobre el hardware físico de un servidor, sin necesidad de un sistema operativo anfitrión, controlando directamente los recursos del hardware y gestionando las máquinas virtuales.'
+                },
+                {
+                    question: '56. ¿Qué comando de Linux se utiliza para cambiar los permisos de un archivo o directorio?',
+                    options: [
+                        'a) `chmod`',
+                        'b) `chown`',
+                        'c) `mkdir`',
+                        'd) `cp`'
+                    ],
+                    correctAnswer: 'a) `chmod`',
+                    explanation: 'El comando `chmod` (change mode) se utiliza en sistemas Unix/Linux para cambiar los permisos de acceso a archivos y directorios (lectura, escritura, ejecución) para el propietario, el grupo y otros usuarios.'
+                },
+                {
+                    question: '57. ¿Qué es un "firewall" en seguridad de redes?',
+                    options: [
+                        'a) Un dispositivo que amplifica la señal de red.',
+                        'b) Un software o hardware que filtra el tráfico de red, permitiendo o bloqueando el paso de datos según reglas de seguridad.',
+                        'c) Un sistema para almacenar copias de seguridad de datos.',
+                        'd) Un protocolo para cifrar comunicaciones web.'
+                    ],
+                    correctAnswer: 'b) Un software o hardware que filtra el tráfico de red, permitiendo o bloqueando el paso de datos según reglas de seguridad.',
+                    explanation: 'Un firewall (cortafuegos) es un sistema de seguridad de red que monitorea y controla el tráfico de red entrante y saliente basándose en reglas de seguridad predeterminadas. Su propósito es establecer una barrera entre una red interna de confianza y redes externas no confiables.'
+                },
+                {
+                    question: '58. ¿Cuál de las siguientes es una característica principal del protocolo UDP (User Datagram Protocol)?',
+                    options: [
+                        'a) Orientado a la conexión y fiable.',
+                        'b) No orientado a la conexión y no fiable.',
+                        'c) Utiliza un handshake de tres vías para establecer la conexión.',
+                        'd) Garantiza la entrega de paquetes en orden.'
+                    ],
+                    correctAnswer: 'b) No orientado a la conexión y no fiable.',
+                    explanation: 'UDP es un protocolo de la capa de transporte que es rápido y ligero, ya que es "connectionless" (no orientado a la conexión) y no garantiza la fiabilidad ni el orden de los paquetes, ni retransmisiones. Es adecuado para aplicaciones donde la velocidad es más crítica que la fiabilidad, como streaming de video o juegos online.'
+                },
+                {
+                    question: '59. En el ciclo de vida del desarrollo de software, ¿qué fase se encarga de traducir los requisitos del usuario en una estructura detallada del sistema?',
+                    options: [
+                        'a) Análisis de requisitos',
+                        'b) Diseño',
+                        'c) Implementación',
+                        'd) Pruebas'
+                    ],
+                    correctAnswer: 'b) Diseño',
+                    explanation: 'La fase de diseño en el ciclo de vida del software se encarga de crear la arquitectura del sistema, la estructura de los módulos, las bases de datos y la interfaz de usuario, basándose en los requisitos definidos en la fase de análisis.'
+                },
+                {
+                    question: '60. ¿Qué lenguaje de marcado se utiliza para estructurar el contenido de las páginas web?',
+                    options: [
+                        'a) CSS',
+                        'b) JavaScript',
+                        'c) HTML',
+                        'd) XML'
+                    ],
+                    correctAnswer: 'c) HTML',
+                    explanation: 'HTML (HyperText Markup Language) es el lenguaje de marcado estándar para crear páginas web y aplicaciones web. Se utiliza para estructurar el contenido de la web, como encabezados, párrafos, enlaces, imágenes, etc.'
+                },
+                {
+                    question: '61. En el contexto de las bases de datos, ¿qué es un "índice"?',
+                    options: [
+                        'a) Un tipo de tabla que almacena datos temporales.',
+                        'b) Una estructura de datos que mejora la velocidad de las operaciones de recuperación de datos en una tabla de base de datos.',
+                        'c) Un conjunto de reglas para validar la entrada de datos.',
+                        'd) Un proceso para normalizar tablas.'
+                    ],
+                    correctAnswer: 'b) Una estructura de datos que mejora la velocidad de las operaciones de recuperación de datos en una tabla de base de datos.',
+                    explanation: 'Un índice en una base de datos es una estructura de datos que permite al motor de la base de datos encontrar y recuperar filas de datos más rápidamente. Actúa como un índice de libro, permitiendo saltar directamente a la ubicación de los datos buscados sin escanear toda la tabla.'
+                },
+                {
+                    question: '62. ¿Qué protocolo se utiliza para enviar correo electrónico desde un cliente de correo a un servidor o entre servidores de correo?',
+                    options: [
+                        'a) POP3',
+                        'b) IMAP',
+                        'c) SMTP',
+                        'd) HTTP'
+                    ],
+                    correctAnswer: 'c) SMTP',
+                    explanation: 'SMTP (Simple Mail Transfer Protocol) es el protocolo estándar de Internet para el envío de correo electrónico. Se utiliza para la comunicación entre servidores de correo y para enviar correos desde un cliente a un servidor.'
+                },
+                {
+                    question: '63. ¿Qué es un ataque de "phishing"?',
+                    options: [
+                        'a) Un ataque que intenta adivinar contraseñas mediante pruebas repetidas.',
+                        'b) Un ataque que intercepta el tráfico de red para robar datos.',
+                        'c) Un intento fraudulento de obtener información sensible como nombres de usuario, contraseñas y detalles de tarjetas de crédito, disfrazándose como una entidad de confianza en una comunicación electrónica.',
+                        'd) Un tipo de software malicioso que se autorreplica.'
+                    ],
+                    correctAnswer: 'c) Un intento fraudulento de obtener información sensible como nombres de usuario, contraseñas y detalles de tarjetas de crédito, disfrazándose como una entidad de confianza en una comunicación electrónica.',
+                    explanation: 'El phishing es una técnica de ingeniería social donde los atacantes se hacen pasar por entidades legítimas (bancos, empresas, etc.) para engañar a las víctimas y robar información personal o credenciales, generalmente a través de correos electrónicos, mensajes o sitios web falsos.'
+                },
+                {
+                    question: '64. ¿Qué concepto describe la capacidad de un sistema para expandirse y manejar un aumento de la demanda o carga de trabajo?',
+                    options: [
+                        'a) Fiabilidad',
+                        'b) Disponibilidad',
+                        'c) Escalabilidad',
+                        'd) Seguridad'
+                    ],
+                    correctAnswer: 'c) Escalabilidad',
+                    explanation: 'La escalabilidad es la capacidad de un sistema, red o proceso para manejar una cantidad creciente de trabajo o su potencial para ser ampliado para acomodar ese crecimiento. Se refiere a cómo un sistema puede adaptarse a un aumento en la carga de usuarios, datos o transacciones.'
+                },
+                {
+                    question: '65. ¿Qué tipo de pruebas de software se centran en verificar que la aplicación satisface las necesidades y expectativas del usuario final?',
+                    options: [
+                        'a) Pruebas unitarias',
+                        'b) Pruebas de integración',
+                        'c) Pruebas de sistema',
+                        'd) Pruebas de aceptación'
+                    ],
+                    correctAnswer: 'd) Pruebas de aceptación',
+                    explanation: 'Las pruebas de aceptación (UAT - User Acceptance Testing) son el último nivel de pruebas de software, donde el usuario final verifica que el sistema cumple con sus requisitos y expectativas del negocio en un entorno simulado o real.'
+                },
+                {
+                    question: '66. En programación orientada a objetos, ¿qué concepto permite a una clase derivar propiedades y comportamientos de otra clase?',
+                    options: [
+                        'a) Encapsulación',
+                        'b) Polimorfismo',
+                        'c) Herencia',
+                        'd) Abstracción'
+                    ],
+                    correctAnswer: 'c) Herencia',
+                    explanation: 'La herencia es uno de los pilares de la programación orientada a objetos, donde una clase (subclase o clase hija) puede heredar atributos y métodos de otra clase (superclase o clase padre), promoviendo la reutilización de código y la creación de jerarquías.'
+                },
+                {
+                    question: '67. ¿Qué es un "commit" en un sistema de control de versiones como Git?',
+                    options: [
+                        'a) Una copia completa del repositorio.',
+                        'b) Un conjunto de cambios guardados en el repositorio, junto con un mensaje descriptivo.',
+                        'c) El proceso de fusionar ramas de código.',
+                        'd) La acción de descargar código desde un repositorio remoto.'
+                    ],
+                    correctAnswer: 'b) Un conjunto de cambios guardados en el repositorio, junto con un mensaje descriptivo.',
+                    explanation: 'En Git, un "commit" es una instantánea de los cambios en el código de un proyecto en un momento específico. Cada commit tiene un identificador único y un mensaje descriptivo que explica los cambios realizados.'
+                },
+                {
+                    question: '68. ¿Qué es un balanceador de carga (Load Balancer) en una arquitectura de red?',
+                    options: [
+                        'a) Un dispositivo que encripta el tráfico de red.',
+                        'b) Un software que detecta intrusiones en la red.',
+                        'c) Un dispositivo que distribuye el tráfico de red de manera eficiente entre múltiples servidores para mejorar el rendimiento y la disponibilidad.',
+                        'd) Un servidor que almacena copias de seguridad.'
+                    ],
+                    correctAnswer: 'c) Un dispositivo que distribuye el tráfico de red de manera eficiente entre múltiples servidores para mejorar el rendimiento y la disponibilidad.',
+                    explanation: 'Un balanceador de carga es un dispositivo o software que distribuye el tráfico de red o las solicitudes de clientes entre un grupo de servidores backend. Su objetivo es optimizar el uso de recursos, maximizar el rendimiento, reducir el tiempo de respuesta y evitar la sobrecarga de un solo servidor.'
+                },
+                {
+                    question: '69. ¿Qué se entiende por "Big Data"?',
+                    options: [
+                        'a) Cualquier conjunto de datos que supera los 100 GB de tamaño.',
+                        'b) El procesamiento de grandes volúmenes de datos utilizando hojas de cálculo.',
+                        'c) Conjuntos de datos tan grandes y complejos que los métodos tradicionales de procesamiento de datos no son suficientes, caracterizados por las 3 Vs (Volumen, Velocidad, Variedad).',
+                        'd) Una base de datos relacional con muchas tablas.'
+                    ],
+                    correctAnswer: 'c) Conjuntos de datos tan grandes y complejos que los métodos tradicionales de procesamiento de datos no son suficientes, caracterizados por las 3 Vs (Volumen, Velocidad, Variedad).',
+                    explanation: 'Big Data se refiere a conjuntos de datos tan grandes, complejos y rápidos que los métodos tradicionales de procesamiento de datos resultan inadecuados. Se caracteriza por las "3 Vs": Volumen (cantidad de datos), Velocidad (rapidez de generación y procesamiento) y Variedad (diversidad de fuentes y formatos de datos).'
+                },
+                {
+                    question: '70. ¿Qué se entiende por "computación en la nube" (Cloud Computing)?',
+                    options: [
+                        'a) El almacenamiento de datos en discos duros locales.',
+                        'b) La entrega de servicios informáticos (servidores, almacenamiento, bases de datos, redes, software, análisis) a través de Internet ("la nube") con pago por uso.',
+                        'c) La creación de aplicaciones que solo se ejecutan en un único servidor.',
+                        'd) La utilización de computadoras cuánticas para resolver problemas complejos.'
+                    ],
+                    correctAnswer: 'b) La entrega de servicios informáticos (servidores, almacenamiento, bases de datos, redes, software, análisis) a través de Internet ("la nube") con pago por uso.',
+                    explanation: 'La computación en la nube es la entrega bajo demanda de recursos informáticos (incluyendo servidores, almacenamiento, bases de datos, redes, software, análisis e inteligencia) a través de Internet con un modelo de precios de pago por uso.'
+                },
+                {
+                    question: '71. ¿Cuál es el propósito principal de un sistema de control de versiones (VCS) en el desarrollo de software?',
+                    options: [
+                        'a) Automatizar la compilación y despliegue de software.',
+                        'b) Gestionar dependencias de librerías en un proyecto.',
+                        'c) Registrar y gestionar los cambios en el código fuente a lo largo del tiempo, permitiendo la colaboración y la reversión a versiones anteriores.',
+                        'd) Realizar pruebas de rendimiento de la aplicación.'
+                    ],
+                    correctAnswer: 'c) Registrar y gestionar los cambios en el código fuente a lo largo del tiempo, permitiendo la colaboración y la reversión a versiones anteriores.',
+                    explanation: 'Un sistema de control de versiones (VCS) es una herramienta que registra los cambios realizados en archivos o conjuntos de archivos a lo largo del tiempo, de modo que se puedan recuperar versiones específicas más adelante. Facilita la colaboración entre desarrolladores y el seguimiento del historial del proyecto.'
+                },
+                {
+                    question: '72. ¿Qué es un API RESTful?',
+                    options: [
+                        'a) Una interfaz de programación de aplicaciones que utiliza únicamente el método HTTP GET.',
+                        'b) Una API que sigue los principios arquitectónicos de REST, utilizando HTTP para la comunicación y recursos identificables por URIs.',
+                        'c) Un conjunto de librerías para la conexión a bases de datos.',
+                        'd) Un protocolo de comunicación para enviar correos electrónicos seguros.'
+                    ],
+                    correctAnswer: 'b) Una API que sigue los principios arquitectónicos de REST, utilizando HTTP para la comunicación y recursos identificables por URIs.',
+                    explanation: 'Una API RESTful (Representational State Transfer) es una interfaz de programación de aplicaciones que cumple con las restricciones del estilo arquitectónico REST. Utiliza los métodos HTTP (GET, POST, PUT, DELETE) para operar sobre recursos identificados por URLs/URIs, siendo "stateless" y basada en el intercambio de representaciones de recursos.'
+                },
+                {
+                    question: '73. ¿Qué modelo de desarrollo de software se caracteriza por ciclos cortos e iterativos, con entregas frecuentes y retroalimentación constante del cliente?',
+                    options: [
+                        'a) Modelo en cascada.',
+                        'b) Modelo en V.',
+                        'c) Metodologías ágiles (ej. Scrum, Kanban).',
+                        'd) Modelo en espiral.'
+                    ],
+                    correctAnswer: 'c) Metodologías ágiles (ej. Scrum, Kanban).',
+                    explanation: 'Las metodologías ágiles (como Scrum y Kanban) se caracterizan por su enfoque iterativo e incremental, con ciclos de desarrollo cortos (sprints), entregas frecuentes de software funcional y una fuerte colaboración y retroalimentación con el cliente.'
+                },
+                {
+                    question: '74. ¿Qué tipo de dato se utiliza en SQL para almacenar texto largo, como descripciones o comentarios, cuya longitud puede variar considerablemente?',
+                    options: [
+                        'a) INT',
+                        'b) VARCHAR',
+                        'c) TEXT',
+                        'd) BOOLEAN'
+                    ],
+                    correctAnswer: 'c) TEXT',
+                    explanation: 'El tipo de dato `TEXT` (o `CLOB`/`NCLOB` en algunos sistemas) se utiliza en SQL para almacenar cadenas de caracteres de longitud variable muy grandes, adecuadas para textos extensos como artículos, descripciones o comentarios. `VARCHAR` es para cadenas de longitud variable, pero con un límite de tamaño más bajo.'
+                },
+                {
+                    question: '75. ¿Cuál es el propósito del control de concurrencia en una base de datos?',
+                    options: [
+                        'a) Asegurar que solo un usuario pueda acceder a la base de datos a la vez.',
+                        'b) Prevenir que múltiples usuarios o transacciones interactúen con los mismos datos de manera que se comprometa la integridad de la base de datos.',
+                        'c) Optimizar el rendimiento de las consultas SELECT.',
+                        'd) Realizar copias de seguridad automáticas de los datos.'
+                    ],
+                    correctAnswer: 'b) Prevenir que múltiples usuarios o transacciones interactúen con los mismos datos de manera que se comprometa la integridad de la base de datos.',
+                    explanation: 'El control de concurrencia en una base de datos se encarga de gestionar el acceso simultáneo de múltiples transacciones a los mismos datos, garantizando que los resultados sean correctos y consistentes, evitando problemas como lecturas sucias, lecturas no repetibles y lecturas fantasmas.'
+                },
+                {
+                    question: '76. ¿Qué es un gestor de paquetes en Linux (ej. apt, yum, pacman)?',
+                    options: [
+                        'a) Un programa para comprimir y descomprimir archivos.',
+                        'b) Una herramienta para instalar, actualizar, configurar y eliminar software en un sistema operativo.',
+                        'c) Un programa para gestionar la conexión a Internet.',
+                        'd) Un sistema para monitorizar el rendimiento del hardware.'
+                    ],
+                    correctAnswer: 'b) Una herramienta para instalar, actualizar, configurar y eliminar software en un sistema operativo.',
+                    explanation: 'Un gestor de paquetes es una colección de herramientas de software que automatiza el proceso de instalación, actualización, configuración y eliminación de paquetes de software para un sistema operativo. Ejemplos comunes en Linux incluyen `apt` (Debian/Ubuntu), `yum`/`dnf` (Red Hat/Fedora) y `pacman` (Arch Linux).'
+                },
+                {
+                    question: '77. ¿Qué se entiende por "kernel panic" en un sistema operativo tipo Unix/Linux?',
+                    options: [
+                        'a) Un error en una aplicación de usuario que provoca su cierre inesperado.',
+                        'b) Un estado crítico del sistema donde el kernel detecta un error irrecuperable y detiene todas las operaciones.',
+                        'c) Un error de hardware que no afecta al sistema operativo.',
+                        'd) Una advertencia de bajo espacio en disco.'
+                    ],
+                    correctAnswer: 'b) Un estado crítico del sistema donde el kernel detecta un error irrecuperable y detiene todas las operaciones.',
+                    explanation: 'Un "kernel panic" es una acción que realiza el sistema operativo al detectar un error interno grave e irrecuperable. Es un mecanismo de seguridad para prevenir daños mayores, y suele implicar un volcado de memoria y el reinicio del sistema.'
+                },
+                {
+                    question: '78. ¿Qué protocolo se utiliza en redes para asignar direcciones IP automáticamente a los dispositivos?',
+                    options: [
+                        'a) FTP',
+                        'b) DHCP',
+                        'c) SNMP',
+                        'd) RDP'
+                    ],
+                    correctAnswer: 'b) DHCP',
+                    explanation: 'DHCP (Dynamic Host Configuration Protocol) es un protocolo de red que permite a los servidores asignar automáticamente direcciones IP y otros parámetros de configuración de red a los dispositivos conectados, simplificando la administración de red.'
+                },
+                {
+                    question: '79. ¿Qué técnica de programación orientada a objetos oculta los detalles de implementación de una clase y expone solo una interfaz pública?',
+                    options: [
+                        'a) Herencia',
+                        'b) Polimorfismo',
+                        'c) Encapsulación',
+                        'd) Agregación'
+                    ],
+                    correctAnswer: 'c) Encapsulación',
+                    explanation: 'La encapsulación es el principio de agrupar datos (atributos) y los métodos que operan sobre esos datos en una única unidad (clase), y restringir el acceso directo a algunos de los componentes del objeto. Esto se logra a menudo mediante modificadores de acceso (público, privado, protegido), ocultando los detalles internos de implementación.'
+                },
+                {
+                    question: '80. ¿Qué estándar de la IEEE define las redes de área local Ethernet cableadas?',
+                    options: [
+                        'a) IEEE 802.11',
+                        'b) IEEE 802.3',
+                        'c) IEEE 802.1Q',
+                        'd) IEEE 802.1X'
+                    ],
+                    correctAnswer: 'b) IEEE 802.3',
+                    explanation: 'IEEE 802.3 es el estándar que define la tecnología Ethernet para redes de área local cableadas, incluyendo especificaciones para el medio físico y el control de acceso al medio (MAC).'
+                },
+                {
+                    question: '81. ¿Qué es un "commit" en el contexto de Git?',
+                    options: [
+                        'a) Un comando para fusionar ramas.',
+                        'b) Un cambio guardado en el historial del repositorio.',
+                        'c) Una copia de seguridad completa del proyecto.',
+                        'd) Un proceso para descargar actualizaciones del repositorio.'
+                    ],
+                    correctAnswer: 'b) Un cambio guardado en el historial del repositorio.',
+                    explanation: 'Un "commit" en Git es una instantánea de los cambios en tu proyecto que se guarda en el historial del repositorio. Cada commit es una versión específica de tu código en un momento dado.'
+                },
+                {
+                    question: '82. ¿Qué herramienta de integración continua/entrega continua (CI/CD) permite automatizar los pasos de construcción, prueba y despliegue de software?',
+                    options: [
+                        'a) Git',
+                        'b) Jira',
+                        'c) Jenkins',
+                        'd) Slack'
+                    ],
+                    correctAnswer: 'c) Jenkins',
+                    explanation: 'Jenkins es un servidor de automatización de código abierto que facilita la construcción, prueba y despliegue continuo de software, siendo una herramienta fundamental en los pipelines de CI/CD.'
+                },
+                {
+                    question: '83. ¿Qué concepto de base de datos asegura que los datos permanecen precisos y consistentes después de una transacción?',
+                    options: [
+                        'a) Atomicidad',
+                        'b) Consistencia',
+                        'c) Aislamiento',
+                        'd) Durabilidad'
+                    ],
+                    correctAnswer: 'b) Consistencia',
+                    explanation: 'La consistencia es una de las propiedades ACID. Asegura que cualquier transacción lleva la base de datos de un estado válido a otro estado válido, manteniendo las reglas de integridad de los datos.'
+                },
+                {
+                    question: '84. ¿Qué es un "microservicio" en la arquitectura de software?',
+                    options: [
+                        'a) Un servicio que se ejecuta en un microcontrolador.',
+                        'b) Una pequeña aplicación monolítica.',
+                        'c) Un componente de software pequeño, independiente y desplegable de forma autónoma, que se comunica con otros microservicios a través de APIs ligeras.',
+                        'd) Una base de datos ligera.'
+                    ],
+                    correctAnswer: 'c) Un componente de software pequeño, independiente y desplegable de forma autónoma, que se comunica con otros microservicios a través de APIs ligeras.',
+                    explanation: 'Los microservicios son un estilo arquitectónico que estructura una aplicación como una colección de servicios pequeños, altamente desacoplados, desplegables de forma independiente y que se comunican a través de APIs bien definidas, a menudo RESTful.'
+                },
+                {
+                    question: '85. ¿Qué patrón de diseño de software se utiliza para asegurar que una clase solo tenga una instancia y proporcionar un punto de acceso global a ella?',
+                    options: [
+                        'a) Factory Method',
+                        'b) Observer',
+                        'c) Singleton',
+                        'd) Decorator'
+                    ],
+                    correctAnswer: 'c) Singleton',
+                    explanation: 'El patrón Singleton es un patrón de diseño creacional que restringe la instanciación de una clase a un solo objeto. Esto es útil cuando se necesita exactamente una instancia de una clase para coordinar acciones en todo el sistema.'
+                },
+                {
+                    question: '86. ¿Qué se entiende por "Serverless Computing" (Computación sin servidor)?',
+                    options: [
+                        'a) La ejecución de aplicaciones sin usar ningún servidor físico.',
+                        'b) Un modelo de desarrollo en la nube donde el proveedor gestiona la infraestructura del servidor, y el desarrollador solo se preocupa por el código de las funciones.',
+                        'c) La creación de aplicaciones que no requieren acceso a Internet.',
+                        'd) El uso de máquinas virtuales locales para ejecutar código.'
+                    ],
+                    correctAnswer: 'b) Un modelo de desarrollo en la nube donde el proveedor gestiona la infraestructura del servidor, y el desarrollador solo se preocupa por el código de las funciones.',
+                    explanation: 'Serverless computing es un modelo de ejecución en la nube donde el proveedor de la nube (como AWS Lambda, Azure Functions, Google Cloud Functions) gestiona dinámicamente la asignación y aprovisionamiento de servidores. Los desarrolladores solo implementan el código de sus funciones y el proveedor se encarga de ejecutarlo cuando es necesario.'
+                },
+                {
+                    question: '87. ¿Qué tipo de pruebas de software se realizan para verificar el rendimiento, la escalabilidad y la estabilidad de una aplicación bajo diferentes cargas de trabajo?',
+                    options: [
+                        'a) Pruebas funcionales',
+                        'b) Pruebas de usabilidad',
+                        'c) Pruebas de rendimiento',
+                        'd) Pruebas de seguridad'
+                    ],
+                    correctAnswer: 'c) Pruebas de rendimiento',
+                    explanation: 'Las pruebas de rendimiento evalúan la capacidad de respuesta, estabilidad, escalabilidad y uso de recursos de un sistema bajo una carga de trabajo particular. Incluyen pruebas de carga, estrés, volumen y resistencia.'
+                },
+                {
+                    question: '88. ¿Qué lenguaje de programación es ampliamente utilizado para el desarrollo web tanto en el frontend (navegador) como en el backend (servidor con Node.js)?',
+                    options: [
+                        'a) Python',
+                        'b) Java',
+                        'c) C++',
+                        'd) JavaScript'
+                    ],
+                    correctAnswer: 'd) JavaScript',
+                    explanation: 'JavaScript es el lenguaje de programación fundamental para el desarrollo web frontend, ejecutándose en el navegador. Con la aparición de Node.js, JavaScript también se ha convertido en una opción muy popular para el desarrollo de backend, permitiendo un stack completo con un solo lenguaje.'
+                },
+                {
+                    question: '89. ¿Qué es un "token JWT" (JSON Web Token) en el contexto de la autenticación y autorización?',
+                    options: [
+                        'a) Un tipo de cookie para almacenar sesiones de usuario.',
+                        'b) Un estándar abierto para la creación de tokens de acceso que permiten la verificación de la identidad del usuario y sus permisos.',
+                        'c) Un protocolo para cifrar el tráfico de red.',
+                        'd) Una base de datos distribuida de usuarios.'
+                    ],
+                    correctAnswer: 'b) Un estándar abierto para la creación de tokens de acceso que permiten la verificación de la identidad del usuario y sus permisos.',
+                    explanation: 'Un JSON Web Token (JWT) es un estándar compacto y autocontenido para transmitir información de forma segura entre partes como un objeto JSON. Se utiliza comúnmente para la autenticación y autorización, donde un servidor genera un token que el cliente presenta en futuras solicitudes para demostrar su identidad y permisos.'
+                },
+                {
+                    question: '90. ¿Cuál es el objetivo principal de la Ciberseguridad?',
+                    options: [
+                        'a) Asegurar que todos los usuarios tengan acceso ilimitado a todos los sistemas.',
+                        'b) Proteger los sistemas y la información de amenazas cibernéticas, asegurando la confidencialidad, integridad y disponibilidad (CIA) de los datos.',
+                        'c) Instalar el software más reciente en todos los dispositivos.',
+                        'd) Eliminar por completo el uso de contraseñas.'
+                    ],
+                    correctAnswer: 'b) Proteger los sistemas y la información de amenazas cibernéticas, asegurando la confidencialidad, integridad y disponibilidad (CIA) de los datos.',
+                    explanation: 'El objetivo fundamental de la ciberseguridad es proteger los activos de información (datos, sistemas, redes) de amenazas y vulnerabilidades, garantizando las tres pilares de la seguridad de la información: Confidencialidad, Integridad y Disponibilidad (CIA).'
+                },
+                {
+                    question: '91. ¿Qué es un "proxy inverso" (Reverse Proxy)?',
+                    options: [
+                        'a) Un servidor que se sitúa entre un cliente y un servidor de origen, reenviando las solicitudes del cliente al servidor de origen en nombre del cliente.',
+                        'b) Un servidor que se sitúa entre un cliente y un servidor de origen, reenviando las solicitudes del cliente al servidor de origen, pero el cliente es quien hace las peticiones directamente.',
+                        'c) Un servidor que se sitúa entre Internet y uno o más servidores internos, actuando como un intermediario para las solicitudes de los clientes externos, reenviándolas a los servidores internos y devolviendo sus respuestas.',
+                        'd) Un tipo de firewall de aplicación web.'
+                    ],
+                    correctAnswer: 'c) Un servidor que se sitúa entre Internet y uno o más servidores internos, actuando como un intermediario para las solicitudes de los clientes externos, reenviándolas a los servidores internos y devolviendo sus respuestas.',
+                    explanation: 'Un proxy inverso es un tipo de servidor proxy que se sitúa frente a uno o más servidores web y maneja las solicitudes entrantes de los clientes en su nombre. Ofrece ventajas como balanceo de carga, seguridad (ocultando la topología interna), SSL offloading y caching.'
+                },
+                {
+                    question: '92. ¿Qué paradigma de programación se centra en la lógica computacional y en la expresión de hechos y reglas, en lugar de en la secuencia de instrucciones?',
+                    options: [
+                        'a) Programación imperativa.',
+                        'b) Programación funcional.',
+                        'c) Programación lógica.',
+                        'd) Programación orientada a objetos.'
+                    ],
+                    correctAnswer: 'c) Programación lógica.',
+                    explanation: 'La programación lógica se basa en el uso de la lógica formal para representar conocimientos y reglas, y un motor de inferencia para encontrar soluciones. Prolog es un ejemplo clásico de lenguaje de programación lógica.'
+                },
+                {
+                    question: '93. ¿Qué métrica de calidad de software mide la cantidad de módulos de un programa que se acoplan y dependen entre sí?',
+                    options: [
+                        'a) Cohesión.',
+                        'b) Acoplamiento.',
+                        'c) Complejidad ciclomática.',
+                        'd) Mantenibilidad.'
+                    ],
+                    correctAnswer: 'b) Acoplamiento.',
+                    explanation: 'El acoplamiento es una métrica que mide el grado de interdependencia entre módulos de software. Un bajo acoplamiento es deseable, ya que indica que los módulos son más independientes y, por lo tanto, más fáciles de modificar, probar y reutilizar.'
+                },
+                {
+                    question: '94. En el desarrollo web frontend, ¿qué tecnología se utiliza para añadir interactividad y dinamismo a las páginas web?',
+                    options: [
+                        'a) HTML',
+                        'b) CSS',
+                        'c) JavaScript',
+                        'd) PHP'
+                    ],
+                    correctAnswer: 'c) JavaScript',
+                    explanation: 'JavaScript es un lenguaje de programación de scripts que se ejecuta en el lado del cliente (navegador web) y se utiliza para añadir interactividad, dinamismo y lógica a las páginas web, permitiendo crear experiencias de usuario ricas.'
+                },
+                {
+                    question: '95. ¿Qué protocolo de red se utiliza para la monitorización de dispositivos de red (routers, switches, servidores)?',
+                    options: [
+                        'a) FTP',
+                        'b) SSH',
+                        'c) SNMP',
+                        'd) Telnet'
+                    ],
+                    correctAnswer: 'c) SNMP',
+                    explanation: 'SNMP (Simple Network Management Protocol) es un protocolo estándar de Internet para la gestión de red, que permite a los administradores monitorear dispositivos conectados a la red, recopilar información sobre ellos y configurar sus parámetros.'
+                },
+                {
+                    question: '96. ¿Qué método de cifrado utiliza una clave diferente para cifrar y descifrar la información, y una de las claves (pública) se puede compartir abiertamente?',
+                    options: [
+                        'a) Cifrado simétrico.',
+                        'b) Cifrado de bloque.',
+                        'c) Cifrado de flujo.',
+                        'd) Cifrado asimétrico (o de clave pública).'
+                    ],
+                    correctAnswer: 'd) Cifrado asimétrico (o de clave pública).',
+                    explanation: 'El cifrado asimétrico (o de clave pública) utiliza un par de claves matemáticamente relacionadas: una clave pública para cifrar y una clave privada para descifrar (o viceversa para la firma digital). La clave pública se puede compartir libremente, mientras que la clave privada debe mantenerse en secreto.'
+                },
+                {
+                    question: '97. ¿Qué es un "container registry" (registro de contenedores)?',
+                    options: [
+                        'a) Un tipo de base de datos para almacenar imágenes de máquinas virtuales.',
+                        'b) Un repositorio centralizado para almacenar y gestionar imágenes de contenedores (como Docker images).',
+                        'c) Una herramienta para monitorizar el estado de los contenedores en ejecución.',
+                        'd) Un servicio para desplegar contenedores en la nube.'
+                    ],
+                    correctAnswer: 'b) Un repositorio centralizado para almacenar y gestionar imágenes de contenedores (como Docker images).',
+                    explanation: 'Un registro de contenedores (o registry) es un servicio de almacenamiento y distribución para imágenes de contenedores. Permite a los desarrolladores subir sus imágenes creadas y a otros usuarios (o sistemas de orquestación como Kubernetes) descargarlas para su despliegue.'
+                },
+                {
+                    question: '98. ¿Qué arquitectura de red se utiliza comúnmente en las redes de área local (LAN) donde todos los dispositivos comparten un único medio de transmisión y se evita la colisión mediante CSMA/CD?',
+                    options: [
+                        'a) Token Ring',
+                        'b) Ethernet (Bus o Estrella compartida)',
+                        'c) FDDI',
+                        'd) ATM'
+                    ],
+                    correctAnswer: 'b) Ethernet (Bus o Estrella compartida)',
+                    explanation: 'Originalmente, Ethernet usaba una topología de bus y CSMA/CD (Acceso Múltiple con Detección de Portadora y Detección de Colisiones) para evitar colisiones en un medio compartido. Aunque ahora predomina la topología en estrella con switches, que reduce las colisiones, el concepto fundamental de Ethernet y CSMA/CD está ligado a su origen en el medio compartido.'
+                },
+                {
+                    question: '99. ¿Cuál de los siguientes es un sistema de gestión de bases de datos relacionales (SGBDR)?',
+                    options: [
+                        'a) Cassandra',
+                        'b) Redis',
+                        'c) MongoDB',
+                        'd) PostgreSQL'
+                    ],
+                    correctAnswer: 'd) PostgreSQL',
+                    explanation: 'PostgreSQL es un potente sistema de gestión de bases de datos relacionales (SGBDR) de código abierto y altamente extensible, conocido por su fiabilidad, robustez de características y rendimiento. Cassandra y MongoDB son NoSQL, y Redis es una base de datos en memoria.'
+                },
+                {
+                    question: '100. ¿Qué estándar de seguridad web define un conjunto de encabezados HTTP que ayudan a mitigar ataques como Cross-Site Scripting (XSS) y Clickjacking?',
+                    options: [
+                        'a) TLS',
+                        'b) OAuth',
+                        'c) Content Security Policy (CSP)',
+                        'd) SAML'
+                    ],
+                    correctAnswer: 'c) Content Security Policy (CSP)',
+                    explanation: 'CSP (Content Security Policy) es un estándar de seguridad web que permite a los administradores de sitios web controlar los recursos que un agente de usuario tiene permitido cargar para una página en particular. Con un conjunto de directivas HTTP, se pueden mitigar ataques como XSS, inyección de datos y Clickjacking al restringir de dónde se pueden cargar scripts, estilos, imágenes, etc.'
+                }
+            ];
+
+            let currentQuestionIndex = 0;
+            let selectedOption = null;
+
+            const questionTextElement = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const feedbackContainer = document.getElementById('feedback-container');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const explanationText = document.getElementById('explanation-text');
+            const checkAnswerBtn = document.getElementById('check-answer-btn');
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            const restartQuizBtn = document.getElementById('restart-quiz-btn');
+
+            function loadQuestion() {
+                const currentQuestion = questions[currentQuestionIndex];
+                questionTextElement.textContent = currentQuestion.question; // Question number is already in the text
+                optionsContainer.innerHTML = ''; // Clear previous options
+                feedbackContainer.classList.add('hidden'); // Hide feedback
+                feedbackContainer.classList.remove('correct', 'incorrect'); // Clear feedback styling
+                selectedOption = null; // Reset selected option
+
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-button');
+                    button.setAttribute('data-option', option);
+                    button.addEventListener('click', () => selectOption(button));
+                    optionsContainer.appendChild(button);
+                });
+
+                // Show/hide buttons
+                checkAnswerBtn.classList.remove('hidden');
+                nextQuestionBtn.classList.add('hidden');
+                restartQuizBtn.classList.add('hidden');
+                checkAnswerBtn.disabled = true; // Disable check button until an option is selected
+            }
+
+            function selectOption(button) {
+                // Remove 'selected' class from all options
+                document.querySelectorAll('.option-button').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                // Add 'selected' class to the clicked button
+                button.classList.add('selected');
+                selectedOption = button.getAttribute('data-option');
+                checkAnswerBtn.disabled = false; // Enable check button
+            }
+
+            function checkAnswer() {
+                if (!selectedOption) return; // Do nothing if no option is selected
+
+                const currentQuestion = questions[currentQuestionIndex];
+                const isCorrect = (selectedOption === currentQuestion.correctAnswer);
+
+                // Disable all option buttons after checking
+                document.querySelectorAll('.option-button').forEach(btn => {
+                    btn.classList.add('disabled');
+                    btn.removeEventListener('click', selectOption); // Remove listener
+                });
+
+                // Highlight correct/incorrect answer
+                const allOptionButtons = document.querySelectorAll('.option-button');
+                allOptionButtons.forEach(btn => {
+                    if (btn.getAttribute('data-option') === currentQuestion.correctAnswer) {
+                        btn.classList.add('correct');
+                    } else if (btn.getAttribute('data-option') === selectedOption && !isCorrect) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+
+                // Display feedback
+                feedbackContainer.classList.remove('hidden');
+                explanationText.textContent = currentQuestion.explanation;
+
+                if (isCorrect) {
+                    feedbackTitle.textContent = '¡Correcto!';
+                    feedbackContainer.classList.add('correct');
+                } else {
+                    feedbackTitle.textContent = 'Incorrecto. La respuesta correcta es: ' + currentQuestion.correctAnswer;
+                    feedbackContainer.classList.add('incorrect');
+                }
+
+                // Show next question button or restart button
+                checkAnswerBtn.classList.add('hidden');
+                if (currentQuestionIndex < questions.length - 1) {
+                    nextQuestionBtn.classList.remove('hidden');
+                } else {
+                    restartQuizBtn.classList.remove('hidden');
+                }
+            }
+
+            function nextQuestion() {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    // This state should ideally not be reached if restartQuizBtn is shown correctly
+                    alert('¡Has completado el test!');
+                    restartQuizBtn.classList.remove('hidden');
+                    nextQuestionBtn.classList.add('hidden');
+                }
+            }
+
+            function restartQuiz() {
+                currentQuestionIndex = 0;
+                loadQuestion();
+            }
+
+            // Event Listeners for navigation buttons
+            checkAnswerBtn.addEventListener('click', checkAnswer);
+            nextQuestionBtn.addEventListener('click', nextQuestion);
+            restartQuizBtn.addEventListener('click', restartQuiz);
+
+            // Initial load
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>

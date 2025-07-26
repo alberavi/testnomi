@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo de Redes</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* rounded-3xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            padding: 2.5rem; /* p-10 */
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* gap-6 */
+        }
+        .question-text {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            color: #1a202c; /* text-gray-900 */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.5rem; /* py-4 px-6 */
+            margin-bottom: 0.75rem; /* mb-3 */
+            border-radius: 0.75rem; /* rounded-xl */
+            background-color: #edf2f7; /* bg-gray-200 */
+            color: #2d3748; /* text-gray-800 */
+            text-align: left;
+            font-size: 1.125rem; /* text-lg */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            border: 2px solid transparent;
+        }
+        .option-button:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background-color: #e2e8f0; /* bg-gray-300 */
+            transform: translateY(-2px);
+        }
+        .option-button.selected {
+            border-color: #4299e1; /* blue-500 */
+            background-color: #ebf8ff; /* blue-50 */
+        }
+        .option-button.correct {
+            background-color: #d4edda; /* green-200 */
+            border-color: #28a745; /* green-600 */
+            color: #155724; /* green-800 */
+            cursor: default;
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da; /* red-200 */
+            border-color: #dc3545; /* red-600 */
+            color: #721c24; /* red-800 */
+            cursor: default;
+        }
+        .option-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .feedback {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            margin-top: 1rem; /* mt-4 */
+            text-align: center;
+        }
+        .feedback.correct {
+            color: #28a745; /* green-600 */
+        }
+        .feedback.incorrect {
+            color: #dc3545; /* red-600 */
+        }
+        .next-button, .restart-button {
+            background-color: #4299e1; /* blue-500 */
+            color: white;
+            padding: 1rem 2rem; /* py-4 px-8 */
+            border-radius: 0.75rem; /* rounded-xl */
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* font-bold */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            border: none;
+            align-self: center; /* Center the button */
+        }
+        .next-button:hover, .restart-button:hover {
+            background-color: #3182ce; /* blue-600 */
+            transform: translateY(-2px);
+        }
+        .next-button:disabled {
+            background-color: #a0aec0; /* gray-400 */
+            cursor: not-allowed;
+        }
+        .score-container {
+            text-align: center;
+            font-size: 2rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #2d3748; /* text-gray-800 */
+            margin-top: 2rem; /* mt-8 */
+        }
+        .question-counter {
+            font-size: 1rem; /* text-base */
+            color: #718096; /* text-gray-600 */
+            text-align: right;
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <div class="question-counter" id="question-counter"></div>
+        <div class="question-text" id="question-text"></div>
+        <div id="options-container" class="flex flex-col">
+            <!-- Options will be dynamically loaded here -->
+        </div>
+        <div id="feedback" class="feedback"></div>
+        <button id="next-button" class="next-button" disabled>Siguiente Pregunta</button>
+        <div id="results-container" class="hidden">
+            <div class="score-container" id="final-score"></div>
+            <button id="restart-button" class="restart-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Cuál es el principal propósito del Modelo OSI en la arquitectura de red?",
+                options: [
+                    "a) Definir un estándar de hardware para dispositivos de red.",
+                    "b) Establecer un patrón de arquitectura de software para la comunicación entre equipos de red.",
+                    "c) Medir la velocidad de transmisión de datos en la capa física.",
+                    "d) Gestionar la seguridad de la información en todas las capas."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué porcentaje aproximado de la pila de protocolos del Modelo OSI se corresponde con software?",
+                options: [
+                    "a) 10%",
+                    "b) 50%",
+                    "c) 75%",
+                    "d) 90%"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "Si un PC implementa los 7 niveles del Modelo OSI, ¿cuántos niveles suele tener implementados un router doméstico?",
+                options: [
+                    "a) 7 niveles",
+                    "b) 5 niveles",
+                    "c) 3 niveles",
+                    "d) 1 nivel"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué función principal se atribuye al Nivel de Aplicación en el Modelo OSI?",
+                options: [
+                    "a) Enrutamiento de paquetes IP.",
+                    "b) Servicios de red a aplicaciones de usuario.",
+                    "c) Control de flujo de datos entre extremos.",
+                    "d) Codificación y decodificación de datos."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuáles son algunas de las funciones realizadas en el Nivel de Presentación del Modelo OSI?",
+                options: [
+                    "a) Direccionamiento lógico y fragmentación.",
+                    "b) Compresión, cifrado y codificación de datos.",
+                    "c) Establecimiento y terminación de sesiones.",
+                    "d) Detección y corrección de errores de transmisión."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "Según el documento, ¿qué tipo de información puede ser codificada en el Nivel de Presentación?",
+                options: [
+                    "a) Direcciones MAC.",
+                    "b) Direcciones IP.",
+                    "c) Audio, vídeo y caracteres (UTF-8).",
+                    "d) Números de puerto TCP/UDP."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "La función principal del Nivel de Sesión en el Modelo OSI es:",
+                options: [
+                    "a) El control de acceso al medio físico.",
+                    "b) La gestión de las conexiones entre aplicaciones.",
+                    "c) La traducción de nombres de dominio a direcciones IP.",
+                    "d) La verificación de la integridad de los datos."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "Dentro del Nivel de Transporte del Modelo OSI, ¿qué protocolos son considerados 'fiables' por garantizar la entrega de datos?",
+                options: [
+                    "a) TP0 y TP2",
+                    "b) TP1, TP3 y TP4",
+                    "c) UDP y ICMP",
+                    "d) IP y ARP"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué protocolos de la capa de transporte son considerados 'no fiables' en el Modelo OSI, refiriéndose a que no garantizan la entrega?",
+                options: [
+                    "a) TCP y SPX",
+                    "b) FTP y HTTP",
+                    "c) TP0 y TP2",
+                    "d) SMTP y POP3"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cómo se denomina la unidad de datos en cada capa del Modelo OSI, que incluye el SDU de la capa superior y el Control Information de la capa actual?",
+                options: [
+                    "a) Datagrama",
+                    "b) Segmento",
+                    "c) PDU (Protocol Data Unit)",
+                    "d) Trama"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es la principal desventaja del Modelo OSI mencionada en el documento?",
+                options: [
+                    "a) Su falta de compatibilidad con IPv6.",
+                    "b) La enorme sobrecarga (overhead) que genera.",
+                    "c) Su incapacidad para manejar redes inalámbricas.",
+                    "d) La complejidad para depurar errores."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "Aunque equivalentes al Nivel 2 de OSI, ¿qué subcapas pertenecen al modelo IEEE?",
+                options: [
+                    "a) IP y ICMP",
+                    "b) TCP y UDP",
+                    "c) MAC y LLC",
+                    "d) ARP y RARP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es la función principal del Nivel de Red en el Modelo OSI?",
+                options: [
+                    "a) Proporcionar servicios de usuario final.",
+                    "b) Gestión de la conexión entre aplicaciones.",
+                    "c) Determinación de ruta y direccionamiento lógico.",
+                    "d) Control de acceso al medio físico."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué técnica se ocupa del direccionamiento físico y es considerada el 'routing del nivel 2'?",
+                options: [
+                    "a) Enrutamiento IP",
+                    "b) Switching",
+                    "c) NAT",
+                    "d) VPN"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué función principal tiene el nivel LLC (Logical Link Control)?",
+                options: [
+                    "a) Definir la dirección MAC de los dispositivos.",
+                    "b) Encapsular los protocolos de red, controlar errores y sincronizar tramas.",
+                    "c) Gestionar la autenticación de usuarios.",
+                    "d) Fragmentar paquetes IP."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuál es la función principal del nivel MAC (Media Access Control)?",
+                options: [
+                    "a) Enrutar paquetes entre redes.",
+                    "b) Controlar el acceso de los dispositivos al medio y los permisos para transmitir.",
+                    "c) Cifrar el tráfico de datos.",
+                    "d) Establecer conexiones lógicas de extremo a extremo."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué algoritmos se mencionan para ser utilizados en el nivel MAC para la difusión sin bucles en redes conmutadas?",
+                options: [
+                    "a) RIP y OSPF",
+                    "b) BGP y EIGRP",
+                    "c) STP, MSTP, RSTP, SPB",
+                    "d) DHCP y DNS"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolo se utiliza para obtener la dirección MAC de una dirección IP conocida?",
+                options: [
+                    "a) RARP",
+                    "b) DNS",
+                    "c) ARP",
+                    "d) ICMP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué tecnología permite definir un nivel lógico que no corresponde necesariamente con las conexiones físicas, aislando zonas para seguridad y rendimiento?",
+                options: [
+                    "a) VPN",
+                    "b) NAT",
+                    "c) VLAN",
+                    "d) Firewall"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Dónde se configuran las VLANs para segmentar una red?",
+                options: [
+                    "a) En los routers",
+                    "b) En los servidores DNS",
+                    "c) En los switches",
+                    "d) En los firewalls"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué dispositivo se encarga de encaminar el tráfico entre VLANs diferentes?",
+                options: [
+                    "a) Un switch no gestionado",
+                    "b) Un hub",
+                    "c) Un router",
+                    "d) Un punto de acceso inalámbrico"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cómo se representan las VLANs dentro de la PDU (Protocol Data Unit) en una red Ethernet?",
+                options: [
+                    "a) Mediante un campo en la cabecera IP.",
+                    "b) Como una etiqueta (tag) dentro de la PDU.",
+                    "c) A través de la dirección MAC de destino.",
+                    "d) Utilizando un número de puerto específico."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué modelo de arquitectura de red se compone de las capas Acceso a red, Internet, Transporte y Aplicación?",
+                options: [
+                    "a) Modelo OSI",
+                    "b) Modelo TCP/IP (o DoD)",
+                    "c) Modelo de red local",
+                    "d) Modelo cliente-servidor"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "En el Modelo TCP/IP, ¿qué capas del Modelo OSI abarca la capa de Aplicación?",
+                options: [
+                    "a) Solo la capa de Aplicación (7).",
+                    "b) Capas de Sesión (5) y Presentación (6).",
+                    "c) Capas de Aplicación (7), Presentación (6) y Sesión (5).",
+                    "d) Capas de Transporte (4) y Sesión (5)."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué dos protocolos son ejemplos de protocolos de la capa de Aplicación en el 'Internet Suite Protocols' (Modelo TCP/IP)?",
+                options: [
+                    "a) TCP y UDP",
+                    "b) IP y ICMP",
+                    "c) FTP y HTTP",
+                    "d) ARP y RARP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolos se mencionan específicamente como parte de la capa de Transporte en el modelo DoD (TCP/IP)?",
+                options: [
+                    "a) IP y ICMP",
+                    "b) TCP y UDP",
+                    "c) HTTP y FTP",
+                    "d) OSPF y BGP"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué protocolos se incluyen en la capa de Internet (Red) del modelo DoD (TCP/IP)?",
+                options: [
+                    "a) Telnet y SMTP",
+                    "b) SNMP y DNS",
+                    "c) IP, ICMP e IGMP",
+                    "d) SSH y SFTP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué significan las siglas PDU en el contexto de las capas de red?",
+                options: [
+                    "a) Physical Data Unit",
+                    "b) Protocol Data Utility",
+                    "c) Process Data Understanding",
+                    "d) Protocol Data Unit"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "¿Cuál es la longitud de las direcciones MAC (Media Access Control)?",
+                options: [
+                    "a) 32 bits",
+                    "b) 48 bits",
+                    "c) 64 bits",
+                    "d) 128 bits"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "En IPv4, ¿qué se utiliza cuando un datagrama es demasiado grande para la MTU del siguiente enlace y necesita ser dividido en partes más pequeñas?",
+                options: [
+                    "a) Agregación de rutas",
+                    "b) Fragmentación",
+                    "c) Encapsulación",
+                    "d) Multiplexación"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuál es el tamaño mínimo de la cabecera IPv4?",
+                options: [
+                    "a) 12 bytes",
+                    "b) 20 bytes",
+                    "c) 32 bytes",
+                    "d) 60 bytes"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué significa el campo 'TTL' (Time to Live) en la cabecera IPv4?",
+                options: [
+                    "a) Tiempo total de latencia.",
+                    "b) Número máximo de saltos permitidos para el paquete.",
+                    "c) Tipo de tráfico de red.",
+                    "d) Tiempo de espera para la respuesta del host."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "Si el campo 'Protocol' en la cabecera IPv4 indica '6', ¿qué protocolo de la capa superior está encapsulado?",
+                options: [
+                    "a) UDP",
+                    "b) ICMP",
+                    "c) TCP",
+                    "d) IGMP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "Si el campo 'Protocol' en la cabecera IPv4 indica '17', ¿qué protocolo de la capa superior está siendo transportado?",
+                options: [
+                    "a) TCP",
+                    "b) UDP",
+                    "c) ICMP",
+                    "d) OSPF"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Para qué se utilizan las siglas DSCP (Differentiated Services Code Point) en la cabecera IPv4?",
+                options: [
+                    "a) Para el control de fragmentación.",
+                    "b) Para la diferenciación de servicios y QoS (Calidad de Servicio).",
+                    "c) Para el cifrado de datos.",
+                    "d) Para la detección de errores de checksum."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué tipo de mensajes se controlan con el protocolo ICMP (Internet Control Message Protocol)?",
+                options: [
+                    "a) Mensajes de correo electrónico.",
+                    "b) Mensajes de control y error de red.",
+                    "c) Mensajes de transferencia de archivos.",
+                    "d) Mensajes de navegación web."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Para qué se utiliza principalmente el protocolo IGMP (Internet Group Management Protocol)?",
+                options: [
+                    "a) Para la asignación dinámica de direcciones IP.",
+                    "b) Para la resolución de nombres de dominio.",
+                    "c) Para la gestión de grupos multicast.",
+                    "d) Para la autenticación de usuarios."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolo se utiliza comúnmente para el almacenamiento en red y la compartición de archivos e impresoras en entornos Windows?",
+                options: [
+                    "a) FTP",
+                    "b) NFS",
+                    "c) SMB/CIFS",
+                    "d) TFTP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué dos protocolos se mencionan en el documento como utilizados para videoconferencia y VoIP?",
+                options: [
+                    "a) HTTP y HTTPS",
+                    "b) FTP y SFTP",
+                    "c) H.323 y SIP",
+                    "d) SNMP y SSH"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolo se utiliza para acceder a un equipo de forma remota, mostrando su escritorio?",
+                options: [
+                    "a) Telnet",
+                    "b) FTP",
+                    "c) RDP (Remote Desktop Protocol)",
+                    "d) SMTP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolo se emplea para sincronizar la fecha y hora de los servidores en una red?",
+                options: [
+                    "a) NTP (Network Time Protocol)",
+                    "b) SNMP",
+                    "c) DNS",
+                    "d) LDAP"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                question: "¿Qué protocolo se utiliza como servicio de directorio para almacenar información sobre objetos en una red, como usuarios, grupos y recursos?",
+                options: [
+                    "a) DNS",
+                    "b) DHCP",
+                    "c) LDAP (Lightweight Directory Access Protocol)",
+                    "d) NTP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolo se usa específicamente para la impresión a través de la red en entornos TCP/IP?",
+                options: [
+                    "a) FTP",
+                    "b) SMTP",
+                    "c) IPP (Internet Printing Protocol)",
+                    "d) HTTP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "Según el documento, ¿qué tres protocolos van siempre de la mano en el contexto de los sistemas de archivos de red para describir formatos de datos?",
+                options: [
+                    "a) TCP, UDP, IP",
+                    "b) HTTP, HTTPS, FTP",
+                    "c) NFS, XDR, RPC",
+                    "d) SMB, CIFS, NetBIOS"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es la principal desventaja del direccionamiento IPv4 Classful (por clases)?",
+                options: [
+                    "a) Su incompatibilidad con el Modelo OSI.",
+                    "b) El uso ineficiente del espacio de direcciones IP.",
+                    "c) La dificultad para implementar NAT.",
+                    "d) La imposibilidad de realizar subnetting."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué representa la dirección IPv4 0.0.0.0?",
+                options: [
+                    "a) La dirección de broadcast.",
+                    "b) La dirección de loopback.",
+                    "c) Una dirección instrumental que identifica la red.",
+                    "d) Una dirección pública reservada."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es el rango de direcciones IP privadas de Clase A?",
+                options: [
+                    "a) 172.16.0.0/12",
+                    "b) 192.168.0.0/16",
+                    "c) 10.0.0.0/8",
+                    "d) 169.254.0.0/16"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es la dirección de loopback estándar en IPv4?",
+                options: [
+                    "a) 192.168.1.1",
+                    "b) 127.0.0.1",
+                    "c) 172.16.0.1",
+                    "d) 10.0.0.1"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuál es el rango de direcciones IP privadas de Clase B?",
+                options: [
+                    "a) 10.0.0.0 - 10.255.255.255",
+                    "b) 172.16.0.0 - 172.31.255.255",
+                    "c) 192.168.0.0 - 192.168.255.255",
+                    "d) 224.0.0.0 - 239.255.255.255"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuál es el rango de direcciones IP privadas de Clase C?",
+                options: [
+                    "a) 10.0.0.0/8",
+                    "b) 172.16.0.0/12",
+                    "c) 192.168.0.0/16",
+                    "d) 127.0.0.0/8"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué tipo de direcciones IPv4 se utilizan para grupos de difusión (multicast)?",
+                options: [
+                    "a) Clase A",
+                    "b) Clase B",
+                    "c) Clase C",
+                    "d) Clase D"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "En una dirección IPv4, ¿qué significa que la 'parte de host' esté a 0?",
+                options: [
+                    "a) Es una dirección de broadcast.",
+                    "b) Es una dirección de loopback.",
+                    "c) Es una dirección instrumental que identifica la red.",
+                    "d) Es una dirección pública asignada."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "En una dirección IPv4, ¿qué significa que la 'parte de host' esté a 1 (todos los bits a 1)?",
+                options: [
+                    "a) Es una dirección de red.",
+                    "b) Es una dirección instrumental que identifica todos los hosts (Broadcast).",
+                    "c) Es una dirección de gateway.",
+                    "d) Es una dirección de un host específico."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué función realiza el Source NAT (SNAT)?",
+                options: [
+                    "a) Cambia la dirección IP de destino de un paquete.",
+                    "b) Traduce direcciones IP privadas a públicas en el origen.",
+                    "c) Direcciona el tráfico hacia un servidor específico.",
+                    "d) Fragmenta paquetes IP para su transmisión."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuál es otro nombre comúnmente utilizado para Source NAT (SNAT), especialmente en configuraciones dinámicas?",
+                options: [
+                    "a) Port Forwarding",
+                    "b) DNAT",
+                    "c) IP Masquerading",
+                    "d) Proxy Inverso"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es la diferencia principal entre SNAT estático y SNAT dinámico (MASQUERADE)?",
+                options: [
+                    "a) SNAT estático usa una IP pública dinámica, SNAT dinámico una fija.",
+                    "b) SNAT estático mapea una IP privada a una IP pública fija, SNAT dinámico usa una IP pública dinámica.",
+                    "c) SNAT estático se usa para clientes, SNAT dinámico para servidores.",
+                    "d) SNAT estático no usa puertos, SNAT dinámico sí."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Para qué se utiliza principalmente el Destination NAT (DNAT) o port forwarding?",
+                options: [
+                    "a) Para cambiar la dirección IP de origen de un paquete.",
+                    "b) Para permitir que clientes externos inicien conexiones a servidores internos con IP privada.",
+                    "c) Para ocultar la IP pública de los servidores.",
+                    "d) Para balancear la carga entre múltiples servidores."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué elemento modifica el PAT (Port Address Translation) además de la dirección IP de origen o destino?",
+                options: [
+                    "a) El Time to Live (TTL).",
+                    "b) El número de secuencia.",
+                    "c) El puerto (origen o destino).",
+                    "d) El tipo de servicio (ToS)."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué concepto introduce la ICANN para superar las limitaciones del direccionamiento IPv4 Classful y permitir una asignación de direcciones más flexible?",
+                options: [
+                    "a) ARP",
+                    "b) RIP",
+                    "c) CIDR (Classless Inter-Domain Routing)",
+                    "d) VLAN"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "En la notación CIDR w.x.y.z/a, ¿qué representa la 'a'?",
+                options: [
+                    "a) El número de hosts disponibles en la red.",
+                    "b) El número de la subred.",
+                    "c) El prefijo de red (longitud del prefijo).",
+                    "d) La dirección de broadcast."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué técnica se utiliza para agrupar distintos 'Bloques CIDR' que comparten una parte de la numeración contigua para minimizar las entradas en las tablas del router?",
+                options: [
+                    "a) Subnetting",
+                    "b) VLSM",
+                    "c) Supernetting",
+                    "d) NAT"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué es el subnetting en el contexto de las redes IP?",
+                options: [
+                    "a) Un método para cifrar el tráfico de red.",
+                    "b) Un proceso para dividir un espacio de direcciones IP en subredes más pequeñas y hosts.",
+                    "c) Una técnica para convertir IPv4 a IPv6.",
+                    "d) Un protocolo de enrutamiento dinámico."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué significa FLSM en subnetting?",
+                options: [
+                    "a) Flexible Length Subnet Mask.",
+                    "b) Fixed Length Subnet Mask.",
+                    "c) Fast Link State Multicast.",
+                    "d) Forwarding and Local Service Management."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué tipo de máscara de red, complementaria a la máscara de subred, se utiliza en los routers para crear ACLs (listas de control de acceso) y definir permisos?",
+                options: [
+                    "a) Máscara de subred",
+                    "b) Máscara de red",
+                    "c) Máscara wildcard",
+                    "d) Máscara de broadcast"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué significa VLSM en subnetting?",
+                options: [
+                    "a) Very Long Subnet Mask.",
+                    "b) Virtual Link State Multicast.",
+                    "c) Variable Length Subnet Mask.",
+                    "d) Voice Line Service Management."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es la longitud de las direcciones IPv6?",
+                options: [
+                    "a) 32 bits",
+                    "b) 48 bits",
+                    "c) 64 bits",
+                    "d) 128 bits"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "¿Cuál es el tamaño de la cabecera IPv6 base?",
+                options: [
+                    "a) 20 bytes",
+                    "b) 40 bytes",
+                    "c) 60 bytes",
+                    "d) 80 bytes"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "En IPv6, ¿dónde se colocan las cabeceras de extensión (si las hay) cuando hay un campo 'Next header' en la cabecera base?",
+                options: [
+                    "a) Antes de la cabecera base.",
+                    "b) Dentro de la cabecera base.",
+                    "c) En el payload (área de datos) del paquete.",
+                    "d) Se ignoran en el routing."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cómo se llama a la dirección IPv6 ::FFFF:a:b:c:d, utilizada como una forma de convertir una IPv4 en una IPv6 'interna' para compatibilidad?",
+                options: [
+                    "a) Link-local address",
+                    "b) Unique-local address",
+                    "c) Mapped-address",
+                    "d) Global Unicast address"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué técnica de transición IPv4 a IPv6 permite enviar paquetes IPv6 sobre redes IPv4 mediante encapsulación dentro de paquetes IPv4?",
+                options: [
+                    "a) Dual Stack",
+                    "b) NAT64",
+                    "c) 6to4 tunneling",
+                    "d) Proxy IPv6"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué se elimina en la compresión de direcciones IPv6 para simplificar su sintaxis?",
+                options: [
+                    "a) Los ceros a la derecha y los grupos de '::'.",
+                    "b) Los ceros por la izquierda y un único grupo de '::' para secuencias de ceros.",
+                    "c) Cualquier valor hexadecimal que no sea un 0.",
+                    "d) Los dos puntos intermedios."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué tipo de dirección IPv6 ya no existe, a diferencia de su equivalente en IPv4?",
+                options: [
+                    "a) Unicast",
+                    "b) Multicast",
+                    "c) Anycast",
+                    "d) Broadcast"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "¿Cuál es la dirección de loopback en IPv6?",
+                options: [
+                    "a) FE80::1",
+                    "b) FC00::1",
+                    "c) 2001:DB8::1",
+                    "d) ::1/128"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "¿Qué tipo de dirección IPv6 identifica a un único interfaz/host y es comparable a una dirección IP Unicast en IPv4?",
+                options: [
+                    "a) Multicast",
+                    "b) Anycast",
+                    "c) Unicast",
+                    "d) Link-Local"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué tipo de direcciones IPv6 no son enrutables fuera de un segmento de red específico y se utilizan para autoconfiguración y descubrimiento de vecindario?",
+                options: [
+                    "a) Global Unicast",
+                    "b) Unique-Local",
+                    "c) Link-Local",
+                    "d) Anycast"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué tipo de direcciones IPv6 son enrutables dentro de tu propia red (similar a las IPs privadas de IPv4) pero no son enrutables globalmente en Internet?",
+                options: [
+                    "a) Global Unicast",
+                    "b) Unique-Local",
+                    "c) Link-Local",
+                    "d) Multicast"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cuál es el prefijo que indica una dirección IPv6 Global Unicast (pública y enrutables en Internet)?",
+                options: [
+                    "a) FE80::/10",
+                    "b) FC00::/7",
+                    "c) FF00::/8",
+                    "d) 2000::/3"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "¿Cuál es el prefijo que indica una dirección IPv6 Multicast?",
+                options: [
+                    "a) 2001:DB8::/32",
+                    "b) FE80::/10",
+                    "c) FF00::/8",
+                    "d) ::1/128"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Para qué se utiliza la dirección de multicast 'Solicited-Node' en IPv6?",
+                options: [
+                    "a) Para el enrutamiento de tráfico entre subredes.",
+                    "b) Para la comunicación con servidores DNS.",
+                    "c) En el protocolo de descubrimiento de vecinos y detección de direcciones duplicadas.",
+                    "d) Para la asignación dinámica de direcciones IP."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué tipo de dirección IPv6 permite que varios equipos tengan la misma IP y el router decida a quién entregar la información, usándose para sistemas de alta disponibilidad?",
+                options: [
+                    "a) Unicast",
+                    "b) Multicast",
+                    "c) Anycast",
+                    "d) Link-Local"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué dos métodos principales se mencionan para la configuración automática de la dirección IPv6 de una máquina?",
+                options: [
+                    "a) Manual y Estática",
+                    "b) DHCPv6 (Stateful) y SLAAC (Autoconfiguración Stateless)",
+                    "c) ARP y RARP",
+                    "d) DNS y WINS"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Cómo se genera la parte de 64 bits del Interface ID en la autoconfiguración IPv6 (SLAAC)?",
+                options: [
+                    "a) Siempre de forma secuencial.",
+                    "b) De forma aleatoria o mediante el algoritmo EUI-64.",
+                    "c) Se asigna siempre manualmente.",
+                    "d) Mediante un servidor DNS."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "Describe el algoritmo EUI-64 modificado para generar la parte del Interface ID a partir de una dirección MAC.",
+                options: [
+                    "a) Añade ceros al final de la MAC.",
+                    "b) Toma la dirección MAC, inserta FF FE en el medio, e invierte el 7º bit del primer octeto.",
+                    "c) Invierte toda la dirección MAC.",
+                    "d) Convierte la MAC a decimal y la usa como ID."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué protocolo IPv6 utiliza mensajes ICMPv6 como RA (Router Advertisement), RS (Router Solicitation), NS (Neighbor Solicitation), NA (Neighbor Advertisement) y redirect?",
+                options: [
+                    "a) DHCPv6",
+                    "b) NDP (Neighbor Discovery Protocol)",
+                    "c) DNSv6",
+                    "d) IGMPv6"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué categoría de protocolos de enrutamiento se da entre sistemas autónomos (AS), es decir, entre ISPs diferentes?",
+                options: [
+                    "a) Interior Gateway Protocols (IGP)",
+                    "b) Exterior Gateway Protocols (EGP)",
+                    "c) Link-State Protocols",
+                    "d) Distance Vector Protocols"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué característica principal distingue a los protocolos de enrutamiento 'Vector Distancia'?",
+                options: [
+                    "a) Tienen una foto completa y detallada de la topología de la red.",
+                    "b) Intercambian información de enrutamiento únicamente con sus vecinos directos.",
+                    "c) Usan el algoritmo de Dijkstra para calcular las rutas.",
+                    "d) Se basan en el coste del enlace para determinar la mejor ruta."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué característica principal distingue a los protocolos de enrutamiento 'Estado Enlace'?",
+                options: [
+                    "a) Intercambian solo el número de saltos con los vecinos.",
+                    "b) Tienen una foto completa de la red (estado de los enlaces) para calcular rutas.",
+                    "c) Son propensos a los bucles de enrutamiento.",
+                    "d) Son más simples de configurar en grandes redes."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué algoritmo utiliza OSPF (Open Shortest Path First) para la selección de rutas en una red?",
+                options: [
+                    "a) Bellman-Ford",
+                    "b) Dijkstra",
+                    "c) Floyd-Warshall",
+                    "d) Greedy algorithm"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué direcciones multicast específicas utiliza OSPF para la comunicación entre routers en una red?",
+                options: [
+                    "a) 224.0.0.1 y 224.0.0.2",
+                    "b) 224.0.0.9 y 224.0.0.10",
+                    "c) 224.0.0.5 y 224.0.0.6",
+                    "d) 224.0.0.12 y 224.0.0.13"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué dirección multicast utiliza RIPv2 (Routing Information Protocol version 2) para enviar su tabla de routing a los routers adyacentes?",
+                options: [
+                    "a) 224.0.0.1",
+                    "b) 224.0.0.5",
+                    "c) 224.0.0.9",
+                    "d) 224.0.0.12"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué protocolos de enrutamiento mencionados en el documento soportan VLSM (Variable Length Subnet Mask)?",
+                options: [
+                    "a) Solo RIPv1",
+                    "b) RIPv1 y IGRP",
+                    "c) OSPF, RIPv2, IS-IS y EIGRP",
+                    "d) BGP y estático"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Sobre qué protocolo de la capa de red se encapsula directamente el ICMPv4 (Internet Control Message Protocol for IPv4)?",
+                options: [
+                    "a) TCP",
+                    "b) UDP",
+                    "c) IP",
+                    "d) Ethernet"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es el tamaño de la cabecera de un mensaje ICMPv4?",
+                options: [
+                    "a) 2 bytes",
+                    "b) 4 bytes",
+                    "c) 8 bytes",
+                    "d) 16 bytes"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué tipos de mensajes ICMP se utilizan específicamente en el comando ping para verificar la conectividad?",
+                options: [
+                    "a) Destination Unreachable y Redirect.",
+                    "b) Echo request (Tipo 8) y Echo reply (Tipo 0).",
+                    "c) Time Exceeded y Parameter Problem.",
+                    "d) Source Quench y Router Advertisement."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué tipos de mensajes ICMP se utilizan en el comando traceroute para determinar la ruta que sigue un paquete?",
+                options: [
+                    "a) Solo Echo request y Echo reply.",
+                    "b) Time Exceeded (Tipo 11) y Echo request/reply (Tipo 8/0).",
+                    "c) Redirect y Source Quench.",
+                    "d) Destination Unreachable y Time Exceeded."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "¿Qué protocolo de transporte se describe como 'garantista' por asegurar la entrega de datos, y utiliza puertos para identificar aplicaciones?",
+                options: [
+                    "a) UDP",
+                    "b) IP",
+                    "c) TCP",
+                    "d) ICMP"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Cuál es el rango de 'Well Known Ports' o 'System Ports' en TCP/UDP, reservados para servicios y aplicaciones comunes?",
+                options: [
+                    "a) 1024 - 49151",
+                    "b) 49152 - 65535",
+                    "c) 0 - 1023",
+                    "d) 0 - 65535"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué significa el proceso de 'handshake' en TCP?",
+                options: [
+                    "a) El proceso de cifrado de la conexión.",
+                    "b) El intercambio de claves de seguridad.",
+                    "c) El establecimiento de una conexión previo al envío de datos, determinando números de secuencia.",
+                    "d) El cierre de una conexión TCP."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué indica el campo 'Window Size' en la cabecera TCP?",
+                options: [
+                    "a) La velocidad máxima de transmisión de datos.",
+                    "b) El tamaño del segmento TCP.",
+                    "c) El tamaño de la ventana de recepción, indicando cuánto puede recibir el equipo.",
+                    "d) El número de puerto de origen."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "¿Qué significa el flag 'SYN' en la cabecera TCP?",
+                options: [
+                    "a) Indica que la conexión ha finalizado.",
+                    "b) Se utiliza para sincronizar los números de secuencia e iniciar una conexión.",
+                    "c) Se usa para confirmar la recepción de datos.",
+                    "d) Solicita el reenvío de datos."
+                ],
+                correctAnswer: "b"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOption = null; // To store the currently selected option element
+
+        const questionCounterElement = document.getElementById('question-counter');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackElement = document.getElementById('feedback');
+        const nextButton = document.getElementById('next-button');
+        const resultsContainer = document.getElementById('results-container');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        function displayQuestion() {
+            // Clear previous state
+            optionsContainer.innerHTML = '';
+            feedbackElement.textContent = '';
+            nextButton.disabled = true;
+            selectedOption = null;
+
+            if (currentQuestionIndex < questions.length) {
+                const currentQuestion = questions[currentQuestionIndex];
+                questionCounterElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+                questionTextElement.textContent = currentQuestion.question;
+
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-button');
+                    button.dataset.option = option.charAt(0); // 'a', 'b', 'c', 'd'
+                    button.addEventListener('click', () => selectOption(button));
+                    optionsContainer.appendChild(button);
+                });
+            } else {
+                showResults();
+            }
+        }
+
+        function selectOption(button) {
+            // If an option was previously selected, remove its 'selected' class
+            if (selectedOption) {
+                selectedOption.classList.remove('selected');
+            }
+
+            // Add 'selected' class to the newly selected option
+            button.classList.add('selected');
+            selectedOption = button;
+            nextButton.disabled = false; // Enable next button once an option is selected
+        }
+
+        function checkAnswer() {
+            if (!selectedOption) {
+                // This should not happen if nextButton is disabled until an option is selected
+                return;
+            }
+
+            const userAnswer = selectedOption.dataset.option;
+            const correctAnswer = questions[currentQuestionIndex].correctAnswer;
+
+            // Disable all option buttons after an answer is submitted
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.classList.add('disabled');
+                btn.removeEventListener('click', () => selectOption(btn)); // Remove event listener
+            });
+
+            if (userAnswer === correctAnswer) {
+                score++;
+                feedbackElement.textContent = '¡Correcto!';
+                feedbackElement.classList.remove('incorrect');
+                feedbackElement.classList.add('correct');
+                selectedOption.classList.add('correct');
+            } else {
+                feedbackElement.textContent = `Incorrecto. La respuesta correcta era: ${correctAnswer.toUpperCase()})`;
+                feedbackElement.classList.remove('correct');
+                feedbackElement.classList.add('incorrect');
+                selectedOption.classList.add('incorrect');
+
+                // Highlight the correct answer if the user was wrong
+                Array.from(optionsContainer.children).forEach(btn => {
+                    if (btn.dataset.option === correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+            nextButton.disabled = false; // Ensure next button is enabled to proceed
+        }
+
+        function nextQuestion() {
+            // First, check the answer if it hasn't been checked yet (e.g., if user clicks next without selecting)
+            // This logic is slightly redundant if nextButton is only enabled after selection,
+            // but good for robustness.
+            if (selectedOption && feedbackElement.textContent === '') {
+                checkAnswer();
+                return; // Stop here, let the user see the feedback, then click next again
+            }
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            questionTextElement.classList.add('hidden');
+            optionsContainer.classList.add('hidden');
+            feedbackElement.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            questionCounterElement.classList.add('hidden');
+
+            resultsContainer.classList.remove('hidden');
+            finalScoreElement.textContent = `Tu puntuación final es: ${score} de ${questions.length}`;
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedOption = null;
+
+            questionTextElement.classList.remove('hidden');
+            optionsContainer.classList.remove('hidden');
+            feedbackElement.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            questionCounterElement.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+
+            displayQuestion();
+        }
+
+        // Event Listeners
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartQuiz);
+
+        // Initial display
+        document.addEventListener('DOMContentLoaded', displayQuestion);
+
+        // Add event listener to options container to delegate clicks
+        optionsContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('option-button') && !event.target.classList.contains('disabled')) {
+                selectOption(event.target);
+                // Automatically check the answer when an option is selected
+                checkAnswer();
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,2423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TREBEP Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        .question-container {
+            margin-bottom: 25px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border: 2px solid #e0e7ff;
+            border-radius: 10px;
+            background-color: #eff6ff;
+            color: #3b82f6;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button:hover:not(.correct):not(.incorrect):not(.selected) {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+        .options-container button.selected {
+            border-color: #60a5fa;
+            background-color: #bfdbfe;
+            color: #1e40af;
+        }
+        .options-container button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: bold;
+        }
+        .options-container button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: bold;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        .nav-button.prev {
+            background-color: #a78bfa;
+            color: white;
+        }
+        .nav-button.prev:hover {
+            background-color: #8b5cf6;
+        }
+        .nav-button.next {
+            background-color: #6366f1;
+            color: white;
+        }
+        .nav-button.next:hover {
+            background-color: #4f46e5;
+        }
+        .nav-button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            height: 15px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4f46e5;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-text {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #64748b;
+        }
+        .reset-button {
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .reset-button:hover {
+            background-color: #dc2626;
+        }
+        .feedback-message {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 25px; /* Ensure space even when empty */
+        }
+        .feedback-message.correct {
+            color: #065f46;
+        }
+        .feedback-message.incorrect {
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-6">Test TREBEP</h1>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText"></div>
+
+        <div class="question-container">
+            <p class="question-text" id="questionText"></p>
+            <div class="options-container" id="optionsContainer">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+        </div>
+
+        <div class="feedback-message" id="feedbackMessage"></div>
+
+        <div class="navigation-buttons">
+            <button class="nav-button prev" id="prevButton" disabled>Anterior</button>
+            <button class="nav-button next" id="nextButton">Siguiente</button>
+        </div>
+
+        <button class="reset-button" id="resetButton">Reiniciar Test</button>
+    </div>
+
+    <script>
+        // Array de objetos para las preguntas y respuestas
+        const questions = [
+            {
+                question: "¿A qué personal NO se aplica directamente el TREBEP?",
+                options: [
+                    "a) Al personal funcionario de las Administraciones de las CCAA.",
+                    "b) Al personal laboral de los organismos públicos.",
+                    "c) Al personal docente.",
+                    "d) Al personal funcionario de las Entidades Locales."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Para quién tiene el Estatuto Básico del Empleado Público (TREBEP) carácter supletorio?",
+                options: [
+                    "a) Solo para el personal de la Administración General del Estado.",
+                    "b) Para todo el personal de las Administraciones Públicas no incluido en su ámbito de aplicación.",
+                    "c) Exclusivamente para el personal estatutario de los Servicios de Salud.",
+                    "d) Para ningún tipo de personal, es siempre de aplicación directa."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué ley rige supletoriamente a la Policía Local en lo no previsto por el TREBEP y la legislación autonómica?",
+                options: [
+                    "a) La Ley de Coordinación de Policías Locales.",
+                    "b) La Ley Orgánica 2/1986, de Fuerzas y Cuerpos de Seguridad.",
+                    "c) La Ley de Bases de Régimen Local.",
+                    "d) El Código Penal."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un tipo de personal al servicio de las Administraciones Públicas según el TREBEP?",
+                options: [
+                    "a) Funcionarios de carrera.",
+                    "b) Personal eventual.",
+                    "c) Funcionarios honoríficos.",
+                    "d) Personal laboral."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Quiénes son funcionarios interinos?",
+                options: [
+                    "a) Aquellos que desempeñan puestos de trabajo con carácter permanente.",
+                    "b) Aquellos que son nombrados por razones de necesidad o urgencia para el desempeño de funciones propias de funcionarios de carrera.",
+                    "c) Aquellos que acceden a la función pública mediante un contrato de trabajo.",
+                    "d) Aquellos que realizan tareas de asesoramiento especial."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes es una causa para el nombramiento de funcionarios interinos por exceso o acumulación de tareas?",
+                options: [
+                    "a) La sustitución transitoria de los titulares.",
+                    "b) La existencia de plazas vacantes que no puedan ser cubiertas por funcionarios de carrera.",
+                    "c) Un plazo máximo improrrogable de seis meses dentro de un periodo de doce meses.",
+                    "d) La ejecución de programas de carácter temporal."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué personal puede ser nombrado para la realización de funciones expresamente calificadas como de confianza o asesoramiento especial?",
+                options: [
+                    "a) Funcionarios de carrera.",
+                    "b) Funcionarios interinos.",
+                    "c) Personal eventual.",
+                    "d) Personal laboral."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué ocurre con el nombramiento del personal eventual al cesar la autoridad que los nombró?",
+                options: [
+                    "a) Pasan a la situación de excedencia.",
+                    "b) Su nombramiento queda automáticamente extinguido.",
+                    "c) Se les ofrece un puesto como funcionario de carrera.",
+                    "d) Su contrato se prorroga automáticamente."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un requisito para acceder al empleo público, según el TREBEP?",
+                options: [
+                    "a) Tener nacionalidad española.",
+                    "b) Poseer la capacidad funcional para el desempeño de las tareas.",
+                    "c) Ser mayor de edad o menor emancipado.",
+                    "d) No haber sido separado mediante expediente disciplinario del servicio de cualquiera de las Administraciones Públicas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "10. ¿Qué se entiende por \"servicio de cualquiera de las Administraciones Públicas\"?",
+                options: [
+                    "a) Únicamente el servicio en la Administración General del Estado.",
+                    "b) El servicio en la Administración General del Estado, autonómica o local, así como en los organismos públicos y universidades.",
+                    "c) Solo el servicio en el sector privado que preste servicios a la administración.",
+                    "d) Exclusivamente el servicio en los ministerios."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el sistema ordinario de selección de personal fijo, según el TREBEP?",
+                options: [
+                    "a) La libre designación.",
+                    "b) La oposición o concurso-oposición.",
+                    "c) El concurso de méritos.",
+                    "d) La entrevista personal."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué pruebas NO pueden aplicarse en los procesos selectivos para el acceso al empleo público?",
+                options: [
+                    "a) Psicotécnicos.",
+                    "b) Reconocimiento médico.",
+                    "c) Pruebas tendentes a detectar el nivel de inteligencia o cociente intelectual.",
+                    "d) Pruebas de conocimiento."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un principio rector de los procesos selectivos?",
+                options: [
+                    "a) Transparencia.",
+                    "b) Agilidad.",
+                    "c) Discrecionalidad.",
+                    "d) Eficacia en la selección de los empleados públicos."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes principios debe respetarse al establecer las bases de cada convocatoria, especialmente en la valoración de la fase de concurso?",
+                options: [
+                    "a) La valoración de la experiencia profesional.",
+                    "b) La capacidad formativa.",
+                    "c) La discrecionalidad de la Administración.",
+                    "d) La conciliación de la vida personal, familiar y laboral."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué documento debe publicar el nombramiento de los funcionarios de carrera?",
+                options: [
+                    "a) En el Boletín Oficial del Estado.",
+                    "b) En el diario de mayor tirada de la Comunidad Autónoma.",
+                    "c) En el tablón de anuncios del Ayuntamiento.",
+                    "d) En la página web de la institución."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Qué se requiere para adquirir la condición de funcionario de carrera, además de la publicación del nombramiento?",
+                options: [
+                    "a) Un curso de formación intensivo.",
+                    "b) La superación de un periodo de prueba.",
+                    "c) La toma de posesión.",
+                    "d) La autorización del Ministerio de Hacienda."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿A quién compete al nombramiento de los funcionarios?",
+                options: [
+                    "a) Al Presidente del Gobierno.",
+                    "b) Al Secretario de Estado de Función Pública.",
+                    "c) Al titular del órgano superior de cada Administración Pública o de sus Organismos.",
+                    "d) Al Ministro de la rama correspondiente."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una forma de provisión de puestos de trabajo?",
+                options: [
+                    "a) Concurso.",
+                    "b) Libre designación.",
+                    "c) Traslado voluntario.",
+                    "d) Reasignación de efectivos."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la forma normal de provisión de puestos de trabajo para funcionarios?",
+                options: [
+                    "a) Libre designación.",
+                    "b) Concurso.",
+                    "c) Adscripción provisional.",
+                    "d) Permutas."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué mérito es de preceptiva valoración en los concursos de provisión de puestos de trabajo?",
+                options: [
+                    "a) El nivel de conocimiento de idiomas.",
+                    "b) Los cursos de formación y perfeccionamiento.",
+                    "c) La antigüedad.",
+                    "d) La conciliación de la vida personal, familiar y laboral."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿En qué plazo debe resolverse el concurso de provisión de puestos de trabajo, salvo que la convocatoria establezca otro?",
+                options: [
+                    "a) Un mes.",
+                    "b) Dos meses.",
+                    "c) Tres meses.",
+                    "d) Seis meses."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿En qué consiste la libre designación con convocatoria pública?",
+                options: [
+                    "a) La valoración de méritos exclusivamente.",
+                    "b) La apreciación discrecional del candidato.",
+                    "c) Un sorteo entre los aspirantes.",
+                    "d) Un proceso de ascenso automático."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué ocurre si un puesto de libre designación es cubierto por un funcionario que no cumple los requisitos del puesto?",
+                options: [
+                    "a) El nombramiento es válido si el funcionario tiene buena trayectoria.",
+                    "b) El nombramiento es nulo.",
+                    "c) El funcionario debe realizar un curso de adaptación.",
+                    "d) La Administración debe compensar al funcionario."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Por qué causas se puede cesar en un puesto cubierto por libre designación?",
+                options: [
+                    "a) Por haber cumplido el periodo de un año en el puesto.",
+                    "b) Por decisión discrecional de la autoridad que efectuó el nombramiento.",
+                    "c) Por voluntad del funcionario, sin necesidad de justificación.",
+                    "d) Por haber obtenido una plaza en otro concurso."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Si un funcionario cesa en un puesto de libre designación, ¿a qué situación pasa si no obtiene otro puesto?",
+                options: [
+                    "a) Excedencia voluntaria por interés particular.",
+                    "b) Excedencia forzosa.",
+                    "c) Servicio activo pendiente de asignación de puesto.",
+                    "d) Suspensión de funciones."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuál es la duración de la adscripción provisional en comisión de servicios para cubrir necesidades urgentes e inaplazables?",
+                options: [
+                    "a) Máximo 3 meses.",
+                    "b) Máximo 6 meses.",
+                    "c) Máximo 1 año, prorrogable por otro.",
+                    "d) Indefinida hasta la cobertura definitiva del puesto."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué tipo de funciones debe tener el puesto al que se adscriba un funcionario en comisión de servicios de atribución temporal de funciones?",
+                options: [
+                    "a) Funciones distintas a las propias de su Cuerpo.",
+                    "b) Funciones del mismo Cuerpo o Escala.",
+                    "c) Funciones de mayor nivel de las que le corresponden.",
+                    "d) Funciones de menor nivel de las que le corresponden."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuándo se puede solicitar una permuta entre funcionarios?",
+                options: [
+                    "a) En cualquier momento, siempre que haya acuerdo mutuo.",
+                    "b) Siempre que los funcionarios tengan el mismo nivel de complemento de destino.",
+                    "c) Entre funcionarios del mismo Subgrupo o Grupo de clasificación, si los puestos son de igual nivel y características.",
+                    "d) Solo si uno de los funcionarios va a cambiar de Comunidad Autónoma."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Si un funcionario ya ha realizado una permuta, ¿cuándo NO se autorizará una nueva?",
+                options: [
+                    "a) Hasta pasados 2 años.",
+                    "b) Hasta pasados 5 años.",
+                    "c) Hasta pasados 10 años (5 si son laborales).",
+                    "d) Hasta pasados 15 años."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué se entiende por pérdida de la condición de funcionario de carrera?",
+                options: [
+                    "a) La excedencia voluntaria por interés particular.",
+                    "b) Una situación administrativa temporal.",
+                    "c) Una causa de cese definitivo en la relación de servicios del funcionario.",
+                    "d) Un traslado a otra Administración Pública."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una causa de pérdida de la condición de funcionario de carrera?",
+                options: [
+                    "a) La sanción disciplinaria de separación del servicio.",
+                    "b) La jubilación voluntaria.",
+                    "c) La renuncia a la condición de funcionario.",
+                    "d) La excedencia por cuidado de familiares."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué ocurre si un funcionario renuncia a su condición y está sujeto a expediente disciplinario?",
+                options: [
+                    "a) Se acepta la renuncia y el expediente se archiva.",
+                    "b) La renuncia no será aceptada hasta la resolución del expediente disciplinario.",
+                    "c) La renuncia se acepta, pero la sanción se mantiene.",
+                    "d) El funcionario es inhabilitado automáticamente."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué ocurre si un funcionario pierde la nacionalidad española o de otro Estado miembro de la UE que fue tenida en cuenta para su nombramiento?",
+                options: [
+                    "a) No pierde la condición de funcionario si reside en España.",
+                    "b) Pierde la condición de funcionario, salvo que adquiera simultáneamente la nacionalidad de algún otro Estado miembro de la Unión Europea.",
+                    "c) Puede recuperar la nacionalidad y el puesto.",
+                    "d) Pasa a la situación de excedencia."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿A qué edad se produce la jubilación forzosa por edad de los funcionarios?",
+                options: [
+                    "a) 60 años.",
+                    "b) 65 años.",
+                    "c) 67 años.",
+                    "d) 70 años."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Hasta qué edad máxima se puede solicitar la prolongación de la permanencia en el servicio activo?",
+                options: [
+                    "a) 68 años.",
+                    "b) 69 años.",
+                    "c) 70 años.",
+                    "d) Indefinidamente."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Con qué antelación mínima a la fecha de jubilación debe presentarse la solicitud de prolongación de permanencia en el servicio activo?",
+                options: [
+                    "a) Un mes.",
+                    "b) Dos meses.",
+                    "c) Tres meses.",
+                    "d) Seis meses."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el porcentaje de reducción de jornada en la cesación progresiva de actividades y qué porcentaje de retribuciones se percibe?",
+                options: [
+                    "a) Reducción del 50% de jornada, percibiendo el 50% de retribuciones.",
+                    "b) Reducción del 66% de jornada, percibiendo el 80% de retribuciones.",
+                    "c) Reducción del 75% de jornada, percibiendo el 90% de retribuciones.",
+                    "d) Reducción del 80% de jornada, percibiendo el 100% de retribuciones."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una situación administrativa de los funcionarios de carrera, según el documento?",
+                options: [
+                    "a) Servicio en prácticas.",
+                    "b) Suspensión de funciones.",
+                    "c) Expectativa de destino.",
+                    "d) Servicios en la Comunidad Europea."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué situación administrativa implica que el funcionario goza de todos los derechos y está sujeto a todos los deberes y responsabilidades?",
+                options: [
+                    "a) Servicios especiales.",
+                    "b) Excedencia forzosa.",
+                    "c) Servicio activo.",
+                    "d) Suspensión de funciones."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿En qué situación administrativa se declara al personal funcionario que es nombrado miembro de los órganos constitucionales o de los órganos estatutarios de las Comunidades Autónomas?",
+                options: [
+                    "a) Servicio activo.",
+                    "b) Excedencia voluntaria por interés particular.",
+                    "c) Servicios especiales.",
+                    "d) Suspensión de funciones."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Si un funcionario en situación de servicios especiales pierde esa condición, ¿en qué plazo debe solicitar el reingreso al servicio activo para no pasar a excedencia voluntaria por interés particular?",
+                options: [
+                    "a) 15 días.",
+                    "b) 1 mes.",
+                    "c) 3 meses.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué situación administrativa se aplica a los funcionarios de carrera que prestan servicios en organismos o entidades del sector público que no tengan la condición de Administración Pública?",
+                options: [
+                    "a) Servicio activo.",
+                    "b) Servicios especiales.",
+                    "c) Excedencia voluntaria.",
+                    "d) Suspensión de funciones."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la duración mínima de la excedencia voluntaria por interés particular, salvo que las leyes de Función Pública de las distintas Administraciones Públicas establezcan periodos menores?",
+                options: [
+                    "a) 1 año.",
+                    "b) 2 años.",
+                    "c) 3 años.",
+                    "d) 5 años."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué ocurre con el tiempo de permanencia en la excedencia voluntaria por interés particular a efectos de trienios y derechos pasivos?",
+                options: [
+                    "a) Computa para ambos.",
+                    "b) No computa para ninguno.",
+                    "c) Computa solo para trienios.",
+                    "d) Computa solo para derechos pasivos."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la duración máxima de la excedencia voluntaria por agrupación familiar?",
+                options: [
+                    "a) 5 años.",
+                    "b) 10 años.",
+                    "c) 15 años.",
+                    "d) Indefinida."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la duración mínima del periodo de excedencia por cuidado de familiares si la legislación específica no lo establece?",
+                options: [
+                    "a) 3 meses.",
+                    "b) 6 meses.",
+                    "c) 1 año.",
+                    "d) 2 años."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "En la excedencia por cuidado de familiares, ¿el tiempo que el funcionario permanece en esta situación computa a efectos de trienios y derechos pasivos?",
+                options: [
+                    "a) No.",
+                    "b) Sí.",
+                    "c) Depende de la duración.",
+                    "d) Solo para trienios."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Por qué periodo se reserva el puesto de trabajo en la excedencia por cuidado de familiares?",
+                options: [
+                    "a) Durante 1 año.",
+                    "b) Durante 2 años.",
+                    "c) Durante 3 años.",
+                    "d) Indefinidamente."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuánto tiempo se puede prorrogar la reserva de puesto en la excedencia por cuidado de familiares en caso de familia numerosa de categoría general?",
+                options: [
+                    "a) Hasta 12 meses adicionales.",
+                    "b) Hasta 18 meses adicionales.",
+                    "c) Hasta 24 meses adicionales.",
+                    "d) Hasta 30 meses adicionales."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el periodo máximo de reserva de puesto de trabajo en la excedencia por razón de violencia de género?",
+                options: [
+                    "a) 6 meses.",
+                    "b) 12 meses.",
+                    "c) 18 meses.",
+                    "d) 24 meses."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "Durante los dos primeros meses de la excedencia por razón de violencia de género, ¿a qué tiene derecho la funcionaria, además de la reserva del puesto?",
+                options: [
+                    "a) Sólo a la retribución básica.",
+                    "b) A percibir las retribuciones íntegras.",
+                    "c) A la mitad de sus retribuciones.",
+                    "d) A un subsidio por desempleo."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué situación administrativa se aplica cuando un funcionario ha sido sancionado con suspensión firme de funciones por un tiempo superior a seis meses?",
+                options: [
+                    "a) Excedencia voluntaria por interés particular.",
+                    "b) Excedencia forzosa.",
+                    "c) Suspensión provisional.",
+                    "d) Servicio en expectativa de destino."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el plazo máximo de la suspensión provisional como medida cautelar durante la tramitación de un expediente disciplinario?",
+                options: [
+                    "a) 3 meses.",
+                    "b) 6 meses.",
+                    "c) 9 meses.",
+                    "d) 12 meses."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué retribuciones percibe un funcionario en suspensión provisional?",
+                options: [
+                    "a) Todas las retribuciones del puesto.",
+                    "b) Solo retribuciones básicas.",
+                    "c) Retribuciones básicas y, en su caso, prestaciones familiares por hijo a cargo.",
+                    "d) Ninguna retribución."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Si la suspensión provisional no es declarada firme o el expediente finaliza sin declaración de responsabilidad, ¿qué ocurre con el tiempo de suspensión?",
+                options: [
+                    "a) No se computa a ningún efecto.",
+                    "b) Se computa como tiempo de servicio activo, con la consiguiente devolución de retribuciones.",
+                    "c) Se computa como excedencia.",
+                    "d) El funcionario es indemnizado."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes es un derecho individual de los empleados públicos según el TREBEP?",
+                options: [
+                    "a) El derecho a la negociación colectiva.",
+                    "b) El derecho a la huelga.",
+                    "c) El derecho a la inamovilidad en la condición de funcionario de carrera.",
+                    "d) El derecho de reunión."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué derecho individual se ejercerá en los términos que se determinen por Ley, teniendo en cuenta la naturaleza de las funciones o servicios?",
+                options: [
+                    "a) El derecho a la participación en la negociación colectiva.",
+                    "b) El derecho a la libre asociación.",
+                    "c) El derecho a la huelga.",
+                    "d) El derecho a vacaciones."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes derechos de los empleados públicos producirá efectos a partir de la entrada en vigor de la Ley de Función Pública que se dicte en desarrollo del TREBEP?",
+                options: [
+                    "a) Permisos y licencias.",
+                    "b) Carrera profesional.",
+                    "c) Seguridad y salud en el trabajo.",
+                    "d) Asistencia jurídica."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿En qué consiste la carrera horizontal?",
+                options: [
+                    "a) Ascenso desde un cuerpo o escala a otro superior.",
+                    "b) Progresión de grado, categoría, escalón u otros conceptos análogos, sin necesidad de cambiar de puesto de trabajo.",
+                    "c) Ascenso a puestos de mayor responsabilidad.",
+                    "d) Cambio de Administración Pública."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes conceptos NO forma parte de las retribuciones básicas de los funcionarios?",
+                options: [
+                    "a) Sueldo.",
+                    "b) Complemento de destino.",
+                    "c) Trienios.",
+                    "d) Pagas extraordinarias."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuántas pagas extraordinarias se perciben al año?",
+                options: [
+                    "a) Una.",
+                    "b) Dos.",
+                    "c) Tres.",
+                    "d) Cuatro."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué componentes NO se incluyen en el cálculo de las pagas extraordinarias?",
+                options: [
+                    "a) Sueldo y trienios.",
+                    "b) Complemento de destino.",
+                    "c) Productividad y servicios extraordinarios.",
+                    "d) Complemento específico."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué retribución complementaria retribuye el distinto nivel de ocupación de un puesto de trabajo?",
+                options: [
+                    "a) Complemento específico.",
+                    "b) Complemento de productividad.",
+                    "c) Complemento de destino.",
+                    "d) Gratificaciones."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué retribución complementaria retribuye las condiciones particulares de algunos puestos de trabajo en atención a su especial dificultad técnica, dedicación, incompatibilidad, etc.?",
+                options: [
+                    "a) Complemento de destino.",
+                    "b) Complemento específico.",
+                    "c) Complemento de productividad.",
+                    "d) Gratificaciones."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué retribución complementaria retribuye el especial rendimiento, la actividad extraordinaria y el interés o iniciativa con que el funcionario desempeña su trabajo?",
+                options: [
+                    "a) Complemento de destino.",
+                    "b) Complemento específico.",
+                    "c) Complemento de productividad.",
+                    "d) Pagas extraordinarias."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la retribución que NO puede ser fija en su cuantía?",
+                options: [
+                    "a) Sueldo.",
+                    "b) Complemento de destino.",
+                    "c) Complemento de productividad.",
+                    "d) Complemento específico."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué porcentaje máximo de las retribuciones anuales puede representar la suma de las asistencias por concurrencia a reuniones de tribunales, órganos de selección, etc.?",
+                options: [
+                    "a) 25%.",
+                    "b) 30%.",
+                    "c) 40%.",
+                    "d) 50%."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la jornada de trabajo para el personal del Sector Público, en promedio anual?",
+                options: [
+                    "a) 35 horas semanales.",
+                    "b) 37,5 horas semanales.",
+                    "c) 40 horas semanales.",
+                    "d) 42,5 horas semanales."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el horario fijo de la jornada de mañana de lunes a viernes?",
+                options: [
+                    "a) De 7:30 a 15:00 horas.",
+                    "b) De 8:00 a 15:00 horas.",
+                    "c) De 9:00 a 14:30 horas.",
+                    "d) De 9:00 a 17:00 horas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuánto tiempo se considera como pausa que computa como trabajo efectivo dentro de la jornada diaria continuada?",
+                options: [
+                    "a) 15 minutos.",
+                    "b) 20 minutos.",
+                    "c) 30 minutos.",
+                    "d) 45 minutos."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la duración de la jornada en régimen de especial dedicación?",
+                options: [
+                    "a) 37,5 horas semanales.",
+                    "b) 40 horas semanales.",
+                    "c) 42,5 horas semanales.",
+                    "d) 45 horas semanales."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué periodo abarca la jornada intensiva de verano?",
+                options: [
+                    "a) Del 1 de junio al 31 de agosto.",
+                    "b) Del 15 de junio al 15 de septiembre.",
+                    "c) Del 1 de julio al 31 de agosto.",
+                    "d) Del 1 de junio al 30 de septiembre."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Hasta qué edad de los hijos, o porcentaje de discapacidad, los empleados públicos pueden flexibilizar en 1 hora diaria el horario fijo por cuidado de hijos?",
+                options: [
+                    "a) Hijos hasta 6 años o discapacidad > 25%.",
+                    "b) Hijos hasta 10 años o discapacidad >= 30%.",
+                    "c) Hijos hasta 12 años o discapacidad >= 33%.",
+                    "d) Hijos hasta 14 años o discapacidad >= 40%."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuántas horas de flexibilidad diaria sobre el horario fijo corresponde a los empleados públicos que tengan a su cargo personas con discapacidad hasta el primer grado de consanguinidad o afinidad?",
+                options: [
+                    "a) 1 hora.",
+                    "b) 1.5 horas.",
+                    "c) 2 horas.",
+                    "d) 3 horas."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuántos días hábiles de vacaciones anuales tienen derecho los empleados públicos por año completo de servicio?",
+                options: [
+                    "a) 20 días.",
+                    "b) 22 días.",
+                    "c) 25 días.",
+                    "d) 30 días."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿En qué periodos mínimos pueden disfrutarse las vacaciones anuales?",
+                options: [
+                    "a) Mínimo de 3 días hábiles consecutivos.",
+                    "b) Mínimo de 5 días hábiles consecutivos.",
+                    "c) Mínimo de 7 días naturales.",
+                    "d) Mínimo de 10 días laborables."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Hasta qué fecha pueden disfrutarse las vacaciones anuales?",
+                options: [
+                    "a) Hasta el 31 de diciembre del año en curso.",
+                    "b) Hasta el 15 de enero del año siguiente.",
+                    "c) Hasta el 31 de enero del año siguiente.",
+                    "d) Hasta el 28 de febrero del año siguiente."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuántos días adicionales de vacaciones corresponden a un funcionario con 15 años de antigüedad?",
+                options: [
+                    "a) 1 día.",
+                    "b) 2 días.",
+                    "c) 3 días.",
+                    "d) 4 días."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuántos días de permiso por asuntos particulares sin justificar tienen los funcionarios?",
+                options: [
+                    "a) 4 días.",
+                    "b) 5 días.",
+                    "c) 6 días.",
+                    "d) 7 días."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuántos días adicionales de permiso por asuntos particulares se conceden a partir del sexto trienio de antigüedad?",
+                options: [
+                    "a) 1 día adicional.",
+                    "b) 2 días adicionales.",
+                    "c) 3 días adicionales.",
+                    "d) 4 días adicionales."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cómo computa el tiempo dedicado a la formación cuando se celebra dentro del horario de trabajo?",
+                options: [
+                    "a) Como permiso no retribuido.",
+                    "b) Como tiempo de descanso.",
+                    "c) Como tiempo de trabajo a todos los efectos.",
+                    "d) Como excedencia formativa."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuántas horas al año tienen derecho los funcionarios para cursos de perfeccionamiento profesional que se impartan fuera del horario de trabajo?",
+                options: [
+                    "a) Hasta 20 horas.",
+                    "b) Hasta 30 horas.",
+                    "c) Hasta 40 horas.",
+                    "d) Sin límite de horas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Por fallecimiento, accidente o enfermedad grave de un familiar de primer grado, ¿cuántos días de permiso corresponden si es en la misma localidad?",
+                options: [
+                    "a) 2 días hábiles.",
+                    "b) 3 días hábiles.",
+                    "c) 4 días hábiles.",
+                    "d) 5 días hábiles."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "Por fallecimiento, accidente o enfermedad grave de un familiar de segundo grado, ¿cuántos días de permiso corresponden si es en distinta localidad?",
+                options: [
+                    "a) 2 días hábiles.",
+                    "b) 3 días hábiles.",
+                    "c) 4 días hábiles.",
+                    "d) 5 días hábiles."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Por enfermedad muy grave de un familiar de primer grado, ¿qué reducción de jornada puede solicitarse y por qué plazo máximo?",
+                options: [
+                    "a) Reducción del 25% de jornada por un mes.",
+                    "b) Reducción del 50% de jornada por un mes.",
+                    "c) Reducción del 75% de jornada por un mes.",
+                    "d) Reducción del 100% de jornada por 15 días."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuántos días de permiso corresponden por traslado de domicilio sin cambio de residencia?",
+                options: [
+                    "a) 1 día.",
+                    "b) 2 días.",
+                    "c) 3 días.",
+                    "d) 5 días."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "Para exámenes prenatales, preparación al parto y fecundación asistida, ¿las funcionarias embarazadas tienen derecho a ausentarse por?",
+                options: [
+                    "a) Una hora diaria.",
+                    "b) El tiempo indispensable.",
+                    "c) Media jornada.",
+                    "d) Una jornada completa."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Por lactancia de un hijo menor de 12 meses, ¿cuánto tiempo de ausencia diaria se puede tener y cómo se puede dividir?",
+                options: [
+                    "a) Media hora diaria, en una fracción.",
+                    "b) Una hora diaria, que podrá dividir en dos fracciones.",
+                    "c) Una hora diaria, que podrá acumular en 4 semanas completas.",
+                    "d) Ambas b) y c) son correctas."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "En caso de nacimientos de hijos prematuros o que deban permanecer hospitalizados tras el parto, ¿cuántas horas diarias pueden reducir la jornada con disminución proporcional de retribuciones?",
+                options: [
+                    "a) Hasta 1 hora.",
+                    "b) Hasta 1.5 horas.",
+                    "c) Hasta 2 horas.",
+                    "d) Hasta 3 horas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué reducción de jornada se aplica para el cuidado directo de un familiar hasta el 2º grado de consanguinidad o afinidad que no pueda valerse por sí mismo y no desempeñe actividad retribuida?",
+                options: [
+                    "a) Reducción de 1/4 o 1/2 de su jornada.",
+                    "b) Reducción de 1/3 o 1/2 de su jornada.",
+                    "c) Reducción de 1/2 o 3/4 de su jornada.",
+                    "d) Reducción de la jornada hasta el 99%."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuántos días de permiso corresponden por matrimonio o por registro o constitución de pareja de hecho?",
+                options: [
+                    "a) 10 días.",
+                    "b) 15 días.",
+                    "c) 20 días.",
+                    "d) 25 días."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la duración del permiso por parto para la madre biológica?",
+                options: [
+                    "a) 10 semanas.",
+                    "b) 12 semanas.",
+                    "c) 16 semanas.",
+                    "d) 20 semanas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "En caso de parto múltiple, ¿cuánto se amplía el permiso por parto por cada hijo a partir del segundo?",
+                options: [
+                    "a) 1 semana.",
+                    "b) 2 semanas.",
+                    "c) 3 semanas.",
+                    "d) 4 semanas."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Si el hijo es discapacitado, ¿en cuántas semanas se ampliará el permiso por parto?",
+                options: [
+                    "a) 1 semana.",
+                    "b) 2 semanas.",
+                    "c) 3 semanas.",
+                    "d) 4 semanas."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuánto tiempo se puede ampliar el permiso por parto en caso de parto prematuro o que el recién nacido deba permanecer hospitalizado?",
+                options: [
+                    "a) Hasta 8 semanas adicionales.",
+                    "b) Hasta 10 semanas adicionales.",
+                    "c) Hasta 13 semanas adicionales.",
+                    "d) Sin límite de tiempo."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Durante cuánto tiempo el permiso por parto no se verá reducido en caso de hospitalización del recién nacido?",
+                options: [
+                    "a) Hasta 6 semanas tras el parto.",
+                    "b) Hasta 10 semanas tras el parto.",
+                    "c) Hasta 13 semanas tras el parto.",
+                    "d) Hasta 16 semanas tras el parto."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuánto tiempo se puede iniciar el permiso de adopción internacional antes de la resolución constitutiva, cuando sea necesario el desplazamiento?",
+                options: [
+                    "a) Hasta 2 semanas.",
+                    "b) Hasta 3 semanas.",
+                    "c) Hasta 4 semanas.",
+                    "d) Hasta 6 semanas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuánto tiempo se puede disfrutar de la licencia por asuntos propios sin retribuir cada dos años?",
+                options: [
+                    "a) Máximo de un mes.",
+                    "b) Máximo de dos meses.",
+                    "c) Máximo de tres meses.",
+                    "d) Máximo de seis meses."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes principios NO forma parte del Código de Conducta de los empleados públicos, según el documento?",
+                options: [
+                    "a) Imparcialidad.",
+                    "b) Austeridad.",
+                    "c) Transparencia.",
+                    "d) Colaboración."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué deben hacer los empleados públicos en asuntos donde puedan existir conflictos de intereses?",
+                options: [
+                    "a) Abstenerse de intervenir en los procedimientos.",
+                    "b) Solicitar permiso a su superior para continuar.",
+                    "c) Informar a sus compañeros.",
+                    "d) Buscar una solución de compromiso."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Qué deben rechazar los empleados públicos, según los principios de conducta?",
+                options: [
+                    "a) Cualquier invitación a eventos públicos.",
+                    "b) Cualquier regalo, favor o servicio en condiciones ventajosas que vaya más allá de los usos habituales.",
+                    "c) Cualquier crítica constructiva.",
+                    "d) Cualquier muestra de reconocimiento por parte de la ciudadanía."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el nivel mínimo y máximo de los Cuerpos o Escalas del Subgrupo A2?",
+                options: [
+                    "a) 16-24.",
+                    "b) 18-26.",
+                    "c) 20-28.",
+                    "d) 22-30."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué titulación se requiere para el acceso a Cuerpos o Escalas del Subgrupo C1?",
+                options: [
+                    "a) Graduado Escolar.",
+                    "b) Bachiller o Técnico.",
+                    "c) Diplomado.",
+                    "d) Licenciado."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cómo se adquiere el grado personal?",
+                options: [
+                    "a) Por haber desempeñado uno o más puestos del nivel correspondiente durante 1 año continuado.",
+                    "b) Por haber desempeñado uno o más puestos del nivel correspondiente durante 2 años continuados o 3 con interrupción.",
+                    "c) Por la superación de un proceso de promoción interna.",
+                    "d) Por alcanzar una determinada antigüedad en la Administración."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el sistema normal de acceso a otros Cuerpos o Escalas del mismo Subgrupo de titulación?",
+                options: [
+                    "a) Concurso de méritos.",
+                    "b) Concurso-oposición o concurso.",
+                    "c) Promoción interna vertical.",
+                    "d) Libre designación."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una falta muy grave según el TREBEP?",
+                options: [
+                    "a) La incomparecencia injustificada en Comisiones de Investigación de las Cortes Generales.",
+                    "b) El notorio incumplimiento de las funciones esenciales inherentes al puesto de trabajo.",
+                    "c) El abandono del servicio.",
+                    "d) La grave desconsideración con los superiores."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué se considera una falta muy grave en relación con la información o documentación?",
+                options: [
+                    "a) La negligencia en la custodia de documentos que no cause daño.",
+                    "b) La publicación o utilización indebida de la documentación o información a que tengan o hayan tenido acceso por razón de su cargo o función.",
+                    "c) El retraso en la entrega de informes.",
+                    "d) El uso de información para fines estadísticos sin consentimiento."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes es una falta grave según el Reglamento Disciplinario?",
+                options: [
+                    "a) El acoso sexual.",
+                    "b) El incumplimiento injustificado de la jornada de trabajo que acumule diez horas al mes.",
+                    "c) La adopción de acuerdos manifiestamente ilegales que causen perjuicio grave a la Administración.",
+                    "d) La ostentación de distintivos que no correspondan."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes es una falta leve según el Reglamento Disciplinario?",
+                options: [
+                    "a) El notorio incumplimiento de las funciones esenciales.",
+                    "b) El abuso de autoridad en el ejercicio de sus funciones.",
+                    "c) El incumplimiento injustificado del horario de trabajo.",
+                    "d) La grave indisciplina o desobediencia."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué sanción es aplicable en el caso de faltas muy graves?",
+                options: [
+                    "a) Apercibimiento.",
+                    "b) Traslado forzoso con cambio de localidad.",
+                    "c) Suspensión firme de funciones y separación del servicio.",
+                    "d) Suspensión provisional."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la duración máxima de la suspensión firme de funciones?",
+                options: [
+                    "a) 3 años.",
+                    "b) 6 años.",
+                    "c) 9 años.",
+                    "d) 10 años."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Si un funcionario es sancionado con traslado forzoso, ¿durante cuánto tiempo no podrá obtener un nuevo destino en la misma localidad?",
+                options: [
+                    "a) 1 año.",
+                    "b) 2 años.",
+                    "c) 3 años.",
+                    "d) 5 años."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el plazo de prescripción para las faltas muy graves?",
+                options: [
+                    "a) 1 año.",
+                    "b) 2 años.",
+                    "c) 3 años.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el plazo de prescripción para las faltas leves?",
+                options: [
+                    "a) 3 meses.",
+                    "b) 6 meses.",
+                    "c) 1 año.",
+                    "d) 2 años."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el plazo de prescripción para las sanciones impuestas por faltas muy graves?",
+                options: [
+                    "a) 1 año.",
+                    "b) 2 años.",
+                    "c) 3 años.",
+                    "d) 6 años."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿En qué plazo se puede solicitar la cancelación de anotaciones disciplinarias por faltas leves?",
+                options: [
+                    "a) A los 6 meses desde el cumplimiento de la sanción.",
+                    "b) A los 1 año desde el cumplimiento de la sanción.",
+                    "c) A los 2 años desde el cumplimiento de la sanción.",
+                    "d) A los 6 años desde el cumplimiento de la sanción."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Qué porcentaje máximo puede superar la cantidad total percibida por ambos puestos en caso de compatibilidad para el Subgrupo A2?",
+                options: [
+                    "a) 25%.",
+                    "b) 30%.",
+                    "c) 35%.",
+                    "d) 40%."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué porcentaje máximo puede superar la cantidad total percibida por ambos puestos en caso de compatibilidad para el Subgrupo C1?",
+                options: [
+                    "a) 30%.",
+                    "b) 35%.",
+                    "c) 40%.",
+                    "d) 45%."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes es una prohibición para obtener o mantener la compatibilidad?",
+                options: [
+                    "a) Percibir retribuciones por ambos puestos superiores al 50%.",
+                    "b) Desarrollar actividades profesionales que se relacionen directamente con las funciones del puesto público.",
+                    "c) Realizar actividades fuera de la jornada laboral.",
+                    "d) Ejercer actividades privadas que requieran un número de horas inferior a la jornada normal."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se entiende por promoción interna vertical?",
+                options: [
+                    "a) El acceso a Cuerpos o Escalas del mismo Subgrupo profesional.",
+                    "b) El ascenso desde un Cuerpo o Escala del Subgrupo inferior a otro del Subgrupo superior.",
+                    "c) La progresión de grado o nivel sin cambiar de puesto.",
+                    "d) El cambio de Administración Pública."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se entiende por promoción interna horizontal?",
+                options: [
+                    "a) El acceso a Cuerpos o Escalas del mismo Subgrupo profesional.",
+                    "b) El ascenso desde un Cuerpo o Escala del Subgrupo inferior a otro del Subgrupo superior.",
+                    "c) La progresión de grado o nivel sin cambiar de puesto.",
+                    "d) El cambio de Administración Pública."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "En el permiso por cuidado de hijo menor afectado por cáncer o enfermedad grave, si ambos progenitores trabajan en el mismo órgano o entidad, ¿cuánto tiempo de reducción de jornada es el mínimo para percibir retribuciones íntegras?",
+                options: [
+                    "a) 1/4 de la jornada.",
+                    "b) 1/3 de la jornada.",
+                    "c) La mitad de la duración.",
+                    "d) 2/3 de la jornada."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Hasta qué edad del menor se extiende el permiso por cuidado de hijo menor afectado por cáncer o enfermedad grave?",
+                options: [
+                    "a) Hasta los 12 años.",
+                    "b) Hasta los 16 años.",
+                    "c) Hasta los 18 años.",
+                    "d) Sin límite de edad."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué tipo de personal se rige por su legislación específica y supletoriamente por el TREBEP?",
+                options: [
+                    "a) Los funcionarios de la AGE.",
+                    "b) El personal de las Cortes Generales.",
+                    "c) El personal laboral.",
+                    "d) Los funcionarios interinos."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el requisito para la jubilación voluntaria de los funcionarios?",
+                options: [
+                    "a) Haber cumplido 60 años de edad.",
+                    "b) Haber cumplido la edad que para cada caso se establezca.",
+                    "c) Haber prestado servicios en la Administración durante al menos 10 años.",
+                    "d) Haber cumplido la edad ordinaria de jubilación."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuál es el plazo de reingreso al servicio activo para el funcionario que finaliza la situación de servicios especiales?",
+                options: [
+                    "a) 15 días.",
+                    "b) 1 mes.",
+                    "c) 3 meses.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué tipo de excedencia no genera derecho a la reserva de puesto de trabajo?",
+                options: [
+                    "a) Excedencia por cuidado de familiares.",
+                    "b) Excedencia por razón de violencia de género.",
+                    "c) Excedencia voluntaria por interés particular.",
+                    "d) Excedencia por razón de estudios."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "En la excedencia por cuidado de familiares, ¿cuánto se amplía el periodo de reserva del puesto de trabajo en caso de familia numerosa de categoría especial?",
+                options: [
+                    "a) Hasta 18 meses adicionales.",
+                    "b) Hasta 24 meses adicionales.",
+                    "c) Hasta 30 meses adicionales.",
+                    "d) Hasta 36 meses adicionales."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuánto tiempo se puede prolongar la situación de excedencia por violencia de género, a partir de los 6 meses iniciales?",
+                options: [
+                    "a) Por periodos de 3 meses, con un máximo de 18 meses en total.",
+                    "b) Por periodos de 6 meses, sin límite.",
+                    "c) Por periodos de 12 meses, hasta 24 meses en total.",
+                    "d) Indefinidamente, si la situación de violencia persiste."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "Si la suspensión provisional es superior a la sanción impuesta, ¿qué ocurre con el exceso de tiempo de suspensión?",
+                options: [
+                    "a) Se convierte en excedencia voluntaria.",
+                    "b) Se declara el derecho a la devolución de la parte proporcional de las retribuciones.",
+                    "c) No se tiene en cuenta a ningún efecto.",
+                    "d) Se compensa con días de vacaciones."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué sistema de selección se utiliza prioritariamente para el acceso al empleo público fijo?",
+                options: [
+                    "a) Concurso de méritos.",
+                    "b) Oposición o concurso-oposición.",
+                    "c) Libre designación.",
+                    "d) Entrevista personal."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se entiende por \"promoción interna\"?",
+                options: [
+                    "a) El acceso a puestos de mayor nivel en la misma Administración.",
+                    "b) El ascenso desde un cuerpo o escala a otro superior.",
+                    "c) La carrera horizontal.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué complemento retribuye el valor del puesto de trabajo según la dificultad técnica, responsabilidad, etc.?",
+                options: [
+                    "a) Complemento de destino.",
+                    "b) Complemento específico.",
+                    "c) Complemento de productividad.",
+                    "d) Gratificaciones."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué complemento retribuye el especial rendimiento, la actividad extraordinaria y el interés o iniciativa del funcionario?",
+                options: [
+                    "a) Complemento de destino.",
+                    "b) Complemento específico.",
+                    "c) Complemento de productividad.",
+                    "d) Gratificaciones."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la duración de la jornada general de trabajo efectivo en cómputo semanal?",
+                options: [
+                    "a) 35 horas.",
+                    "b) 37,5 horas.",
+                    "c) 40 horas.",
+                    "d) Varía según la Administración."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿A partir de cuántos años de antigüedad se empieza a disfrutar de días adicionales de vacaciones?",
+                options: [
+                    "a) 10 años.",
+                    "b) 15 años.",
+                    "c) 20 años.",
+                    "d) 25 años."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuántos días adicionales de permiso por asuntos particulares se conceden por la antigüedad de 30 años?",
+                options: [
+                    "a) 1 día adicional.",
+                    "b) 2 días adicionales.",
+                    "c) 3 días adicionales.",
+                    "d) 4 días adicionales."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Cómo se considera el tiempo dedicado a la formación cuando no puede realizarse fuera del horario de trabajo y no afecta al funcionamiento de los servicios?",
+                options: [
+                    "a) Como tiempo de trabajo.",
+                    "b) Como permiso no retribuido.",
+                    "c) Como excedencia voluntaria.",
+                    "d) No se considera en ningún caso."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "En caso de fallecimiento, accidente o enfermedad grave de un familiar de primer grado, ¿cuántos días hábiles de permiso corresponden si es en distinta localidad?",
+                options: [
+                    "a) 2 días.",
+                    "b) 3 días.",
+                    "c) 4 días.",
+                    "d) 5 días."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "En caso de fallecimiento, accidente o enfermedad grave de un familiar de segundo grado, ¿cuántos días hábiles de permiso corresponden si es en la misma localidad?",
+                options: [
+                    "a) 1 día.",
+                    "b) 2 días.",
+                    "c) 3 días.",
+                    "d) 4 días."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuál es la duración máxima del permiso por enfermedad muy grave de un familiar de primer grado con reducción del 50% de la jornada?",
+                options: [
+                    "a) 15 días.",
+                    "b) 1 mes.",
+                    "c) 2 meses.",
+                    "d) 3 meses."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Para el cuidado de hijo menor de 12 meses, si se opta por acumular el permiso de lactancia, ¿en cuántas semanas se acumula?",
+                options: [
+                    "a) En 2 semanas.",
+                    "b) En 3 semanas.",
+                    "c) En 4 semanas.",
+                    "d) En 6 semanas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "En caso de nacimientos de hijos prematuros que deban permanecer hospitalizados tras el parto, ¿cuánto se puede prolongar el permiso de la madre?",
+                options: [
+                    "a) Hasta 8 semanas adicionales.",
+                    "b) Hasta 10 semanas adicionales.",
+                    "c) Hasta 13 semanas adicionales.",
+                    "d) Hasta 16 semanas adicionales."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "El permiso por cuidado directo de un familiar que no pueda valerse por sí mismo y no desempeñe actividad retribuida implica una reducción de jornada de:",
+                options: [
+                    "a) 1/4 o 1/2.",
+                    "b) 1/3 o 1/2.",
+                    "c) 1/2 o 3/4.",
+                    "d) A voluntad del funcionario."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuál es la duración del permiso por adopción o acogimiento?",
+                options: [
+                    "a) 10 semanas.",
+                    "b) 12 semanas.",
+                    "c) 16 semanas.",
+                    "d) 20 semanas."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la duración máxima del permiso por asuntos propios sin retribuir cada dos años?",
+                options: [
+                    "a) Un mes.",
+                    "b) Tres meses.",
+                    "c) Seis meses.",
+                    "d) Un año."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué se entiende por \"lealtad institucional\" en el Código de Conducta?",
+                options: [
+                    "a) El apoyo incondicional a los superiores.",
+                    "b) El respeto a la Constitución y al resto de normas que integran el ordenamiento jurídico.",
+                    "c) La preferencia por los intereses de la propia Administración.",
+                    "d) La subordinación a las directrices políticas del gobierno."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿A qué Subgrupo pertenecen los Cuerpos o Escalas clasificados como Grado o Diplomatura?",
+                options: [
+                    "a) A1.",
+                    "b) A2.",
+                    "c) C1.",
+                    "d) C2."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el nivel mínimo y máximo del Subgrupo C1?",
+                options: [
+                    "a) 14-22.",
+                    "b) 16-24.",
+                    "c) 18-26.",
+                    "d) 20-28."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuánto tiempo se requiere haber desempeñado uno o más puestos de nivel superior en más de dos niveles al suyo para consolidar el grado personal correspondiente al nivel del puesto superior?",
+                options: [
+                    "a) Un año continuado.",
+                    "b) Dos años continuados o tres con interrupción.",
+                    "c) Tres años continuados o cinco con interrupción.",
+                    "d) No se puede consolidar."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes es una falta muy grave relacionada con los procedimientos selectivos?",
+                options: [
+                    "a) La participación en tribunales de selección de forma objetiva.",
+                    "b) El fraude, la deslealtad, el abuso de autoridad en el ejercicio de las funciones.",
+                    "c) La realización de actividades docentes en procesos selectivos.",
+                    "d) La colaboración en la elaboración de bases de convocatoria."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué sanción es la más grave para un funcionario de carrera?",
+                options: [
+                    "a) Suspensión firme de funciones.",
+                    "b) Traslado forzoso.",
+                    "c) Separación del servicio.",
+                    "d) Apercibimiento."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el plazo de prescripción para las sanciones impuestas por faltas leves?",
+                options: [
+                    "a) 6 meses.",
+                    "b) 1 año.",
+                    "c) 2 años.",
+                    "d) 3 años."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿En qué plazo se puede solicitar la cancelación de anotaciones disciplinarias por faltas muy graves?",
+                options: [
+                    "a) A los 2 años desde el cumplimiento de la sanción.",
+                    "b) A los 4 años desde el cumplimiento de la sanción.",
+                    "c) A los 6 años desde el cumplimiento de la sanción.",
+                    "d) A los 10 años desde el cumplimiento de la sanción."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la titulación requerida para el Subgrupo C2?",
+                options: [
+                    "a) Graduado Escolar o equivalente.",
+                    "b) Bachiller o Técnico.",
+                    "c) Diplomado.",
+                    "d) Licenciado."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Qué ocurre con las pagas extraordinarias si el tiempo de servicios prestados es inferior a la totalidad del período correspondiente a las mismas?",
+                options: [
+                    "a) Se perciben íntegras.",
+                    "b) Se reducen en una cuantía proporcional.",
+                    "c) Se abonan en el siguiente periodo.",
+                    "d) Se pierden por completo."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Quién aprueba el calendario laboral para los empleados públicos?",
+                options: [
+                    "a) El Ministerio de Hacienda y Función Pública.",
+                    "b) Los órganos de gobierno de las correspondientes Administraciones Públicas.",
+                    "c) Los representantes sindicales.",
+                    "d) El director de cada centro de trabajo."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Si un funcionario ha agotado la edad máxima para la prolongación en el servicio activo, ¿qué ocurre?",
+                options: [
+                    "a) Pasa a la situación de excedencia.",
+                    "b) Se le declara jubilado forzosamente.",
+                    "c) Puede optar por un contrato laboral.",
+                    "d) Se le aplica una prórroga excepcional."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Quién fija las retribuciones complementarias de los funcionarios?",
+                options: [
+                    "a) Las Leyes de Presupuestos de cada Administración Pública.",
+                    "b) El Consejo de Ministros.",
+                    "c) Los órganos de personal de cada Ministerio.",
+                    "d) La negociación colectiva."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuál es el nivel mínimo y máximo del Subgrupo C2?",
+                options: [
+                    "a) 10-18.",
+                    "b) 12-20.",
+                    "c) 14-22.",
+                    "d) 16-24."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el plazo de reingreso al servicio activo para un funcionario en excedencia voluntaria por interés particular?",
+                options: [
+                    "a) Un mes desde la solicitud.",
+                    "b) Está supeditado a la existencia de puesto vacante.",
+                    "c) Seis meses desde la solicitud.",
+                    "d) Un año."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿En qué situación administrativa se encuentra un funcionario que es designado miembro de un Tribunal Constitucional?",
+                options: [
+                    "a) Servicio activo.",
+                    "b) Servicios especiales.",
+                    "c) Excedencia.",
+                    "d) Suspensión de funciones."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué ley se aplica supletoriamente al personal investigador de las Administraciones Públicas?",
+                options: [
+                    "a) La Ley de la Ciencia.",
+                    "b) El TREBEP.",
+                    "c) El Estatuto de los Trabajadores.",
+                    "d) Su legislación específica exclusivamente."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué ocurre con la antigüedad en la Administración para un funcionario en excedencia voluntaria por agrupación familiar?",
+                options: [
+                    "a) Se computa totalmente.",
+                    "b) Se computa parcialmente.",
+                    "c) No se computa a ningún efecto.",
+                    "d) Depende de la legislación de cada Administración."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de las siguientes causas de jubilación es siempre de oficio?",
+                options: [
+                    "a) Jubilación voluntaria.",
+                    "b) Jubilación por incapacidad permanente para el servicio.",
+                    "c) Jubilación forzosa por edad.",
+                    "d) Jubilación parcial."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué tipo de funciones corresponden al personal eventual?",
+                options: [
+                    "a) Funciones de gestión.",
+                    "b) Funciones de confianza o asesoramiento especial.",
+                    "c) Funciones de carácter permanente.",
+                    "d) Funciones de sustitución de titulares."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué tipo de pruebas NO pueden ser causa de discriminación en los procesos selectivos?",
+                options: [
+                    "a) Las pruebas de aptitud física.",
+                    "b) Las pruebas que no evalúen la capacidad funcional para el desempeño de las tareas.",
+                    "c) Las pruebas psicológicas.",
+                    "d) Las pruebas de conocimientos."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿En qué situación administrativa se declara al funcionario que, como consecuencia de expediente disciplinario o resolución judicial, es privado temporalmente del ejercicio de sus funciones?",
+                options: [
+                    "a) Excedencia forzosa.",
+                    "b) Suspensión de funciones.",
+                    "c) Servicio en prácticas.",
+                    "d) Servicios especiales."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cómo se regula el tiempo de trabajo, las jornadas y horarios del personal?",
+                options: [
+                    "a) Por el Estatuto Básico del Empleado Público.",
+                    "b) Por las normas que dicte el Estado o las Comunidades Autónomas.",
+                    "c) Por el convenio colectivo del personal laboral.",
+                    "d) Por decisión de cada organismo."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre carrera horizontal y carrera vertical?",
+                options: [
+                    "a) La carrera horizontal implica cambio de puesto, la vertical no.",
+                    "b) La carrera horizontal implica ascenso sin cambiar de puesto, la vertical ascenso en la estructura de puestos.",
+                    "c) La carrera horizontal es para laborales, la vertical para funcionarios.",
+                    "d) La carrera horizontal no existe en el TREBEP."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el complemento retributivo por pagas extraordinarias?",
+                options: [
+                    "a) Sueldo, trienios y el 70% del complemento de destino.",
+                    "b) Sueldo, trienios y el 100% del complemento de destino.",
+                    "c) Sueldo, trienios y complemento específico.",
+                    "d) Solo sueldo y trienios."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Qué permiso se concede por el tiempo indispensable para el cumplimiento de un deber inexcusable de carácter público y personal?",
+                options: [
+                    "a) Permiso por asuntos particulares.",
+                    "b) Permiso por deber inexcusable.",
+                    "c) Permiso sin sueldo.",
+                    "d) Permiso por colaboración cívica."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Si la excedencia por cuidado de familiares se solicita por el cuidado de un familiar con discapacidad, ¿hay prórroga automática de la reserva del puesto?",
+                options: [
+                    "a) No.",
+                    "b) Sí, hasta 18 meses adicionales.",
+                    "c) Sí, hasta 24 meses adicionales.",
+                    "d) Sí, hasta 30 meses adicionales."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cómo deben actuar los empleados públicos en el desempeño de sus funciones?",
+                options: [
+                    "a) De forma subjetiva e interesada.",
+                    "b) De forma objetiva, sin prejuicios y con la debida diligencia.",
+                    "c) De forma personal y discrecional.",
+                    "d) De forma rápida, sin importar el rigor."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Quién puede declarar la situación de excedencia voluntaria por interés particular?",
+                options: [
+                    "a) La Administración, a propuesta del funcionario.",
+                    "b) El funcionario, previa solicitud y cumplimiento de requisitos.",
+                    "c) El Consejo de Ministros.",
+                    "d) El Ministro competente."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el requisito de antigüedad para acceder a la excedencia voluntaria por interés particular?",
+                options: [
+                    "a) Haber prestado servicios durante al menos 1 año.",
+                    "b) Haber prestado servicios durante al menos 2 años.",
+                    "c) Haber prestado servicios durante al menos 5 años.",
+                    "d) Haber prestado servicios durante al menos 10 años."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el efecto de la sanción de separación del servicio en la condición de funcionario?",
+                options: [
+                    "a) Pérdida temporal de la condición de funcionario.",
+                    "b) Pérdida definitiva de la condición de funcionario.",
+                    "c) Suspensión de empleo y sueldo.",
+                    "d) Traslado forzoso."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿En qué Subgrupo se clasifican los Cuerpos o Escalas para cuyo ingreso se exige estar en posesión del título de Bachiller o Técnico?",
+                options: [
+                    "a) A1.",
+                    "b) A2.",
+                    "c) C1.",
+                    "d) C2."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué órgano aprueba las plantillas de personal en cada Administración Pública?",
+                options: [
+                    "a) El Congreso de los Diputados.",
+                    "b) El Gobierno o los órganos de gobierno de las Comunidades Autónomas y Entidades Locales.",
+                    "c) El Ministerio de Hacienda y Función Pública.",
+                    "d) El Consejo de Ministros."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cómo se denominan las retribuciones que retribuyen servicios extraordinarios realizados fuera de la jornada normal de trabajo?",
+                options: [
+                    "a) Complemento de productividad.",
+                    "b) Gratificaciones.",
+                    "c) Servicios especiales.",
+                    "d) Complemento de destino."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuántos días de permiso corresponden por matrimonio o registro de pareja de hecho si es en localidad distinta?",
+                options: [
+                    "a) 15 días.",
+                    "b) 20 días.",
+                    "c) 25 días.",
+                    "d) No se especifica distinción por localidad en el documento para este permiso."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Cuál es el plazo de disfrute del permiso por lactancia si se opta por acumularlo en jornadas completas?",
+                options: [
+                    "a) Debe disfrutarse antes de que el hijo cumpla 6 meses.",
+                    "b) Debe disfrutarse antes de que el hijo cumpla 9 meses.",
+                    "c) Debe disfrutarse antes de que el hijo cumpla 12 meses.",
+                    "d) No hay límite de tiempo."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué principio rige la selección del personal laboral?",
+                options: [
+                    "a) Mérito y capacidad.",
+                    "b) Publicidad y libre concurrencia.",
+                    "c) Desigualdad de oportunidades.",
+                    "d) Ambas a) y b) son correctas."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Cuál es el plazo máximo para la finalización de un proceso selectivo, salvo causa justificada?",
+                options: [
+                    "a) 6 meses.",
+                    "b) 1 año.",
+                    "c) 2 años.",
+                    "d) No se especifica en el documento."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué ley regula el personal investigador de las Universidades Públicas?",
+                options: [
+                    "a) El TREBEP.",
+                    "b) La Ley Orgánica de Universidades.",
+                    "c) Ambas, de forma coordinada.",
+                    "d) Ninguna de las anteriores."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué ocurre con el nombramiento de funcionarios interinos que se realizan para la ejecución de programas de carácter temporal si se supera el plazo máximo legal?",
+                options: [
+                    "a) Se convierten en funcionarios de carrera.",
+                    "b) Se convierten en personal laboral fijo.",
+                    "c) El nombramiento se considerará nulo.",
+                    "d) Se les aplica una sanción."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿En qué situación administrativa se encuentra un funcionario que es nombrado Ministro?",
+                options: [
+                    "a) Servicio activo.",
+                    "b) Servicios especiales.",
+                    "c) Excedencia forzosa.",
+                    "d) Suspensión de funciones."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Si un funcionario que ha sido declarado en situación de suspensión de funciones es absuelto o el expediente disciplinario no declara su responsabilidad, ¿qué ocurre con el tiempo de suspensión?",
+                options: [
+                    "a) Se convierte en excedencia voluntaria.",
+                    "b) Se le devuelve la totalidad de las retribuciones.",
+                    "c) Se considera tiempo de servicio activo.",
+                    "d) Se le indemniza por los perjuicios causados."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un deber de los empleados públicos según el Código de Conducta?",
+                options: [
+                    "a) Tratar a los ciudadanos con respeto.",
+                    "b) Atender al público personalmente.",
+                    "c) Actuar de acuerdo con los principios de buena fe y confianza legítima.",
+                    "d) Observar el principio de neutralidad."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la clasificación del personal de la Policía Local?",
+                options: [
+                    "a) Personal laboral.",
+                    "b) Funcionarios de carrera.",
+                    "c) Personal eventual.",
+                    "d) Personal estatutario."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se entiende por “eficiencia” en el código de conducta?",
+                options: [
+                    "a) El uso adecuado de los recursos públicos, optimizando su rendimiento.",
+                    "b) La rapidez en la toma de decisiones.",
+                    "c) La flexibilidad en la aplicación de la normativa.",
+                    "d) La satisfacción de los intereses particulares."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Qué ocurre si un funcionario supera el límite máximo de edad para la prolongación en el servicio activo?",
+                options: [
+                    "a) Puede seguir trabajando con un contrato especial.",
+                    "b) Pasa obligatoriamente a la situación de jubilación forzosa.",
+                    "c) Se le otorga una prórroga por un año más.",
+                    "d) Puede solicitar una excedencia especial."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el plazo para la toma de posesión del puesto de trabajo si el nombramiento de un funcionario implica cambio de residencia?",
+                options: [
+                    "a) 3 días hábiles.",
+                    "b) 5 días hábiles.",
+                    "c) 8 días hábiles.",
+                    "d) 1 mes."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Cuál es la finalidad de las gratificaciones?",
+                options: [
+                    "a) Remunerar la dificultad técnica.",
+                    "b) Remunerar la dedicación o incompatibilidad.",
+                    "c) Remunerar servicios extraordinarios fuera de la jornada normal.",
+                    "d) Remunerar el rendimiento del puesto."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué derecho no tienen los funcionarios interinos?",
+                options: [
+                    "a) El derecho a la negociación colectiva.",
+                    "b) El derecho a la carrera profesional.",
+                    "c) El derecho a vacaciones.",
+                    "d) El derecho a permisos."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿En qué caso el periodo de reserva del puesto en excedencia por cuidado de familiares puede ampliarse?",
+                options: [
+                    "a) Si el funcionario tiene más de 2 hijos.",
+                    "b) Si el familiar a cuidar tiene una discapacidad.",
+                    "c) Si la duración de la excedencia supera los 2 años.",
+                    "d) Siempre, por cualquier causa justificada."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cómo se denomina al sistema de provisión de puestos de trabajo por el cual la autoridad que nombra tiene discrecionalidad para elegir al candidato, entre los que reúnan el perfil?",
+                options: [
+                    "a) Concurso.",
+                    "b) Concurso-oposición.",
+                    "c) Libre designación.",
+                    "d) Adscripción provisional."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué tipo de personal de las Administraciones Públicas se rige por el derecho laboral?",
+                options: [
+                    "a) Funcionarios de carrera.",
+                    "b) Personal eventual.",
+                    "c) Personal laboral.",
+                    "d) Funcionarios interinos."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes es un principio ético del código de conducta?",
+                options: [
+                    "a) Interés particular.",
+                    "b) Discrecionalidad absoluta.",
+                    "c) Transparencia.",
+                    "d) Parcialidad."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la edad máxima del menor para el permiso por lactancia?",
+                options: [
+                    "a) 6 meses.",
+                    "b) 9 meses.",
+                    "c) 12 meses.",
+                    "d) 18 meses."
+                ],
+                correctAnswer: "c)"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Para almacenar las respuestas seleccionadas por el usuario
+        const LOCAL_STORAGE_KEY = 'trebepTestProgress';
+
+        const questionTextElement = document.getElementById('questionText');
+        const optionsContainerElement = document.getElementById('optionsContainer');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const resetButton = document.getElementById('resetButton');
+        const feedbackMessageElement = document.getElementById('feedbackMessage');
+
+        // Cargar progreso desde Local Storage
+        function loadProgress() {
+            const savedProgress = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedProgress) {
+                const { index, answers } = JSON.parse(savedProgress);
+                currentQuestionIndex = index;
+                userAnswers = answers;
+            }
+        }
+
+        // Guardar progreso en Local Storage
+        function saveProgress() {
+            const progress = {
+                index: currentQuestionIndex,
+                answers: userAnswers
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
+        }
+
+        // Mostrar la pregunta actual
+        function displayQuestion() {
+            const questionData = questions[currentQuestionIndex];
+            questionTextElement.textContent = questionData.question;
+            optionsContainerElement.innerHTML = '';
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.className = 'feedback-message'; // Reset classes
+
+            questionData.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.dataset.option = option.split(')')[0] + ')'; // Extract 'a)', 'b)', etc.
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainerElement.appendChild(button);
+            });
+
+            // Si ya hay una respuesta seleccionada para esta pregunta, mostrarla
+            const selectedOption = userAnswers[currentQuestionIndex];
+            if (selectedOption) {
+                const buttons = optionsContainerElement.querySelectorAll('button');
+                buttons.forEach(button => {
+                    button.disabled = true; // Disable all options after an answer is selected
+                    if (button.textContent === selectedOption) {
+                        button.classList.add('selected');
+                    }
+                    if (button.dataset.option === questionData.correctAnswer) {
+                        button.classList.add('correct');
+                    } else if (button.textContent === selectedOption && button.dataset.option !== questionData.correctAnswer) {
+                        button.classList.add('incorrect');
+                    }
+                });
+                showFeedback(selectedOption, questionData.correctAnswer);
+            }
+
+            updateNavigationButtons();
+            updateProgressBar();
+        }
+
+        // Seleccionar una respuesta
+        function selectAnswer(selectedButton, selectedOptionText) {
+            const questionData = questions[currentQuestionIndex];
+            const correctOption = questionData.correctAnswer;
+            const selectedOption = selectedButton.dataset.option;
+
+            // Deshabilitar todos los botones de opción
+            const buttons = optionsContainerElement.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.disabled = true;
+                button.classList.remove('selected'); // Remove selected class from previous if any
+            });
+
+            // Marcar la opción seleccionada
+            selectedButton.classList.add('selected');
+
+            // Mostrar la respuesta correcta e incorrecta si aplica
+            buttons.forEach(button => {
+                if (button.dataset.option === correctOption) {
+                    button.classList.add('correct');
+                } else if (button.dataset.option === selectedOption && selectedOption !== correctOption) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            // Guardar la respuesta del usuario
+            userAnswers[currentQuestionIndex] = selectedOptionText;
+            saveProgress();
+            showFeedback(selectedOption, correctOption);
+        }
+
+        // Mostrar feedback de la respuesta
+        function showFeedback(selectedOption, correctOption) {
+            if (selectedOption === correctOption) {
+                feedbackMessageElement.textContent = '¡Correcto!';
+                feedbackMessageElement.classList.add('correct');
+                feedbackMessageElement.classList.remove('incorrect');
+            } else {
+                feedbackMessageElement.textContent = 'Incorrecto. La respuesta correcta es ' + correctOption;
+                feedbackMessageElement.classList.add('incorrect');
+                feedbackMessageElement.classList.remove('correct');
+            }
+        }
+
+        // Actualizar botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+        }
+
+        // Actualizar barra de progreso
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+        }
+
+        // Navegar a la pregunta anterior
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+                saveProgress();
+            }
+        });
+
+        // Navegar a la siguiente pregunta
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+                saveProgress();
+            }
+        });
+
+        // Reiniciar el test
+        resetButton.addEventListener('click', () => {
+            // Using a custom modal for confirmation
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background-color: white;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+            `;
+            const message = document.createElement('p');
+            message.textContent = '¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.';
+            message.style.cssText = 'margin-bottom: 20px; font-size: 1.1rem; color: #333;';
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = 'display: flex; justify-content: space-around;';
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = 'Sí, Reiniciar';
+            confirmBtn.style.cssText = `
+                background-color: #ef4444;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 1rem;
+                cursor: pointer;
+                border: none;
+                transition: background-color 0.3s ease;
+            `;
+            confirmBtn.onmouseover = () => confirmBtn.style.backgroundColor = '#dc2626';
+            confirmBtn.onmouseout = () => confirmBtn.style.backgroundColor = '#ef4444';
+            confirmBtn.onclick = () => {
+                currentQuestionIndex = 0;
+                userAnswers = [];
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                displayQuestion();
+                document.body.removeChild(modal);
+            };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancelar';
+            cancelBtn.style.cssText = `
+                background-color: #6b7280;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 1rem;
+                cursor: pointer;
+                border: none;
+                transition: background-color 0.3s ease;
+            `;
+            cancelBtn.onmouseover = () => cancelBtn.style.backgroundColor = '#4b5563';
+            cancelBtn.onmouseout = () => cancelBtn.style.backgroundColor = '#6b7280';
+            cancelBtn.onclick = () => {
+                document.body.removeChild(modal);
+            };
+
+            buttonContainer.appendChild(confirmBtn);
+            buttonContainer.appendChild(cancelBtn);
+            modalContent.appendChild(message);
+            modalContent.appendChild(buttonContainer);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+        });
+
+        // Inicializar el test al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
+            displayQuestion();
+        });
+    </script>
+</body>
+</html>

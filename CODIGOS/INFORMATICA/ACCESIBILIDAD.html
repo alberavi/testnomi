@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Accesibilidad Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #334155; /* Darker text for readability */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            padding: 2.5rem;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 2rem;
+        }
+        .question-card {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0; /* Light border for separation */
+        }
+        .question-card:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .question-text {
+            font-size: 1.3rem; /* Slightly larger font for questions */
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1e293b; /* Even darker for questions */
+        }
+        .answer-button {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            background-color: #e0f2fe; /* Light blue button */
+            color: #0c4a6e; /* Dark blue text */
+            border: 2px solid #90cdf4; /* Blue border */
+            border-radius: 0.75rem; /* Rounded button corners */
+            text-align: left;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Subtle button shadow */
+        }
+        .answer-button:hover {
+            background-color: #bfdbfe; /* Lighter blue on hover */
+            border-color: #60a5fa; /* Darker blue border on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+        }
+        .answer-button.correct {
+            background-color: #d1fae5; /* Green for correct */
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .answer-button.incorrect {
+            background-color: #fee2e2; /* Red for incorrect */
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .solution-text {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            color: #4b5563; /* Gray text for solution */
+            background-color: #f8fafc; /* Lighter background for solution */
+            border: 1px solid #e2e8f0;
+            display: none; /* Hidden by default */
+        }
+        .solution-text.show {
+            display: block;
+        }
+        .solution-text.correct-solution {
+            background-color: #ecfdf5; /* Light green for correct solution */
+            border-color: #a7f3d0;
+            color: #065f46;
+        }
+        .solution-text.incorrect-solution {
+            background-color: #fef2f2; /* Light red for incorrect solution */
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 1.5rem;
+                margin-top: 1rem;
+            }
+            .question-text {
+                font-size: 1.1rem;
+            }
+            .answer-button {
+                font-size: 1rem;
+                padding: 0.8rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Test de Accesibilidad Web</h1>
+        <div id="quiz-content"></div>
+    </div>
+
+    <script>
+        // Define the quiz questions and their correct answers with explanations
+        const quizData = [
+            {
+                question: "¿Qué conjunto de pautas de la W3C define la accesibilidad para páginas con una interfaz compleja, con muchos elementos gráficos de datos como árboles, elementos colapsables o widgets?",
+                options: ["a) UAAG 2.0", "b) ATAG 2.0", "c) ARIA 1.2", "d) WCAG 2.2"],
+                correctAnswer: "c) ARIA 1.2",
+                explanation: "ARIA (Accessible Rich Internet Applications) 1.2 define cómo hacer que el contenido web dinámico y los componentes de la interfaz de usuario avanzados sean más accesibles."
+            },
+            {
+                question: "Según las normas WAI, ¿cuál de las siguientes es una característica de un \"user agent\"?",
+                options: ["a) Un editor HTML WYSIWYG", "b) Un CMS", "c) Un navegador web", "d) Un procesador de texto con opción \"Guardar como HTML\""],
+                correctAnswer: "c) Un navegador web",
+                explanation: "Un 'user agent' es cualquier software que recupera, renderiza y facilita la interacción del usuario con el contenido web, siendo el navegador web el ejemplo más común."
+            },
+            {
+                question: "¿Qué principio de las WCAG se refiere a que la información y los componentes de la interfaz de usuario deben presentarse de formas que los usuarios puedan entender?",
+                options: ["a) Operable", "b) Comprensible", "c) Perceptible", "d) Robusto"],
+                correctAnswer: "c) Perceptible",
+                explanation: "El principio 'Perceptible' asegura que la información y los componentes de la interfaz de usuario se presenten de manera que los usuarios puedan percibirlos, incluso si tienen discapacidades."
+            },
+            {
+                question: "¿Cuántos principios componen las \"Authoring Tool Accessibility Guidelines\" (ATAG 2.0)?",
+                options: ["a) 4", "b) 5", "c) 2 (cada una con 4 principios)", "d) 8"],
+                correctAnswer: "c) 2 (cada una con 4 principios)",
+                explanation: "ATAG 2.0 se compone de dos partes, cada una con cuatro principios, sumando un total de 8 principios."
+            },
+            {
+                question: "¿Cuál de los siguientes atributos HTML se utiliza para definir zonas funcionales en un documento, conocidas como Land Marks, según WAI-ARIA?",
+                options: ["a) tabindex", "b) aria-live", "c) role", "d) aria-expanded"],
+                correctAnswer: "c) role",
+                explanation: "El atributo 'role' en WAI-ARIA se utiliza para definir la función o el 'rol' de un elemento en la interfaz de usuario, como 'main', 'navigation', 'banner', etc., que son conocidos como Land Marks."
+            },
+            {
+                question: "¿Qué establece la norma WCAG 2.2?",
+                options: ["a) Las reglas para evaluar la conformidad de los sistemas de evaluación.", "b) El formato de los resultados de una evaluación de accesibilidad.", "c) La accesibilidad referida al contenido web en sí mismo.", "d) Las normas que deben cumplir los user agents."],
+                correctAnswer: "c) La accesibilidad referida al contenido web en sí mismo.",
+                explanation: "Las WCAG (Web Content Accessibility Guidelines) se centran en hacer que el contenido web sea accesible para personas con discapacidad."
+            },
+            {
+                question: "Según las WCAG, ¿qué requisito se refiere a la necesidad de proporcionar alternativas sincronizadas para contenidos multimedia dependientes del tiempo?",
+                options: ["a) Texto alternativo", "b) Adaptable", "c) Distinguible", "d) Contenido multimedia dependiente del tiempo"],
+                correctAnswer: "d) Contenido multimedia dependiente del tiempo",
+                explanation: "Este requisito específico trata sobre la provisión de alternativas para medios como audio y video pregrabados."
+            },
+            {
+                question: "Si un sitio web cumple con el Nivel AA de conformidad de las WCAG, ¿qué implica esto en términos de criterios?",
+                options: ["a) Debe satisfacer los 30 criterios del Nivel A.", "b) Debe satisfacer los 50 criterios (30 de A y 20 de AA).", "c) Debe satisfacer los 78 criterios (30 de A, 20 de AA y 28 de AAA).", "d) No tiene relación con los criterios del Nivel A."],
+                correctAnswer: "b) Debe satisfacer los 50 criterios (30 de A y 20 de AA).",
+                explanation: "Los niveles de conformidad de las WCAG son acumulativos. Para alcanzar el Nivel AA, se deben cumplir todos los criterios del Nivel A y del Nivel AA."
+            },
+            {
+                question: "¿Cuál es el propósito del atributo aria-live en WAI-ARIA?",
+                options: ["a) Definir la estructura semántica del documento.", "b) Permitir la navegación mediante teclado.", "c) Informar de áreas que se actualizan dinámicamente.", "d) Indicar el estado de los widgets."],
+                correctAnswer: "c) Informar de áreas que se actualizan dinámicamente.",
+                explanation: "El atributo 'aria-live' se utiliza para indicar a las tecnologías de asistencia que ciertas regiones del contenido se actualizan dinámicamente y que los cambios deben ser anunciados al usuario."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un principio fundamental de la accesibilidad web según las WCAG?",
+                options: ["a) Perceptible", "b) Operable", "c) Eficiente", "d) Comprensible"],
+                correctAnswer: "c) Eficiente",
+                explanation: "Los cuatro principios fundamentales de las WCAG son Perceptible, Operable, Comprensible y Robusto (POUR)."
+            },
+            {
+                question: "¿Qué norma se refiere a cómo deben ser las reglas a evaluar y el formato de las reglas de los sistemas de evaluación que realizan los test de conformidad?",
+                options: ["a) EARL", "b) ACT", "c) UAAG", "d) ATAG"],
+                correctAnswer: "b) ACT",
+                explanation: "ACT (Accessibility Conformance Testing) Rules Format define un formato para las reglas de prueba de accesibilidad."
+            },
+            {
+                question: "¿Qué significa el principio \"Robusto\" en el contexto de las WCAG?",
+                options: ["a) Que el contenido debe ser fácilmente comprensible para el usuario.", "b) Que los componentes de la interfaz deben ser manejables.", "c) Que el contenido debe poder ser interpretado por una variedad de user agents.", "d) Que la información debe ser presentada en diferentes formas."],
+                correctAnswer: "c) Que el contenido debe poder ser interpretado por una variedad de user agents.",
+                explanation: "El principio 'Robusto' asegura que el contenido sea lo suficientemente robusto como para ser interpretado de manera fiable por una amplia variedad de user agents, incluyendo tecnologías de asistencia."
+            },
+            {
+                question: "¿Cuál de los siguientes elementos es un ejemplo de \"herramienta de autor\" según las ATAG 2.0?",
+                options: ["a) Un lector de pantalla", "b) Un navegador web", "c) Un CMS (Sistema de Gestión de Contenidos)", "d) Un magnificador de pantalla"],
+                correctAnswer: "c) Un CMS (Sistema de Gestión de Contenidos)",
+                explanation: "ATAG 2.0 se aplica a las 'herramientas de autor', que son programas o servicios que se utilizan para crear o modificar contenido web, como los CMS."
+            },
+            {
+                question: "¿Qué establece la norma EARL?",
+                options: ["a) Las normas que deben cumplir los user agents.", "b) Las normas que deben seguir las herramientas de autor.", "c) El formato de los resultados de una evaluación de accesibilidad.", "d) La accesibilidad para páginas con interfaz compleja."],
+                correctAnswer: "c) El formato de los resultados de una evaluación de accesibilidad.",
+                explanation: "EARL (Evaluation and Report Language) es un formato para expresar los resultados de las pruebas de accesibilidad."
+            },
+            {
+                question: "Según las WCAG, ¿cuál de los siguientes requisitos se relaciona con \"tiempo suficiente\"?",
+                options: ["a) Controlar todas las funciones desde el teclado.", "b) No diseñar contenido que pueda causar ataques epilépticos.", "c) Proporcionar tiempo suficiente para leer y utilizar el contenido.", "d) Ayudar a los usuarios a navegar y buscar contenido."],
+                correctAnswer: "c) Proporcionar tiempo suficiente para leer y utilizar el contenido.",
+                explanation: "El criterio de éxito 'Tiempo suficiente' asegura que los usuarios tengan suficiente tiempo para interactuar con el contenido, especialmente aquellos con discapacidades cognitivas o motoras."
+            },
+            {
+                question: "¿Qué Real Decreto español transpone la Directiva Europea 2016/2102 sobre accesibilidad?",
+                options: ["a) Real Decreto 1112/2018", "b) Real Decreto 1524/2018", "c) Real Decreto 2102/2016", "d) Real Decreto 301549/2022"],
+                correctAnswer: "a) Real Decreto 1112/2018",
+                explanation: "El Real Decreto 1112/2018 es la transposición española de la Directiva (UE) 2016/2102 sobre la accesibilidad de los sitios web y aplicaciones para dispositivos móviles de los organismos del sector público."
+            },
+            {
+                question: "¿Cuál es el nivel de conformidad AA que deben cumplir los sitios web y aplicaciones para dispositivos móviles según la normativa técnica española (EN 301 549)?",
+                options: ["a) A", "b) AA", "c) AAA", "d) No se especifica un nivel."],
+                correctAnswer: "b) AA",
+                explanation: "La normativa española exige el cumplimiento del Nivel AA de las WCAG 2.1."
+            },
+            {
+                question: "¿A partir de qué fecha entró en vigor la normativa de accesibilidad para los sitios web, según el Real Decreto 1112/2018?",
+                options: ["a) 23/06/2021", "b) 23/09/2019", "c) 20/09/2018", "d) La fecha no se menciona."],
+                correctAnswer: "c) 20/09/2018",
+                explanation: "El Real Decreto 1112/2018 entró en vigor el 20 de septiembre de 2018."
+            },
+            {
+                question: "¿Cuál de los siguientes contenidos  no  se considera una excepción a la aplicación de la normativa de accesibilidad, si la carga es desproporcionada?",
+                options: ["a) Falta de prioridad", "b) Carga financiera excesiva", "c) Carga organizativa excesiva", "d) Compromiso de la capacidad para cumplir el cometido"],
+                correctAnswer: "a) Falta de prioridad",
+                explanation: "Las excepciones por carga desproporcionada se refieren a impedimentos financieros u organizativos, no a una falta de prioridad."
+            },
+            {
+                question: "¿Qué tipo de entidades  no  están obligadas a cumplir la normativa de accesibilidad según el Real Decreto 1112/2018?",
+                options: ["a) AGE/CCAA/EELL", "b) Empresas con menos de 50 empleados y que facturen menos de 3 millones de euros", "c) Centros privados educativos sostenidos total o parcialmente con fondos públicos", "d) Sitios web vinculados a la prestación de servicios públicos"],
+                correctAnswer: "b) Empresas con menos de 50 empleados y que facturen menos de 3 millones de euros",
+                explanation: "La obligatoriedad es para empresas con más de 100 empleados o que facturen más de 6 millones de euros. Por lo tanto, el caso contrario no está obligado."
+            },
+            {
+                question: "¿Qué información  no  es obligatoria incluir en la declaración de accesibilidad?",
+                options: ["a) Explicación sobre las partes no accesibles, razones y alternativas.", "b) Enlace y descripción del mecanismo de comunicación.", "c) El nombre del responsable de la unidad de accesibilidad.", "d) Enlace al procedimiento de reclamación."],
+                correctAnswer: "c) El nombre del responsable de la unidad de accesibilidad.",
+                explanation: "La normativa no exige el nombre del responsable de la unidad de accesibilidad en la declaración."
+            },
+            {
+                question: "¿Con qué frecuencia mínima debe ser revisada y actualizada la declaración de accesibilidad?",
+                options: ["a) Cada 3 años", "b) Cada 2 años", "c) Anualmente", "d) Cuando haya cambios significativos en el sitio."],
+                correctAnswer: "c) Anualmente",
+                explanation: "La declaración de accesibilidad debe ser revisada y actualizada anualmente."
+            },
+            {
+                question: "¿Qué organismo es responsable de designar la unidad responsable de accesibilidad?",
+                options: ["a) ENAC", "b) MAETD", "c) La propia entidad obligada", "d) El Defensor del Pueblo"],
+                correctAnswer: "c) La propia entidad obligada",
+                explanation: "Cada entidad obligada es responsable de designar su propia unidad responsable de accesibilidad."
+            },
+            {
+                question: "¿Cuál de las siguientes es una función de la unidad responsable de accesibilidad?",
+                options: ["a) Certificar la accesibilidad de los sitios web.", "b) Realizar pruebas automatizadas de accesibilidad.", "c) Atender quejas, consultas y sugerencias sobre accesibilidad.", "d) Elaborar el informe de seguimiento para Europa."],
+                correctAnswer: "c) Atender quejas, consultas y sugerencias sobre accesibilidad.",
+                explanation: "Entre las funciones de la unidad responsable de accesibilidad se encuentra la de atender las comunicaciones de los usuarios."
+            },
+            {
+                question: "¿Cuál es el método de seguimiento de la accesibilidad que aplica solo a sitios web y utiliza un subconjunto de requisitos y pruebas automatizadas realizadas por el MAETD?",
+                options: ["a) Metodología en Profundidad", "b) Método Simplificado", "c) Evaluación de la Muestra", "d) Auditoría de Conformidad"],
+                correctAnswer: "b) Método Simplificado",
+                explanation: "El método simplificado se utiliza para un seguimiento rápido y automatizado de un gran número de sitios web."
+            },
+            {
+                question: "¿Con qué frecuencia se presenta el reporte periódico del MAETD a Europa sobre el cumplimiento de la accesibilidad?",
+                options: ["a) Anualmente", "b) Cada 2 años", "c) Cada 3 años", "d) No hay un plazo fijo."],
+                correctAnswer: "c) Cada 3 años",
+                explanation: "El reporte periódico a Europa se realiza cada tres años."
+            },
+            {
+                question: "¿Qué norma de la W3C se centra en las normas que deben cumplir los \"user agents\"?",
+                options: ["a) ATAG 2.0", "b) UAAG 2.0", "c) WCAG 2.2", "d) ARIA 1.2"],
+                correctAnswer: "b) UAAG 2.0",
+                explanation: "UAAG (User Agent Accessibility Guidelines) se enfoca en la accesibilidad de los navegadores web y otros 'user agents'."
+            },
+            {
+                question: "¿Qué significa que los niveles de conformidad A, AA y AAA de las WCAG son \"acumulativos\"?",
+                options: ["a) Se pueden cumplir parcialmente.", "b) Para alcanzar un nivel superior, se deben cumplir todos los criterios de los niveles inferiores.", "c) Solo se aplica el nivel más alto alcanzado.", "d) No tienen relación entre sí."],
+                correctAnswer: "b) Para alcanzar un nivel superior, se deben cumplir todos los criterios de los niveles inferiores.",
+                explanation: "La acumulatividad implica que para cumplir con un nivel superior, todos los requisitos de los niveles inferiores deben ser satisfechos."
+            },
+            {
+                question: "¿Qué formato de entrada especifican las reglas de los sistemas de evaluación para realizar los test de conformidad?",
+                options: ["a) EARL", "b) ACT", "c) ARIA", "d) WCAG"],
+                correctAnswer: "b) ACT",
+                explanation: "ACT (Accessibility Conformance Testing) define las reglas para los test de conformidad."
+            },
+            {
+                question: "¿Qué se entiende por \"región live o activa\" en WAI-ARIA?",
+                options: ["a) Una zona del documento que no cambia.", "b) Una región donde el contenido cambia sin intervención del usuario.", "c) Un elemento interactivo que requiere la acción del usuario.", "d) Una zona con muchos elementos gráficos de datos."],
+                correctAnswer: "b) Una región donde el contenido cambia sin intervención del usuario.",
+                explanation: "Las regiones live son áreas de la página cuyo contenido se actualiza sin que el usuario realice una acción explícita."
+            },
+            {
+                question: "¿Cuántas pautas y criterios de conformidad, respectivamente, se mencionan en las WCAG?",
+                options: ["a) 4 pautas y 13 criterios", "b) 13 pautas y 78 criterios", "c) 78 pautas y 13 criterios", "d) 4 pautas y 78 criterios"],
+                correctAnswer: "b) 13 pautas y 78 criterios",
+                explanation: "Las WCAG se estructuran en 4 principios, 13 pautas y 78 criterios de éxito."
+            },
+            {
+                question: "¿Qué principio de las WCAG se asegura de que el contenido pueda ser presentado de diferentes formas sin perder ni información ni estructura?",
+                options: ["a) Perceptible", "b) Operable", "c) Comprensible", "d) Robusto"],
+                correctAnswer: "a) Perceptible",
+                explanation: "El principio 'Perceptible' incluye la capacidad de presentar la información en diferentes modalidades sin perder significado."
+            },
+            {
+                question: "¿Qué tipo de contenido no textual requiere texto alternativo según el principio \"Perceptible\" de las WCAG?",
+                options: ["a) Imágenes", "b) Vídeos", "c) Audio", "d) Todas las anteriores"],
+                correctAnswer: "a) Imágenes",
+                explanation: "Las imágenes son el ejemplo más común de contenido no textual que requiere texto alternativo."
+            },
+            {
+                question: "¿Qué requisito de las WCAG busca facilitar a los usuarios ver y escuchar el contenido, incluyendo la distinción entre lo más y menos importante?",
+                options: ["a) Texto alternativo", "b) Contenido multimedia dependiente del tiempo", "c) Adaptable", "d) Distinguible"],
+                correctAnswer: "d) Distinguible",
+                explanation: "El criterio 'Distinguible' se refiere a la facilidad de separar el primer plano del fondo y de distinguir los diferentes elementos."
+            },
+            {
+                question: "¿Qué principio de las WCAG se enfoca en que los componentes de la interfaz de usuario y la navegación deben ser manejables, permitiendo la interacción?",
+                options: ["a) Perceptible", "b) Operable", "c) Comprensible", "d) Robusto"],
+                correctAnswer: "b) Operable",
+                explanation: "El principio 'Operable' garantiza que los usuarios puedan interactuar con la interfaz de usuario y navegar por el contenido."
+            },
+            {
+                question: "¿Qué requisito de las WCAG implica que todas las funciones deben poder controlarse desde el teclado?",
+                options: ["a) Tiempo suficiente", "b) Ataques epilépticos", "c) Navegación", "d) Teclado accesible"],
+                correctAnswer: "d) Teclado accesible",
+                explanation: "El criterio 'Teclado accesible' es fundamental para usuarios que no pueden usar un ratón."
+            },
+            {
+                question: "¿Cuál de las siguientes acciones se prohíbe en el diseño de contenido según las WCAG para evitar ataques epilépticos?",
+                options: ["a) Usar colores brillantes.", "b) Diseñar contenido con destellos o parpadeos.", "c) Incluir animaciones.", "d) Utilizar texto grande."],
+                correctAnswer: "b) Diseñar contenido con destellos o parpadeos.",
+                explanation: "Las WCAG prohíben el contenido que destella más de tres veces por segundo para prevenir ataques fotosensibles."
+            },
+            {
+                question: "¿Qué principio de las WCAG se centra en que la información y las operaciones de usuario deben ser entendibles?",
+                options: ["a) Perceptible", "b) Operable", "c) Comprensible", "d) Robusto"],
+                correctAnswer: "c) Comprensible",
+                explanation: "El principio 'Comprensible' asegura que la información y la forma de operar la interfaz sean entendibles."
+            },
+            {
+                question: "¿Qué requisito de las WCAG busca hacer la apariencia y la forma de utilizar las páginas web previsibles?",
+                options: ["a) Legible", "b) Asistencia a la entrada de datos", "c) Previsible", "d) Compatible"],
+                correctAnswer: "c) Previsible",
+                explanation: "El criterio 'Previsible' se refiere a la consistencia en la navegación y la interacción."
+            },
+            {
+                question: "¿Qué tipo de tecnología compatible con accesibilidad se menciona como ejemplo para cumplir los requisitos de conformidad?",
+                options: ["a) JPG", "b) HTML", "c) PDF", "d) MP3"],
+                correctAnswer: "c) PDF",
+                explanation: "Los documentos PDF pueden ser accesibles si se crean correctamente, siendo un formato común para compartir información."
+            },
+            {
+                question: "¿Qué es una \"declaración de conformidad\" en el contexto de la accesibilidad web?",
+                options: ["a) Un documento que certifica el cumplimiento de las normas.", "b) Un informe de evaluación.", "c) Una queja sobre accesibilidad.", "d) Un formulario de contacto."],
+                correctAnswer: "a) Un documento que certifica el cumplimiento de las normas.",
+                explanation: "La declaración de conformidad es un documento oficial que afirma que un sitio web o aplicación cumple con los estándares de accesibilidad."
+            },
+            {
+                question: "¿Qué metodología se utiliza para la evaluación de la accesibilidad, según el documento?",
+                options: ["a) WCAG-EM", "b) UNE-EN 301549:2022", "c) Real Decreto 1112/2018", "d) Directiva Europea 2016/2102"],
+                correctAnswer: "a) WCAG-EM",
+                explanation: "WCAG-EM (WCAG Evaluation Methodology) es la metodología recomendada para evaluar la conformidad con las WCAG."
+            },
+            {
+                question: "¿Cuál de las siguientes no es una etapa de la metodología WCAG-EM para la evaluación de la accesibilidad?",
+                options: ["a) Definir el alcance", "b) Explorar el sitio", "c) Implementar las correcciones", "d) Auditar la muestra"],
+                correctAnswer: "c) Implementar las correcciones",
+                explanation: "Implementar las correcciones es una acción posterior a la evaluación, no una etapa de la metodología de evaluación en sí."
+            },
+            {
+                question: "¿Qué servicio ofrece la Oficina de Accesibilidad Web (OAW) a las AAPP?",
+                options: ["a) Certificación de la accesibilidad por parte de la ENAC.", "b) Una revisión automática de accesibilidad y de la Declaración de accesibilidad.", "c) Formación en diseño web accesible.", "d) Un sistema de quejas y reclamaciones."],
+                correctAnswer: "b) Una revisión automática de accesibilidad y de la Declaración de accesibilidad.",
+                explanation: "La OAW ofrece herramientas y servicios para ayudar a las Administraciones Públicas a cumplir con la normativa."
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas se menciona como \"Lector de pantalla\"?",
+                options: ["a) LunarPlus", "b) AChecker", "c) Cynthia Says", "d) WAVE"],
+                correctAnswer: "a) LunarPlus",
+                explanation: "LunarPlus es una herramienta de asistencia para personas con baja visión, que incluye funciones de lector de pantalla."
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas se menciona como \"Magnificador\"?",
+                options: ["a) JAWS", "b) NVDA", "c) ZoomText", "d) Orca (GNOME)"],
+                correctAnswer: "c) ZoomText",
+                explanation: "ZoomText es un software de magnificación de pantalla y lector de pantalla para personas con baja visión."
+            },
+            {
+                question: "¿Qué distribución de Linux está especialmente diseñada para personas con ceguera o deficiencia visual?",
+                options: ["a) Ubuntu", "b) Fedora", "c) VINUX", "d) Debian"],
+                correctAnswer: "c) VINUX",
+                explanation: "VINUX es una distribución de Linux basada en Ubuntu, diseñada específicamente para personas con discapacidad visual."
+            },
+            {
+                question: "¿Qué Decisión de Ejecución Europea (Normativa Técnica) se menciona como parte de la transposición del Real Decreto 1112/2018?",
+                options: ["a) 2016/2102", "b) 2018/1524", "c) 301549", "d) No se menciona ninguna Decisión de Ejecución."],
+                correctAnswer: "b) 2018/1524",
+                explanation: "La Decisión de Ejecución (UE) 2018/1524 establece la metodología de seguimiento de la accesibilidad."
+            },
+            {
+                question: "¿Qué normativa técnica europea se recoge en la EN 301 549?",
+                options: ["a) La WCAG 2.1", "b) La WCAG 2.2", "c) La ARIA 1.2", "d) La UAAG 2.0"],
+                correctAnswer: "a) La WCAG 2.1",
+                explanation: "La EN 301 549 es una norma europea que incorpora los requisitos de las WCAG 2.1."
+            },
+            {
+                question: "¿A qué tipo de contenidos aplica la normativa española de accesibilidad?",
+                options: ["a) Solo contenidos textuales.", "b) Contenidos textuales y no textuales, documentos descargables y multimedia pregrabado.", "c) Exclusivamente sitios web de la Administración Pública.", "d) Únicamente formularios de interacción."],
+                correctAnswer: "b) Contenidos textuales y no textuales, documentos descargables y multimedia pregrabado.",
+                explanation: "La normativa cubre una amplia gama de contenidos para asegurar la accesibilidad completa."
+            },
+            {
+                question: "¿Qué se entiende por \"carga desproporcionada\" en el contexto de la accesibilidad?",
+                options: ["a) Una falta de tiempo o conocimientos para implementar la accesibilidad.", "b) Una carga financiera u organizativa excesiva que compromete la capacidad de la entidad.", "c) Un contenido que no se puede hacer accesible.", "d) Un motivo para no cumplir con la normativa."],
+                correctAnswer: "b) Una carga financiera u organizativa excesiva que compromete la capacidad de la entidad.",
+                explanation: "La carga desproporcionada es una excepción que permite no cumplir con ciertos requisitos si el costo o la dificultad son excesivos."
+            },
+            {
+                question: "¿Quiénes son los destinatarios de las quejas y sugerencias sobre accesibilidad, además del Defensor del Pueblo?",
+                options: ["a) Únicamente la Oficina de Atención a la Discapacidad.", "b) Email habilitado, formulario y oficina física de atención.", "c) Solo el Ministerio de Asuntos Económicos y Transformación Digital.", "d) Las entidades reconocidas por ENAC."],
+                correctAnswer: "b) Email habilitado, formulario y oficina física de atención.",
+                explanation: "Se deben proporcionar diversos canales para que los usuarios puedan presentar quejas y sugerencias."
+            },
+            {
+                question: "¿Qué se espera que incluya la Declaración de Accesibilidad sobre las partes del contenido no accesibles?",
+                options: ["a) Solo una lista de los contenidos.", "b) Explicación, razones y alternativas.", "c) Una justificación sin alternativas.", "d) No es necesario especificar las partes no accesibles."],
+                correctAnswer: "b) Explicación, razones y alternativas.",
+                explanation: "La declaración debe ser transparente sobre las deficiencias y ofrecer soluciones alternativas."
+            },
+            {
+                question: "¿Quién es responsable de la coordinación de revisiones periódicas de accesibilidad dentro de una entidad?",
+                options: ["a) El Ministerio de Asuntos Económicos y Transformación Digital.", "b) La unidad responsable de accesibilidad.", "c) La ENAC.", "d) El equipo de desarrollo web."],
+                correctAnswer: "b) La unidad responsable de accesibilidad.",
+                explanation: "La unidad responsable de accesibilidad se encarga de supervisar y coordinar las actividades de accesibilidad."
+            },
+            {
+                question: "¿Cuándo se deben realizar las revisiones de accesibilidad de un sitio web o app?",
+                options: ["a) Solo antes de la puesta en funcionamiento.", "b) En la fase de diseño y revisiones periódicas cada 3 años.", "c) Cada año.", "d) Solo cuando se recibe una queja."],
+                correctAnswer: "b) En la fase de diseño y revisiones periódicas cada 3 años.",
+                explanation: "La accesibilidad debe considerarse desde el diseño y ser objeto de revisiones periódicas."
+            },
+            {
+                question: "¿Qué informe debe incluir los informes de revisión de accesibilidad realizados en el año?",
+                options: ["a) Informe sobre la atención de quejas y reclamaciones.", "b) Informe de seguimiento sobre la promoción, concienciación y formación.", "c) Informe de seguimiento sobre el cumplimiento de los requisitos de accesibilidad.", "d) Informe de resultado del seguimiento."],
+                correctAnswer: "c) Informe de seguimiento sobre el cumplimiento de los requisitos de accesibilidad.",
+                explanation: "Este informe consolida los resultados de las revisiones de accesibilidad."
+            },
+            {
+                question: "¿Cuántos sitios web deben ser objeto de seguimiento simplificado en 2023, según el documento?",
+                options: ["a) 1008", "b) 1475", "c) 84", "d) 53"],
+                correctAnswer: "b) 1475",
+                explanation: "El documento indica un aumento en el número de sitios a seguir en 2023."
+            },
+            {
+                question: "¿Qué método de evaluación de usabilidad se menciona en el documento?",
+                options: ["a) Agile", "b) Sirius", "c) Waterfall", "d) Scrum"],
+                correctAnswer: "b) Sirius",
+                explanation: "Sirius es un método de evaluación de usabilidad, a menudo utilizado en el contexto de la experiencia de usuario."
+            },
+            {
+                question: "Según Jakob Nielsen, ¿cuántos principios heurísticos se consideran para la usabilidad web?",
+                options: ["a) 5", "b) 7", "c) 10", "d) 12"],
+                correctAnswer: "c) 10",
+                explanation: "Jakob Nielsen propuso 10 heurísticas de usabilidad para el diseño de interfaces."
+            },
+            {
+                question: "¿Qué implica que una web sea \"usable\" en términos de velocidad de búsqueda?",
+                options: ["a) Encontrar lo buscado en menos de 10 segundos.", "b) Encontrar lo buscado en menos de 4 segundos.", "c) Encontrar lo buscado en cualquier tiempo, siempre que se encuentre.", "d) Que la web sea sencilla."],
+                correctAnswer: "b) Encontrar lo buscado en menos de 4 segundos.",
+                explanation: "La usabilidad a menudo se asocia con la eficiencia y la rapidez para completar tareas."
+            },
+            {
+                question: "¿Qué promueve la Fundación SIDAR en relación con el diseño?",
+                options: ["a) Diseño de bases de datos.", "b) Diseño Centrado en el Usuario (DCU).", "c) Diseño de interfaz gráfica.", "d) Diseño de redes."],
+                correctAnswer: "b) Diseño Centrado en el Usuario (DCU).",
+                explanation: "La Fundación SIDAR promueve el Diseño Centrado en el Usuario para mejorar la accesibilidad y usabilidad."
+            },
+            {
+                question: "¿Qué método de evaluación de la usabilidad implica la comparación con otros sistemas?",
+                options: ["a) Pruebas empíricas.", "b) Pruebas relativas.", "c) Pruebas de campo.", "d) Pruebas de laboratorio."],
+                correctAnswer: "b) Pruebas relativas.",
+                explanation: "Las pruebas relativas comparan el sistema en evaluación con otros sistemas o estándares."
+            },
+            {
+                question: "¿Qué herramienta de cifrado de discos de Windows se menciona en el documento?",
+                options: ["a) Truecrypt", "b) FileVault 2", "c) BitLocker", "d) DiskCryptor"],
+                correctAnswer: "c) BitLocker",
+                explanation: "BitLocker es la solución de cifrado de disco completo de Microsoft para Windows."
+            },
+            {
+                question: "¿Qué algoritmo de cifrado utiliza BitLocker por defecto?",
+                options: ["a) RSA", "b) AES-CBC de 128 bits", "c) SHA-256", "d) DES"],
+                correctAnswer: "b) AES-CBC de 128 bits",
+                explanation: "BitLocker utiliza AES (Advanced Encryption Standard) en modo CBC (Cipher Block Chaining) con una clave de 128 bits por defecto."
+            },
+            {
+                question: "¿Qué herramienta de cifrado trabaja sobre NTFS y permite cifrado de archivos?",
+                options: ["a) BitLocker", "b) EFS", "c) Veracrypt", "d) LUKS"],
+                correctAnswer: "b) EFS",
+                explanation: "EFS (Encrypting File System) es una característica de Windows que permite cifrar archivos individuales o carpetas en volúmenes NTFS."
+            },
+            {
+                question: "¿Qué se entiende por \"Security by Design\" en el desarrollo de aplicaciones?",
+                options: ["a) Añadir seguridad al final del desarrollo.", "b) Integrar la seguridad desde el inicio de la aplicación.", "c) Contratar a un experto en seguridad.", "d) Realizar pruebas de penetración una vez finalizada la aplicación."],
+                correctAnswer: "b) Integrar la seguridad desde el inicio de la aplicación.",
+                explanation: "Security by Design es un enfoque que integra la seguridad en cada fase del ciclo de vida del desarrollo de software."
+            },
+            {
+                question: "¿Qué proyecto se menciona en relación con los principios \"Security by Design\"?",
+                options: ["a) Microsoft SDL", "b) NIST 800-64", "c) OWASP", "d) JFrog Xray"],
+                correctAnswer: "c) OWASP",
+                explanation: "OWASP (Open Web Application Security Project) es una comunidad que produce recursos relacionados con la seguridad de aplicaciones web, incluyendo principios de diseño seguro."
+            },
+            {
+                question: "¿Qué significa el acrónimo SSDLC en el contexto de la seguridad en el desarrollo de aplicaciones?",
+                options: ["a) Secure Software Development Life Cycle", "b) Standard System Design and Lifecycle", "c) Software Security Design and Logistics Center", "d) System Secure Deployment and Linkage Control"],
+                correctAnswer: "a) Secure Software Development Life Cycle",
+                explanation: "SSDLC se refiere a la integración de prácticas de seguridad en el ciclo de vida del desarrollo de software."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un principio de las WCAG 2.2 según el \"Mapa de WCAG 2.2\"?",
+                options: ["a) Perceptible", "b) Operable", "c) Seguro", "d) Comprensible"],
+                correctAnswer: "c) Seguro",
+                explanation: "Los principios de las WCAG son Perceptible, Operable, Comprensible y Robusto. La seguridad no es uno de ellos directamente."
+            },
+            {
+                question: "En el \"Mapa de WCAG 2.2\", bajo el principio \"Perceptible\", ¿qué criterio se relaciona con el \"Texto alternativo\"?",
+                options: ["a) 1.2 Medios basados en el tiempo", "b) 1.1 Alternativas textuales", "c) 1.3 Adaptable", "d) 1.4 Distinguible"],
+                correctAnswer: "b) 1.1 Alternativas textuales",
+                explanation: "El criterio 1.1 Alternativas textuales exige que se proporcione texto alternativo para todo el contenido no textual."
+            },
+            {
+                question: "¿Qué criterio bajo el principio \"Operable\" en el \"Mapa de WCAG 2.2\" se refiere al \"Teclado accesible\"?",
+                options: ["a) 2.2 Tiempo suficiente", "b) 2.1 Accesible", "c) 2.3 Convulsiones y reacciones físicas", "d) 2.4 Navegable"],
+                correctAnswer: "b) 2.1 Accesible",
+                explanation: "El criterio 2.1 Accesible se refiere a la accesibilidad del teclado para todas las funcionalidades."
+            },
+            {
+                question: "¿Qué criterio bajo el principio \"Comprensible\" en el \"Mapa de WCAG 2.2\" se refiere a \"Legible\"?",
+                options: ["a) 3.2 Predecible", "b) 3.1 Legible", "c) 3.3 Ayuda para la entrada", "d) 3.4 Robusto"],
+                correctAnswer: "b) 3.1 Legible",
+                explanation: "El criterio 3.1 Legible se enfoca en hacer que el contenido de texto sea legible y comprensible."
+            },
+            {
+                question: "¿Qué criterio bajo el principio \"Robusto\" en el \"Mapa de WCAG 2.2\" se relaciona con \"Compatible\"?",
+                options: ["a) 4.1 Compatible", "b) 4.2 Validación", "c) 4.3 Nombre, rol, valor", "d) 4.4 Mensajes de estado"],
+                correctAnswer: "a) 4.1 Compatible",
+                explanation: "El criterio 4.1 Compatible asegura que el contenido sea compatible con las tecnologías actuales y futuras."
+            },
+            {
+                question: "¿Qué nivel de conformidad de las WCAG corresponde al criterio 1.4.3 \"Contraste (mínimo)\"?",
+                options: ["a) A", "b) AA", "c) AAA", "d) No se especifica."],
+                correctAnswer: "b) AA",
+                explanation: "El criterio 1.4.3 Contraste (mínimo) es un requisito de Nivel AA."
+            },
+            {
+                question: "¿Qué nivel de conformidad de las WCAG corresponde al criterio 2.4.7 \"Foco visible\"?",
+                options: ["a) A", "b) AA", "c) AAA", "d) No se especifica."],
+                correctAnswer: "b) AA",
+                explanation: "El criterio 2.4.7 Foco visible es un requisito de Nivel AA."
+            },
+            {
+                question: "¿Qué nivel de conformidad de las WCAG corresponde al criterio 3.3.3 \"Sugerencia para el error\"?",
+                options: ["a) A", "b) AA", "c) AAA", "d) No se especifica."],
+                correctAnswer: "a) A",
+                explanation: "El criterio 3.3.3 Sugerencia para el error es un requisito de Nivel A."
+            },
+            {
+                question: "¿Cuántos criterios de conformidad tiene el Nivel A de las WCAG?",
+                options: ["a) 20", "b) 30", "c) 50", "d) 78"],
+                correctAnswer: "b) 30",
+                explanation: "El Nivel A de las WCAG tiene 30 criterios de éxito."
+            },
+            {
+                question: "¿Qué atributo HTML permite informar sobre los widgets, indicando qué son y el estado que tienen?",
+                options: ["a) tabindex", "b) role", "c) aria-expanded", "d) aria-live"],
+                correctAnswer: "c) aria-expanded",
+                explanation: "Mientras 'role' define qué es un widget, 'aria-expanded' es un atributo ARIA que indica el estado (expandido o colapsado) de un elemento, lo cual es crucial para informar sobre el estado de los widgets interactivos."
+            },
+            {
+                question: "¿Qué establece la Declaración de Ejecución 2018/1524 de la UE?",
+                options: ["a) La normativa técnica de accesibilidad.", "b) La metodología de seguimiento de la accesibilidad.", "c) Los principios de la WCAG.", "d) Los niveles de conformidad."],
+                correctAnswer: "b) La metodología de seguimiento de la accesibilidad.",
+                explanation: "La Decisión de Ejecución (UE) 2018/1524 detalla cómo los Estados miembros deben monitorear y reportar la accesibilidad."
+            },
+            {
+                question: "¿Quién es el responsable de elaborar el informe sobre el resultado del seguimiento de la accesibilidad que se envía a la Unión Europea?",
+                options: ["a) La unidad responsable de accesibilidad de cada organismo.", "b) El Ministerio de Asuntos Económicos y Transformación Digital (MAETD).", "c) La Oficina de Accesibilidad Web (OAW).", "d) Los organismos del sector público."],
+                correctAnswer: "b) El Ministerio de Asuntos Económicos y Transformación Digital (MAETD).",
+                explanation: "El MAETD es el organismo central en España para la supervisión y reporte de la accesibilidad."
+            },
+            {
+                question: "¿Cuál de las siguientes es una excepción a la aplicación de la normativa de accesibilidad, si la carga es desproporcionada?",
+                options: ["a) La falta de conocimientos.", "b) La falta de tiempo.", "c) La falta de prioridad.", "d) Imponer una carga financiera excesiva."],
+                correctAnswer: "d) Imponer una carga financiera excesiva.",
+                explanation: "La carga desproporcionada se refiere a un impacto financiero o administrativo excesivo."
+            },
+            {
+                question: "¿Qué se entiende por \"Contenido multimedia pregrabado de base temporal independiente de la plataforma de difusión\"?",
+                options: ["a) Videos en vivo.", "b) Audios en tiempo real.", "c) Contenidos subidos a plataformas como YouTube o Twitter.", "d) Archivos PDF con elementos multimedia."],
+                correctAnswer: "c) Contenidos subidos a plataformas como YouTube o Twitter.",
+                explanation: "Se refiere a contenido multimedia que no es en vivo y que se aloja en plataformas externas."
+            },
+            {
+                question: "¿Qué porcentaje de sitios web del sector público se auditaron en el seguimiento simplificado en 2022?",
+                options: ["a) 1475", "b) 1008", "c) 84", "d) 53"],
+                correctAnswer: "b) 1008",
+                explanation: "El documento especifica 1008 sitios web para el seguimiento simplificado en 2022."
+            },
+            {
+                question: "¿Qué tipo de revisión se requiere para el \"seguimiento en profundidad\"?",
+                options: ["a) Solo pruebas automatizadas.", "b) Solo revisión manual.", "c) Todos los requisitos, utilizando informes de revisión de accesibilidad verificados y agregados por el MAETD.", "d) Un subconjunto de requisitos."],
+                correctAnswer: "c) Todos los requisitos, utilizando informes de revisión de accesibilidad verificados y agregados por el MAETD.",
+                explanation: "El seguimiento en profundidad implica una evaluación exhaustiva de todos los requisitos de accesibilidad."
+            },
+            {
+                question: "¿Quién puede solicitar un servicio de diagnóstico en línea de la OAW para una revisión automática de accesibilidad?",
+                options: ["a) Cualquier ciudadano.", "b) El personal de las Administraciones Públicas.", "c) Empresas privadas.", "d) Organizaciones sin ánimo de lucro."],
+                correctAnswer: "b) El personal de las Administraciones Públicas.",
+                explanation: "Los servicios de la OAW están dirigidos principalmente a las Administraciones Públicas."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un principio de las ATAG 2.0?",
+                options: ["a) Perceptible", "b) Operable", "c) Comprensible", "d) No se especifican los principios individuales."],
+                correctAnswer: "d) No se especifican los principios individuales.",
+                explanation: "El documento indica que ATAG 2.0 tiene dos partes, cada una con 4 principios, pero no los detalla individualmente."
+            },
+            {
+                question: "¿Qué se entiende por \"adaptable\" en el contexto de las WCAG, bajo el principio \"Perceptible\"?",
+                options: ["a) El contenido no debe cambiar.", "b) El contenido debe poder presentarse de diferentes formas sin perder información.", "c) El contenido debe adaptarse al tamaño de la pantalla.", "d) El contenido debe ser interactivo."],
+                correctAnswer: "b) El contenido debe poder presentarse de diferentes formas sin perder información.",
+                explanation: "La adaptabilidad se refiere a la flexibilidad de presentación del contenido."
+            },
+            {
+                question: "¿Qué atributo permite la navegación mediante teclado?",
+                options: ["a) role", "b) aria-live", "c) tabindex", "d) id"],
+                correctAnswer: "c) tabindex",
+                explanation: "El atributo 'tabindex' controla si un elemento es enfocable y su orden en la navegación por teclado."
+            },
+            {
+                question: "¿Qué norma de accesibilidad se relaciona con la estructuración semántica del documento y el uso de roles?",
+                options: ["a) WCAG", "b) UAAG", "c) ARIA", "d) ATAG"],
+                correctAnswer: "c) ARIA",
+                explanation: "WAI-ARIA proporciona un marco para añadir semántica a los elementos HTML para mejorar la accesibilidad."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un \"Land Mark\" que permite definir el atributo role?",
+                options: ["a) main", "b) banner", "c) footer", "d) navigation"],
+                correctAnswer: "c) footer",
+                explanation: "Aunque 'footer' es un elemento HTML, no es un 'Land Mark' reconocido por WAI-ARIA para el atributo 'role' en el mismo nivel que 'main', 'banner', o 'navigation'."
+            },
+            {
+                question: "¿Qué se especifica en la norma EARL?",
+                options: ["a) Las reglas para los test de conformidad.", "b) El formato de los resultados de una evaluación.", "c) Las directrices para las herramientas de autor.", "d) Los principios de la accesibilidad web."],
+                correctAnswer: "b) El formato de los resultados de una evaluación.",
+                explanation: "EARL es un lenguaje para expresar los resultados de las evaluaciones de accesibilidad."
+            },
+            {
+                question: "¿Qué se entiende por \"legible\" en el principio \"Comprensible\" de las WCAG?",
+                options: ["a) Que el texto sea de gran tamaño.", "b) Que el texto sea de un color llamativo.", "c) Hacer el contenido de texto legible y comprensible.", "d) Que el texto tenga animaciones."],
+                correctAnswer: "c) Hacer el contenido de texto legible y comprensible.",
+                explanation: "La legibilidad se refiere a la facilidad con la que se puede leer y entender el texto."
+            },
+            {
+                question: "¿Cuál es el número total de criterios de conformidad de las WCAG en el Nivel AAA?",
+                options: ["a) 30", "b) 50", "c) 78", "d) 580"],
+                correctAnswer: "c) 78",
+                explanation: "El Nivel AAA incluye todos los criterios de A, AA y los propios de AAA, sumando 78."
+            },
+            {
+                question: "¿Quién es el responsable del reporte periódico anual de las unidades al MAETD?",
+                options: ["a) El MAETD.", "b) Las unidades responsables de accesibilidad.", "c) La ENAC.", "d) La Oficina de Accesibilidad Web."],
+                correctAnswer: "b) Las unidades responsables de accesibilidad.",
+                explanation: "Cada unidad es responsable de informar su progreso al MAETD."
+            },
+            {
+                question: "¿Qué Decisión de Ejecución de la UE se menciona en relación con las \"Revisiones en profundidad\"?",
+                options: ["a) 2016/2102", "b) 2018/1524", "c) 301549", "d) No se menciona."],
+                correctAnswer: "b) 2018/1524",
+                explanation: "La Decisión de Ejecución (UE) 2018/1524 establece los detalles para las revisiones en profundidad."
+            },
+            {
+                question: "¿Qué se entiende por \"Navegación consistente\" en el principio \"Comprensible\" de las WCAG?",
+                options: ["a) La navegación es siempre la misma en todas las páginas.", "b) La navegación cambia según el usuario.", "c) La navegación tiene muchos elementos.", "d) No se menciona."],
+                correctAnswer: "a) La navegación es siempre la misma en todas las páginas.",
+                explanation: "La navegación consistente ayuda a los usuarios a orientarse y predecir el comportamiento del sitio."
+            },
+            {
+                question: "¿Cuál es una característica de la Usabilidad Web (UX) según el documento?",
+                options: ["a) Que sea compleja.", "b) Que sea investigable por los buscadores.", "c) Que sea lenta.", "d) Que no necesite actualización."],
+                correctAnswer: "b) Que sea investigable por los buscadores.",
+                explanation: "Una buena usabilidad a menudo se correlaciona con la optimización para motores de búsqueda."
+            },
+            {
+                question: "¿Qué herramienta de cifrado de discos se menciona para Mac?",
+                options: ["a) BitLocker", "b) Truecrypt", "c) FileVault 2", "d) LUKS"],
+                correctAnswer: "c) FileVault 2",
+                explanation: "FileVault 2 es la solución de cifrado de disco completo de Apple para macOS."
+            },
+            {
+                question: "¿Qué herramienta de ayuda se menciona en el contexto de la seguridad en el desarrollo de aplicaciones?",
+                options: ["a) OWASP CLASP", "b) JFrog Xray", "c) MS SDL", "d) NIST 800-64"],
+                correctAnswer: "a) OWASP CLASP",
+                explanation: "OWASP CLASP (Comprehensive, Lightweight Application Security Process) es una metodología para integrar la seguridad en el ciclo de vida del desarrollo de software."
+            },
+            {
+                question: "¿Cuál es la versión de WCAG que se muestra en el mapa y sobre la que se basan los criterios?",
+                options: ["a) WCAG 2.0", "b) WCAG 2.1", "c) WCAG 2.2", "d) WCAG 1.0"],
+                correctAnswer: "c) WCAG 2.2",
+                explanation: "El mapa y los criterios se basan en la versión más reciente mencionada, WCAG 2.2."
+            }
+        ];
+
+        const quizContent = document.getElementById('quiz-content');
+
+        // Function to render the quiz questions and options
+        function renderQuiz() {
+            quizData.forEach((q, index) => {
+                const questionCard = document.createElement('div');
+                questionCard.className = 'question-card';
+                questionCard.setAttribute('aria-labelledby', `question-${index}`);
+
+                const questionText = document.createElement('p');
+                questionText.id = `question-${index}`;
+                questionText.className = 'question-text';
+                questionText.textContent = `${index + 1}. ${q.question}`;
+                questionCard.appendChild(questionText);
+
+                q.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'answer-button';
+                    button.textContent = option;
+                    button.setAttribute('aria-controls', `solution-${index}`);
+                    button.setAttribute('aria-expanded', 'false');
+                    button.onclick = () => checkAnswer(button, option, q.correctAnswer, q.explanation, index);
+                    questionCard.appendChild(button);
+                });
+
+                const solutionText = document.createElement('div');
+                solutionText.id = `solution-${index}`;
+                solutionText.className = 'solution-text';
+                solutionText.setAttribute('aria-live', 'polite'); // Announce changes to screen readers
+                questionCard.appendChild(solutionText);
+
+                quizContent.appendChild(questionCard);
+            });
+        }
+
+        // Function to check the selected answer
+        function checkAnswer(button, selectedOption, correctAnswer, explanation, index) {
+            const buttons = button.parentNode.querySelectorAll('.answer-button');
+            buttons.forEach(btn => {
+                btn.disabled = true; // Disable all buttons for this question after an answer is selected
+                btn.classList.remove('correct', 'incorrect'); // Clear previous states
+            });
+
+            const solutionText = document.getElementById(`solution-${index}`);
+            solutionText.classList.add('show'); // Show the solution text
+            button.setAttribute('aria-expanded', 'true'); // Update ARIA for expanded state
+
+            if (selectedOption === correctAnswer) {
+                button.classList.add('correct');
+                solutionText.classList.add('correct-solution');
+                solutionText.textContent = `¡Correcto! ${explanation}`;
+            } else {
+                button.classList.add('incorrect');
+                solutionText.classList.add('incorrect-solution');
+                solutionText.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}. ${explanation}`;
+            }
+        }
+
+        // Render the quiz when the page loads
+        document.addEventListener('DOMContentLoaded', renderQuiz);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Ley de Transparencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        .question-card {
+            background-color: #e0f2fe;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: left;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .question-text {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c5282;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: 2px solid #a7d9f7;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #333;
+            font-size: 1em;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #e0f2fe;
+            border-color: #63b3ed;
+        }
+        .options-container button.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: 600;
+        }
+        .options-container button:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .feedback.correct {
+            color: #28a745;
+        }
+        .feedback.incorrect {
+            color: #dc3545;
+        }
+        .navigation-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1;
+        }
+        .navigation-buttons button:hover {
+            transform: translateY(-2px);
+        }
+        #prevQuestion {
+            background-color: #63b3ed;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(99, 179, 237, 0.3);
+        }
+        #prevQuestion:hover {
+            background-color: #4299e1;
+        }
+        #nextQuestion {
+            background-color: #48bb78;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+        }
+        #nextQuestion:hover {
+            background-color: #38a169;
+        }
+        #restartQuiz {
+            background-color: #f6ad55;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(246, 173, 85, 0.3);
+        }
+        #restartQuiz:hover {
+            background-color: #ed8936;
+        }
+        .quiz-header {
+            margin-bottom: 25px;
+            font-size: 2em;
+            color: #2c5282;
+            font-weight: 700;
+        }
+        .score-display {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4299e1;
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-header">
+            Test Ley de Transparencia
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div id="quizContent">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="score-display" id="scoreDisplay">
+            Puntuación: 0 / 0
+        </div>
+        <div class="navigation-buttons">
+            <button id="prevQuestion" class="hidden">Anterior</button>
+            <button id="nextQuestion">Siguiente</button>
+            <button id="restartQuiz" class="hidden">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Cuál es uno de los objetos principales de la Ley de Transparencia, Acceso a la Información Pública y Buen Gobierno?",
+                options: [
+                    "a) Regular el mercado de valores.",
+                    "b) Ampliar y reforzar la transparencia de la actividad pública.",
+                    "c) Establecer normativas sobre el comercio internacional.",
+                    "d) Promover la privatización de servicios públicos."
+                ],
+                correctAnswer: "b) Ampliar y reforzar la transparencia de la actividad pública."
+            },
+            {
+                question: "¿Qué derecho se busca garantizar con esta ley?",
+                options: [
+                    "a) El derecho a la propiedad privada.",
+                    "b) El derecho de asociación.",
+                    "c) El derecho de acceso a la información de la actividad pública.",
+                    "d) El derecho a la libre circulación."
+                ],
+                correctAnswer: "c) El derecho de acceso a la información de la actividad pública."
+            },
+            {
+                question: "¿A qué tipo de entidades se aplica la Ley de Transparencia en el ámbito de las Administraciones Públicas?",
+                options: [
+                    "a) Únicamente a las empresas privadas.",
+                    "b) A las AGE, CCAA y AALL.",
+                    "c) Solo a las corporaciones de derecho privado.",
+                    "d) Exclusivamente a las universidades privadas."
+                ],
+                correctAnswer: "b) A las AGE, CCAA y AALL."
+            },
+            {
+                question: "¿Las Entidades gestoras y servicios SSSS y colaboradores están incluidas en el ámbito de aplicación de la ley?",
+                options: [
+                    "a) No, solo las Administraciones Públicas.",
+                    "b) Sí.",
+                    "c) Solo si son de ámbito local.",
+                    "d) Únicamente las entidades gestoras."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Los Organismos autónomos, Agencias estatales y Entidades públicas empresariales, Entidades de derecho público (funciones regulación o supervisión) están sujetos a esta ley?",
+                options: [
+                    "a) No, por su naturaleza especial.",
+                    "b) Sí.",
+                    "c) Solo las Agencias estatales.",
+                    "d) Exclusivamente los Organismos autónomos."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Las Corporaciones de Derecho Público están dentro del ámbito de aplicación de la Ley de Transparencia?",
+                options: [
+                    "a) No, tienen su propia normativa.",
+                    "b) Sí.",
+                    "c) Solo si reciben fondos públicos.",
+                    "d) Depende de su tamaño."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué instituciones, entre otras, se mencionan específicamente en el ámbito de aplicación de la ley?",
+                options: [
+                    "a) Bancos privados y compañías de seguros.",
+                    "b) La Casa de su Majestad el Rey, el Congreso de los Diputados y el Senado.",
+                    "c) Asociaciones vecinales y clubes deportivos.",
+                    "d) Empresas multinacionales."
+                ],
+                correctAnswer: "b) La Casa de su Majestad el Rey, el Congreso de los Diputados y el Senado."
+            },
+            {
+                question: "¿Las Sociedades mercantiles con más del 50% de participación pública están incluidas en el ámbito de aplicación?",
+                options: [
+                    "a) No, solo las entidades 100% públicas.",
+                    "b) Sí.",
+                    "c) Únicamente si son de capital íntegramente público.",
+                    "d) Solo las que cotizan en bolsa."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué condiciones deben cumplir las entidades privadas para estar sujetas a la Ley de Transparencia?",
+                options: [
+                    "a) Recibir solo subvenciones públicas.",
+                    "b) Recibir ayudas o subvenciones públicas + 100.000 euros o el 40% total ingresos anuales sean ayuda o subvención pública con mínimo de 5.000 euros.",
+                    "c) Tener más de 500 empleados.",
+                    "d) Realizar actividades de investigación."
+                ],
+                correctAnswer: "b) Recibir ayudas o subvenciones públicas + 100.000 euros o el 40% total ingresos anuales sean ayuda o subvención pública con mínimo de 5.000 euros."
+            },
+            {
+                question: "¿Las personas físicas y jurídicas que presten servicios públicos o ejerzan potestades administrativas están incluidas en el ámbito de aplicación de la ley?",
+                options: [
+                    "a) No, solo las entidades públicas.",
+                    "b) Sí.",
+                    "c) Solo si son organizaciones sin ánimo de lucro.",
+                    "d) Únicamente las personas jurídicas."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "Respecto a la publicidad activa, ¿cómo debe ser la información publicada?",
+                options: [
+                    "a) Compleja y en formato no editable.",
+                    "b) Clara, estructurada y entendible, y en formato reutilizable.",
+                    "c) Solo disponible en papel.",
+                    "d) Restringida a personal autorizado."
+                ],
+                correctAnswer: "b) Clara, estructurada y entendible, y en formato reutilizable."
+            },
+            {
+                question: "¿Qué característica debe tener la información para facilitar su comprensión?",
+                options: [
+                    "a) Debe ser exclusivamente técnica.",
+                    "b) Debe ser comprensible, de acceso fácil y gratuito.",
+                    "c) Puede tener un coste asociado.",
+                    "d) Su accesibilidad no es un requisito."
+                ],
+                correctAnswer: "b) Debe ser comprensible, de acceso fácil y gratuito."
+            },
+            {
+                question: "¿Qué información se incluye dentro de las funciones en el ámbito institucional, organizativo y de planificación?",
+                options: [
+                    "a) Datos bancarios de los empleados.",
+                    "b) Normativa de aplicación y organigrama.",
+                    "c) Historial médico de los funcionarios.",
+                    "d) Opiniones personales de los responsables."
+                ],
+                correctAnswer: "b) Normativa de aplicación y organigrama."
+            },
+            {
+                question: "¿Los planes y programas anuales y plurianuales y objetivos forman parte de la información pública en el ámbito de planificación?",
+                options: [
+                    "a) No, son documentos internos.",
+                    "b) Sí.",
+                    "c) Solo si son de carácter económico.",
+                    "d) Únicamente los planes operativos."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "En cuanto a la relevancia jurídica, ¿qué tipo de documentos se deben publicar?",
+                options: [
+                    "a) Borradores sin validez legal.",
+                    "b) Directrices, instrucciones y acuerdos que interpreten el Derecho.",
+                    "c) Conversaciones informales.",
+                    "d) Listas de contactos personales."
+                ],
+                correctAnswer: "b) Directrices, instrucciones y acuerdos que interpreten el Derecho."
+            },
+            {
+                question: "¿Los Anteproyectos de Ley y los proyectos de DLegislativos son información de relevancia jurídica que debe ser pública?",
+                options: [
+                    "a) No, solo cuando ya están aprobados.",
+                    "b) Sí.",
+                    "c) Únicamente los proyectos de reglamento.",
+                    "d) Depende de su urgencia."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué tipo de información económica, presupuestaria y estadística debe ser publicada?",
+                options: [
+                    "a) Solo los balances bancarios de los directivos.",
+                    "b) Contratos, convenios suscritos y subvenciones y ayudas públicas.",
+                    "c) Pronósticos del tiempo.",
+                    "d) Opiniones de mercado."
+                ],
+                correctAnswer: "b) Contratos, convenios suscritos y subvenciones y ayudas públicas."
+            },
+            {
+                question: "¿Las retribuciones percibidas por altos cargos y máximos responsables de la entidad son información sujeta a publicidad activa?",
+                options: [
+                    "a) No, es información privada.",
+                    "b) Sí.",
+                    "c) Solo las retribuciones anuales.",
+                    "d) Únicamente las indemnizaciones."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Quién controla las obligaciones de publicidad activa según la Ley de Transparencia?",
+                options: [
+                    "a) El Ministerio de Hacienda.",
+                    "b) El Consejo de Transparencia y Buen Gobierno.",
+                    "c) Los ciudadanos directamente.",
+                    "d) Las Cortes Generales."
+                ],
+                correctAnswer: "b) El Consejo de Transparencia y Buen Gobierno."
+            },
+            {
+                question: "En caso de incumplimiento de las obligaciones de transparencia, ¿qué puede iniciar el Consejo de Transparencia y Buen Gobierno?",
+                options: [
+                    "a) Un proceso de mediación.",
+                    "b) Actuaciones disciplinarias.",
+                    "c) Una campaña de sensibilización.",
+                    "d) Un estudio de mercado."
+                ],
+                correctAnswer: "b) Actuaciones disciplinarias."
+            },
+            {
+                question: "¿Qué es el derecho de acceso a la información pública según el Art. 12?",
+                options: [
+                    "a) El derecho a recibir solo información clasificada.",
+                    "b) El derecho de todas las personas a acceder a la información pública.",
+                    "c) El derecho exclusivo de los funcionarios a la información.",
+                    "d) El derecho a crear información pública."
+                ],
+                correctAnswer: "b) El derecho de todas las personas a acceder a la información pública."
+            },
+            {
+                question: "¿Qué abarca el concepto de 'información pública' en el Art. 13?",
+                options: [
+                    "a) Solo documentos en formato físico.",
+                    "b) Contenidos o documentos en cualquier formato o soporte, elaborados o adquiridos en el ejercicio de funciones públicas.",
+                    "c) Información personal de los funcionarios.",
+                    "d) Publicaciones científicas."
+                ],
+                correctAnswer: "b) Contenidos o documentos en cualquier formato o soporte, elaborados o adquiridos en el ejercicio de funciones públicas."
+            },
+            {
+                question: "¿Cuál de los siguientes es un límite al derecho de acceso a la información pública según el Art. 14?",
+                options: [
+                    "a) La protección de datos meteorológicos.",
+                    "b) La seguridad nacional.",
+                    "c) El derecho a la información privada de terceros no afectados.",
+                    "d) La disponibilidad de recursos tecnológicos."
+                ],
+                correctAnswer: "b) La seguridad nacional."
+            },
+            {
+                question: "¿Otro límite al derecho de acceso es la prevención, investigación y sanción de qué tipo de ilícitos?",
+                options: [
+                    "a) Ilícitos deportivos.",
+                    "b) Ilícitos penales, administrativos o disciplinarios.",
+                    "c) Ilícitos civiles.",
+                    "d) Ilícitos comerciales."
+                ],
+                correctAnswer: "b) Ilícitos penales, administrativos o disciplinarios."
+            },
+            {
+                question: "¿La garantía de la confidencialidad o el secreto requerido en procesos de toma de decisión es un límite al derecho de acceso?",
+                options: [
+                    "a) No, la toma de decisiones debe ser siempre pública.",
+                    "b) Sí.",
+                    "c) Solo en casos de emergencia.",
+                    "d) Únicamente para decisiones económicas."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Cómo debe ser la aplicación de los límites al derecho de acceso a la información?",
+                options: [
+                    "a) Arbitraria y discrecional.",
+                    "b) Justificada y proporcional a su objeto y finalidad de protección.",
+                    "c) Universal e incondicional.",
+                    "d) Dependiendo del solicitante."
+                ],
+                correctAnswer: "b) Justificada y proporcional a su objeto y finalidad de protección."
+            },
+            {
+                question: "¿Qué tipo de datos personales requieren consentimiento expreso y escrito para su acceso?",
+                options: [
+                    "a) Datos de contacto.",
+                    "b) Datos que revelen la ideología, afiliación sindical, religión o creencias.",
+                    "c) Datos de identificación.",
+                    "d) Datos bancarios genéricos."
+                ],
+                correctAnswer: "b) Datos que revelen la ideología, afiliación sindical, religión o creencias."
+            },
+            {
+                question: "Si la información solicitada contiene datos protegidos pero son disociados, ¿se aplica la protección de datos?",
+                options: [
+                    "a) Sí, siempre se aplica.",
+                    "b) No, si los datos son disociados.",
+                    "c) Solo si hay un interés público superior.",
+                    "d) Depende de la nacionalidad del solicitante."
+                ],
+                correctAnswer: "b) No, si los datos son disociados."
+            },
+            {
+                question: "¿Qué ocurre si los límites del Art. 14 no afectan a la totalidad de la información?",
+                options: [
+                    "a) Se deniega el acceso por completo.",
+                    "b) Se omite la información afectada y se da acceso parcial.",
+                    "c) Se pospone la entrega de la información.",
+                    "d) Se solicita una nueva petición."
+                ],
+                correctAnswer: "b) Se omite la información afectada y se da acceso parcial."
+            },
+            {
+                question: "En una solicitud de acceso a la información, ¿qué información no es obligatoria incluir?",
+                options: [
+                    "a) La identidad del solicitante.",
+                    "b) La información que se solicita.",
+                    "c) La modalidad que se prefiera para acceder a la información solicitada.",
+                    "d) Una dirección de contacto."
+                ],
+                correctAnswer: "c) La modalidad que se prefiera para acceder a la información solicitada."
+            },
+            {
+                question: "¿Una solicitud se considerará inadmisible si la información está en curso de elaboración o de publicación general?",
+                options: [
+                    "a) No, nunca.",
+                    "b) Sí.",
+                    "c) Solo si es un documento secreto.",
+                    "d) Depende de la fecha de la solicitud."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué ocurre si una solicitud tiene un carácter 'manifiestamente repetitivo o abusivo no justificado con la finalidad de transparencia'?",
+                options: [
+                    "a) Se prioriza su tramitación.",
+                    "b) Se considera inadmisible.",
+                    "c) Se deriva a otro organismo.",
+                    "d) Se cobra una tasa adicional."
+                ],
+                correctAnswer: "b) Se considera inadmisible."
+            },
+            {
+                question: "¿Cuál es el plazo máximo para notificar la resolución de una solicitud de acceso a la información?",
+                options: [
+                    "a) 15 días.",
+                    "b) 1 mes, prorrogable por otro mes.",
+                    "c) 3 meses.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b) 1 mes, prorrogable por otro mes."
+            },
+            {
+                question: "Si transcurrido el plazo máximo no hay resolución expresa, ¿qué se entiende?",
+                options: [
+                    "a) Silencio positivo.",
+                    "b) Desestimación.",
+                    "c) Que la solicitud está en trámite.",
+                    "d) Que la información no existe."
+                ],
+                correctAnswer: "b) Desestimación."
+            },
+            {
+                question: "¿Las resoluciones de acceso a la información son recurribles ante qué jurisdicción?",
+                options: [
+                    "a) Penal.",
+                    "b) Contencioso-Administrativa (JC-A).",
+                    "c) Civil.",
+                    "d) Social."
+                ],
+                correctAnswer: "b) Contencioso-Administrativa (JC-A)."
+            },
+            {
+                question: "En caso de oposición de un tercero al acceso a la información, ¿cuándo se puede dar acceso?",
+                options: [
+                    "a) Inmediatamente.",
+                    "b) Tras el plazo de recurso C-A sin formalización o resuelto el derecho a recibir.",
+                    "c) Cuando el tercero lo autorice expresamente.",
+                    "d) Nunca si hay oposición."
+                ],
+                correctAnswer: "b) Tras el plazo de recurso C-A sin formalización o resuelto el derecho a recibir."
+            },
+            {
+                question: "¿El acceso a la información pública es, en general, gratuito?",
+                options: [
+                    "a) No, siempre tiene un coste.",
+                    "b) Sí.",
+                    "c) Solo si la solicitud es telemática.",
+                    "d) Depende del volumen de información."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Ante qué organismo se pueden interponer reclamaciones potestativas contra las resoluciones de acceso a la información?",
+                options: [
+                    "a) El Tribunal Supremo.",
+                    "b) El Consejo de Transparencia y Buen Gobierno (CTyBG).",
+                    "c) El Defensor del Pueblo.",
+                    "d) El Ministerio de Justicia."
+                ],
+                correctAnswer: "b) El Consejo de Transparencia y Buen Gobierno (CTyBG)."
+            },
+            {
+                question: "¿Cuál es el plazo para interponer una reclamación ante el CTyBG?",
+                options: [
+                    "a) 15 días.",
+                    "b) 1 mes.",
+                    "c) 3 meses.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b) 1 mes."
+            },
+            {
+                question: "¿Cuánto tiempo tiene el CTyBG para contestar una reclamación?",
+                options: [
+                    "a) 1 mes.",
+                    "b) 2 meses.",
+                    "c) 3 meses.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "c) 3 meses."
+            },
+            {
+                question: "¿A quiénes abarca el ámbito de aplicación de Buen Gobierno en la AGE?",
+                options: [
+                    "a) Únicamente a los empleados públicos de base.",
+                    "b) A los miembros del Gobierno y Secretarios de Estado.",
+                    "c) Solo a los cargos de confianza.",
+                    "d) A los voluntarios."
+                ],
+                correctAnswer: "b) A los miembros del Gobierno y Secretarios de Estado."
+            },
+            {
+                question: "¿Los altos cargos o asimilados de las CCAA o EELL están sujetos a los principios de Buen Gobierno?",
+                options: [
+                    "a) No, cada CCAA/EELL tiene su propia normativa.",
+                    "b) Sí.",
+                    "c) Solo si son nombrados por el Gobierno central.",
+                    "d) Únicamente los de la capital."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué principio deben observar los altos cargos en su actuación?",
+                options: [
+                    "a) Actuar sin rendir cuentas.",
+                    "b) Actuar con transparencia en la gestión de los asuntos públicos.",
+                    "c) Priorizar los intereses personales.",
+                    "d) Limitar el acceso a la información."
+                ],
+                correctAnswer: "b) Actuar con transparencia en la gestión de los asuntos públicos."
+            },
+            {
+                question: "¿Deben los altos cargos asegurar un trato igual y sin discriminaciones de ningún tipo en el ejercicio de sus funciones?",
+                options: [
+                    "a) No es una obligación.",
+                    "b) Sí.",
+                    "c) Solo si es legalmente requerido.",
+                    "d) Depende de la situación."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Con qué fin deben ejercer sus poderes los altos cargos?",
+                options: [
+                    "a) Para obtener beneficios personales.",
+                    "b) Con la finalidad exclusiva para la que fueron otorgados y evitar toda acción que pueda poner en riesgo el interés público.",
+                    "c) Para promover sus intereses políticos.",
+                    "d) Para favorecer a sus allegados."
+                ],
+                correctAnswer: "b) Con la finalidad exclusiva para la que fueron otorgados y evitar toda acción que pueda poner en riesgo el interés público."
+            },
+            {
+                question: "¿Qué deben hacer los altos cargos si tienen conocimiento de cualquier actuación irregular?",
+                options: [
+                    "a) Ignorarla.",
+                    "b) Ponerla en conocimiento de los órganos competentes.",
+                    "c) Resolverla por sí mismos.",
+                    "d) Archivarla."
+                ],
+                correctAnswer: "b) Ponerla en conocimiento de los órganos competentes."
+            },
+            {
+                question: "¿Qué tipo de obsequios pueden aceptar los altos cargos?",
+                options: [
+                    "a) Cualquier obsequio que se les ofrezca.",
+                    "b) Regalos que superen los usos habituales, sociales o de cortesía.",
+                    "c) Obsequios de una mayor relevancia institucional que se incorporen al patrimonio de la AAPP.",
+                    "d) Ningún tipo de obsequio."
+                ],
+                correctAnswer: "c) Obsequios de una mayor relevancia institucional que se incorporen al patrimonio de la AAPP."
+            },
+            {
+                question: "¿Deben los altos cargos gestionar, proteger y conservar adecuadamente los recursos públicos?",
+                options: [
+                    "a) No, es responsabilidad de los empleados de menor rango.",
+                    "b) Sí.",
+                    "c) Solo si son recursos económicos.",
+                    "d) Únicamente los bienes inmuebles."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Pueden los altos cargos valerse de su posición en la Administración para obtener ventajas personales o materiales?",
+                options: [
+                    "a) Sí, si no hay un daño directo.",
+                    "b) No.",
+                    "c) Solo si no es detectado.",
+                    "d) Es una cuestión de ética personal, no legal."
+                ],
+                correctAnswer: "b) No."
+            },
+            {
+                question: "¿Cuál de las siguientes es una infracción muy grave en materia de gestión económico-presupuestaria?",
+                options: [
+                    "a) La omisión de un informe rutinario.",
+                    "b) La incursión en alcance en la administración de los fondos públicos.",
+                    "c) Un pequeño retraso en un pago.",
+                    "d) La ausencia de una firma en un documento."
+                ],
+                correctAnswer: "b) La incursión en alcance en la administración de los fondos públicos."
+            },
+            {
+                question: "¿Es una infracción muy grave la no presentación o la falta de puesta en marcha en plazo del plan económico-financiero o del plan de reequilibrio?",
+                options: [
+                    "a) No, solo es una falta leve.",
+                    "b) Sí.",
+                    "c) Solo si el importe es muy elevado.",
+                    "d) Depende del motivo del retraso."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿La no adopción de un acuerdo de no disponibilidad es una infracción muy grave?",
+                options: [
+                    "a) No.",
+                    "b) Sí.",
+                    "c) Solo si causa un perjuicio económico.",
+                    "d) Depende de si se ha solicitado."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Cuál de las siguientes es una infracción grave en el ámbito disciplinario?",
+                options: [
+                    "a) Un saludo inadecuado.",
+                    "b) La adopción de acuerdos manifiestamente ilegales que causen perjuicio grave a la Administración o a los ciudadanos.",
+                    "c) Un error tipográfico en un informe.",
+                    "d) Llegar tarde un día al trabajo."
+                ],
+                correctAnswer: "b) La adopción de acuerdos manifiestamente ilegales que causen perjuicio grave a la Administración o a los ciudadanos."
+            },
+            {
+                question: "¿La publicación o utilización indebida de la documentación o información a que tengan o hayan tenido acceso por razón de su cargo o función es una infracción grave?",
+                options: [
+                    "a) No, solo si es información clasificada.",
+                    "b) Sí.",
+                    "c) Solo si se hace con ánimo de lucro.",
+                    "d) No si es de dominio público."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿La violación de la imparcialidad, utilizando las facultades atribuidas para influir en procesos electorales de cualquier naturaleza y ámbito, es una infracción grave?",
+                options: [
+                    "a) No, es parte de la política.",
+                    "b) Sí.",
+                    "c) Solo si se demuestra la intención.",
+                    "d) Depende del resultado electoral."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿El acoso laboral es considerado una infracción grave?",
+                options: [
+                    "a) No.",
+                    "b) Sí.",
+                    "c) Solo si es reiterado.",
+                    "d) Solo si es denunciado."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Cuál de las siguientes es una infracción leve?",
+                options: [
+                    "a) Abuso de autoridad en el ejercicio del cargo.",
+                    "b) La incorrección con los superiores, compañeros o subordinados.",
+                    "c) El notorio incumplimiento de las funciones esenciales.",
+                    "d) La falta de justificación de la inversión de fondos."
+                ],
+                correctAnswer: "b) La incorrección con los superiores, compañeros o subordinados."
+            },
+            {
+                question: "¿La intervención en un procedimiento administrativo cuando se dé alguna de las causas de abstención legalmente señaladas es una infracción leve?",
+                options: [
+                    "a) No, es una infracción grave.",
+                    "b) Sí.",
+                    "c) Solo si causa un perjuicio.",
+                    "d) Depende del conocimiento del alto cargo."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿No guardar el debido sigilo respecto a los asuntos que se conozcan por razón del cargo, cuando causen perjuicio a la Administración o se utilice en provecho propio, es una infracción leve?",
+                options: [
+                    "a) No, es una infracción grave.",
+                    "b) Sí.",
+                    "c) Solo si el perjuicio es considerable.",
+                    "d) No si el provecho propio es mínimo."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Una infracción leve puede convertirse en grave si el autor ha sido sancionado por dos infracciones leves a lo largo del año anterior contra las que no quepa recurso en vía administrativa?",
+                options: [
+                    "a) No, las sanciones leves no se acumulan.",
+                    "b) Sí.",
+                    "c) Solo si se demuestra intencionalidad.",
+                    "d) Depende de la autoridad sancionadora."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Cuál es la sanción para las infracciones leves?",
+                options: [
+                    "a) Destitución del cargo.",
+                    "b) Amonestación.",
+                    "c) Multa económica.",
+                    "d) Suspensión de empleo y sueldo."
+                ],
+                correctAnswer: "b) Amonestación."
+            },
+            {
+                question: "¿Qué sanción se aplica a las infracciones muy graves?",
+                options: [
+                    "a) Amonestación y multa.",
+                    "b) Declaración del incumplimiento y no percepción de indemnización por cese en el cargo.",
+                    "c) Suspensión temporal.",
+                    "d) Cursos de formación obligatorios."
+                ],
+                correctAnswer: "b) Declaración del incumplimiento y no percepción de indemnización por cese en el cargo."
+            },
+            {
+                question: "Además de la destitución del cargo, ¿qué otra consecuencia tienen las infracciones muy graves en cuanto al nombramiento para futuros cargos?",
+                options: [
+                    "a) No podrán ser nombrados para ocupar ningún puesto de alto cargo o asimilado durante un período de entre cinco y diez años.",
+                    "b) Se les prohibirá trabajar en la administración pública de por vida.",
+                    "c) Deberán pagar una multa equivalente a su último salario.",
+                    "d) No podrán ejercer ninguna profesión relacionada con el sector público."
+                ],
+                correctAnswer: "a) No podrán ser nombrados para ocupar ningún puesto de alto cargo o asimilado durante un período de entre cinco y diez años."
+            },
+            {
+                question: "¿Cuál de los siguientes es un criterio para la graduación de las sanciones?",
+                options: [
+                    "a) La edad del infractor.",
+                    "b) La gravedad del peligro ocasionado o del perjuicio causado.",
+                    "c) El nivel de educación del alto cargo.",
+                    "d) La opinión pública."
+                ],
+                correctAnswer: "b) La gravedad del peligro ocasionado o del perjuicio causado."
+            },
+            {
+                question: "¿La subsanación de la infracción por propia iniciativa es un criterio para la graduación de las sanciones?",
+                options: [
+                    "a) No, una vez cometida la infracción no hay vuelta atrás.",
+                    "b) Sí.",
+                    "c) Solo si se realiza antes de la investigación.",
+                    "d) Depende de la naturaleza de la infracción."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "Si una infracción es constitutiva de delito, ¿qué debe hacerse?",
+                options: [
+                    "a) Seguir el procedimiento administrativo sin más.",
+                    "b) Comunicar a Fiscal General del Estado y suspender actuaciones administrativas.",
+                    "c) Imponer directamente la sanción máxima.",
+                    "d) Realizar una investigación interna adicional."
+                ],
+                correctAnswer: "b) Comunicar a Fiscal General del Estado y suspender actuaciones administrativas."
+            },
+            {
+                question: "¿Quién incoa el procedimiento sancionador cuando el alto cargo tiene la condición de miembro del Gobierno o Secretario de Estado?",
+                options: [
+                    "a) El Ministro de Justicia.",
+                    "b) El Consejo de Ministros a propuesta del Ministro de Hacienda y Administraciones Públicas.",
+                    "c) La Oficina de Conflicto de Intereses.",
+                    "d) El Tribunal de Cuentas."
+                ],
+                correctAnswer: "b) El Consejo de Ministros a propuesta del Ministro de Hacienda y Administraciones Públicas."
+            },
+            {
+                question: "¿Quién es el órgano instructor en estos casos?",
+                options: [
+                    "a) El Consejo de Ministros.",
+                    "b) La Oficina de Conflicto de Intereses.",
+                    "c) El Ministro de Hacienda y Administraciones Públicas.",
+                    "d) El Tribunal Supremo."
+                ],
+                correctAnswer: "b) La Oficina de Conflicto de Intereses."
+            },
+            {
+                question: "¿Quién sanciona a los altos cargos que son miembros del Gobierno o Secretarios de Estado?",
+                options: [
+                    "a) La Oficina de Conflicto de Intereses.",
+                    "b) El Consejo de Ministros.",
+                    "c) El Tribunal de Cuentas.",
+                    "d) El Presidente del Gobierno."
+                ],
+                correctAnswer: "b) El Consejo de Ministros."
+            },
+            {
+                question: "¿Quién incoa el procedimiento sancionador cuando los responsables son personas al servicio de la AGE distintas de los anteriores?",
+                options: [
+                    "a) El Consejo de Ministros.",
+                    "b) El Ministro de Hacienda y Administraciones Públicas.",
+                    "c) La Oficina de Conflicto de Intereses.",
+                    "d) El Director General de la entidad."
+                ],
+                correctAnswer: "b) El Ministro de Hacienda y Administraciones Públicas."
+            },
+            {
+                question: "¿Cuál es la naturaleza jurídica del Consejo de Transparencia y Buen Gobierno (CTyBG)?",
+                options: [
+                    "a) Una asociación privada.",
+                    "b) Un organismo público independiente.",
+                    "c) Una empresa estatal.",
+                    "d) Un sindicato."
+                ],
+                correctAnswer: "b) Un organismo público independiente."
+            },
+            {
+                question: "¿Cuál es uno de los fines del CTyBG?",
+                options: [
+                    "a) Realizar estudios económicos.",
+                    "b) Promover la transparencia de la actividad pública.",
+                    "c) Gestionar el patrimonio del Estado.",
+                    "d) Organizar eventos culturales."
+                ],
+                correctAnswer: "b) Promover la transparencia de la actividad pública."
+            },
+            {
+                question: "¿Cuánto tiempo prescriben las infracciones muy graves?",
+                options: [
+                    "a) 1 año.",
+                    "b) 3 años.",
+                    "c) 5 años.",
+                    "d) 10 años."
+                ],
+                correctAnswer: "c) 5 años."
+            },
+            {
+                question: "¿Cuánto tiempo prescriben las infracciones graves?",
+                options: [
+                    "a) 1 año.",
+                    "b) 3 años.",
+                    "c) 5 años.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b) 3 años."
+            },
+            {
+                question: "¿Cuánto tiempo prescriben las infracciones leves?",
+                options: [
+                    "a) 6 meses.",
+                    "b) 1 año.",
+                    "c) 2 años.",
+                    "d) 3 años."
+                ],
+                correctAnswer: "b) 1 año."
+            },
+            {
+                question: "¿A qué Ministerio está adscrito el CTyBG?",
+                options: [
+                    "a) Ministerio de Presidencia.",
+                    "b) Ministerio de Asuntos Exteriores.",
+                    "c) Ministerio de Hacienda y AAPP.",
+                    "d) Ministerio de Justicia."
+                ],
+                correctAnswer: "c) Ministerio de Hacienda y AAPP."
+            },
+            {
+                question: "¿Quién forma parte de la composición del CTyBG, además de su Presidente?",
+                options: [
+                    "a) Un Fiscal General.",
+                    "b) Un Diputado y un Senador.",
+                    "c) El Presidente del Tribunal Supremo.",
+                    "d) El Defensor del Pueblo."
+                ],
+                correctAnswer: "b) Un Diputado y un Senador."
+            },
+            {
+                question: "¿Un representante de qué organismo forma parte de la composición del CTyBG?",
+                options: [
+                    "a) La Agencia Tributaria.",
+                    "b) La Agencia Española de Protección de Datos.",
+                    "c) El Banco de España.",
+                    "d) La Comisión Nacional del Mercado de Valores."
+                ],
+                correctAnswer: "b) La Agencia Española de Protección de Datos."
+            },
+            {
+                question: "¿Qué se establece en el Real Decreto 919/2014, de 31 de octubre, relacionado con el CTyBG?",
+                options: [
+                    "a) Su presupuesto anual.",
+                    "b) Su Estatuto, organización, estructura y funcionamiento.",
+                    "c) Las sanciones por incumplimiento de la ley.",
+                    "d) Los límites al acceso a la información."
+                ],
+                correctAnswer: "b) Su Estatuto, organización, estructura y funcionamiento."
+            },
+            {
+                question: "¿Con qué periodicidad el Presidente del CTyBG comparece ante la Comisión correspondiente de las Cortes para dar cuentas de la memoria?",
+                options: [
+                    "a) Semestralmente.",
+                    "b) Anualmente.",
+                    "c) Cada dos años.",
+                    "d) Cuando sea requerido por una única vez."
+                ],
+                correctAnswer: "b) Anualmente."
+            },
+            {
+                question: "¿Cuál es una de las funciones del CTyBG?",
+                options: [
+                    "a) Adoptar recomendaciones para el mejor cumplimiento de las obligaciones contenidas en la Ley.",
+                    "b) Dictar sentencias judiciales.",
+                    "c) Realizar auditorías contables a empresas privadas.",
+                    "d) Proponer leyes al Parlamento."
+                ],
+                correctAnswer: "a) Adoptar recomendaciones para el mejor cumplimiento de las obligaciones contenidas en la Ley."
+            },
+            {
+                question: "¿El CTyBG debe informar preceptivamente los proyectos normativos de carácter estatal que desarrollen esta Ley?",
+                options: [
+                    "a) No, solo los de ámbito autonómico.",
+                    "b) Sí.",
+                    "c) Solo si son de urgencia.",
+                    "d) Depende de la solicitud del Gobierno."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿El CTyBG evalúa el grado de aplicación de esta Ley?",
+                options: [
+                    "a) No, esa es función de las CCAA.",
+                    "b) Sí, elaborando una memoria anual.",
+                    "c) Solo a petición de los ciudadanos.",
+                    "d) Únicamente en casos de infracción."
+                ],
+                correctAnswer: "b) Sí, elaborando una memoria anual."
+            },
+            {
+                question: "¿Qué actividades promueve el CTyBG para un mejor conocimiento de las materias reguladas por esta Ley?",
+                options: [
+                    "a) Actividades recreativas.",
+                    "b) Actividades de formación y sensibilización.",
+                    "c) Competiciones deportivas.",
+                    "d) Viajes de estudio."
+                ],
+                correctAnswer: "b) Actividades de formación y sensibilización."
+            },
+            {
+                question: "¿Por cuánto tiempo es nombrado el Presidente del CTyBG?",
+                options: [
+                    "a) 3 años renovables.",
+                    "b) 5 años no renovables.",
+                    "c) Indefinidamente.",
+                    "d) 4 años, prorrogable por otros 4."
+                ],
+                correctAnswer: "b) 5 años no renovables."
+            },
+            {
+                question: "¿Qué requisito se exige para el nombramiento del Presidente del CTyBG?",
+                options: [
+                    "a) Ser funcionario de carrera.",
+                    "b) Reconocido prestigio.",
+                    "c) Haber sido ministro.",
+                    "d) Ser abogado."
+                ],
+                correctAnswer: "b) Reconocido prestigio."
+            },
+            {
+                question: "¿Requiere el nombramiento del Presidente del CTyBG la mayoría del Congreso?",
+                options: [
+                    "a) No, es una decisión unilateral del Gobierno.",
+                    "b) Sí.",
+                    "c) Solo si no hay acuerdo.",
+                    "d) Depende del partido en el gobierno."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿El Presidente del CTyBG percibe retribución?",
+                options: [
+                    "a) No.",
+                    "b) Sí.",
+                    "c) Solo si cumple ciertos objetivos.",
+                    "d) Solo los gastos de representación."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Con qué grado de dedicación desempeña su cargo el Presidente del CTyBG?",
+                options: [
+                    "a) Dedicación parcial.",
+                    "b) Dedicación absoluta.",
+                    "c) Dedicación flexible.",
+                    "d) Dependiendo de la carga de trabajo."
+                ],
+                correctAnswer: "b) Dedicación absoluta."
+            },
+            {
+                question: "¿El Presidente del CTyBG vela por el cumplimiento de la ley?",
+                options: [
+                    "a) No, esa es función del Consejo.",
+                    "b) Sí.",
+                    "c) Solo en casos de denuncia.",
+                    "d) Únicamente si es requerido por el Gobierno."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué información debe publicar periódicamente y actualizada la Administración según el Art. 2?",
+                options: [
+                    "a) Información personal de los ciudadanos.",
+                    "b) La información de transparencia.",
+                    "c) Estudios de mercado privados.",
+                    "d) Informes confidenciales de seguridad."
+                ],
+                correctAnswer: "b) La información de transparencia."
+            },
+            {
+                question: "¿Qué principio general de la Ley de Transparencia busca la 'disociación de datos para publicidad'?",
+                options: [
+                    "a) Reducir costes.",
+                    "b) Proteger datos sensibles mientras se publica otra información.",
+                    "c) Aumentar la complejidad de la información.",
+                    "d) Limitar el acceso solo a expertos."
+                ],
+                correctAnswer: "b) Proteger datos sensibles mientras se publica otra información."
+            },
+            {
+                question: "¿Qué ocurre con la información si afecta derechos o intereses de terceros durante la tramitación de una solicitud de acceso?",
+                options: [
+                    "a) Se deniega automáticamente el acceso.",
+                    "b) Se informa a los terceros para que presenten alegaciones en 15 días.",
+                    "c) Se publica la información sin alteraciones.",
+                    "d) Se suspende indefinidamente la tramitación."
+                ],
+                correctAnswer: "b) Se informa a los terceros para que presenten alegaciones en 15 días."
+            },
+            {
+                question: "¿Quién es el órgano competente para instruir un procedimiento sancionador cuando los responsables son personas al servicio de una CCAA o AALL?",
+                options: [
+                    "a) El Ministro de Hacienda y Administraciones Públicas.",
+                    "b) Los órganos que tengan atribuidas estas funciones en aplicación del régimen disciplinario propio.",
+                    "c) El Consejo de Transparencia y Buen Gobierno.",
+                    "d) El Tribunal de Cuentas."
+                ],
+                correctAnswer: "b) Los órganos que tengan atribuidas estas funciones en aplicación del régimen disciplinario propio."
+            },
+            {
+                question: "¿Quién sanciona a los responsables al servicio de una CCAA o AALL?",
+                options: [
+                    "a) El Ministro de Hacienda y Administraciones Públicas.",
+                    "b) El Consejo de Gobierno de la CCAA o el Pleno de la Junta de Gobierno de la EELL.",
+                    "c) La Oficina de Conflicto de Intereses.",
+                    "d) El Defensor del Pueblo."
+                ],
+                correctAnswer: "b) El Consejo de Gobierno de la CCAA o el Pleno de la Junta de Gobierno de la EELL."
+            },
+            {
+                question: "¿Las resoluciones sancionadoras son recurribles ante qué jurisdicción?",
+                options: [
+                    "a) Penal.",
+                    "b) Contencioso-Administrativa (JC-A).",
+                    "c) Civil.",
+                    "d) Social."
+                ],
+                correctAnswer: "b) Contencioso-Administrativa (JC-A)."
+            },
+            {
+                question: "¿El Presidente del CTyBG puede instar el inicio del procedimiento sancionador?",
+                options: [
+                    "a) No, esa es una función exclusiva del Gobierno.",
+                    "b) Sí.",
+                    "c) Solo en casos de infracción muy grave.",
+                    "d) Únicamente si hay una denuncia previa."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Qué tipo de información económica se debe publicar según el Art. 8?",
+                options: [
+                    "a) Solo los gastos de representación.",
+                    "b) Las cuentas anuales e informes de auditorías de cuentas y fiscalización.",
+                    "c) Las inversiones privadas de los altos cargos.",
+                    "d) Los planes de negocio de empresas vinculadas."
+                ],
+                correctAnswer: "b) Las cuentas anuales e informes de auditorías de cuentas y fiscalización."
+            },
+            {
+                question: "¿Qué deben hacer los adjudicatarios de contratos del sector público según la Ley de Transparencia?",
+                options: [
+                    "a) Presentar informes financieros anuales al Congreso.",
+                    "b) Cumplir con las obligaciones de transparencia.",
+                    "c) Obtener una certificación especial.",
+                    "d) Realizar auditorías internas."
+                ],
+                correctAnswer: "b) Cumplir con las obligaciones de transparencia."
+            },
+            {
+                question: "¿La Ley 3/2015, de 30 de marzo, es relevante para los principios de actuación de buen gobierno?",
+                options: [
+                    "a) No, esa ley trata sobre otro tema.",
+                    "b) Sí.",
+                    "c) Solo para aspectos económicos.",
+                    "d) Únicamente para la AGE."
+                ],
+                correctAnswer: "b) Sí."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answeredQuestions = 0;
+        const userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer index
+
+        const quizContent = document.getElementById('quizContent');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const prevQuestionBtn = document.getElementById('prevQuestion');
+        const nextQuestionBtn = document.getElementById('nextQuestion');
+        const restartQuizBtn = document.getElementById('restartQuiz');
+        const progressBar = document.getElementById('progressBar');
+
+        // Function to load a question
+        function loadQuestion() {
+            const questionData = quizData[currentQuestionIndex];
+            quizContent.innerHTML = `
+                <div class="question-card">
+                    <div class="question-text">${questionData.question}</div>
+                    <div class="options-container" id="optionsContainer">
+                        ${questionData.options.map((option, index) => `
+                            <button data-index="${index}" class="option-button">${option}</button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedbackMessage"></div>
+                </div>
+            `;
+
+            const optionButtons = document.querySelectorAll('.option-button');
+            optionButtons.forEach(button => {
+                button.addEventListener('click', handleAnswerClick);
+            });
+
+            // Restore previous answer state if available
+            if (userAnswers[currentQuestionIndex] !== null) {
+                const selectedButton = optionButtons[userAnswers[currentQuestionIndex]];
+                checkAnswer(selectedButton, true); // Pass true to indicate it's a reload
+            }
+
+            updateNavigationButtons();
+            updateProgressBar();
+            updateScoreDisplay();
+        }
+
+        // Function to handle answer click
+        function handleAnswerClick(event) {
+            const selectedButton = event.target;
+            const selectedAnswer = selectedButton.textContent;
+            const selectedIndex = parseInt(selectedButton.dataset.index);
+
+            // Disable all buttons once an answer is selected
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.disabled = true;
+            });
+
+            userAnswers[currentQuestionIndex] = selectedIndex; // Store the user's answer
+
+            checkAnswer(selectedButton);
+        }
+
+        // Function to check the answer and update UI
+        function checkAnswer(selectedButton, isReload = false) {
+            const selectedAnswer = selectedButton.textContent;
+            const questionData = quizData[currentQuestionIndex];
+            const feedbackMessage = document.getElementById('feedbackMessage');
+
+            if (selectedAnswer === questionData.correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackMessage.textContent = "¡Correcto!";
+                feedbackMessage.classList.remove('incorrect');
+                feedbackMessage.classList.add('correct');
+                if (!isReload && userAnswers[currentQuestionIndex] !== null) { // Only increment score if it's a new answer
+                    score++;
+                    answeredQuestions++;
+                }
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackMessage.textContent = "Incorrecto. La respuesta correcta es: " + questionData.correctAnswer;
+                feedbackMessage.classList.remove('correct');
+                feedbackMessage.classList.add('incorrect');
+                if (!isReload && userAnswers[currentQuestionIndex] === null) { // Mark as answered even if incorrect
+                    answeredQuestions++;
+                }
+                // Highlight the correct answer
+                document.querySelectorAll('.option-button').forEach(button => {
+                    if (button.textContent === questionData.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            updateScoreDisplay();
+        }
+
+        // Function to update navigation button visibility
+        function updateNavigationButtons() {
+            prevQuestionBtn.classList.toggle('hidden', currentQuestionIndex === 0);
+            nextQuestionBtn.classList.toggle('hidden', currentQuestionIndex === quizData.length - 1);
+            restartQuizBtn.classList.toggle('hidden', currentQuestionIndex !== quizData.length - 1);
+
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextQuestionBtn.textContent = 'Finalizar Test';
+            } else {
+                nextQuestionBtn.textContent = 'Siguiente';
+            }
+        }
+
+        // Function to update the progress bar
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Function to update the score display
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Puntuación: ${score} / ${answeredQuestions}`;
+        }
+
+        // Event listener for previous question button
+        prevQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Event listener for next question button
+        nextQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1) {
+                // Handle end of quiz
+                quizContent.innerHTML = `
+                    <div class="question-card">
+                        <div class="question-text">¡Has completado el test!</div>
+                        <div class="feedback correct">Tu puntuación final es: ${score} de ${quizData.length} preguntas.</div>
+                    </div>
+                `;
+                nextQuestionBtn.classList.add('hidden');
+                prevQuestionBtn.classList.add('hidden');
+                restartQuizBtn.classList.remove('hidden');
+                scoreDisplay.textContent = `Puntuación final: ${score} / ${quizData.length}`;
+            }
+        });
+
+        // Event listener for restart quiz button
+        restartQuizBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            answeredQuestions = 0;
+            userAnswers.fill(null); // Reset user answers
+            loadQuestion();
+            restartQuizBtn.classList.add('hidden');
+        });
+
+        // Initial load of the first question
+        loadQuestion();
+    </script>
+</body>
+</html>

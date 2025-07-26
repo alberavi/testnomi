@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Periféricos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #2d3748;
+            line-height: 1.4;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .option-button {
+            background-color: #edf2f7;
+            color: #4a5568;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            word-wrap: break-word; /* Ensures long text wraps */
+            white-space: normal; /* Ensures long text wraps */
+        }
+        .option-button:hover {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+        }
+        .option-button.correct {
+            background-color: #d4edda; /* Light green */
+            color: #155724; /* Dark green */
+            border-color: #28a745; /* Green */
+            font-weight: 600;
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da; /* Light red */
+            color: #721c24; /* Dark red */
+            border-color: #dc3545; /* Red */
+            font-weight: 600;
+        }
+        .feedback-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .feedback-message.correct {
+            color: #28a745; /* Green */
+        }
+        .feedback-message.incorrect {
+            color: #dc3545; /* Red */
+        }
+        .navigation-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .nav-button {
+            background-color: #4299e1; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-grow: 1; /* Allows buttons to grow */
+        }
+        .nav-button:hover {
+            background-color: #3182ce; /* Darker blue */
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0; /* Gray */
+            cursor: not-allowed;
+        }
+        .quiz-progress {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #718096;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .quiz-container {
+                padding: 20px;
+            }
+            .question-text {
+                font-size: 1.2rem;
+            }
+            .option-button {
+                font-size: 1rem;
+                padding: 12px 15px;
+            }
+            .nav-button {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+            .navigation-buttons {
+                flex-direction: column; /* Stack buttons on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-progress" id="quiz-progress"></div>
+        <div class="question-text" id="question-text"></div>
+        <div class="options-container" id="options-container"></div>
+        <div class="feedback-message" id="feedback-message"></div>
+        <div class="navigation-buttons">
+            <button class="nav-button" id="prev-button" disabled>Anterior</button>
+            <button class="nav-button" id="next-button">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "¿Cuál es el primer paso en el proceso de interacción con un teclado según el diagrama?",
+                options: [
+                    "a) El Controlador genera una interrupción (IRQ).",
+                    "b) La PIC genera el vector de interrupción 09H.",
+                    "c) Se presiona una tecla y llega al Controlador del teclado.",
+                    "d) La PIC le dice a la CPU que se detenga."
+                ],
+                correctAnswer: "c) Se presiona una tecla y llega al Controlador del teclado."
+            },
+            {
+                question: "Después de que se presiona una tecla, ¿qué componente genera una interrupción o IRQ que llega a la PIC?",
+                options: [
+                    "a) La CPU",
+                    "b) El Dispositivo",
+                    "c) El Controlador",
+                    "d) La RAM"
+                ],
+                correctAnswer: "c) El Controlador"
+            },
+            {
+                question: "¿Qué vector de interrupción genera la PIC para buscar en la RAM la dirección que apunta a la ISR?",
+                options: [
+                    "a) 00H",
+                    "b) 09H",
+                    "c) 0FH",
+                    "d) 16H"
+                ],
+                correctAnswer: "b) 09H"
+            },
+            {
+                question: "¿Qué le indica la PIC a la CPU después de generar el vector de interrupción?",
+                options: [
+                    "a) Que continúe con la tarea actual.",
+                    "b) Que ejecute el firmware.",
+                    "c) Que se detenga para atender la interrupción y ejecutar la ISR.",
+                    "d) Que ignore la interrupción."
+                ],
+                correctAnswer: "c) Que se detenga para atender la interrupción y ejecutar la ISR."
+            },
+            {
+                question: "¿Qué significan las siglas IRQ?",
+                options: [
+                    "a) Interrupt Routine Queue",
+                    "b) Interrupt ReQuest.",
+                    "c) Interrupt Response Query",
+                    "d) Input Register Queue"
+                ],
+                correctAnswer: "b) Interrupt ReQuest."
+            },
+            {
+                question: "Según el documento, ¿qué es un Controlador en el contexto de los periféricos?",
+                options: [
+                    "a) Un software que gestiona la memoria.",
+                    "b) Un chip con registro de control, estado y datos y firmware con la lógica.",
+                    "c) Un dispositivo de almacenamiento.",
+                    "d) Un bus de datos."
+                ],
+                correctAnswer: "b) Un chip con registro de control, estado y datos y firmware con la lógica."
+            },
+            {
+                question: "¿Qué es el Firmware?",
+                options: [
+                    "a) Un tipo de memoria volátil.",
+                    "b) ROM Actualizable.",
+                    "c) Un sistema operativo.",
+                    "d) Un componente de la CPU."
+                ],
+                correctAnswer: "b) ROM Actualizable."
+            },
+            {
+                question: "¿Qué significan las siglas PIC?",
+                options: [
+                    "a) Peripheral Interface Controller",
+                    "b) Programable Interrupt Channel",
+                    "c) Controlador Programable de Interrupciones.",
+                    "d) Processor Interface Chip"
+                ],
+                correctAnswer: "c) Controlador Programable de Interrupciones."
+            },
+            {
+                question: "¿Qué es un Vector de interrupción?",
+                options: [
+                    "a) Una dirección de memoria fija.",
+                    "b) Índice de la tabla dentro de la RAM que sirve para localizar la ISR.",
+                    "c) Un tipo de interrupción de hardware.",
+                    "d) Un registro de la CPU."
+                ],
+                correctAnswer: "b) Índice de la tabla dentro de la RAM que sirve para localizar la ISR."
+            },
+            {
+                question: "¿Qué significan las siglas ISR?",
+                options: [
+                    "a) Input State Register",
+                    "b) Internal Service Routine",
+                    "c) Interrupt Service Routine.",
+                    "d) Interruption System Request"
+                ],
+                correctAnswer: "c) Interrupt Service Routine."
+            },
+            {
+                question: "¿Qué es un Driver en el contexto de las interrupciones?",
+                options: [
+                    "a) El hardware que genera la interrupción.",
+                    "b) Código que atiende a la interrupción hw.",
+                    "c) Un dispositivo de entrada/salida.",
+                    "d) Una señal de control."
+                ],
+                correctAnswer: "b) Código que atiende a la interrupción hw."
+            },
+            {
+                question: "¿Qué método de sincronización CPU-Dispositivo implica que la CPU pregunta periódicamente al dispositivo para conocer su estado?",
+                options: [
+                    "a) Por Interrupciones",
+                    "b) Por DMA",
+                    "c) Por Polling.",
+                    "d) Por Traps"
+                ],
+                correctAnswer: "c) Por Polling."
+            },
+            {
+                question: "¿Qué método de sincronización CPU-Dispositivo permite a los dispositivos operar directamente sobre la memoria sin intervención de la CPU, salvo comienzo o fin de la operación?",
+                options: [
+                    "a) Por Polling",
+                    "b) Por Interrupciones",
+                    "c) Por DMA: Acceso Directo a Memoria.",
+                    "d) Por Traps"
+                ],
+                correctAnswer: "c) Por DMA: Acceso Directo a Memoria."
+            },
+            {
+                question: "Según el documento, ¿qué posibles problemas de coherencia pueden surgir con DMA?",
+                options: [
+                    "a) De la RAM",
+                    "b) De la caché.",
+                    "c) Del registro de datos",
+                    "d) Del bus de direcciones"
+                ],
+                correctAnswer: "b) De la caché."
+            },
+            {
+                question: "¿Qué dispositivos suelen usar DMA según el texto?",
+                options: [
+                    "a) El teclado y el ratón.",
+                    "b) El disco duro y la tarjeta gráfica.",
+                    "c) La impresora y el escáner.",
+                    "d) Los dispositivos USB."
+                ],
+                correctAnswer: "b) El disco duro y la tarjeta gráfica."
+            },
+            {
+                question: "La transferencia de datos entre CPU y Dispositivos se realiza a través de:",
+                options: [
+                    "a) Puertos USB",
+                    "b) puertos E/S (instrucciones IN/OUT).",
+                    "c) Ranuras PCI",
+                    "d) Conexiones inalámbricas"
+                ],
+                correctAnswer: "b) puertos E/S (instrucciones IN/OUT)."
+            },
+            {
+                question: "¿Cuáles son las instrucciones utilizadas para la lectura/escritura a través de puertos E/S?",
+                options: [
+                    "a) READ/WRITE",
+                    "b) GET/PUT",
+                    "c) IN/OUT.",
+                    "d) LOAD/STORE"
+                ],
+                correctAnswer: "c) IN/OUT."
+            },
+            {
+                question: "¿Cuál es el puerto de estado/control para el teclado, según el ejemplo dado?",
+                options: [
+                    "a) Puerto 60h",
+                    "b) Puerto 64h.",
+                    "c) Puerto 80h",
+                    "d) Puerto 3F8h"
+                ],
+                correctAnswer: "b) Puerto 64h."
+            },
+            {
+                question: "¿Cuál es el puerto de datos para el teclado, según el ejemplo dado?",
+                options: [
+                    "a) Puerto 60h.",
+                    "b) Puerto 64h",
+                    "c) Puerto 80h",
+                    "d) Puerto 3F8h"
+                ],
+                correctAnswer: "a) Puerto 60h."
+            },
+            {
+                question: "¿Qué es el 'caching' en el contexto de la transferencia de datos?",
+                options: [
+                    "a) Un proceso de respaldo de datos.",
+                    "b) Una memoria intermedia.",
+                    "c) Caché temporal.",
+                    "d) Una técnica de compresión de datos."
+                ],
+                correctAnswer: "c) Caché temporal."
+            },
+            {
+                question: "¿Qué es el 'buffering' en el contexto de la transferencia de datos?",
+                options: [
+                    "a) Un dispositivo de entrada.",
+                    "b) Memoria intermedia.",
+                    "c) Un tipo de procesador.",
+                    "d) Un protocolo de red."
+                ],
+                correctAnswer: "b) Memoria intermedia."
+            },
+            {
+                question: "¿Qué es el 'spooling'?",
+                options: [
+                    "a) Una técnica de encriptación.",
+                    "b) Un tipo de cable de red.",
+                    "c) Buffer.",
+                    "d) Un formato de archivo."
+                ],
+                correctAnswer: "c) Buffer."
+            },
+            {
+                question: "¿Cuáles son los formatos de los discos ópticos CD-ROM/DVD?",
+                options: [
+                    "a) FAT32 y NTFS",
+                    "b) ISO9660 y UDF.",
+                    "c) HFS+ y ext4",
+                    "d) exFAT y APFS"
+                ],
+                correctAnswer: "b) ISO9660 y UDF."
+            },
+            {
+                question: "¿Qué extensión de formato para discos ópticos permite nombres largos?",
+                options: [
+                    "a) Rock Ridge",
+                    "b) Joilet.",
+                    "c) El Torito",
+                    "d) UDF"
+                ],
+                correctAnswer: "b) Joilet."
+            },
+            {
+                question: "¿Qué se entiende por 'el torito' en relación con los discos ópticos?",
+                options: [
+                    "a) Un tipo de formato de audio.",
+                    "b) Un método de protección contra copia.",
+                    "c) El arranque desde el CD.",
+                    "d) Un tamaño específico de disco."
+                ],
+                correctAnswer: "c) El arranque desde el CD."
+            },
+            {
+                question: "¿Qué elementos determinan la arquitectura de una unidad de disco rígido o mecánico (HDD)?",
+                options: [
+                    "a) Píxeles y resolución.",
+                    "b) Cilindro / Pista; Cabeza L/E.",
+                    "c) Bits y bytes.",
+                    "d) Sectores y clústeres únicamente."
+                ],
+                correctAnswer: "b) Cilindro / Pista; Cabeza L/E."
+            },
+            {
+                question: "¿Cómo se llama el direccionamiento 'real' basado en Cilindro-Cabeza-Sector para HDD?",
+                options: [
+                    "a) LBA",
+                    "b) IDE",
+                    "c) CHS (Cylinder-Head-Sector).",
+                    "d) PATA"
+                ],
+                correctAnswer: "c) CHS (Cylinder-Head-Sector)."
+            },
+            {
+                question: "¿Cómo se llama el direccionamiento lineal para HDD?",
+                options: [
+                    "a) CHS",
+                    "b) LBA (Logical Block Addressing).",
+                    "c) SCSI",
+                    "d) SATA"
+                ],
+                correctAnswer: "b) LBA (Logical Block Addressing)."
+            },
+            {
+                question: "¿Qué tipo de interfaz es IDE/PATA?",
+                options: [
+                    "a) Serie",
+                    "b) Paralelo.",
+                    "c) Óptica",
+                    "d) Inalámbrica"
+                ],
+                correctAnswer: "b) Paralelo."
+            },
+            {
+                question: "¿Cuántos dispositivos puede soportar la interfaz SCSI?",
+                options: [
+                    "a) De 1 a 2",
+                    "b) De 7 a 15.",
+                    "c) Más de 100",
+                    "d) Solo uno"
+                ],
+                correctAnswer: "b) De 7 a 15."
+            },
+            {
+                question: "¿Qué tipo de interfaz es SATA?",
+                options: [
+                    "a) Paralelo",
+                    "b) Serie.",
+                    "c) Inalámbrica",
+                    "d) Óptica"
+                ],
+                correctAnswer: "b) Serie."
+            },
+            {
+                question: "¿Cuál es la velocidad de transferencia de SATA-1?",
+                options: [
+                    "a) 3 Gbps",
+                    "b) 1,5 Gbps.",
+                    "c) 6 Gbps",
+                    "d) 12 Gbps"
+                ],
+                correctAnswer: "b) 1,5 Gbps."
+            },
+            {
+                question: "¿Cuál es la velocidad de transferencia de SATA-3?",
+                options: [
+                    "a) 1,5 Gbps",
+                    "b) 3 Gbps",
+                    "c) 6 Gbps.",
+                    "d) 12 Gbps"
+                ],
+                correctAnswer: "c) 6 Gbps."
+            },
+            {
+                question: "¿Qué significan las siglas SAS?",
+                options: [
+                    "a) Serial Advanced Storage",
+                    "b) Simple Access System",
+                    "c) Serial Attached SCSI.",
+                    "d) Standard Access Serial"
+                ],
+                correctAnswer: "c) Serial Attached SCSI."
+            },
+            {
+                question: "¿Qué identificación única tiene cada dispositivo en SAS?",
+                options: [
+                    "a) ID de puerto",
+                    "b) WWN.",
+                    "c) Dirección MAC",
+                    "d) Número de serie"
+                ],
+                correctAnswer: "b) WWN."
+            },
+            {
+                question: "¿Cuántos dispositivos por dominio puede soportar SAS?",
+                options: [
+                    "a) 7",
+                    "b) 15",
+                    "c) 16.384.",
+                    "d) Ilimitados"
+                ],
+                correctAnswer: "c) 16.384."
+            },
+            {
+                question: "¿Cuál es la velocidad de transferencia de SAS-4?",
+                options: [
+                    "a) 3 Gbps",
+                    "b) 6 Gbps",
+                    "c) 12 Gbps",
+                    "d) 22,5 Gbps."
+                ],
+                correctAnswer: "d) 22,5 Gbps."
+            },
+            {
+                question: "¿En qué tipo de memorias se basan las unidades de disco sólido (SSD)?",
+                options: [
+                    "a) SRAM",
+                    "b) DRAM",
+                    "c) memorias Flash/Nand.",
+                    "d) EEPROM"
+                ],
+                correctAnswer: "c) memorias Flash/Nand."
+            },
+            {
+                question: "¿Cuántos bits por celda almacena la tecnología SLC en SSD?",
+                options: [
+                    "a) 1 bit.",
+                    "b) 2 bits",
+                    "c) 3 bits",
+                    "d) 4 bits"
+                ],
+                correctAnswer: "a) 1 bit."
+            },
+            {
+                question: "¿Cuántos bits por celda almacena la tecnología MLC en SSD?",
+                options: [
+                    "a) 1 bit",
+                    "b) 2 bits.",
+                    "c) 3 bits",
+                    "d) 4 bits"
+                ],
+                correctAnswer: "b) 2 bits."
+            },
+            {
+                question: "¿Cuántos bits por celda almacena la tecnología TLC en SSD?",
+                options: [
+                    "a) 1 bit",
+                    "b) 2 bits",
+                    "c) 3 bits.",
+                    "d) 4 bits"
+                ],
+                correctAnswer: "c) 3 bits."
+            },
+            {
+                question: "¿Cuántos bits por celda almacena la tecnología QLC en SSD?",
+                options: [
+                    "a) 1 bit",
+                    "b) 2 bits",
+                    "c) 3 bits",
+                    "d) 4 bits."
+                ],
+                correctAnswer: "d) 4 bits."
+            },
+            {
+                question: "¿Qué interfaz de SSD reemplaza a mSATA y puede conectarse por SATA o PCI-e?",
+                options: [
+                    "a) NVMe",
+                    "b) U.2",
+                    "c) M.2.",
+                    "d) SAS"
+                ],
+                correctAnswer: "c) M.2."
+            },
+            {
+                question: "¿Qué tipo de conexión utiliza M.2 NVMe?",
+                options: [
+                    "a) SATA",
+                    "b) PCI-e.",
+                    "c) USB",
+                    "d) Thunderbolt"
+                ],
+                correctAnswer: "b) PCI-e."
+            },
+            {
+                question: "¿Cuántas 'lanes' usa NVMe?",
+                options: [
+                    "a) 1",
+                    "b) 2",
+                    "c) 4.",
+                    "d) 8"
+                ],
+                correctAnswer: "c) 4."
+            },
+            {
+                question: "¿A qué bus de datos se conecta NVMe?",
+                options: [
+                    "a) SATA",
+                    "b) USB",
+                    "c) PCI-e.",
+                    "d) IDE"
+                ],
+                correctAnswer: "c) PCI-e."
+            },
+            {
+                question: "¿Cuál es la velocidad de PCI-e 7?",
+                options: [
+                    "a) 32 GT/s",
+                    "b) 64 GT/s",
+                    "c) 128 GT/s.",
+                    "d) 256 GT/s"
+                ],
+                correctAnswer: "c) 128 GT/s."
+            },
+            {
+                question: "¿Para qué tipo de entornos está diseñada la interfaz U.2?",
+                options: [
+                    "a) Portátiles",
+                    "b) Consumidores",
+                    "c) para servidores.",
+                    "d) Dispositivos móviles"
+                ],
+                correctAnswer: "c) para servidores."
+            },
+            {
+                question: "¿Qué permite U.2?",
+                options: [
+                    "a) Solo lectura.",
+                    "b) hot swapping.",
+                    "c) Solo uso en sistemas operativos específicos.",
+                    "d) Mayor distancia de cable."
+                ],
+                correctAnswer: "b) hot swapping."
+            },
+            {
+                question: "¿Qué significa RAID?",
+                options: [
+                    "a) Random Array of Independent Disks",
+                    "b) Redundant Array of Inexpensive Disks",
+                    "c) Redundant Array of Independent Disks.",
+                    "d) Rapid Access Interface Device"
+                ],
+                correctAnswer: "c) Redundant Array of Independent Disks."
+            },
+            {
+                question: "En una configuración RAID, si se tienen discos de diferente tamaño, ¿qué capacidad 'mandará'?",
+                options: [
+                    "a) La del disco más grande.",
+                    "b) el más pequeño.",
+                    "c) El promedio de las capacidades.",
+                    "d) La suma de todas las capacidades."
+                ],
+                correctAnswer: "b) el más pequeño."
+            },
+            {
+                question: "¿Qué es un 'Spare' en un sistema RAID?",
+                options: [
+                    "a) Un disco principal.",
+                    "b) disco de reserva que entra en funcionamiento si otro se estropea.",
+                    "c) Un disco para almacenamiento temporal.",
+                    "d) Un disco que almacena paridad."
+                ],
+                correctAnswer: "b) disco de reserva que entra en funcionamiento si otro se estropea."
+            },
+            {
+                question: "¿Cómo se conoce también a RAID 0?",
+                options: [
+                    "a) Mirroring",
+                    "b) Striping.",
+                    "c) Parity",
+                    "d) Duplication"
+                ],
+                correctAnswer: "b) Striping."
+            },
+            {
+                question: "¿RAID 0 es tolerante a fallos?",
+                options: [
+                    "a) Sí, totalmente.",
+                    "b) No, no tolerante a fallos.",
+                    "c) Solo si se usan más de 4 discos.",
+                    "d) Solo para lecturas."
+                ],
+                correctAnswer: "b) No, no tolerante a fallos."
+            },
+            {
+                question: "¿Cuántos discos son el mínimo para configurar RAID 0?",
+                options: [
+                    "a) 1",
+                    "b) Mínimo 2 discos.",
+                    "c) 3",
+                    "d) 4"
+                ],
+                correctAnswer: "b) Mínimo 2 discos."
+            },
+            {
+                question: "¿Cuál es la Capacidad Neta en RAID 0?",
+                options: [
+                    "a) Capacidad del disco más pequeño.",
+                    "b) Número de discos * Capacidad del disco más pequeño.",
+                    "c) (Número de discos - 1) * Capacidad del disco más pequeño.",
+                    "d) (Número de discos - 2) * Capacidad del disco más pequeño."
+                ],
+                correctAnswer: "b) Número de discos * Capacidad del disco más pequeño."
+            },
+            {
+                question: "¿Cómo se conoce también a RAID 1?",
+                options: [
+                    "a) Striping",
+                    "b) Parity",
+                    "c) Mirroring.",
+                    "d) Spanning"
+                ],
+                correctAnswer: "c) Mirroring."
+            },
+            {
+                question: "¿Qué técnica utiliza RAID 1?",
+                options: [
+                    "a) División de datos en tiras.",
+                    "b) Cada bloque de información se copia en los discos.",
+                    "c) Distribuye la paridad.",
+                    "d) Calcula código Hamming."
+                ],
+                correctAnswer: "b) Cada bloque de información se copia en los discos."
+            },
+            {
+                question: "¿Cuántos discos son el mínimo para configurar RAID 1?",
+                options: [
+                    "a) 1",
+                    "b) Mínimo 2 discos.",
+                    "c) 3",
+                    "d) 4"
+                ],
+                correctAnswer: "b) Mínimo 2 discos."
+            },
+            {
+                question: "¿Cuál es la Capacidad Neta en RAID 1?",
+                options: [
+                    "a) Número de discos * Capacidad del disco más pequeño.",
+                    "b) Capacidad del disco más pequeño.",
+                    "c) (Número de discos * Capacidad del disco más pequeño) / 2.",
+                    "d) (Número de discos - 1) * Capacidad del disco más pequeño."
+                ],
+                correctAnswer: "c) (Número de discos * Capacidad del disco más pequeño) / 2."
+            },
+            {
+                question: "¿Qué característica tienen RAID 2 y 3 en cuanto a la participación de los discos en cada petición de E/S?",
+                options: [
+                    "a) Acceso independiente.",
+                    "b) Acceso secuencial.",
+                    "c) Todos los discos participan en la ejecución de cada petición de E/S simultáneamente.",
+                    "d) Acceso asíncrono."
+                ],
+                correctAnswer: "c) Todos los discos participan en la ejecución de cada petición de E/S simultáneamente."
+            },
+            {
+                question: "¿De qué tamaño son las tiras de información en RAID 2 y 3?",
+                options: [
+                    "a) Muy grandes / bloques.",
+                    "b) Grandes / bloques.",
+                    "c) Tiras de información muy pequeñas (bit, byte o palabra).",
+                    "d) Medianas / clústeres."
+                ],
+                correctAnswer: "c) Tiras de información muy pequeñas (bit, byte o palabra)."
+            },
+            {
+                question: "¿Qué código calcula RAID 2 para detección y corrección de errores?",
+                options: [
+                    "a) Código Reed-Solomon.",
+                    "b) Código Hamming.",
+                    "c) CRC.",
+                    "d) Checksum."
+                ],
+                correctAnswer: "b) Código Hamming."
+            },
+            {
+                question: "¿Cuántos discos son el mínimo para configurar RAID 2?",
+                options: [
+                    "a) 2",
+                    "b) 3 o más discos.",
+                    "c) 4",
+                    "d) 5 o más."
+                ],
+                correctAnswer: "b) 3 o más discos."
+            },
+            {
+                question: "¿Cuántos discos son el mínimo para configurar RAID 3?",
+                options: [
+                    "a) 2",
+                    "b) 3 o más discos.",
+                    "c) 4",
+                    "d) 5 o más."
+                ],
+                correctAnswer: "b) 3 o más discos."
+            },
+            {
+                question: "¿Cuál es la Capacidad Neta en RAID 3?",
+                options: [
+                    "a) Número de discos * Capacidad del disco más pequeño.",
+                    "b) Capacidad del disco más pequeño.",
+                    "c) (Número de discos - 1) * Capacidad del disco más pequeño.",
+                    "d) (Número de discos - 2) * Capacidad del disco más pequeño."
+                ],
+                correctAnswer: "c) (Número de discos - 1) * Capacidad del disco más pequeño."
+            },
+            {
+                question: "¿De qué tamaño son las tiras de información en RAID 4, 5 y 6?",
+                options: [
+                    "a) Muy pequeñas (bit, byte o palabra).",
+                    "b) Tiras de información grandes / bloques.",
+                    "c) Pequeñas / segmentos.",
+                    "d) Muy grandes / volúmenes."
+                ],
+                correctAnswer: "b) Tiras de información grandes / bloques."
+            },
+            {
+                question: "¿Cuántos discos son el mínimo para configurar RAID 4?",
+                options: [
+                    "a) 2",
+                    "b) 3 o más discos.",
+                    "c) 4",
+                    "d) 5 o más."
+                ],
+                correctAnswer: "b) 3 o más discos."
+            },
+            {
+                question: "¿Cuál es la Capacidad Neta en RAID 4?",
+                options: [
+                    "a) Número de discos * Capacidad del disco más pequeño.",
+                    "b) Capacidad del disco más pequeño.",
+                    "c) (Número de discos - 1) * Capacidad del disco más pequeño.",
+                    "d) (Número de discos - 2) * Capacidad del disco más pequeño."
+                ],
+                correctAnswer: "c) (Número de discos - 1) * Capacidad del disco más pequeño."
+            },
+            {
+                question: "¿Qué nivel de RAID distribuye las tiras de paridad por todos los discos?",
+                options: [
+                    "a) RAID 0",
+                    "b) RAID 1",
+                    "c) RAID 4",
+                    "d) RAID 5."
+                ],
+                correctAnswer: "d) RAID 5."
+            },
+            {
+                question: "¿Cuántos fallos en una unidad soporta RAID 5?",
+                options: [
+                    "a) 0",
+                    "b) 1 fallo.",
+                    "c) 2",
+                    "d) Más de 2"
+                ],
+                correctAnswer: "b) 1 fallo."
+            },
+            {
+                question: "¿Cuál es la Capacidad Neta en RAID 5?",
+                options: [
+                    "a) Número de discos * Capacidad del disco más pequeño.",
+                    "b) Capacidad del disco más pequeño.",
+                    "c) (Número de discos - 1) * Capacidad del disco más pequeño.",
+                    "d) (Número de discos - 2) * Capacidad del disco más pequeño."
+                ],
+                correctAnswer: "c) (Número de discos - 1) * Capacidad del disco más pequeño."
+            },
+            {
+                question: "¿Qué nivel de RAID es como RAID 5 pero la paridad se escribe en 2 unidades?",
+                options: [
+                    "a) RAID 0",
+                    "b) RAID 1",
+                    "c) RAID 6.",
+                    "d) RAID 10"
+                ],
+                correctAnswer: "c) RAID 6."
+            },
+            {
+                question: "¿Cuántos discos son el mínimo para configurar RAID 6?",
+                options: [
+                    "a) 2",
+                    "b) 3",
+                    "c) 4 o más discos.",
+                    "d) 5 o más."
+                ],
+                correctAnswer: "c) 4 o más discos."
+            },
+            {
+                question: "¿Cuántos fallos en una unidad soporta RAID 6?",
+                options: [
+                    "a) 0",
+                    "b) 1",
+                    "c) 2 fallos.",
+                    "d) Más de 2"
+                ],
+                correctAnswer: "c) 2 fallos."
+            },
+            {
+                question: "¿Cuál es la Capacidad Neta en RAID 6?",
+                options: [
+                    "a) Número de discos * Capacidad del disco más pequeño.",
+                    "b) Capacidad del disco más pequeño.",
+                    "c) (Número de discos - 1) * Capacidad del disco más pequeño.",
+                    "d) (Número de discos - 2) * Capacidad del disco más pequeño."
+                ],
+                correctAnswer: "d) (Número de discos - 2) * Capacidad del disco más pequeño."
+            },
+            {
+                question: "En un RAID 0+1, ¿qué operación se realiza primero?",
+                options: [
+                    "a) Primero RAID 1 (espejo).",
+                    "b) Primero RAID 0 (2 discos).",
+                    "c) Ambas al mismo tiempo.",
+                    "d) Depende de la configuración."
+                ],
+                correctAnswer: "b) Primero RAID 0 (2 discos)."
+            },
+            {
+                question: "En un RAID 1+0, ¿qué operación se realiza primero?",
+                options: [
+                    "a) Primero RAID 0 (división).",
+                    "b) Primero RAID 1 (espejo).",
+                    "c) Ambas al mismo tiempo.",
+                    "d) Depende de la configuración."
+                ],
+                correctAnswer: "b) Primero RAID 1 (espejo)."
+            },
+            {
+                question: "¿Qué significa JBOD?",
+                options: [
+                    "a) Just a Bunch Of Disks",
+                    "b) Joint Basic Operating Drives",
+                    "c) muchos discos trabajan como uno solo.",
+                    "d) Jumbo Bytes Of Data"
+                ],
+                correctAnswer: "c) muchos discos trabajan como uno solo."
+            },
+            {
+                question: "¿Qué sucede si se rompe un disco en un sistema JBOD?",
+                options: [
+                    "a) Se pierde toda la información del conjunto.",
+                    "b) se pierde la info de ese disco, pero la unidad sigue funcionando.",
+                    "c) El sistema se detiene completamente.",
+                    "d) Los datos se reconstruyen automáticamente."
+                ],
+                correctAnswer: "b) se pierde la info de ese disco, pero la unidad sigue funcionando."
+            },
+            {
+                question: "¿Qué significan las siglas CRT en el contexto de pantallas?",
+                options: [
+                    "a) Color Raster Tube",
+                    "b) haz de rayos sobre pantalla de fósforo.",
+                    "c) Clear Resolution Technology",
+                    "d) Chromatic Raster Display"
+                ],
+                correctAnswer: "b) haz de rayos sobre pantalla de fósforo."
+            },
+            {
+                question: "¿Qué significan las siglas LCD en el contexto de pantallas?",
+                options: [
+                    "a) Light Crystal Display",
+                    "b) Liquid Color Display",
+                    "c) cristal líquido más iluminación.",
+                    "d) Low Cost Display"
+                ],
+                correctAnswer: "c) cristal líquido más iluminación."
+            },
+            {
+                question: "¿Cuál es la principal característica de las pantallas OLED según el documento?",
+                options: [
+                    "a) Utilizan cristal líquido para la imagen.",
+                    "b) Cada diodo para un pixel.",
+                    "c) Necesitan retroiluminación.",
+                    "d) Generan imágenes mediante un haz de electrones."
+                ],
+                correctAnswer: "b) Cada diodo para un pixel."
+            },
+            {
+                question: "¿Qué tipo de interfaz de pantalla es VGA?",
+                options: [
+                    "a) Digital",
+                    "b) analógico.",
+                    "c) Híbrido",
+                    "d) Óptico"
+                ],
+                correctAnswer: "b) analógico."
+            },
+            {
+                question: "¿Qué interfaz de pantalla soporta audio + vídeo, y su versión 2.1 soporta 10K y 120 Hz?",
+                options: [
+                    "a) DVI",
+                    "b) DisplayPort",
+                    "c) HDMI.",
+                    "d) VGA"
+                ],
+                correctAnswer: "c) HDMI."
+            },
+            {
+                question: "¿Qué fotosensor utiliza un escáner?",
+                options: [
+                    "a) CMOS",
+                    "b) CCD.",
+                    "c) FSO",
+                    "d) IGBT"
+                ],
+                correctAnswer: "b) CCD."
+            },
+            {
+                question: "¿Qué significa OCR en el contexto de escáneres?",
+                options: [
+                    "a) Optical Character Recognition (reconocimiento óptico de caracteres).",
+                    "b) Object Color Restoration",
+                    "c) Output Character Reader",
+                    "d) Online Content Retrieval"
+                ],
+                correctAnswer: "a) Optical Character Recognition (reconocimiento óptico de caracteres)."
+            },
+            {
+                question: "¿Cuál es el principal componente que interactúa con el tóner en una impresora láser para la impresión?",
+                options: [
+                    "a) El cabezal de inyección.",
+                    "b) toner+tambor fotosensible.",
+                    "c) La cinta de transferencia.",
+                    "d) El fusor."
+                ],
+                correctAnswer: "b) toner+tambor fotosensible."
+            },
+            {
+                question: "¿Qué tipo de impresoras utilizan papel sensible al calor?",
+                options: [
+                    "a) Inyección de tinta.",
+                    "b) Matríciales.",
+                    "c) Térmica.",
+                    "d) Sublimación."
+                ],
+                correctAnswer: "c) Térmica."
+            },
+            {
+                question: "¿Qué modelos de color se utilizan en impresión?",
+                options: [
+                    "a) RGB",
+                    "b) CMYK.",
+                    "c) HSL",
+                    "d) HSV"
+                ],
+                correctAnswer: "b) CMYK."
+            },
+            {
+                question: "¿Qué es un PDL?",
+                options: [
+                    "a) Un protocolo de red.",
+                    "b) Es un lenguaje que tiene comandos que entiende la impresora.",
+                    "c) Un formato de imagen.",
+                    "d) Un tipo de driver."
+                ],
+                correctAnswer: "b) Es un lenguaje que tiene comandos que entiende la impresora."
+            },
+            {
+                question: "¿Qué lenguaje de descripción de página es propiedad de Adobe?",
+                options: [
+                    "a) PCL",
+                    "b) XPS",
+                    "c) PDF",
+                    "d) PostScript."
+                ],
+                correctAnswer: "d) PostScript."
+            },
+            {
+                question: "¿Qué tipo de fichero es comúnmente usado en impresoras 3D, según el documento?",
+                options: [
+                    "a) JPG",
+                    "b) Ficheros STL, 3MF, VRML.",
+                    "c) DOCX",
+                    "d) PDF"
+                ],
+                correctAnswer: "b) Ficheros STL, 3MF, VRML."
+            },
+            {
+                question: "¿Cuál es el tipo de impresión 3D más usado (FDM y FFF)?",
+                options: [
+                    "a) Stereolithography (SLA).",
+                    "b) Fusión de lecho de polvo (SLS).",
+                    "c) De extrusión.",
+                    "d) Procesamiento de luz digital (DLP)."
+                ],
+                correctAnswer: "c) De extrusión."
+            },
+            {
+                question: "¿Qué materiales se usan comúnmente en la impresión 3D de extrusión?",
+                options: [
+                    "a) Resina y metales.",
+                    "b) Polvo cerámico.",
+                    "c) PLA, ABS y TPU.",
+                    "d) Madera y vidrio."
+                ],
+                correctAnswer: "c) PLA, ABS y TPU."
+            },
+            {
+                question: "¿Cuál era la principal aplicación de FireWire, según el documento?",
+                options: [
+                    "a) Conectar redes de área local.",
+                    "b) Usado para conectar dispositivos digitales (cámaras y videocámaras) a PC.",
+                    "c) Almacenamiento externo de alta capacidad.",
+                    "d) Conexión a monitores."
+                ],
+                correctAnswer: "b) Usado para conectar dispositivos digitales (cámaras y videocámaras) a PC."
+            },
+            {
+                question: "¿Cómo se llamaba también ThunderBolt inicialmente?",
+                options: [
+                    "a) SuperSpeed.",
+                    "b) Light Peak.",
+                    "c) UltraConnect.",
+                    "d) FastLink."
+                ],
+                correctAnswer: "b) Light Peak."
+            },
+            {
+                question: "¿Qué protocolos soporta ThunderBolt?",
+                options: [
+                    "a) Solo Ethernet.",
+                    "b) Solo DisplayPort.",
+                    "c) Múltiples protocolos (soporta DisplayPort, HDMI y Ethernet).",
+                    "d) Solo USB."
+                ],
+                correctAnswer: "c) Múltiples protocolos (soporta DisplayPort, HDMI y Ethernet)."
+            },
+            {
+                question: "¿Cuál es la velocidad de Thunderbolt 3?",
+                options: [
+                    "a) 10 Gbps",
+                    "b) 20 Gbps",
+                    "c) 40 Gbps.",
+                    "d) 80 Gbps"
+                ],
+                correctAnswer: "c) 40 Gbps."
+            },
+            {
+                question: "¿Cuál es la velocidad de USB 4.0 en modo simétrico?",
+                options: [
+                    "a) 20 Gbps",
+                    "b) 40 Gbps",
+                    "c) 80 Gbps.",
+                    "d) 120 Gbps"
+                ],
+                correctAnswer: "c) 80 Gbps."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        let quizCompleted = false;
+
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainerElement = document.getElementById('options-container');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const quizProgressElement = document.getElementById('quiz-progress');
+
+        // Function to load a question
+        function loadQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionTextElement.textContent = currentQuestion.question;
+            optionsContainerElement.innerHTML = '';
+            feedbackMessageElement.textContent = '';
+            selectedAnswer = null; // Reset selected answer for new question
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainerElement.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            updateProgress();
+        }
+
+        // Function to handle answer selection
+        function selectAnswer(selectedButton, answer) {
+            if (selectedAnswer !== null) {
+                // If an answer was already selected, remove its styling
+                const previouslySelectedButton = Array.from(optionsContainerElement.children).find(btn => btn.textContent === selectedAnswer);
+                if (previouslySelectedButton) {
+                    previouslySelectedButton.classList.remove('correct', 'incorrect');
+                }
+            }
+
+            selectedAnswer = answer;
+            const currentQuestion = quizData[currentQuestionIndex];
+
+            // Disable all options after selection
+            Array.from(optionsContainerElement.children).forEach(button => {
+                button.disabled = true;
+            });
+
+            // Provide immediate feedback
+            if (selectedAnswer === currentQuestion.correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackMessageElement.textContent = '¡Correcto!';
+                feedbackMessageElement.classList.remove('incorrect');
+                feedbackMessageElement.classList.add('correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${currentQuestion.correctAnswer}`;
+                feedbackMessageElement.classList.remove('correct');
+                feedbackMessageElement.classList.add('incorrect');
+
+                // Highlight the correct answer
+                Array.from(optionsContainerElement.children).forEach(button => {
+                    if (button.textContent === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+        }
+
+        // Function to update navigation button states
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1 && selectedAnswer === null; // Only disable next if it's the last question and no answer is selected
+            
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextButton.textContent = 'Finalizar Test';
+            } else {
+                nextButton.textContent = 'Siguiente';
+            }
+        }
+
+        // Function to update quiz progress
+        function updateProgress() {
+            quizProgressElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        // Event listener for Next button
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1 && selectedAnswer !== null) {
+                // Handle end of quiz
+                quizCompleted = true;
+                questionTextElement.textContent = '¡Has completado el test!';
+                optionsContainerElement.innerHTML = '';
+                feedbackMessageElement.textContent = '¡Gracias por participar!';
+                feedbackMessageElement.classList.remove('correct', 'incorrect');
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                quizProgressElement.textContent = '';
+            }
+        });
+
+        // Event listener for Previous button
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Initial load of the first question
+        loadQuestion();
+    </script>
+</body>
+</html>

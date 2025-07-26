@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo sobre Las Cortes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .option-button {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            word-wrap: break-word; /* Ensure long options wrap */
+            white-space: normal; /* Allow text wrapping */
+        }
+        .option-button:hover {
+            background-color: #c7d2fe;
+            border-color: #4338ca;
+        }
+        .option-button.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-color: #10b981;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        .nav-button {
+            background-color: #4338ca;
+            color: #ffffff;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 10px rgba(67, 56, 202, 0.3);
+        }
+        .nav-button:hover {
+            background-color: #3730a3;
+        }
+        .nav-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .result-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            color: #10b981;
+        }
+        .result-message.incorrect {
+            color: #ef4444;
+        }
+        .progress-indicator {
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+        /* Mobile responsiveness */
+        @media (max-width: 640px) {
+            .quiz-container {
+                padding: 20px;
+            }
+            .question-text {
+                font-size: 1.2rem;
+            }
+            .option-button {
+                font-size: 0.95rem;
+                padding: 12px 15px;
+            }
+            .nav-button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="progress-indicator" id="progressIndicator"></div>
+        <div class="question-text" id="questionText"></div>
+        <div class="options-container" id="optionsContainer"></div>
+        <div class="result-message" id="resultMessage"></div>
+        <div class="navigation-buttons">
+            <button id="prevButton" class="nav-button" disabled>Anterior</button>
+            <button id="nextButton" class="nav-button">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "¿Cuál de las siguientes funciones NO corresponde a las Cortes Generales en relación con la Corona según la CE?",
+                options: [
+                    "a) Proveer a la sucesión en la Corona en caso de extinción de líneas.",
+                    "b) Excluir de la sucesión a quienes contrajeran matrimonio sin la expresa prohibición del Rey y de las Cortes.",
+                    "c) Reconocer la inhabilitación del Rey para el ejercicio de su autoridad.",
+                    "d) Nombrar la regencia."
+                ],
+                correctAnswer: "b) Excluir de la sucesión a quienes contrajeran matrimonio sin la expresa prohibición del Rey y de las Cortes."
+            },
+            {
+                question: "Según el esquema de elaboración de leyes, ¿quién presenta un \"Proyecto de ley\"?",
+                options: [
+                    "a) El Congreso.",
+                    "b) El Senado.",
+                    "c) El Gobierno.",
+                    "d) La iniciativa popular."
+                ],
+                correctAnswer: "c) El Gobierno."
+            },
+            {
+                question: "En el proceso de elaboración de leyes, si una ley es urgente, ¿cuántos días tiene el Senado para la deliberación?",
+                options: [
+                    "a) 2 meses.",
+                    "b) 15 días.",
+                    "c) 20 días.",
+                    "d) No hay plazo específico."
+                ],
+                correctAnswer: "c) 20 días."
+            },
+            {
+                question: "¿Qué tipo de mayoría se requiere en el Congreso para la aprobación de una Ley Orgánica en una votación sobre la totalidad del proyecto?",
+                options: [
+                    "a) Mayoría simple.",
+                    "b) Mayoría absoluta.",
+                    "c) Dos tercios.",
+                    "d) Tres quintos."
+                ],
+                correctAnswer: "b) Mayoría absoluta."
+            },
+            {
+                question: "¿Quién sanciona y promulga las leyes una vez aprobadas, y en qué plazo?",
+                options: [
+                    "a) El Presidente del Gobierno, en 15 días.",
+                    "b) El Rey, en 15 días.",
+                    "c) El Congreso, en 20 días.",
+                    "d) El Tribunal Constitucional, en 30 días."
+                ],
+                correctAnswer: "b) El Rey, en 15 días."
+            },
+            {
+                question: "¿Cuántos miembros componen el Tribunal Constitucional?",
+                options: [
+                    "a) 9.",
+                    "b) 10.",
+                    "c) 11.",
+                    "d) 12."
+                ],
+                correctAnswer: "d) 12."
+            },
+            {
+                question: "¿Cuántos miembros del Tribunal Constitucional son propuestos por el Congreso?",
+                options: [
+                    "a) 2.",
+                    "b) 4.",
+                    "c) 6.",
+                    "d) 8."
+                ],
+                correctAnswer: "b) 4."
+            },
+            {
+                question: "¿Qué mayoría se requiere en el Senado para proponer a sus miembros del Tribunal Constitucional?",
+                options: [
+                    "a) Mayoría simple.",
+                    "b) Mayoría absoluta.",
+                    "c) Tres quintos.",
+                    "d) Dos tercios."
+                ],
+                correctAnswer: "c) Tres quintos."
+            },
+            {
+                question: "¿Cuál es el período de mandato de los miembros del Tribunal Constitucional?",
+                options: [
+                    "a) 3 años.",
+                    "b) 5 años.",
+                    "c) 9 años.",
+                    "d) Vitalicio."
+                ],
+                correctAnswer: "c) 9 años."
+            },
+            {
+                question: "¿Cada cuánto tiempo se renuevan los miembros del Tribunal Constitucional por terceras partes?",
+                options: [
+                    "a) Cada año.",
+                    "b) Cada 3 años.",
+                    "c) Cada 5 años.",
+                    "d) Cada 9 años."
+                ],
+                correctAnswer: "b) Cada 3 años."
+            },
+            {
+                question: "¿Quién nombra al Presidente del Tribunal Constitucional?",
+                options: [
+                    "a) El Congreso.",
+                    "b) El Rey, a propuesta del TC en pleno.",
+                    "c) El Gobierno.",
+                    "d) El Consejo General del Poder Judicial."
+                ],
+                correctAnswer: "b) El Rey, a propuesta del TC en pleno."
+            },
+            {
+                question: "¿Por cuántos años es nombrado el Presidente del Tribunal Constitucional?",
+                options: [
+                    "a) 9 años.",
+                    "b) 5 años.",
+                    "c) 3 años.",
+                    "d) Indefinidamente."
+                ],
+                correctAnswer: "c) 3 años."
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una competencia del Tribunal Constitucional?",
+                options: [
+                    "a) Recurso de inconstitucionalidad.",
+                    "b) Recurso de amparo por violación de derechos fundamentales.",
+                    "c) Conflictos de competencia entre el Estado y las Comunidades Autónomas.",
+                    "d) Conocer de los recursos de apelación en materia penal."
+                ],
+                correctAnswer: "d) Conocer de los recursos de apelación en materia penal."
+            },
+            {
+                question: "¿Quiénes están legitimados para interponer un recurso de inconstitucionalidad?",
+                options: [
+                    "a) Solo el Presidente del Gobierno.",
+                    "b) El Presidente del Gobierno, el Defensor del Pueblo, 50 Diputados, 50 Senadores, los órganos colegiados ejecutivos de las CCAA y sus Asambleas.",
+                    "c) Cualquier persona natural o jurídica.",
+                    "d) Únicamente el Consejo General del Poder Judicial."
+                ],
+                correctAnswer: "b) El Presidente del Gobierno, el Defensor del Pueblo, 50 Diputados, 50 Senadores, los órganos colegiados ejecutivos de las CCAA y sus Asambleas."
+            },
+            {
+                question: "¿Cuál es el plazo para interponer un recurso de inconstitucionalidad a partir de la publicación de la norma?",
+                options: [
+                    "a) 3 días.",
+                    "b) 20 días.",
+                    "c) 3 meses.",
+                    "d) 5 meses."
+                ],
+                correctAnswer: "c) 3 meses."
+            },
+            {
+                question: "Si el Gobierno impugna una ley de una CCAA ante el TC, ¿cuánto tiempo tiene el TC para pronunciarse sobre la suspensión de la ley?",
+                options: [
+                    "a) 20 días.",
+                    "b) 3 meses.",
+                    "c) 5 meses máximo.",
+                    "d) 2 meses."
+                ],
+                correctAnswer: "c) 5 meses máximo."
+            },
+            {
+                question: "Las sentencias de inconstitucionalidad del Tribunal Constitucional:",
+                options: [
+                    "a) Son recurribles ante el Tribunal Supremo.",
+                    "b) Tienen valor de cosa juzgada y no cabe recurso alguno contra ellas.",
+                    "c) Solo son vinculantes para las partes implicadas.",
+                    "d) Requieren la convalidación del Congreso."
+                ],
+                correctAnswer: "b) Tienen valor de cosa juzgada y no cabe recurso alguno contra ellas."
+            },
+            {
+                question: "¿Qué derechos y libertades son susceptibles de amparo constitucional?",
+                options: [
+                    "a) Todos los recogidos en la Constitución.",
+                    "b) Los reconocidos en los artículos 14 a 29 y 30.2 de la CE.",
+                    "c) Solo los relacionados con la libertad de expresión.",
+                    "d) Únicamente los derechos laborales."
+                ],
+                correctAnswer: "b) Los reconocidos en los artículos 14 a 29 y 30.2 de la CE."
+            },
+            {
+                question: "¿Cuál es el plazo para recurrir en amparo una decisión administrativa?",
+                options: [
+                    "a) 30 días.",
+                    "b) 3 meses.",
+                    "c) 20 días.",
+                    "d) 2 meses."
+                ],
+                correctAnswer: "c) 20 días."
+            },
+            {
+                question: "¿Qué significa un conflicto de competencias \"positivo\" en el ámbito del Tribunal Constitucional?",
+                options: [
+                    "a) Ningún órgano se considera competente.",
+                    "b) Dos órganos consideran que tienen la competencia.",
+                    "c) Un órgano invade la competencia de otro.",
+                    "d) Existe un acuerdo sobre la distribución de competencias."
+                ],
+                correctAnswer: "b) Dos órganos consideran que tienen la competencia."
+            },
+            {
+                question: "¿Quién regula la institución del Defensor del Pueblo?",
+                options: [
+                    "a) La Constitución directamente.",
+                    "b) Una ley orgánica.",
+                    "c) Un Real Decreto.",
+                    "d) Una Orden Ministerial."
+                ],
+                correctAnswer: "b) Una ley orgánica."
+            },
+            {
+                question: "¿Por cuánto tiempo es elegido el Defensor del Pueblo?",
+                options: [
+                    "a) 3 años.",
+                    "b) 4 años.",
+                    "c) 5 años.",
+                    "d) 9 años."
+                ],
+                correctAnswer: "c) 5 años."
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una causa de cese del Defensor del Pueblo?",
+                options: [
+                    "a) Renuncia.",
+                    "b) Expiración del mandato.",
+                    "c) Haber sido propuesto por un partido político.",
+                    "d) Condenado por sentencia firme por delito doloso."
+                ],
+                correctAnswer: "c) Haber sido propuesto por un partido político."
+            },
+            {
+                question: "¿El Defensor del Pueblo puede recibir instrucciones de alguna autoridad?",
+                options: [
+                    "a) Sí, del Congreso.",
+                    "b) Sí, del Gobierno.",
+                    "c) No, desempeña sus funciones con autonomía.",
+                    "d) Sí, del Tribunal Supremo."
+                ],
+                correctAnswer: "c) No, desempeña sus funciones con autonomía."
+            },
+            {
+                question: "¿Son vinculantes las sugerencias del Defensor del Pueblo?",
+                options: [
+                    "a) Sí, siempre.",
+                    "b) No, solo puede sugerir.",
+                    "c) Sí, si son aprobadas por las Cortes.",
+                    "d) Solo para la Administración Pública."
+                ],
+                correctAnswer: "b) No, solo puede sugerir."
+            },
+            {
+                question: "¿Cuántos Diputados componen actualmente el Congreso de los Diputados?",
+                options: [
+                    "a) Entre 300 y 400.",
+                    "b) 350.",
+                    "c) 266.",
+                    "d) 200."
+                ],
+                correctAnswer: "b) 350."
+            },
+            {
+                question: "¿Cómo son elegidos los Diputados?",
+                options: [
+                    "a) Por designación autonómica.",
+                    "b) Por sufragio universal, libre, igual, directo y secreto.",
+                    "c) Por el Rey.",
+                    "d) Por el Consejo de Ministros."
+                ],
+                correctAnswer: "b) Por sufragio universal, libre, igual, directo y secreto."
+            },
+            {
+                question: "¿Cuántos Diputados se eligen en cada provincia?",
+                options: [
+                    "a) 1.",
+                    "b) 2.",
+                    "c) 3.",
+                    "d) 4."
+                ],
+                correctAnswer: "b) 2."
+            },
+            {
+                question: "¿Cuál es el número de Senadores por cada provincia, excluyendo las islas y ciudades autónomas?",
+                options: [
+                    "a) 2.",
+                    "b) 3.",
+                    "c) 4.",
+                    "d) 5."
+                ],
+                correctAnswer: "c) 4."
+            },
+            {
+                question: "¿Cuántos Senadores designa cada Comunidad Autónoma?",
+                options: [
+                    "a) 1 y otro más por cada millón de habitantes.",
+                    "b) 2.",
+                    "c) 3.",
+                    "d) El mismo número de Diputados que tenga."
+                ],
+                correctAnswer: "a) 1 y otro más por cada millón de habitantes."
+            },
+            {
+                question: "¿Qué es una \"Diputación Permanente\" en las Cámaras, y cuántos miembros como mínimo debe tener?",
+                options: [
+                    "a) Un órgano de control interno, 10 miembros.",
+                    "b) Un órgano que representa a los grupos parlamentarios, mínimo 21 miembros.",
+                    "c) Una comisión de estudio, 15 miembros.",
+                    "d) Un grupo de trabajo, 5 miembros."
+                ],
+                correctAnswer: "b) Un órgano que representa a los grupos parlamentarios, mínimo 21 miembros."
+            },
+            {
+                question: "¿Cuál de los siguientes NO es una causa de inelegibilidad o incompatibilidad según el art. 70 CE?",
+                options: [
+                    "a) Miembros del Tribunal Constitucional.",
+                    "b) Magistrados, Jueces y Fiscales en activo.",
+                    "c) Profesores universitarios.",
+                    "d) Miembros de las Juntas Electorales."
+                ],
+                correctAnswer: "c) Profesores universitarios."
+            },
+            {
+                question: "¿Cuál es la duración de la legislatura de las Cortes Generales?",
+                options: [
+                    "a) 3 años.",
+                    "b) 4 años.",
+                    "c) 5 años.",
+                    "d) Indefinida."
+                ],
+                correctAnswer: "b) 4 años."
+            },
+            {
+                question: "¿Quién preside las Cortes Generales cuando se reúnen en sesión conjunta?",
+                options: [
+                    "a) El Presidente del Senado.",
+                    "b) El Presidente del Gobierno.",
+                    "c) El Presidente del Congreso.",
+                    "d) El Rey."
+                ],
+                correctAnswer: "c) El Presidente del Congreso."
+            },
+            {
+                question: "¿Cuál es la \"fuente suprema del ordenamiento jurídico\" español?",
+                options: [
+                    "a) La Ley.",
+                    "b) La Costumbre.",
+                    "c) La Constitución.",
+                    "d) Los Tratados Internacionales."
+                ],
+                correctAnswer: "c) La Constitución."
+            },
+            {
+                question: "¿Cuáles son las fuentes del ordenamiento jurídico español según el documento?",
+                options: [
+                    "a) La Ley y la Jurisprudencia.",
+                    "b) La Ley, la Costumbre y los Principios Generales del Derecho.",
+                    "c) La Constitución y los Reglamentos.",
+                    "d) La Ley, la Doctrina Científica y el Precedente Administrativo."
+                ],
+                correctAnswer: "b) La Ley, la Costumbre y los Principios Generales del Derecho."
+            },
+            {
+                question: "¿Cuándo regirá la costumbre como norma jurídica?",
+                options: [
+                    "a) Siempre, con primacía sobre la ley.",
+                    "b) En defecto de ley aplicable, y siempre que no sea contraria a la moral ni al orden público y que resulte probada.",
+                    "c) Solo si está escrita y publicada en el BOE.",
+                    "d) Nunca, ha sido derogada."
+                ],
+                correctAnswer: "b) En defecto de ley aplicable, y siempre que no sea contraria a la moral ni al orden público y que resulte probada."
+            },
+            {
+                question: "¿Cuál es el carácter principal de los principios generales del derecho?",
+                options: [
+                    "a) Ser únicamente una fuente subsidiaria.",
+                    "b) Tener carácter informador del ordenamiento jurídico y ser una técnica de control de la Administración Pública.",
+                    "c) Ser normas escritas y publicadas.",
+                    "d) Ser vinculantes solo para los jueces."
+                ],
+                correctAnswer: "b) Tener carácter informador del ordenamiento jurídico y ser una técnica de control de la Administración Pública."
+            },
+            {
+                question: "¿Qué artículo de la CE recoge los principios de legalidad, jerarquía normativa, publicidad de las normas e irretroactividad de disposiciones sancionadoras no favorables?",
+                options: [
+                    "a) Artículo 1.1.",
+                    "b) Artículo 9.3.",
+                    "c) Artículo 103.1.",
+                    "d) Artículo 54."
+                ],
+                correctAnswer: "b) Artículo 9.3."
+            },
+            {
+                question: "¿Cómo complementa la jurisprudencia el ordenamiento jurídico?",
+                options: [
+                    "a) Dictando normas con rango de ley.",
+                    "b) Con la doctrina que, de modo reiterado, establezca el Tribunal Supremo al interpretar y aplicar la ley, la costumbre y los principios generales del derecho.",
+                    "c) Creando nuevos principios generales del derecho.",
+                    "d) Publicando tratados internacionales."
+                ],
+                correctAnswer: "b) Con la doctrina que, de modo reiterado, establezca el Tribunal Supremo al interpretar y aplicar la ley, la costumbre y los principios generales del derecho."
+            },
+            {
+                question: "Para que las normas jurídicas contenidas en los tratados internacionales sean de aplicación directa en España, ¿qué requisito deben cumplir?",
+                options: [
+                    "a) Ser aprobados por Ley Orgánica.",
+                    "b) Su publicación íntegra en el Boletín Oficial del Estado.",
+                    "c) La convalidación del Congreso.",
+                    "d) La ratificación del Rey."
+                ],
+                correctAnswer: "b) Su publicación íntegra en el Boletín Oficial del Estado."
+            },
+            {
+                question: "¿Qué papel tiene la doctrina científica en el Derecho Administrativo?",
+                options: [
+                    "a) Es una fuente directa.",
+                    "b) Tiene un papel interpretador, formulando teorías.",
+                    "c) Es vinculante para la Administración.",
+                    "d) Es una fuente principal."
+                ],
+                correctAnswer: "b) Tiene un papel interpretador, formulando teorías."
+            },
+            {
+                question: "¿El precedente administrativo es vinculante?",
+                options: [
+                    "a) Sí, siempre.",
+                    "b) No, pero no se puede apartar de él bajo ningún concepto.",
+                    "c) No, los precedentes no son vinculantes y se puede apartar de ellos motivándolo.",
+                    "d) Solo para el Tribunal Supremo."
+                ],
+                correctAnswer: "c) No, los precedentes no son vinculantes y se puede apartar de ellos motivándolo."
+            },
+            {
+                question: "¿Cuál es la jerarquía normativa de los Reglamentos del Gobierno?",
+                options: [
+                    "a) Órdenes Ministeriales, Reales Decretos.",
+                    "b) Reales Decretos, Órdenes Ministeriales.",
+                    "c) Acuerdos del Consejo de Ministros, Reales Decretos.",
+                    "d) Todas tienen el mismo rango."
+                ],
+                correctAnswer: "b) Reales Decretos, Órdenes Ministeriales."
+            },
+            {
+                question: "¿Quién tiene la potestad legislativa del Estado?",
+                options: [
+                    "a) El Gobierno.",
+                    "b) Las Cortes Generales (Congreso y Senado).",
+                    "c) El Rey.",
+                    "d) El Tribunal Constitucional."
+                ],
+                correctAnswer: "b) Las Cortes Generales (Congreso y Senado)."
+            },
+            {
+                question: "¿Cómo se aprueban las Leyes Ordinarias?",
+                options: [
+                    "a) Por mayoría absoluta del Congreso.",
+                    "b) Por mayoría simple del Congreso y mayoría simple del Senado.",
+                    "c) Por unanimidad en ambas Cámaras.",
+                    "d) Por dos tercios en el Congreso."
+                ],
+                correctAnswer: "b) Por mayoría simple del Congreso y mayoría simple del Senado."
+            },
+            {
+                question: "¿Quién presenta un \"Proyecto de ley\"?",
+                options: [
+                    "a) Las Asambleas Legislativas de las CCAA.",
+                    "b) La iniciativa legislativa popular.",
+                    "c) El Consejo de Ministros (Gobierno).",
+                    "d) Las Cortes."
+                ],
+                correctAnswer: "c) El Consejo de Ministros (Gobierno)."
+            },
+            {
+                question: "¿Quién presenta una \"Proposición de ley\"?",
+                options: [
+                    "a) El Gobierno.",
+                    "b) Las Cortes, Asambleas Legislativas de las CCAA o iniciativa legislativa popular.",
+                    "c) Solo el Congreso.",
+                    "d) Solo el Senado."
+                ],
+                correctAnswer: "b) Las Cortes, Asambleas Legislativas de las CCAA o iniciativa legislativa popular."
+            },
+            {
+                question: "¿En qué casos se dictan los Decretos-Leyes?",
+                options: [
+                    "a) Para desarrollar derechos fundamentales.",
+                    "b) En casos de extraordinaria y urgente necesidad.",
+                    "c) Cuando las Cortes delegan en el Gobierno hacer leyes.",
+                    "d) Para textos refundidos."
+                ],
+                correctAnswer: "b) En casos de extraordinaria y urgente necesidad."
+            },
+            {
+                question: "¿En qué plazo deben ser convalidados los Decretos-Leyes por parte del Congreso?",
+                options: [
+                    "a) 15 días hábiles.",
+                    "b) 20 días hábiles.",
+                    "c) 30 días hábiles.",
+                    "d) 60 días hábiles."
+                ],
+                correctAnswer: "c) 30 días hábiles."
+            },
+            {
+                question: "¿Qué tipo de Ley se utiliza para la delegación legislativa cuando se quiere un Texto Articulado?",
+                options: [
+                    "a) Ley Ordinaria.",
+                    "b) Ley de Bases.",
+                    "c) Ley Orgánica.",
+                    "d) Decreto-Ley."
+                ],
+                correctAnswer: "b) Ley de Bases."
+            },
+            {
+                question: "¿Qué tipo de Ley se utiliza para la delegación legislativa cuando se quiere un Texto Refundido?",
+                options: [
+                    "a) Ley de Bases.",
+                    "b) Ley Orgánica.",
+                    "c) Ley Ordinaria.",
+                    "d) Decreto-Ley."
+                ],
+                correctAnswer: "c) Ley Ordinaria."
+            },
+            {
+                question: "¿Qué autoridad tiene el control sobre el incumplimiento de las normas comunitarias en la Unión Europea?",
+                options: [
+                    "a) El Tribunal Constitucional español.",
+                    "b) El Tribunal Supremo español.",
+                    "c) El Tribunal de Justicia de la Unión Europea.",
+                    "d) El Consejo de la Unión Europea."
+                ],
+                correctAnswer: "c) El Tribunal de Justicia de la Unión Europea."
+            },
+            {
+                question: "¿Cuál es la característica principal de un \"Reglamento\" de la Unión Europea?",
+                options: [
+                    "a) Es una invitación a un comportamiento.",
+                    "b) Obliga al Estado miembro destinatario, dejando la elección de la forma y los medios.",
+                    "c) Tiene alcance general, es obligatorio en todos sus elementos y directamente aplicable en cada Estado miembro.",
+                    "d) Es una decisión no vinculante."
+                ],
+                correctAnswer: "c) Tiene alcance general, es obligatorio en todos sus elementos y directamente aplicable en cada Estado miembro."
+            },
+            {
+                question: "¿Qué característica tiene una \"Directiva\" de la Unión Europea?",
+                options: [
+                    "a) Es directamente aplicable en cada Estado miembro.",
+                    "b) Obliga al Estado miembro destinatario, dejando a las autoridades nacionales la elección de la forma y los medios.",
+                    "c) Es una recomendación sin fuerza vinculante.",
+                    "d) Tiene alcance general y es obligatoria en todos sus elementos."
+                ],
+                correctAnswer: "b) Obliga al Estado miembro destinatario, dejando a las autoridades nacionales la elección de la forma y los medios."
+            },
+            {
+                question: "¿Dónde se publican los Reglamentos y Directivas de la Unión Europea?",
+                options: [
+                    "a) En el Boletín Oficial del Estado (BOE).",
+                    "b) En el Diario Oficial de las Comunidades Europeas.",
+                    "c) En los periódicos nacionales.",
+                    "d) En el Diario Oficial de la Unión Europea (DOUE)."
+                ],
+                correctAnswer: "b) En el Diario Oficial de las Comunidades Europeas."
+            },
+            {
+                question: "¿Cuándo entran en vigor los Reglamentos y Directivas de la Unión Europea?",
+                options: [
+                    "a) Cuando se fije o a los veinte días de su publicación.",
+                    "b) Al día siguiente de su publicación.",
+                    "c) Al mes de su publicación.",
+                    "d) No se especifica."
+                ],
+                correctAnswer: "a) Cuando se fije o a los veinte días de su publicación."
+            },
+            {
+                question: "¿Cuál es el significado del principio de \"inderogabilidad singular de los Reglamentos\"?",
+                options: [
+                    "a) Que los reglamentos pueden ser derogados por una ley.",
+                    "b) Que impide derogar el reglamento para un caso concreto.",
+                    "c) Que los reglamentos no pueden ser modificados.",
+                    "d) Que los reglamentos solo pueden ser derogados por otros reglamentos de igual rango."
+                ],
+                correctAnswer: "b) Que impide derogar el reglamento para un caso concreto."
+            },
+            {
+                question: "¿Qué es el \"Plan anual normativo\"?",
+                options: [
+                    "a) Un informe sobre el cumplimiento de las leyes del año anterior.",
+                    "b) Las iniciativas legislativas o reglamentarias que se elevarán para su aprobación el año siguiente.",
+                    "c) Una recopilación de todas las normas vigentes.",
+                    "d) Un documento que resume las leyes orgánicas."
+                ],
+                correctAnswer: "b) Las iniciativas legislativas o reglamentarias que se elevarán para su aprobación el año siguiente."
+            },
+            {
+                question: "En la tramitación urgente de iniciativas normativas en la Administración General del Estado, ¿cómo se reducen los plazos previstos?",
+                options: [
+                    "a) Se duplican.",
+                    "b) Se mantienen iguales.",
+                    "c) Se reducen a la mitad.",
+                    "d) Se eliminan por completo."
+                ],
+                correctAnswer: "c) Se reducen a la mitad."
+            },
+            {
+                question: "¿Qué trámite no es preciso en la tramitación urgente de iniciativas normativas?",
+                options: [
+                    "a) El de audiencia.",
+                    "b) El de consulta pública.",
+                    "c) El de publicación.",
+                    "d) El de informe jurídico."
+                ],
+                correctAnswer: "b) El de consulta pública."
+            },
+            {
+                question: "¿Qué ocurre si falta un informe preceptivo en la tramitación urgente de iniciativas normativas?",
+                options: [
+                    "a) El procedimiento se detiene.",
+                    "b) Impide continuar el procedimiento.",
+                    "c) No impide continuar el procedimiento.",
+                    "d) Debe reiniciarse el trámite."
+                ],
+                correctAnswer: "c) No impide continuar el procedimiento."
+            },
+            {
+                question: "Según el Artículo 57.3 de la CE, ¿quién provee a la sucesión en la Corona si se extinguen las líneas llamadas en Derecho?",
+                options: [
+                    "a) El Rey.",
+                    "b) El Gobierno.",
+                    "c) Las Cortes.",
+                    "d) El Consejo de Estado."
+                ],
+                correctAnswer: "c) Las Cortes."
+            },
+            {
+                question: "El Artículo 59.2 de la CE faculta a las Cortes para reconocer que el Rey ha quedado inhabilitado para el ejercicio de su autoridad. ¿Es esto correcto?",
+                options: [
+                    "a) Sí.",
+                    "b) No, es competencia del Tribunal Constitucional.",
+                    "c) No, es competencia del Gobierno.",
+                    "d) No, es una prerrogativa del Rey."
+                ],
+                correctAnswer: "a) Sí."
+            },
+            {
+                question: "¿Qué artículo de la CE autoriza a las Cortes para nombrar tutor del rey menor?",
+                options: [
+                    "a) Artículo 57.4.",
+                    "b) Artículo 59.3.",
+                    "c) Artículo 60.1.",
+                    "d) Artículo 61.1."
+                ],
+                correctAnswer: "c) Artículo 60.1."
+            },
+            {
+                question: "La proclamación y el juramento del nuevo rey tendrá lugar ante:",
+                options: [
+                    "a) El Gobierno.",
+                    "b) El Tribunal Supremo.",
+                    "c) Las Cortes.",
+                    "d) El Consejo de Ministros."
+                ],
+                correctAnswer: "c) Las Cortes."
+            },
+            {
+                question: "¿Qué se entiende por \"Iniciativa popular\" en la elaboración de leyes?",
+                options: [
+                    "a) Una propuesta del Congreso.",
+                    "b) Una propuesta del Senado.",
+                    "c) Una iniciativa que requiere +500.000 firmas acreditadas.",
+                    "d) Una iniciativa del Gobierno."
+                ],
+                correctAnswer: "c) Una iniciativa que requiere +500.000 firmas acreditadas."
+            },
+            {
+                question: "¿En qué plazo se publica la ley en el BOE una vez que el Rey la sanciona y promulga?",
+                options: [
+                    "a) A los 20 días.",
+                    "b) A los 15 días.",
+                    "c) A los 30 días.",
+                    "d) No hay plazo establecido."
+                ],
+                correctAnswer: "b) A los 15 días."
+            },
+            {
+                question: "¿En qué plazo entra en vigor una ley desde su publicación en el BOE, salvo que se indique lo contrario?",
+                options: [
+                    "a) A los 5 días.",
+                    "b) A los 10 días.",
+                    "c) A los 20 días naturales.",
+                    "d) Al día siguiente."
+                ],
+                correctAnswer: "c) A los 20 días naturales."
+            },
+            {
+                question: "¿El Título IX de la CE desarrolla la composición y competencias de qué órgano?",
+                options: [
+                    "a) Las Cortes Generales.",
+                    "b) El Gobierno.",
+                    "c) El Tribunal Constitucional.",
+                    "d) El Consejo General del Poder Judicial."
+                ],
+                correctAnswer: "c) El Tribunal Constitucional."
+            },
+            {
+                question: "El Tribunal Constitucional es un órgano:",
+                options: [
+                    "a) Dependiente del Gobierno.",
+                    "b) Independiente.",
+                    "c) Adscrito al Poder Judicial.",
+                    "d) Con funciones consultivas."
+                ],
+                correctAnswer: "b) Independiente."
+            },
+            {
+                question: "¿Quién formaliza el nombramiento y el cese de los miembros del Tribunal Constitucional?",
+                options: [
+                    "a) El Presidente del Gobierno.",
+                    "b) El Presidente del Tribunal Constitucional.",
+                    "c) Mediante Real Decreto.",
+                    "d) El Congreso por mayoría simple."
+                ],
+                correctAnswer: "c) Mediante Real Decreto."
+            },
+            {
+                question: "¿Cuál es el requisito de ejercicio profesional para ser miembro del Tribunal Constitucional?",
+                options: [
+                    "a) Más de 5 años.",
+                    "b) Más de 10 años.",
+                    "c) Más de 15 años.",
+                    "d) No hay requisito específico."
+                ],
+                correctAnswer: "c) Más de 15 años."
+            },
+            {
+                question: "La condición de miembro del Tribunal Constitucional es incompatible con:",
+                options: [
+                    "a) La investigación académica.",
+                    "b) Dar charlas y escribir libros.",
+                    "c) La condición de funcionario en servicios especiales.",
+                    "d) El cargo de Defensor del Pueblo, Diputado y Senador, entre otros."
+                ],
+                correctAnswer: "d) El cargo de Defensor del Pueblo, Diputado y Senador, entre otros."
+            },
+            {
+                question: "Si el Presidente del TC termina su mandato, ¿puede ser reelegido?",
+                options: [
+                    "a) No, nunca.",
+                    "b) Sí, una sola vez.",
+                    "c) Sí, varias veces.",
+                    "d) Solo si hay unanimidad."
+                ],
+                correctAnswer: "b) Sí, una sola vez."
+            },
+            {
+                question: "¿Qué tipo de conflicto de competencia se produce cuando dos órganos consideran que tienen la competencia?",
+                options: [
+                    "a) Negativa.",
+                    "b) Positiva.",
+                    "c) De atribuciones.",
+                    "d) De inconstitucionalidad."
+                ],
+                correctAnswer: "b) Positiva."
+            },
+            {
+                question: "¿Cuál es el plazo para interponer un conflicto de competencias?",
+                options: [
+                    "a) 20 días desde la publicación.",
+                    "b) 3 meses desde la publicación.",
+                    "c) 2 meses desde la publicación.",
+                    "d) 5 meses desde la publicación."
+                ],
+                correctAnswer: "c) 2 meses desde la publicación."
+            },
+            {
+                question: "¿El Defensor del Pueblo goza de inviolabilidad?",
+                options: [
+                    "a) No, en ningún caso.",
+                    "b) Sí, en razón a las opiniones que formule o actos que realice en el ejercicio de su cargo.",
+                    "c) Solo si el Gobierno lo autoriza.",
+                    "d) Solo si está en funciones."
+                ],
+                correctAnswer: "b) Sí, en razón a las opiniones que formule o actos que realice en el ejercicio de su cargo."
+            },
+            {
+                question: "¿Están obligados los poderes públicos a auxiliar al Defensor del Pueblo en sus investigaciones?",
+                options: [
+                    "a) No, solo si es requerido por un juez.",
+                    "b) Sí, con carácter preferente y urgente.",
+                    "c) Solo la Administración del Estado.",
+                    "d) Solo si el Defensor del Pueblo lo solicita formalmente por escrito."
+                ],
+                correctAnswer: "b) Sí, con carácter preferente y urgente."
+            },
+            {
+                question: "¿Cómo se distribuyen los otros 248 Diputados restantes, una vez asignados los 2 por provincia y 1 por Ceuta y Melilla?",
+                options: [
+                    "a) Por sorteo.",
+                    "b) En proporción a la población de las provincias.",
+                    "c) Por acuerdo de los partidos políticos.",
+                    "d) Por decisión del Gobierno."
+                ],
+                correctAnswer: "b) En proporción a la población de las provincias."
+            },
+            {
+                question: "¿En qué plazo deben celebrarse las elecciones al Congreso y Senado desde la terminación del mandato?",
+                options: [
+                    "a) Dentro de los 15 días siguientes.",
+                    "b) Entre 30-60 días.",
+                    "c) Dentro de los 90 días siguientes.",
+                    "d) No hay plazo fijado."
+                ],
+                correctAnswer: "b) Entre 30-60 días."
+            },
+            {
+                question: "Una vez celebradas las elecciones, ¿en qué plazo debe ser convocado el Congreso?",
+                options: [
+                    "a) Dentro de los 10 días siguientes.",
+                    "b) Dentro de los 25 días siguientes.",
+                    "c) Dentro de los 30 días siguientes.",
+                    "d) No hay plazo fijado."
+                ],
+                correctAnswer: "b) Dentro de los 25 días siguientes."
+            },
+            {
+                question: "¿Qué tipo de cámara es el Senado según el documento?",
+                options: [
+                    "a) Cámara baja.",
+                    "b) Cámara alta.",
+                    "c) Cámara única.",
+                    "d) Cámara de representación popular."
+                ],
+                correctAnswer: "b) Cámara alta."
+            },
+            {
+                question: "¿Cuál de las siguientes es una fuente indirecta del Derecho Administrativo según el texto?",
+                options: [
+                    "a) La Ley.",
+                    "b) La Costumbre.",
+                    "c) La Jurisprudencia.",
+                    "d) Los Principios Generales del Derecho."
+                ],
+                correctAnswer: "c) La Jurisprudencia."
+            },
+            {
+                question: "¿Qué principio establece que carecerán de validez las disposiciones que contradigan otra de rango superior?",
+                options: [
+                    "a) Principio de publicidad de las normas.",
+                    "b) Principio de irretroactividad.",
+                    "c) Principio de jerarquía normativa.",
+                    "d) Principio de seguridad jurídica."
+                ],
+                correctAnswer: "c) Principio de jerarquía normativa."
+            },
+            {
+                question: "¿Cuál es la posición de la Constitución en la jerarquía normativa?",
+                options: [
+                    "a) Está al mismo nivel que las leyes orgánicas.",
+                    "b) Es inferior a los tratados internacionales.",
+                    "c) Es la fuente suprema del ordenamiento jurídico.",
+                    "d) Es un principio general del derecho."
+                ],
+                correctAnswer: "c) Es la fuente suprema del ordenamiento jurídico."
+            },
+            {
+                question: "¿Quién aprueba las Leyes de Presupuestos Generales del Estado?",
+                options: [
+                    "a) El Gobierno.",
+                    "b) El Congreso por mayoría absoluta.",
+                    "c) Son Leyes Ordinarias con un proceso específico de tramitación.",
+                    "d) Son Leyes Orgánicas."
+                ],
+                correctAnswer: "c) Son Leyes Ordinarias con un proceso específico de tramitación."
+            },
+            {
+                question: "¿Cuál es el requisito de mayoría para una Ley Orgánica en el Senado?",
+                options: [
+                    "a) Mayoría absoluta.",
+                    "b) Mayoría simple.",
+                    "c) Tres quintos.",
+                    "d) No se especifica."
+                ],
+                correctAnswer: "b) Mayoría simple."
+            },
+            {
+                question: "¿Qué tipo de leyes desarrollan derechos fundamentales y libertades públicas?",
+                options: [
+                    "a) Leyes Ordinarias.",
+                    "b) Decretos-Leyes.",
+                    "c) Leyes Orgánicas.",
+                    "d) Reglamentos."
+                ],
+                correctAnswer: "c) Leyes Orgánicas."
+            },
+            {
+                question: "¿Son los Decretos-Leyes permanentes?",
+                options: [
+                    "a) Sí, desde su publicación en el BOE.",
+                    "b) Sí, si son convalidados por el Congreso.",
+                    "c) No, son provisionales.",
+                    "d) Solo si no son enmendados."
+                ],
+                correctAnswer: "c) No, son provisionales."
+            },
+            {
+                question: "¿Quién delega en el Gobierno la potestad de hacer leyes mediante los Decretos Legislativos?",
+                options: [
+                    "a) El Rey.",
+                    "b) Las Cortes.",
+                    "c) El Tribunal Constitucional.",
+                    "d) El Consejo de Estado."
+                ],
+                correctAnswer: "b) Las Cortes."
+            },
+            {
+                question: "¿Qué significa que un \"Reglamento\" de la UE es directamente aplicable en cada Estado miembro?",
+                options: [
+                    "a) Que necesita ser transformado en ley nacional.",
+                    "b) Que sus efectos se producen sin necesidad de acto de transposición por parte de los Estados.",
+                    "c) Que solo es una recomendación.",
+                    "d) Que solo se aplica a los ciudadanos, no a los Estados."
+                ],
+                correctAnswer: "b) Que sus efectos se producen sin necesidad de acto de transposición por parte de los Estados."
+            },
+            {
+                question: "¿Cuál es el orden jerárquico de los Reglamentos dentro de la Administración del Estado según el texto?",
+                options: [
+                    "a) Órdenes Ministeriales y luego Reales Decretos.",
+                    "b) Disposiciones aprobadas por Orden Ministerial y luego Reales Decretos.",
+                    "c) Disposiciones aprobadas por Real Decreto del Presidente del Gobierno o acordado en el Consejo de Ministros y luego Órdenes Ministeriales.",
+                    "d) Todos los reglamentos tienen el mismo rango."
+                ],
+                correctAnswer: "c) Disposiciones aprobadas por Real Decreto del Presidente del Gobierno o acordado en el Consejo de Ministros y luego Órdenes Ministeriales."
+            },
+            {
+                question: "¿Quién es el \"alto comisionado de las Cortes Generales\" para la defensa de los derechos comprendidos en el Título I de la Constitución?",
+                options: [
+                    "a) El Presidente del Congreso.",
+                    "b) El Defensor del Pueblo.",
+                    "c) El Presidente del Tribunal Constitucional.",
+                    "d) El Fiscal General del Estado."
+                ],
+                correctAnswer: "b) El Defensor del Pueblo."
+            },
+            {
+                question: "¿Qué Título de la Constitución Española recoge los derechos y deberes fundamentales?",
+                options: [
+                    "a) Título II.",
+                    "b) Título VII.",
+                    "c) Título I.",
+                    "d) Título IX."
+                ],
+                correctAnswer: "c) Título I."
+            },
+            {
+                question: "¿El Defensor del Pueblo está sujeto a mandato imperativo o recibe instrucciones de alguna autoridad?",
+                options: [
+                    "a) Sí, del Gobierno.",
+                    "b) Sí, de las Cortes Generales.",
+                    "c) No, no está sujeto a mandato imperativo ni recibe instrucciones.",
+                    "d) Solo en casos de emergencia nacional."
+                ],
+                correctAnswer: "c) No, no está sujeto a mandato imperativo ni recibe instrucciones."
+            },
+            {
+                question: "¿Cuál es la única actividad permitida como incompatibilidad para el cargo de Magistrado del Tribunal Constitucional según el texto?",
+                options: [
+                    "a) Actividades profesionales mercantiles.",
+                    "b) Desempeño de funciones directivas en partidos políticos.",
+                    "c) Investigar, escribir libros o dar charlas.",
+                    "d) Cualquier cargo político o administrativo."
+                ],
+                correctAnswer: "c) Investigar, escribir libros o dar charlas."
+            },
+            {
+                question: "¿Qué porcentaje de miembros del Tribunal Constitucional son nombrados a propuesta del Consejo General del Poder Judicial?",
+                options: [
+                    "a) 1/3.",
+                    "b) 1/4.",
+                    "c) 2/12.",
+                    "d) 4/12."
+                ],
+                correctAnswer: "c) 2/12."
+            },
+            {
+                question: "¿Cuál es el número de miembros mínimo de la Diputación Permanente en cada cámara de las Cortes Generales?",
+                options: [
+                    "a) 10 miembros.",
+                    "b) 15 miembros.",
+                    "c) 21 miembros.",
+                    "d) No hay mínimo."
+                ],
+                correctAnswer: "c) 21 miembros."
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre el Defensor del Pueblo es correcta?",
+                options: [
+                    "a) Sus decisiones son vinculantes para la Administración.",
+                    "b) Puede modificar leyes.",
+                    "c) Solo puede sugerir, pero no puede obligar ni modificar nada.",
+                    "d) Es un órgano jurisdiccional."
+                ],
+                correctAnswer: "c) Solo puede sugerir, pero no puede obligar ni modificar nada."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        let answered = false;
+
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const resultMessage = document.getElementById('resultMessage');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressIndicator = document.getElementById('progressIndicator');
+
+        function loadQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionText.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = '';
+            resultMessage.textContent = '';
+            resultMessage.className = 'result-message'; // Reset classes
+            answered = false;
+            selectedAnswer = null;
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button', 'rounded-xl');
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainer.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            updateProgressIndicator();
+        }
+
+        function selectAnswer(button, selectedOption) {
+            if (answered) return; // Prevent re-answering
+
+            answered = true;
+            selectedAnswer = selectedOption;
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            const allOptionButtons = optionsContainer.querySelectorAll('.option-button');
+
+            allOptionButtons.forEach(btn => {
+                btn.removeEventListener('click', () => selectAnswer(btn, btn.textContent)); // Remove listeners
+                btn.style.cursor = 'default'; // Change cursor
+                if (btn.textContent === currentQuestion.correctAnswer) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === selectedOption) {
+                    btn.classList.add('incorrect');
+                }
+            });
+
+            if (selectedOption === currentQuestion.correctAnswer) {
+                resultMessage.textContent = '¡Correcto!';
+                resultMessage.classList.add('correct');
+            } else {
+                resultMessage.textContent = `Incorrecto. La respuesta correcta es: ${currentQuestion.correctAnswer}`;
+                resultMessage.classList.add('incorrect');
+            }
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+        }
+
+        function updateProgressIndicator() {
+            progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        // Initial load
+        loadQuestion();
+    </script>
+</body>
+</html>

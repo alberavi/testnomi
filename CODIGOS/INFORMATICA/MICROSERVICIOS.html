@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Microservicios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+        .question-container {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background-color: #f9fafb;
+            transition: all 0.2s ease-in-out;
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #374151;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #eef2ff;
+            border-color: #a5b4fc;
+        }
+        .option-button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .feedback {
+            margin-top: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none; /* Hidden by default */
+        }
+        .feedback.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+        .feedback.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            background-color: #4f46e5;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+        }
+        .nav-button:hover {
+            background-color: #4338ca;
+            transform: translateY(-1px);
+        }
+        .nav-button:active {
+            transform: translateY(1px);
+        }
+        .nav-button:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .quiz-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+        .score-container {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .restart-button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 15px 30px;
+            background-color: #10b981;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+        .restart-button:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+        }
+        .restart-button:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="quiz-title">Test de Microservicios</h1>
+        <div id="quiz-container"></div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+        <div id="score-display" class="score-container" style="display: none;"></div>
+        <button id="restart-button" class="restart-button" style="display: none;">Reiniciar Test</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Cuál de las siguientes afirmaciones describe mejor un microservicio?",
+                options: [
+                    "a) Son aplicaciones monolíticas que se despliegan de forma conjunta.",
+                    "b) Son servicios que se despliegan de manera independiente y se modelan alrededor de un dominio de negocio.",
+                    "c) Son grandes sistemas con fuerte acoplamiento entre sus componentes.",
+                    "d) Son exclusivamente para bases de datos muy pequeñas."
+                ],
+                correctAnswer: "b) Son servicios que se despliegan de manera independiente y se modelan alrededor de un dominio de negocio."
+            },
+            {
+                question: "¿El prefijo \"μ\" en microservicios implica que siempre deben ser muy pequeños?",
+                options: [
+                    "a) Sí, es un requisito estricto de tamaño.",
+                    "b) No, el tamaño lo dicta el servicio que presta.",
+                    "c) Solo si se usan lenguajes de programación ligeros.",
+                    "d) Depende de la cantidad de datos que maneje."
+                ],
+                correctAnswer: "b) No, el tamaño lo dicta el servicio que presta."
+            },
+            {
+                question: "¿Qué característica NO es típica de los microservicios?",
+                options: [
+                    "a) Débilmente acoplados.",
+                    "b) Granularidad muy fina (poca responsabilidad).",
+                    "c) Comunicación mediante protocolos pesados (ej. SOAP).",
+                    "d) Equipos de desarrollo independientes."
+                ],
+                correctAnswer: "c) Comunicación mediante protocolos pesados (ej. SOAP)."
+            },
+            {
+                question: "¿Pueden los microservicios definirse en diferentes lenguajes y con distintas bases de datos?",
+                options: [
+                    "a) No, todos deben usar el mismo lenguaje y base de datos.",
+                    "b) Sí, es una de sus ventajas.",
+                    "c) Solo si usan la misma API Gateway.",
+                    "d) Únicamente si son desarrollados por el mismo equipo."
+                ],
+                correctAnswer: "b) Sí, es una de sus ventajas."
+            },
+            {
+                question: "Si un microservicio falla, ¿qué sucede con la aplicación completa en una arquitectura de microservicios?",
+                options: [
+                    "a) Toda la aplicación se viene abajo.",
+                    "b) Solo ese microservicio deja de funcionar, manteniendo la resiliencia de la aplicación.",
+                    "c) Requiere un reinicio completo del sistema.",
+                    "d) Los demás microservicios también fallan inmediatamente."
+                ],
+                correctAnswer: "b) Solo ese microservicio deja de funcionar, manteniendo la resiliencia de la aplicación."
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un nuevo reto de las arquitecturas de microservicios?",
+                options: [
+                    "a) Independientemente desplegables.",
+                    "b) Mezcla de tecnologías.",
+                    "c) Acoplamiento y Cohesión.",
+                    "d) Fácil gobernanza."
+                ],
+                correctAnswer: "a) Independientemente desplegables."
+            },
+            {
+                question: "¿Qué busca el DDD (Domain Driven Design) en el contexto de microservicios?",
+                options: [
+                    "a) Reducir el número de bases de datos.",
+                    "b) Descubrir los conceptos del negocio desde varios puntos de vista para definir servicios, entidades y repositorios.",
+                    "c) Imponer un único lenguaje de programación.",
+                    "d) Centralizar la gestión de errores."
+                ],
+                correctAnswer: "b) Descubrir los conceptos del negocio desde varios puntos de vista para definir servicios, entidades y repositorios."
+            },
+            {
+                question: "¿Qué es un Bounded Context en el diseño de microservicios?",
+                options: [
+                    "a) Un tipo de base de datos relacional.",
+                    "b) Un patrón de diseño que divide el modelo en submodelos, especializados en áreas.",
+                    "c) Un límite físico para la ubicación de los servidores.",
+                    "d) Una herramienta de monitorización de red."
+                ],
+                correctAnswer: "b) Un patrón de diseño que divide el modelo en submodelos, especializados en áreas."
+            },
+            {
+                question: "¿Cada microservicio suele tener un Bounded Context asociado?",
+                options: [
+                    "a) No, solo los servicios principales.",
+                    "b) Sí, se encarga de una funcionalidad, un contexto o un área de negocio.",
+                    "c) Depende del tamaño del microservicio.",
+                    "d) Es una práctica obsoleta."
+                ],
+                correctAnswer: "b) Sí, se encarga de una funcionalidad, un contexto o un área de negocio."
+            },
+            {
+                question: "En la comunicación síncrona entre microservicios, ¿cuál es el principal inconveniente?",
+                options: [
+                    "a) Facilita la transaccionalidad.",
+                    "b) Depende del eslabón más débil, siendo menos robusta.",
+                    "c) Siempre es más rápida.",
+                    "d) Permite mayor independencia."
+                ],
+                correctAnswer: "b) Depende del eslabón más débil, siendo menos robusta."
+            },
+            {
+                question: "¿Qué es un Broker de mensajes en la comunicación asíncrona?",
+                options: [
+                    "a) Un sistema de cacheo de datos.",
+                    "b) Un intermediario entre microservicios para una comunicación asíncrona.",
+                    "c) Un balanceador de carga síncrono.",
+                    "d) Un gestor de autenticación."
+                ],
+                correctAnswer: "b) Un intermediario entre microservicios para una comunicación asíncrona."
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un producto de Broker de mensajes mencionado?",
+                options: [
+                    "a) Apache Kafka.",
+                    "b) RabbitMQ.",
+                    "c) Google Cloud Pub/Sub.",
+                    "d) MySQL."
+                ],
+                correctAnswer: "d) MySQL."
+            },
+            {
+                question: "¿Cómo funciona la comunicación \"dirigida por eventos\" entre microservicios?",
+                options: [
+                    "a) Los microservicios comparten una base de datos central.",
+                    "b) Se genera un evento con información y los suscriptores lo usan como inicio de su trabajo.",
+                    "c) Se realizan llamadas directas y bloqueantes entre servicios.",
+                    "d) A través de peticiones HTTP síncronas."
+                ],
+                correctAnswer: "b) Se genera un evento con información y los suscriptores lo usan como inicio de su trabajo."
+            },
+            {
+                question: "¿Qué tipo de comunicación entre microservicios es actualmente de lo más usado junto con REST?",
+                options: [
+                    "a) SOAP.",
+                    "b) RMI.",
+                    "c) RPC/gRPC.",
+                    "d) GraphQL."
+                ],
+                correctAnswer: "c) RPC/gRPC."
+            },
+            {
+                question: "¿Cuál de estos protocolos de comunicación es muy dependiente de la tecnología Java?",
+                options: [
+                    "a) REST.",
+                    "b) SOAP.",
+                    "c) RMI.",
+                    "d) GraphQL."
+                ],
+                correctAnswer: "c) RMI."
+            },
+            {
+                question: "¿Qué es una API Gateway?",
+                options: [
+                    "a) Un tipo de base de datos NoSQL.",
+                    "b) Una puerta de entrada a los microservicios, aislándolos del exterior.",
+                    "c) Un servidor de mensajería asíncrona.",
+                    "d) Una herramienta para la monitorización de logs."
+                ],
+                correctAnswer: "b) Una puerta de entrada a los microservicios, aislándolos del exterior."
+            },
+            {
+                question: "¿Qué patrón de diseño centraliza la lógica de acceso a los microservicios que están detrás?",
+                options: [
+                    "a) Circuit Breaker.",
+                    "b) Sidecar.",
+                    "c) API Gateway.",
+                    "d) SAGA."
+                ],
+                correctAnswer: "c) API Gateway."
+            },
+            {
+                question: "¿Qué producto es conocido por ser un proxy inverso que canaliza peticiones y oculta la complejidad de los microservicios?",
+                options: [
+                    "a) Ribbon.",
+                    "b) Hystrix.",
+                    "c) Zuul.",
+                    "d) Eureka."
+                ],
+                correctAnswer: "c) Zuul."
+            },
+            {
+                question: "¿Cuál es el propósito del patrón Circuit Breaker?",
+                options: [
+                    "a) Balancear la carga entre microservicios.",
+                    "b) Permitir definir políticas de reintentos y timeout y cortar el acceso a un microservicio erróneo.",
+                    "c) Registrar microservicios y sus metadatos.",
+                    "d) Facilitar la comunicación asíncrona."
+                ],
+                correctAnswer: "b) Permitir definir políticas de reintentos y timeout y cortar el acceso a un microservicio erróneo."
+            },
+            {
+                question: "¿Qué librería es utilizada para balancear peticiones de clientes en el ecosistema de Netflix OSS?",
+                options: [
+                    "a) Hystrix.",
+                    "b) Ribbon.",
+                    "c) Eureka.",
+                    "d) Zuul."
+                ],
+                correctAnswer: "b) Ribbon."
+            },
+            {
+                question: "¿Qué librería de errores en cascada utiliza el patrón Circuit Breaker?",
+                options: [
+                    "a) Ribbon.",
+                    "b) Zuul.",
+                    "c) Hystrix.",
+                    "d) Eureka."
+                ],
+                correctAnswer: "c) Hystrix."
+            },
+            {
+                question: "¿Qué tecnología está diseñada para abordar las complejidades de las arquitecturas de microservicios en la v2.0?",
+                options: [
+                    "a) API Gateway.",
+                    "b) Monolitos.",
+                    "c) Service Mesh.",
+                    "d) Bases de datos distribuidas."
+                ],
+                correctAnswer: "c) Service Mesh."
+            },
+            {
+                question: "¿Qué componentes principales forman un Service Mesh, según el texto?",
+                options: [
+                    "a) Zuul y Ribbon.",
+                    "b) Kafka y RabbitMQ.",
+                    "c) Istio y Envoy.",
+                    "d) Kubernetes y Docker."
+                ],
+                correctAnswer: "c) Istio y Envoy."
+            },
+            {
+                question: "¿Qué es Envoy en el contexto de un Service Mesh?",
+                options: [
+                    "a) Un servidor de descubrimiento de servicios.",
+                    "b) Un proxy que implementa el patrón sidecar.",
+                    "c) Un balanceador de carga síncrono.",
+                    "d) Un gestor de autenticación centralizado."
+                ],
+                correctAnswer: "b) Un proxy que implementa el patrón sidecar."
+            },
+            {
+                question: "¿Qué patrón ayuda a los microservicios dialogando con otra parte de la arquitectura llamada Service Mesh?",
+                options: [
+                    "a) Circuit Breaker.",
+                    "b) API Gateway.",
+                    "c) Sidecar.",
+                    "d) SAGA."
+                ],
+                correctAnswer: "c) Sidecar."
+            },
+            {
+                question: "¿Qué problema de arquitectura abstrae Service Mesh a los desarrolladores?",
+                options: [
+                    "a) La lógica de negocio.",
+                    "b) El descubrimiento de servicios, balanceo de carga y recuperación.",
+                    "c) La interfaz de usuario.",
+                    "d) La definición de los dominios de negocio."
+                ],
+                correctAnswer: "b) El descubrimiento de servicios, balanceo de carga y recuperación."
+            },
+            {
+                question: "¿Qué producto es un ejemplo de centralización en un Service Mesh?",
+                options: [
+                    "a) Envoy.",
+                    "b) Jaeger.",
+                    "c) Istio.",
+                    "d) Prometheus."
+                ],
+                correctAnswer: "c) Istio."
+            },
+            {
+                question: "¿Qué concepto se refiere a la centralización y visualización de trazas asociadas con una sola solicitud entre múltiples servicios?",
+                options: [
+                    "a) Observabilidad.",
+                    "b) Trazabilidad.",
+                    "c) Agregación de logs.",
+                    "d) Monitorización de métricas."
+                ],
+                correctAnswer: "b) Trazabilidad."
+            },
+            {
+                question: "¿Qué producto se menciona para la trazabilidad distribuida?",
+                options: [
+                    "a) Elasticsearch.",
+                    "b) Grafana.",
+                    "c) Jaeger.",
+                    "d) Kiali."
+                ],
+                correctAnswer: "c) Jaeger."
+            },
+            {
+                question: "¿Qué aspectos cubre la observabilidad en microservicios?",
+                options: [
+                    "a) Solo el rendimiento de la CPU.",
+                    "b) Salud, topología, métricas, dashboards y configuración.",
+                    "c) Exclusivamente la seguridad.",
+                    "d) Únicamente la gestión de bases de datos."
+                ],
+                correctAnswer: "b) Salud, topología, métricas, dashboards y configuración."
+            },
+            {
+                question: "¿Qué producto se menciona para la gestión de identidades con SSO en seguridad?",
+                options: [
+                    "a) Prometheus.",
+                    "b) Grafana.",
+                    "c) Keycloak.",
+                    "d) Elasticsearch."
+                ],
+                correctAnswer: "c) Keycloak."
+            },
+            {
+                question: "¿Es habitual combinar API Gateway y Service Mesh?",
+                options: [
+                    "a) No, son tecnologías excluyentes.",
+                    "b) Sí, es bastante habitual.",
+                    "c) Solo en sistemas muy pequeños.",
+                    "d) Únicamente si se usa Kubernetes."
+                ],
+                correctAnswer: "b) Sí, es bastante habitual."
+            },
+            {
+                question: "¿Las bases de datos en microservicios suelen asegurar ACID?",
+                options: [
+                    "a) Sí, siempre.",
+                    "b) No, por ser un sistema altamente distribuido no se puede asegurar ACID.",
+                    "c) Solo con bases de datos relacionales.",
+                    "d) Depende del lenguaje de programación."
+                ],
+                correctAnswer: "b) No, por ser un sistema altamente distribuido no se puede asegurar ACID."
+            },
+            {
+                question: "¿Qué significa CQRS?",
+                options: [
+                    "a) Centralized Query and Reporting System.",
+                    "b) Command and Query Responsibility Segregation.",
+                    "c) Consistent Quality and Reliability Standard.",
+                    "d) Cloud Queue and Resource Scheduling."
+                ],
+                correctAnswer: "b) Command and Query Responsibility Segregation."
+            },
+            {
+                question: "¿Cuál es el propósito principal del patrón CQRS?",
+                options: [
+                    "a) Unificar todas las operaciones de CRUD en un solo servicio.",
+                    "b) Dividir el microservicio en dos para las operaciones de lectura (Query) y escritura (Command).",
+                    "c) Centralizar todas las bases de datos.",
+                    "d) Reducir la latencia en las llamadas síncronas."
+                ],
+                correctAnswer: "b) Dividir el microservicio en dos para las operaciones de lectura (Query) y escritura (Command)."
+            },
+            {
+                question: "¿Por qué el patrón 2PC (Two-Phase Commits) no suele usarse en arquitecturas de microservicios?",
+                options: [
+                    "a) Porque solo funciona con bases de datos NoSQL.",
+                    "b) Por ser muy costoso y bloquear recursos.",
+                    "c) Porque no soporta transacciones distribuidas.",
+                    "d) Porque es un patrón obsoleto."
+                ],
+                correctAnswer: "b) Por ser muy costoso y bloquear recursos."
+            },
+            {
+                question: "¿Qué es el algoritmo SAGA?",
+                options: [
+                    "a) Un tipo de autenticación de microservicios.",
+                    "b) Un algoritmo que coordina múltiples cambios en estados, evitando bloquear recursos por largos periodos.",
+                    "c) Una herramienta para monitorizar métricas.",
+                    "d) Un patrón para el escalado vertical."
+                ],
+                correctAnswer: "b) Un algoritmo que coordina múltiples cambios en estados, evitando bloquear recursos por largos periodos."
+            },
+            {
+                question: "En el patrón SAGA, ¿cómo se manejan los fallos y los \"rollbacks\"?",
+                options: [
+                    "a) Con un único rollback global.",
+                    "b) Se reintenta o se realiza una transacción compensatoria.",
+                    "c) Bloqueando todos los recursos hasta que se resuelva el problema.",
+                    "d) Siempre se ignora el error."
+                ],
+                correctAnswer: "b) Se reintenta o se realiza una transacción compensatoria."
+            },
+            {
+                question: "¿Cuál de los siguientes frameworks NO es de Java para microservicios?",
+                options: [
+                    "a) Spring Cloud/Boot.",
+                    "b) Micronaut.",
+                    "c) Flask.",
+                    "d) Quarkus."
+                ],
+                correctAnswer: "c) Flask."
+            },
+            {
+                question: "¿Qué sistema se utiliza para la orquestación de contenedores y agrupa nodos en un clúster?",
+                options: [
+                    "a) Docker Swarm.",
+                    "b) Kubernetes.",
+                    "c) Ambos a y b.",
+                    "d) Ninguno de los anteriores."
+                ],
+                correctAnswer: "c) Ambos a y b."
+            },
+            {
+                question: "¿Qué es un \"pod\" en Kubernetes?",
+                options: [
+                    "a) Un único contenedor.",
+                    "b) Un conjunto de uno o más contenedores.",
+                    "c) Un nodo de un clúster.",
+                    "d) Una base de datos."
+                ],
+                correctAnswer: "b) Un conjunto de uno o más contenedores."
+            },
+            {
+                question: "¿Qué significa la \"automatización\" en el contexto de despliegues de microservicios?",
+                options: [
+                    "a) Reducir el número de desarrolladores.",
+                    "b) La importancia creciente del CI/CD y DevOps a medida que aumenta el número de microservicios.",
+                    "c) La eliminación de todos los tests manuales.",
+                    "d) La capacidad de autocuración de los microservicios."
+                ],
+                correctAnswer: "b) La importancia creciente del CI/CD y DevOps a medida que aumenta el número de microservicios."
+            },
+            {
+                question: "¿Qué representa \"IaC\" (Infrastructure as Code)?",
+                options: [
+                    "a) Un lenguaje de programación para microservicios.",
+                    "b) La configuración de la infraestructura para facilitar los despliegues, usando control de versiones.",
+                    "c) Un protocolo de comunicación entre microservicios.",
+                    "d) Una herramienta de monitorización de red."
+                ],
+                correctAnswer: "b) La configuración de la infraestructura para facilitar los despliegues, usando control de versiones."
+            },
+            {
+                question: "¿Qué buscan los \"despliegues Zero-Downtime\"?",
+                options: [
+                    "a) Reducir el tiempo de desarrollo.",
+                    "b) Desplegar microservicios sin que haya interrupción para los usuarios o el servicio.",
+                    "c) Eliminar la necesidad de pruebas.",
+                    "d) Aumentar la complejidad de la infraestructura."
+                ],
+                correctAnswer: "b) Desplegar microservicios sin que haya interrupción para los usuarios o el servicio."
+            },
+            {
+                question: "¿Cuál es un modo de despliegue donde la instancia del microservicio se ejecuta directamente en una máquina física sin virtualización?",
+                options: [
+                    "a) Máquina virtual.",
+                    "b) Contenedor.",
+                    "c) Máquina física.",
+                    "d) PaaS."
+                ],
+                correctAnswer: "c) Máquina física."
+            },
+            {
+                question: "¿Qué modelo de despliegue abstrae al desarrollador de la gestión inferior y corre sus microservicios como instancias administradas?",
+                options: [
+                    "a) IaaS.",
+                    "b) PaaS.",
+                    "c) FaaS.",
+                    "d) KaaS."
+                ],
+                correctAnswer: "b) PaaS."
+            },
+            {
+                question: "¿Qué significa FaaS?",
+                options: [
+                    "a) Framework as a Service.",
+                    "b) Function as a Service.",
+                    "c) File as a Service.",
+                    "d) Feature as a Service."
+                ],
+                correctAnswer: "b) Function as a Service."
+            },
+            {
+                question: "¿Qué son AWS Lambda, Google Cloud Functions o Azure Functions en el contexto de despliegue?",
+                options: [
+                    "a) Ejemplos de PaaS.",
+                    "b) Ejemplos de FaaS (serverless).",
+                    "c) Plataformas de orquestación de contenedores.",
+                    "d) Herramientas de monitorización."
+                ],
+                correctAnswer: "b) Ejemplos de FaaS (serverless)."
+            },
+            {
+                question: "¿Qué implica KaaS (Kubernetes as a Service)?",
+                options: [
+                    "a) Creación de máquinas virtuales para microservicios.",
+                    "b) Un servicio de orquestación de contenedores en la nube, donde la infraestructura es administrada por el CSP.",
+                    "c) La ejecución de microservicios en una máquina física.",
+                    "d) La gestión manual de los contenedores."
+                ],
+                correctAnswer: "b) Un servicio de orquestación de contenedores en la nube, donde la infraestructura es administrada por el CSP."
+            },
+            {
+                question: "¿Cuál es el tipo de test más importante en entornos CI/CD para microservicios?",
+                options: [
+                    "a) End-to-End.",
+                    "b) Servicio.",
+                    "c) Unitarios (TDD).",
+                    "d) Manuales."
+                ],
+                correctAnswer: "c) Unitarios (TDD)."
+            },
+            {
+                question: "¿Qué se prueba en los tests de servicio para microservicios?",
+                options: [
+                    "a) Funciones individuales dentro de un servicio.",
+                    "b) El microservicio como un todo, utilizando Stubs y Mocks.",
+                    "c) El sistema completo de microservicios.",
+                    "d) La base de datos únicamente."
+                ],
+                correctAnswer: "b) El microservicio como un todo, utilizando Stubs y Mocks."
+            },
+            {
+                question: "¿Qué es la agregación de logs en la observabilidad de microservicios?",
+                options: [
+                    "a) La eliminación de registros antiguos.",
+                    "b) La recopilación de todos los registros de cada microservicio en un solo lugar.",
+                    "c) La creación de logs más pequeños.",
+                    "d) La monitorización de la CPU."
+                ],
+                correctAnswer: "b) La recopilación de todos los registros de cada microservicio en un solo lugar."
+            },
+            {
+                question: "¿Qué se captura en la agregación de métricas de microservicios?",
+                options: [
+                    "a) Solo errores y excepciones.",
+                    "b) Constantes de los microservicios (CPU, RAM, peticiones) y también indicadores de negocio (solicitudes, compras).",
+                    "c) Únicamente la información de la red.",
+                    "d) Solo la cantidad de código."
+                ],
+                correctAnswer: "b) Constantes de los microservicios (CPU, RAM, peticiones) y también indicadores de negocio (solicitudes, compras)."
+            },
+            {
+                question: "¿Cuál es el propósito de las trazas distribuidas en la observabilidad?",
+                options: [
+                    "a) Generar alarmas.",
+                    "b) Saber qué ha ocurrido y no perder el rastro de una solicitud o una saga a través de múltiples servicios.",
+                    "c) Reducir la latencia.",
+                    "d) Optimizar el uso de la memoria."
+                ],
+                correctAnswer: "b) Saber qué ha ocurrido y no perder el rastro de una solicitud o una saga a través de múltiples servicios."
+            },
+            {
+                question: "¿Qué se busca evitar con la gestión de alertas en microservicios?",
+                options: [
+                    "a) La falta de información.",
+                    "b) La fatiga de alertas.",
+                    "c) La redundancia de logs.",
+                    "d) El aumento de costos."
+                ],
+                correctAnswer: "b) La fatiga de alertas."
+            },
+            {
+                question: "¿Qué técnica de pruebas en producción permite realizar transacciones sintéticas y tests A/B?",
+                options: [
+                    "a) Tests unitarios.",
+                    "b) Chaos Engineering.",
+                    "c) Pruebas en producción.",
+                    "d) Tests de integración."
+                ],
+                correctAnswer: "c) Pruebas en producción."
+            },
+            {
+                question: "¿En qué etapa del desarrollo debe formar parte la seguridad en microservicios?",
+                options: [
+                    "a) Solo en la fase final de pruebas.",
+                    "b) Desde el inicio del desarrollo.",
+                    "c) Después del despliegue.",
+                    "d) Únicamente si el sistema maneja datos sensibles."
+                ],
+                correctAnswer: "b) Desde el inicio del desarrollo."
+            },
+            {
+                question: "¿Dónde deben almacenarse las credenciales en un entorno de microservicios para mejorar la seguridad?",
+                options: [
+                    "a) Directamente en el código.",
+                    "b) En el entorno o en Secrets Managers.",
+                    "c) En la base de datos pública.",
+                    "d) En un archivo de texto plano accesible."
+                ],
+                correctAnswer: "b) En el entorno o en Secrets Managers."
+            },
+            {
+                question: "¿Qué es un \"timeout\" en el contexto de resiliencia de microservicios?",
+                options: [
+                    "a) Un error de red.",
+                    "b) El tiempo permitido a una ejecución hasta que falle o el tiempo a esperar antes de decidir que algo ha ido mal.",
+                    "c) Un mecanismo de autenticación.",
+                    "d) Una técnica de balanceo de carga."
+                ],
+                correctAnswer: "b) El tiempo permitido a una ejecución hasta que falle o el tiempo a esperar antes de decidir que algo ha ido mal."
+            },
+            {
+                question: "Si un microservicio falla, ¿es recomendable reintentar inmediatamente la llamada?",
+                options: [
+                    "a) Sí, siempre.",
+                    "b) No, se debe aplicar un \"back-off exponencial\" y un número máximo de intentos.",
+                    "c) Solo si el error es de conexión.",
+                    "d) El reintento no es una técnica de resiliencia."
+                ],
+                correctAnswer: "b) No, se debe aplicar un \"back-off exponencial\" y un número máximo de intentos."
+            },
+            {
+                question: "¿Cuáles son los estados básicos del patrón Circuit Breaker?",
+                options: [
+                    "a) Activo y Pasivo.",
+                    "b) Encendido y Apagado.",
+                    "c) Abierto y Cerrado.",
+                    "d) Disponible e Indisponible."
+                ],
+                correctAnswer: "c) Abierto y Cerrado."
+            },
+            {
+                question: "¿Qué significa el estado \"Cerrado\" en un Circuit Breaker?",
+                options: [
+                    "a) Que el acceso al microservicio está abierto.",
+                    "b) Que el acceso a un microservicio se cierra si se detecta que está caído.",
+                    "c) Que el microservicio está en mantenimiento.",
+                    "d) Que no se pueden hacer más reintentos."
+                ],
+                correctAnswer: "a) Que el acceso al microservicio está abierto."
+            },
+            {
+                question: "¿Qué son los \"Bulkheads\" en la resiliencia de microservicios?",
+                options: [
+                    "a) Un tipo de firewall.",
+                    "b) Barreras o protecciones entre componentes para que el fallo de uno no afecte a otro, como cuotas de CPU/RAM.",
+                    "c) Un mecanismo de registro de errores.",
+                    "d) Un tipo de base de datos distribuida."
+                ],
+                correctAnswer: "b) Barreras o protecciones entre componentes para que el fallo de uno no afecte a otro, como cuotas de CPU/RAM."
+            },
+            {
+                question: "¿Qué se busca con las \"cuotas a nivel de CPU/RAM/persistencia\" en los Bulkheads?",
+                options: [
+                    "a) Aumentar la vulnerabilidad de un componente.",
+                    "b) Proteger los recursos de un componente para que el fallo de otro no le afecte.",
+                    "c) Reducir la cantidad de recursos asignados.",
+                    "d) Permitir el acceso ilimitado a los recursos."
+                ],
+                correctAnswer: "b) Proteger los recursos de un componente para que el fallo de otro no le afecte."
+            },
+            {
+                question: "¿Qué es la \"idempotencia\" en microservicios?",
+                options: [
+                    "a) La capacidad de ejecutar una acción una sola vez.",
+                    "b) La propiedad de realizar una acción varias veces y obtener el mismo resultado que si se realizara una sola vez.",
+                    "c) La redundancia de datos.",
+                    "d) La velocidad de procesamiento."
+                ],
+                correctAnswer: "b) La propiedad de realizar una acción varias veces y obtener el mismo resultado que si se realizara una sola vez."
+            },
+            {
+                question: "¿Con qué patrón está relacionada la idempotencia en microservicios?",
+                options: [
+                    "a) Circuit Breaker.",
+                    "b) Event Sourcing.",
+                    "c) API Gateway.",
+                    "d) SAGA."
+                ],
+                correctAnswer: "b) Event Sourcing."
+            },
+            {
+                question: "Si un evento se duplica en una cola (ej. Apache Kafka), ¿qué deben hacer los consumidores si el sistema es idempotente?",
+                options: [
+                    "a) Procesarlo dos veces.",
+                    "b) Ignorar la duplicación y procesarlo solo una vez.",
+                    "c) Generar un error.",
+                    "d) Notificar al productor del evento."
+                ],
+                correctAnswer: "b) Ignorar la duplicación y procesarlo solo una vez."
+            },
+            {
+                question: "¿Qué es el escalado \"vertical\"?",
+                options: [
+                    "a) Añadir más instancias del microservicio.",
+                    "b) Mejorar los recursos del microservicio (más memoria, CPU, etc.).",
+                    "c) Dividir el microservicio en otros más pequeños.",
+                    "d) Distribuir la carga de trabajo entre diferentes bases de datos."
+                ],
+                correctAnswer: "b) Mejorar los recursos del microservicio (más memoria, CPU, etc.)."
+            },
+            {
+                question: "¿Qué es el escalado \"horizontal\"?",
+                options: [
+                    "a) Aumentar la capacidad de un único servidor.",
+                    "b) Crecer en instancias, lanzando nuevos pods o servicios a demanda.",
+                    "c) Descentralizar los logs.",
+                    "d) Optimizar el código del microservicio."
+                ],
+                correctAnswer: "b) Crecer en instancias, lanzando nuevos pods o servicios a demanda."
+            },
+            {
+                question: "¿Cómo se logra la \"descomposición funcional\" para el escalado?",
+                options: [
+                    "a) Consolidando múltiples funcionalidades en un solo microservicio.",
+                    "b) Extrayendo una funcionalidad muy demandante a otro microservicio para escalarlo de forma independiente.",
+                    "c) Limitando el número de funcionalidades por microservicio.",
+                    "d) Compartiendo la misma base de datos entre todas las funcionalidades."
+                ],
+                correctAnswer: "b) Extrayendo una funcionalidad muy demandante a otro microservicio para escalarlo de forma independiente."
+            },
+            {
+                question: "¿Los contenedores son ideales para las arquitecturas de microservicios?",
+                options: [
+                    "a) No, no tienen relación.",
+                    "b) Sí.",
+                    "c) Solo para entornos de desarrollo.",
+                    "d) Únicamente para microservicios muy pequeños."
+                ],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "¿Son los microservicios un tipo de SOA (Arquitectura Orientada a Servicios)?",
+                options: [
+                    "a) No, son conceptos completamente diferentes.",
+                    "b) Sí, son un tipo de SOA.",
+                    "c) SOA es un reemplazo de microservicios.",
+                    "d) Solo si la SOA es muy granular."
+                ],
+                correctAnswer: "b) Sí, son un tipo de SOA."
+            },
+            {
+                question: "¿Qué significa \"Granularidad muy fina\" en el contexto de microservicios?",
+                options: [
+                    "a) Poca responsabilidad por microservicio.",
+                    "b) Que el microservicio es muy grande.",
+                    "c) Mucha responsabilidad por microservicio.",
+                    "d) Que la base de datos es pequeña."
+                ],
+                correctAnswer: "a) Poca responsabilidad por microservicio."
+            },
+            {
+                question: "¿Pueden los microservicios tener su propia base de datos?",
+                options: [
+                    "a) No, deben compartir una base de datos centralizada.",
+                    "b) Sí, cada microservicio puede tener su BD (100% independiente).",
+                    "c) Solo si no manejan datos sensibles.",
+                    "d) Depende de la estrategia de escalado."
+                ],
+                correctAnswer: "b) Sí, cada microservicio puede tener su BD (100% independiente)."
+            },
+            {
+                question: "¿Qué es la \"Gobernanza\" en microservicios?",
+                options: [
+                    "a) La gestión de los equipos de desarrollo.",
+                    "b) La gestión compleja de los microservicios, incluyendo orquestadores y patrones de diseño.",
+                    "c) El control de versiones del código.",
+                    "d) La seguridad de la red."
+                ],
+                correctAnswer: "b) La gestión compleja de los microservicios, incluyendo orquestadores y patrones de diseño."
+            },
+            {
+                question: "¿Qué significa \"segregar\" en el contexto de Bounded Context?",
+                options: [
+                    "a) Compartir todos los atributos de las clases.",
+                    "b) Es mejor dividir y especializar.",
+                    "c) Agrupar todas las funcionalidades.",
+                    "d) Unificar los modelos de datos."
+                ],
+                correctAnswer: "b) Es mejor dividir y especializar."
+            },
+            {
+                question: "¿Cuál de los siguientes es un \"nuevo problema\" introducido por las arquitecturas de microservicios?",
+                options: [
+                    "a) Facilidad de resolución de problemas.",
+                    "b) Baja latencia.",
+                    "c) Muchas opciones a elegir.",
+                    "d) Consistencia de datos sencilla."
+                ],
+                correctAnswer: "c) Muchas opciones a elegir."
+            },
+            {
+                question: "En la comunicación asíncrona, ¿qué aseguran los Brokers de mensajes?",
+                options: [
+                    "a) Comunicación síncrona.",
+                    "b) Entrega garantizada, confianza y transaccionalidad.",
+                    "c) Reducción de la latencia.",
+                    "d) Menor acoplamiento."
+                ],
+                correctAnswer: "b) Entrega garantizada, confianza y transaccionalidad."
+            },
+            {
+                question: "¿Qué significa HTTP2 en el contexto de RPC/gRPC?",
+                options: [
+                    "a) Es un protocolo de comunicación antiguo.",
+                    "b) Es el protocolo subyacente para gRPC.",
+                    "c) Es un tipo de base de datos.",
+                    "d) Es un estándar para la documentación de APIs."
+                ],
+                correctAnswer: "b) Es el protocolo subyacente para gRPC."
+            },
+            {
+                question: "¿Qué permite la \"generación de código nativa\" en RPC/gRPC?",
+                options: [
+                    "a) Escribir todo el código a mano.",
+                    "b) Generar stubs y esqueletos de código para la comunicación.",
+                    "c) Ejecutar el código directamente en el navegador.",
+                    "d) Reducir la velocidad de desarrollo."
+                ],
+                correctAnswer: "b) Generar stubs y esqueletos de código para la comunicación."
+            },
+            {
+                question: "¿Qué se usa para la generación de código con REST?",
+                options: [
+                    "a) Protocol Buffer.",
+                    "b) OpenAPI / Swagger.",
+                    "c) gRPC.",
+                    "d) RMI."
+                ],
+                correctAnswer: "b) OpenAPI / Swagger."
+            },
+            {
+                question: "¿Quién liberó los productos de API Gateway mencionados en el texto?",
+                options: [
+                    "a) Google.",
+                    "b) Netflix.",
+                    "c) Amazon.",
+                    "d) Microsoft."
+                ],
+                correctAnswer: "b) Netflix."
+            },
+            {
+                question: "¿Por qué Zuul se replica muchas veces?",
+                options: [
+                    "a) Para consumir más recursos.",
+                    "b) Para que no caiga todo en caso de fallo.",
+                    "c) Para aumentar la latencia.",
+                    "d) Para reducir la complejidad."
+                ],
+                correctAnswer: "b) Para que no caiga todo en caso de fallo."
+            },
+            {
+                question: "¿Qué hace Eureka en el ecosistema de Netflix OSS?",
+                options: [
+                    "a) Actúa como API Gateway.",
+                    "b) Es un servidor para registrar microservicios y sus metadatos.",
+                    "c) Implementa el patrón Circuit Breaker.",
+                    "d) Balancea las peticiones de clientes."
+                ],
+                correctAnswer: "b) Es un servidor para registrar microservicios y sus metadatos."
+            },
+            {
+                question: "¿Qué es el \"Plano de Control de Istio\" en un Service Mesh?",
+                options: [
+                    "a) La capa de aplicación donde reside la lógica de negocio.",
+                    "b) Donde se solucionan problemas de chequeo de políticas de seguridad, métricas, etc.",
+                    "c) El proxy Sidecar.",
+                    "d) El balanceador de carga."
+                ],
+                correctAnswer: "b) Donde se solucionan problemas de chequeo de políticas de seguridad, métricas, etc."
+            },
+            {
+                question: "¿Qué servicio proporciona Kubernetes en el contexto de Service Mesh?",
+                options: [
+                    "a) El plano de control de Istio.",
+                    "b) Servicios subyacentes para la orquestación de contenedores.",
+                    "c) La lógica de negocio.",
+                    "d) La intercepción de llamadas de red."
+                ],
+                correctAnswer: "b) Servicios subyacentes para la orquestación de contenedores."
+            },
+            {
+                question: "¿Qué se centraliza y muestra en la \"Trazabilidad distribuida\"?",
+                options: [
+                    "a) Solo los errores.",
+                    "b) Trazas asociadas con una sola solicitud entre múltiples servicios, con un ID único.",
+                    "c) La topología de la red.",
+                    "d) Las métricas de CPU y RAM."
+                ],
+                correctAnswer: "b) Trazas asociadas con una sola solicitud entre múltiples servicios, con un ID único."
+            },
+            {
+                question: "¿Qué producto se menciona para la monitorización de logs en observabilidad?",
+                options: [
+                    "a) Grafana.",
+                    "b) Prometheus.",
+                    "c) Elasticsearch.",
+                    "d) Kiali."
+                ],
+                correctAnswer: "c) Elasticsearch."
+            },
+            {
+                question: "¿Qué patrón se usa para dividir las operaciones CRUD de un microservicio en dos (lectura y escritura)?",
+                options: [
+                    "a) 2PC.",
+                    "b) SAGA.",
+                    "c) CQRS.",
+                    "d) Circuit Breaker."
+                ],
+                correctAnswer: "c) CQRS."
+            },
+            {
+                question: "¿Qué fase del 2PC (Two-Phase Commits) implica la preparación para la transacción?",
+                options: [
+                    "a) Commit.",
+                    "b) Rollback.",
+                    "c) Voting.",
+                    "d) Compensatoria."
+                ],
+                correctAnswer: "c) Voting."
+            },
+            {
+                question: "En SAGA, ¿qué se guarda para facilitar el rollback en caso de fallos?",
+                options: [
+                    "a) Un bloqueo global.",
+                    "b) Una transacción compensatoria.",
+                    "c) Un punto de control.",
+                    "d) Un mensaje de error."
+                ],
+                correctAnswer: "b) Una transacción compensatoria."
+            },
+            {
+                question: "¿Qué es un \"nodo\" en el contexto de orquestación de contenedores?",
+                options: [
+                    "a) Un contenedor individual.",
+                    "b) Un elemento del clúster que puede albergar pods.",
+                    "c) Una base de datos.",
+                    "d) Un servicio de red."
+                ],
+                correctAnswer: "b) Un elemento del clúster que puede albergar pods."
+            },
+            {
+                question: "¿Qué es un \"clúster\" en el contexto de orquestación?",
+                options: [
+                    "a) Un solo servidor.",
+                    "b) Una agrupación de nodos a orquestar, con al menos 1 master y 1 worker.",
+                    "c) Una red de bases de datos.",
+                    "d) Un conjunto de microservicios desplegados."
+                ],
+                correctAnswer: "b) Una agrupación de nodos a orquestar, con al menos 1 master y 1 worker."
+            },
+            {
+                question: "¿Qué es un \"servicio\" en Kubernetes?",
+                options: [
+                    "a) Un único pod.",
+                    "b) Un conjunto de pods a los que se envía tráfico (ingress).",
+                    "c) Una máquina virtual.",
+                    "d) Un volumen de datos."
+                ],
+                correctAnswer: "b) Un conjunto de pods a los que se envía tráfico (ingress)."
+            },
+            {
+                question: "¿Qué es un \"volumen\" en Kubernetes?",
+                options: [
+                    "a) Una cantidad de memoria RAM.",
+                    "b) Un directorio con datos accesibles a los contenedores del pod.",
+                    "c) Un tipo de red.",
+                    "d) Un balanceador de carga."
+                ],
+                correctAnswer: "b) Un directorio con datos accesibles a los contenedores del pod."
+            },
+            {
+                question: "¿Qué permite un \"Namespace\" en Kubernetes?",
+                options: [
+                    "a) Crear un nuevo clúster físico.",
+                    "b) Crear un clúster virtual o una partición del clúster existente.",
+                    "c) Definir las políticas de seguridad.",
+                    "d) Monitorizar los logs."
+                ],
+                correctAnswer: "b) Crear un clúster virtual o una partición del clúster existente."
+            },
+            {
+                question: "¿Qué es la \"ejecución aislada\" en microservicios?",
+                options: [
+                    "a) Ejecutar los microservicios en un único servidor.",
+                    "b) Ejecutar los microservicios de forma aislada, con sus recursos computacionales, sin impactar a otros.",
+                    "c) Desconectar los microservicios de la red.",
+                    "d) Restringir el acceso solo a un desarrollador."
+                ],
+                correctAnswer: "b) Ejecutar los microservicios de forma aislada, con sus recursos computacionales, sin impactar a otros."
+            },
+            {
+                question: "¿Cuál es un modo de despliegue donde el microservicio se ejecuta en un contenedor de aplicaciones que administra otras aplicaciones?",
+                options: [
+                    "a) Contenedor.",
+                    "b) PaaS.",
+                    "c) Contenedor de Aplicaciones.",
+                    "d) FaaS."
+                ],
+                correctAnswer: "c) Contenedor de Aplicaciones."
+            },
+            {
+                question: "¿Qué significa \"estados deseados\" en el contexto de despliegue?",
+                options: [
+                    "a) Definir manualmente cada estado del microservicio.",
+                    "b) Declarar la configuración y que una plataforma mantenga los microservicios en ese estado definido.",
+                    "c) Realizar pruebas continuas para asegurar el estado.",
+                    "d) Revertir a un estado anterior si hay fallos."
+                ],
+                correctAnswer: "b) Declarar la configuración y que una plataforma mantenga los microservicios en ese estado definido."
+            },
+            {
+                question: "¿Qué tipo de pruebas se realizan en producción, como Canary o Chaos Engineering?",
+                options: [
+                    "a) Unitarios.",
+                    "b) De servicio.",
+                    "c) Pruebas en producción.",
+                    "d) De integración."
+                ],
+                correctAnswer: "c) Pruebas en producción."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null); // To store user's selected option index
+
+        const quizContainer = document.getElementById('quiz-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const scoreDisplay = document.getElementById('score-display');
+        const restartButton = document.getElementById('restart-button');
+
+        function displayQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-container" id="question-${currentQuestionIndex}">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${q.question}</p>
+                    <div class="options-container">
+                        ${q.options.map((option, index) => `
+                            <button class="option-button" data-index="${index}">${option}</button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+
+            const optionButtons = quizContainer.querySelectorAll('.option-button');
+            optionButtons.forEach(button => {
+                button.addEventListener('click', () => handleAnswer(button));
+            });
+
+            // Restore previous selection if any
+            if (userAnswers[currentQuestionIndex] !== null) {
+                const selectedButton = optionButtons[userAnswers[currentQuestionIndex]];
+                handleAnswer(selectedButton, true); // Pass true to not re-evaluate score
+            }
+
+            updateNavigationButtons();
+        }
+
+        function handleAnswer(selectedButton, isRestoring = false) {
+            const q = questions[currentQuestionIndex];
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const optionButtons = quizContainer.querySelectorAll('.option-button');
+
+            // Disable all buttons for this question once an answer is selected
+            optionButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.remove('correct', 'incorrect'); // Clear previous styling
+            });
+
+            const selectedOption = selectedButton.textContent;
+            userAnswers[currentQuestionIndex] = parseInt(selectedButton.dataset.index); // Store selected option index
+
+            if (selectedOption === q.correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.classList.add('correct');
+                feedbackDiv.classList.remove('incorrect');
+                if (!isRestoring) { // Only update score if not restoring a previous answer
+                    score++;
+                }
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${q.correctAnswer}`;
+                feedbackDiv.classList.add('incorrect');
+                feedbackDiv.classList.remove('correct');
+                // Highlight the correct answer
+                optionButtons.forEach(button => {
+                    if (button.textContent === q.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            feedbackDiv.style.display = 'block'; // Show feedback
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                nextButton.textContent = 'Finalizar Test';
+            } else {
+                nextButton.textContent = 'Siguiente';
+            }
+        }
+
+        function showResults() {
+            quizContainer.style.display = 'none';
+            prevButton.style.display = 'none';
+            nextButton.style.display = 'none';
+            scoreDisplay.style.display = 'block';
+            restartButton.style.display = 'block';
+            scoreDisplay.textContent = `Has obtenido ${score} de ${questions.length} respuestas correctas.`;
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            quizContainer.style.display = 'block';
+            prevButton.style.display = 'block';
+            nextButton.style.display = 'block';
+            scoreDisplay.style.display = 'none';
+            restartButton.style.display = 'none';
+            displayQuestion();
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                showResults();
+            }
+        });
+
+        restartButton.addEventListener('click', restartQuiz);
+
+        // Initial display
+        displayQuestion();
+    </script>
+</body>
+</html>

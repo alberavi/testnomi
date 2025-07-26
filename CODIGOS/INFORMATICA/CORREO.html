@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Correo Electrónico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #4a5568;
+            background-color: #edf2f7;
+            border: 1px solid #cbd5e0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+        }
+        .options-container button.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: 600;
+            pointer-events: none; /* Deshabilita clics después de la selección */
+        }
+        .options-container button.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: 600;
+            pointer-events: none; /* Deshabilita clics después de la selección */
+        }
+        .options-container button.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .feedback-message {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: none; /* Oculto por defecto */
+        }
+        .feedback-message.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+        .feedback-message.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #dc3545;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:active {
+            transform: translateY(1px);
+        }
+        .nav-button.prev {
+            background-color: #607d8b;
+            color: #ffffff;
+        }
+        .nav-button.prev:hover {
+            background-color: #455a64;
+        }
+        .nav-button.next {
+            background-color: #4CAF50;
+            color: #ffffff;
+        }
+        .nav-button.next:hover {
+            background-color: #43A047;
+        }
+        .nav-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .quiz-summary {
+            text-align: center;
+            padding: 30px;
+            background-color: #e6f7ff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        .quiz-summary h2 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .quiz-summary p {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .quiz-summary button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .quiz-summary button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container" id="quizContainer">
+        <!-- Las preguntas se cargarán aquí -->
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "¿Qué significa la sigla MUA en el contexto del correo electrónico?",
+                options: ["A) Mail Upload Agent", "B) Mail User Agent", "C) Mail Universal Access", "D) Mail Utility Adapter"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es el rol principal de una MSA en una organización según el documento?",
+                options: ["A) Recepción de correos entrantes.", "B) Gobernar el envío de mails para distribuir y dividir de forma controlada y evitar el colapso de las MTAs.", "C) Almacenar correos electrónicos antes de ser descargados por el usuario.", "D) Convertir el formato de correo electrónico para permitir adjuntos."],
+                correctAnswer: "B"
+            },
+            {
+                question: "Según el esquema, ¿qué protocolo utiliza un MUA para enviar un correo a la LAN/Internet?",
+                options: ["A) POP3", "B) IMAP", "C) HTTP", "D) SMTP"],
+                correctAnswer: "D"
+            },
+            {
+                question: "¿Qué tipo de agente es responsable de la entrega de correos electrónicos a los buzones de los usuarios?",
+                options: ["A) MTA", "B) MUA", "C) MDA", "D) MAA"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Para qué se utiliza el \"Mail Spool\" en el proceso de recepción de correo?",
+                options: ["A) Para el envío de correos salientes.", "B) Para almacenar físicamente los buzones de correo.", "C) Para la trazabilidad de los mensajes.", "D) Para la firma digital de los correos."],
+                correctAnswer: "B"
+            },
+            {
+                question: "Si un MAA ofreciera un servicio de webmail como OWA, ¿qué protocolo utilizaría en lugar de IMAP/POP3 para el acceso?",
+                options: ["A) SMTP", "B) FTP", "C) HTTP", "D) SSH"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué comando POP3 se utiliza para listar el número de mensajes y su tamaño?",
+                options: ["A) RETR", "B) STAT", "C) LIST", "D) DELE"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el puerto seguro para el protocolo POP3?",
+                options: ["A) 110", "B) 143", "C) 993", "D) 995"],
+                correctAnswer: "D"
+            },
+            {
+                question: "En IMAP, ¿qué comando se utiliza para borrar mensajes con el flag \\Deleted activado?",
+                options: ["A) DELE", "B) STORE", "C) EXPUNGE", "D) QUIT"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué característica principal diferencia a IMAP de POP3 en cuanto al manejo de los correos?",
+                options: ["A) POP3 está orientado a carpetas en servidor, IMAP a descarga.", "B) IMAP está orientado a uso online y carpetas en servidor, POP3 a descarga.", "C) Ambos son orientados a descarga, pero IMAP es más seguro.", "D) POP3 permite almacenar adjuntos, IMAP no."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es el puerto por defecto para el envío de correos mediante SMTP?",
+                options: ["A) 110", "B) 143", "C) 25", "D) 587"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué comando SMTP finaliza el envío del cuerpo de un mensaje?",
+                options: ["A) QUIT", "B) DATA", "C) RCPT TO", "D) HELO"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué versión extendida de SMTP se indica mediante el comando EHLO?",
+                options: ["A) SSMTP", "B) RSMTP", "C) ESMTP", "D) VSMTP"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es la finalidad de la característica STARTTLS en ESMTP?",
+                options: ["A) Enviar credenciales sin cifrar.", "B) Pasar de modo no seguro a modo seguro.", "C) Autenticar al cliente en dos pasos.", "D) Firmar digitalmente los correos."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué método de autenticación en ESMTP envía el usuario y contraseña sin cifrar?",
+                options: ["A) AUTH LOGIN", "B) AUTH MD5", "C) AUTH PLAIN", "D) AUTH CRAM-MD5"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué función tienen las cabeceras Received y Return-Path en un correo electrónico?",
+                options: ["A) Indicar el destinatario del correo.", "B) Agrupar mensajes por hilos de conversación.", "C) Servir para la trazabilidad del MTA.", "D) Especificar el tipo de contenido del mensaje."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué extensión permite el envío de ficheros adjuntos en el correo electrónico?",
+                options: ["A) RFC 822", "B) MIME", "C) SMTP", "D) POP3"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué cabecera MIME se utiliza para indicar el tipo de contenido del mensaje?",
+                options: ["A) Content-Transfer-Encoding", "B) MIME-Version", "C) Content-Type", "D) Boundary"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas es un cliente de correo según el documento?",
+                options: ["A) Postfix", "B) SendMail", "C) Mozilla Thunderbird", "D) Microsoft Exchange"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué servidor de correo es mencionado en el documento?",
+                options: ["A) EM Client", "B) IBM Lotus Notes", "C) Zimbra", "D) Microsoft Outlook"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué tecnología de securización de correo permite a MTA2 verificar que un mail proviene de MTA1 comprobando IPs autorizadas en un registro TXT?",
+                options: ["A) DKIM", "B) DMARC", "C) SPF", "D) ARC"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué securización de correo utiliza una clave privada para firmar los correos salientes y una clave pública (en un registro TXT) para validarlos?",
+                options: ["A) SPF", "B) DMARC", "C) ARC", "D) DKIM"],
+                correctAnswer: "D"
+            },
+            {
+                question: "¿Qué combinación de tecnologías de securización de correo es DMARC?",
+                options: ["A) SPF + ARC", "B) DKIM + ARC", "C) SPF + DKIM", "D) SPF + HTTP"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué técnica de autenticación garantiza toda la cadena de un correo electrónico?",
+                options: ["A) SPF", "B) DKIM", "C) DMARC", "D) ARC"],
+                correctAnswer: "D"
+            },
+            {
+                question: "En la arquitectura DNS, ¿quién es el primero en ser consultado por el resolver si no tiene la información cacheada?",
+                options: ["A) Top-Level Domain Server", "B) Authoritative Server", "C) Root Server", "D) El propio dominio"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué tipo de registro DNS mapea un nombre de dominio a una dirección IPv4?",
+                options: ["A) Registro AAAA", "B) Registro CNAME", "C) Registro A", "D) Registro MX"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué tipo de registro DNS especifica el o los MTA(s) a los que deben ser entregados los emails?",
+                options: ["A) Registro A", "B) Registro TXT", "C) Registro MX", "D) Registro PTR"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué registro DNS se utiliza como alias o redirección desde subdominios a otros dominios/subdominios?",
+                options: ["A) Registro MX", "B) Registro TXT", "C) Registro CNAME", "D) Registro SRV"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Para qué se utiliza comúnmente un registro TXT en relación con la seguridad del correo electrónico?",
+                options: ["A) Para especificar el servidor de correo entrante.", "B) Para almacenar información sobre las direcciones IP de los usuarios.", "C) Para prevenir ataques de spoofing mediante SPF.", "D) Para el mapeo de direcciones IPv6."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué tipo de registro DNS se utiliza para indicar qué servicios se ofrecen bajo un dominio, como VoIP o el servicio de correo MSA?",
+                options: ["A) Registro CNAME", "B) Registro TXT", "C) Registro SRV", "D) Registro PTR"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué registro DNS restringe qué entidades pueden expedir certificados para un determinado dominio?",
+                options: ["A) Registro SOA", "B) Registro CAA", "C) Registro A", "D) Registro TXT"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué información se almacena en el registro SOA de DNS?",
+                options: ["A) Las direcciones IP de los dominios.", "B) Información sobre los servicios ofrecidos.", "C) La dirección de correo electrónico del administrador y la última actualización del dominio.", "D) Los alias de los subdominios."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el puerto seguro para IMAP?",
+                options: ["A) 110", "B) 143", "C) 993", "D) 995"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué comando IMAP permite la lectura de contenido, cabeceras, flags, etc.?",
+                options: ["A) SELECT", "B) FETCH", "C) SEARCH", "D) STORE"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué comando IMAP se utiliza para modificar los flags de los mensajes?",
+                options: ["A) DELE", "B) EXPUNGE", "C) STORE Flags", "D) STATUS"],
+                correctAnswer: "C"
+            },
+            {
+                question: "Según el diagrama, ¿qué protocolo se utiliza para la comunicación entre un MUA y un MAA?",
+                options: ["A) SMTP", "B) HTTP", "C) POP3", "D) DNS"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es la función principal de la cabecera Message-ID?",
+                options: ["A) Indicar el remitente del correo.", "B) Agrupar mensajes por hilos de conversación.", "C) Especificar la fecha de envío del correo.", "D) Declarar el tipo de codificación del contenido."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué significa RFC 822 en el contexto del correo electrónico?",
+                options: ["A) Un protocolo para el envío de adjuntos.", "B) Un estándar que solo permite texto ASCII (7+1 bits).", "C) Una extensión para la seguridad del correo.", "D) Un formato para la autenticación de usuarios."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué puerto SMTP ha quedado obsoleto según el documento?",
+                options: ["A) 25", "B) 2525", "C) 587", "D) 465"],
+                correctAnswer: "D" // Corrected based on user feedback
+            },
+            {
+                question: "Si se utiliza AUTH LOGIN en ESMTP, ¿cómo se envían las credenciales?",
+                options: ["A) En un solo paso, sin cifrar.", "B) En dos pasos, sin cifrar.", "C) Siempre cifradas.", "D) Mediante un certificado."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es una característica fundamental de las MSA según el documento?",
+                options: ["A) Recibir correos electrónicos de otros dominios.", "B) Evitar que las MTAs colapsen debido a un envío masivo de correos.", "C) Almacenar los correos de los usuarios.", "D) Convertir el formato de los correos para incluir adjuntos."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué significa que una MTA por cada dominio esté configurada?",
+                options: ["A) Que cada usuario tiene su propia MTA.", "B) Que cada dominio tiene una MTA dedicada para gestionar sus correos.", "C) Que una MTA puede gestionar múltiples dominios.", "D) Que la MTA es un componente opcional."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué es un Resolver en la arquitectura DNS?",
+                options: ["A) Un servidor Root.", "B) Un servidor Authoritative.", "C) El servidor DNS configurado localmente (/etc/resolv.conf).", "D) Un servidor TLD."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el orden correcto de consulta en la arquitectura DNS cuando un resolver no tiene la IP cacheada?",
+                options: ["A) Root Server -> Authoritative Server -> TLD Server.", "B) TLD Server -> Root Server -> Authoritative Server.", "C) Root Server -> TLD Server -> Authoritative Server.", "D) Authoritative Server -> Root Server -> TLD Server."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué registro DNS se utiliza para la búsqueda inversa (mapear IP a nombre de dominio)?",
+                options: ["A) Registro A", "B) Registro MX", "C) Registro PTR", "D) Registro TXT"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué identifica el boundary en una cabecera Content-Type: multipart?",
+                options: ["A) El remitente del correo.", "B) El final del mensaje.", "C) El cambio de contenido en el cuerpo del mensaje.", "D) La codificación del contenido."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un valor válido para Content-Transfer-Encoding?",
+                options: ["A) 7bit", "B) 8bit", "C) 16bit", "D) binary"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué comando POP3 se utiliza para marcar un mensaje para borrado?",
+                options: ["A) LIST", "B) RETR", "C) DELE", "D) QUIT"],
+                correctAnswer: "C"
+            },
+            {
+                question: "Si en IMAP se ejecuta el comando DELE y luego QUIT, ¿qué sucede?",
+                options: ["A) Los mensajes se marcan como borrados pero no se eliminan.", "B) Los mensajes marcados como borrados se eliminan.", "C) Se cierra la sesión sin afectar los mensajes.", "D) Se descargan todos los mensajes."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué se especifica con la cabecera Content-Type: application/pdf?",
+                options: ["A) Que el cuerpo del mensaje es texto plano.", "B) Que el cuerpo del mensaje contiene múltiples partes.", "C) Que el cuerpo del mensaje es un documento PDF.", "D) Que el cuerpo del mensaje es una imagen GIF."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué protocolo es \"orientado a descarga\" y \"muy simple\"?",
+                options: ["A) IMAP", "B) SMTP", "C) POP3", "D) HTTP"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué comando SMTP se utiliza para saludar al servidor y presentarse?",
+                options: ["A) MAIL FROM", "B) RCPT TO", "C) HELO", "D) DATA"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué indica el comando EHLO en ESMTP en comparación con HELO en SMTP?",
+                options: ["A) Un saludo de un cliente más antiguo.", "B) Un saludo que solicita extensiones ESMTP.", "C) Un saludo de un servidor de correo.", "D) Un saludo de un cliente de correo web."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Por qué es importante cifrar el canal cuando se utilizan métodos de autenticación como AUTH PLAIN o AUTH LOGIN?",
+                options: ["A) Para reducir el tamaño de los mensajes.", "B) Porque las credenciales se envían en texto claro.", "C) Para mejorar la velocidad de transmisión.", "D) Para evitar que el servidor colapse."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un servidor de correo según el documento?",
+                options: ["A) Postfix", "B) SendMail", "C) Microsoft Exchange", "D) Mozilla Thunderbird"],
+                correctAnswer: "D"
+            },
+            {
+                question: "¿Qué registro DNS es un componente de las bases de datos de los servidores autoritativos?",
+                options: ["A) Registro MX", "B) Registro DNS", "C) Registro CNAME", "D) Registro TXT"],
+                correctAnswer: "D"
+            },
+            {
+                question: "¿Qué es el \"Spool\" en el contexto de correo electrónico?",
+                options: ["A) Un servidor de envío de correos.", "B) El almacenamiento físico de los buzones de correo.", "C) Un protocolo de acceso al correo.", "D) Una herramienta de securización."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué cabecera en MIME se utiliza para indicar la versión de MIME?",
+                options: ["A) Content-Type", "B) Content-Transfer-Encoding", "C) MIME-Version", "D) Boundary"],
+                correctAnswer: "C"
+            },
+            {
+                question: "Si una organización usa MSAs para \"no tumbar las MTAs\", ¿qué problema están tratando de evitar?",
+                options: ["A) La pérdida de correos electrónicos.", "B) La saturación o caída de los servidores de transferencia de correo.", "C) Problemas de seguridad en los correos.", "D) Lentitud en la descarga de correos por parte de los usuarios."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es el significado de \"Acceso\" en el diagrama del lado del \"Destino\"?",
+                options: ["A) El acceso del MUA al Mail Spool.", "B) El acceso del MUA al MAA.", "C) El acceso del MTA al MDA.", "D) El acceso del MDA al Mail Spool."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué comando IMAP permite buscar mensajes según criterios como FROM/TO o DATE?",
+                options: ["A) SELECT", "B) FETCH", "C) SEARCH", "D) STATUS"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el puerto alternativo para SMTP que también se menciona?",
+                options: ["A) 110", "B) 143", "C) 2525", "D) 993"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué registro DNS mapea un nombre de dominio a una dirección IPv6?",
+                options: ["A) Registro A", "B) Registro AAAA", "C) Registro PTR", "D) Registro CNAME"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué significa \"Origen\" en el diagrama?",
+                options: ["A) El servidor de correo del destinatario.", "B) El servidor de correo del remitente.", "C) El cliente de correo del remitente.", "D) El servidor DNS."],
+                correctAnswer: "B" // Inferred from context
+            },
+            {
+                question: "¿Qué componente del correo electrónico se encarga de la trazabilidad del mensaje entre diferentes MTAs?",
+                options: ["A) MUA", "B) MDA", "C) Las cabeceras Received y Return-Path.", "D) El Mail Spool."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es la diferencia principal entre AUTH PLAIN y AUTH LOGIN?",
+                options: ["A) AUTH PLAIN es seguro, AUTH LOGIN no.", "B) AUTH PLAIN es en un paso, AUTH LOGIN en dos.", "C) AUTH PLAIN requiere cifrado, AUTH LOGIN no.", "D) AUTH PLAIN es para enviar adjuntos, AUTH LOGIN no."],
+                correctAnswer: "B"
+            },
+            {
+                question: "Si se quiere ofrecer un servicio SIP bajo un dominio, ¿qué registro DNS se utilizaría?",
+                options: ["A) Registro A", "B) Registro MX", "C) Registro SRV", "D) Registro TXT"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué es el \"Body\" de un correo electrónico en el contexto de RFC 822 y MIME?",
+                options: ["A) La parte que contiene las cabeceras.", "B) La parte que contiene los ficheros adjuntos.", "C) El contenido principal del mensaje.", "D) La información de trazabilidad."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué indica el campo priority en un registro SRV?",
+                options: ["A) La prioridad del servidor destino.", "B) El peso relativo para registros con la misma prioridad.", "C) El puerto del servicio.", "D) La dirección del servidor destino."],
+                correctAnswer: "A" // Inferred from general SRV knowledge
+            },
+            {
+                question: "¿Qué comando POP3 se utiliza para descargar un mensaje específico?",
+                options: ["A) LIST", "B) STAT", "C) RETR", "D) DELE"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el significado de UNSEEN en el comando STATUS de IMAP?",
+                options: ["A) Mensajes eliminados.", "B) Mensajes leídos.", "C) Mensajes no leídos.", "D) Mensajes recientes."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué tecnología de securización de correo implica que MTA1 firma sus correos de salida usando su clave privada?",
+                options: ["A) SPF", "B) DKIM", "C) DMARC", "D) ARC"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Dónde se almacena la clave pública para validar la firma DKIM de un correo?",
+                options: ["A) En la cabecera DKIM-Signature.", "B) En el registro MX del dominio.", "C) En un registro TXT del dominio.", "D) En el Mail Spool."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál de las siguientes es una función de la cabecera Received?",
+                options: ["A) Indicar el destinatario.", "B) La trazabilidad del MTA.", "C) El asunto del mensaje.", "D) La fecha de envío."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué implica que RFC 822 solo permita texto (ASCII: 7+1 bits)?",
+                options: ["A) Que no puede manejar caracteres especiales.", "B) Que no puede enviar ficheros adjuntos.", "C) Que es más eficiente en la transmisión.", "D) Que siempre requiere cifrado."],
+                correctAnswer: "B"
+            },
+            {
+                question: "Si un mensaje pasa por varias MTAs, ¿qué cabeceras ayudan a la trazabilidad de ese camino?",
+                options: ["A) From y To.", "B) Subject y Message-ID.", "C) Received y Return-Path.", "D) Content-Type y MIME-Version."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué es un identificador que se encuentra en el body para indicar cambio de contenido en MIME?",
+                options: ["A) Content-Type", "B) Boundary", "C) Content-Transfer-Encoding", "D) MIME-Version."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es el objetivo principal de SPF?",
+                options: ["A) Cifrar el contenido del correo.", "B) Autenticar al remitente para prevenir spoofing.", "C) Comprimir los ficheros adjuntos.", "D) Organizar los correos en carpetas."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué tipo de registro DNS es esencial para que una MTA emisora sepa dónde entregar los emails de un dominio?",
+                options: ["A) Registro A", "B) Registro CNAME", "C) Registro MX", "D) Registro TXT"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cómo sabe el MUA que debe comunicarse con su MTA según el documento?",
+                options: ["A) Por la consulta a un registro MX.", "B) Porque se configura previamente el servidor saliente y entrante.", "C) Por la información recibida del DNS.", "D) Automáticamente a través de DHCP."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué es el Mail User Agent (MUA)?",
+                options: ["A) El servidor que transfiere correos.", "B) El programa que utilizan los usuarios para leer y enviar correos.", "C) El agente que entrega correos a los buzones.", "D) El servidor que accede a los buzones."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué tipo de codificación se usa para enviar credenciales Base64 en AUTH PLAIN?",
+                options: ["A) Base64", "B) UTF-8", "C) ASCII", "D) Binary"],
+                correctAnswer: "A"
+            },
+            {
+                question: "¿Qué registro DNS permite especificar el puerto y el host de un servicio, como el de envío de correo MSA?",
+                options: ["A) Registro A", "B) Registro CNAME", "C) Registro SRV", "D) Registro TXT"],
+                correctAnswer: "C"
+            },
+            {
+                question: "Si se utiliza el comando DELE en POP3, ¿cuándo se borra el mensaje del servidor?",
+                options: ["A) Inmediatamente.", "B) Después de ejecutar RETR.", "C) Después de ejecutar QUIT.", "D) Nunca se borra."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el nombre del fichero que contiene la configuración del servidor DNS (resolver) en sistemas Linux?",
+                options: ["A) /etc/hosts", "B) /etc/network/interfaces", "C) /etc/resolv.conf", "D) /etc/dns.conf"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué función principal tiene un Top-Level Domain Server en la resolución DNS?",
+                options: ["A) Proporcionar la IP final del dominio.", "B) Redirigir al Root Server.", "C) Indicar qué servidor Authoritative gestiona el dominio.", "D) Cachear las IPs más frecuentes."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el puerto de SMTP con seguridad?",
+                options: ["A) 25", "B) 110", "C) 587", "D) 993"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué significa IN A en un registro DNS?",
+                options: ["A) Indica una entrada para un servicio.", "B) Indica una entrada de dirección IPv4.", "C) Indica una entrada para un alias.", "D) Indica una entrada para el servidor de correo."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué comando SMTP se usa para especificar el remitente del correo?",
+                options: ["A) RCPT TO", "B) DATA", "C) HELO", "D) MAIL FROM"],
+                correctAnswer: "D"
+            },
+            {
+                question: "¿Qué característica tienen los \"flags\" en IMAP?",
+                options: ["A) Son el tamaño de los mensajes.", "B) Indican el estado de los mensajes.", "C) Son las cabeceras del correo.", "D) Son los adjuntos del correo."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué se utiliza para agrupar por hilos de conversación?",
+                options: ["A) Subject", "B) Message-ID", "C) Date", "D) From"],
+                correctAnswer: "B"
+            },
+            {
+                question: "Si el Mail Spool está orientado a la recepción, ¿qué implica esto?",
+                options: ["A) Que se utiliza para almacenar temporalmente los correos salientes.", "B) Que es donde se guardan los correos antes de que el usuario los descargue o acceda a ellos.", "C) Que es el lugar donde se firman los correos.", "D) Que es el componente que filtra el spam."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Cuál es el puerto por defecto para POP3?",
+                options: ["A) 25", "B) 110", "C) 143", "D) 587"],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué es un Authoritative Server en la arquitectura DNS?",
+                options: ["A) El servidor que responde a las consultas iniciales del resolver.", "B) El servidor que tiene la información definitiva de un dominio o zona.", "C) Un servidor que solo contiene registros MX.", "D) Un servidor que gestiona únicamente dominios de nivel superior."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué significa \\Deleted como un flag en IMAP?",
+                options: ["A) Que el mensaje está corrupto.", "B) Que el mensaje ha sido enviado.", "C) Que el mensaje está marcado para borrado.", "D) Que el mensaje ha sido leído."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué comando SMTP finaliza la sesión?",
+                options: ["A) HELO", "B) DATA", "C) QUIT", "D) RCPT TO"],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Cuál es el propósito del registro Return-Path?",
+                options: ["A) Indicar la ruta que siguió el correo para llegar al destino.", "B) Indicar la dirección a la que se deben enviar los errores de entrega.", "C) Indicar la dirección de correo electrónico del remitente.", "D) Indicar la dirección de respuesta del correo."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué significa que IMAP esté \"Orientado a uso online\"?",
+                options: ["A) Que los mensajes se descargan completamente al cliente.", "B) Que los mensajes se gestionan directamente en el servidor sin descargarlos por completo.", "C) Que solo se puede acceder al correo a través de un navegador web.", "D) Que solo se puede enviar correo, no recibir."],
+                correctAnswer: "B"
+            },
+            {
+                question: "¿Qué es EXPUNGE en IMAP?",
+                options: ["A) Un comando para leer el contenido de un mensaje.", "B) Un comando para vaciar la bandeja de entrada.", "C) Un comando para borrar permanentemente los mensajes marcados con \\Deleted.", "D) Un comando para buscar mensajes."],
+                correctAnswer: "C"
+            },
+            {
+                question: "¿Qué se especifica con un registro CAA?",
+                options: ["A) Qué IPs pueden enviar correos desde un dominio.", "B) Qué entidades pueden expedir certificados para un dominio.", "C) Qué servicios se ofrecen bajo un dominio.", "D) La dirección de correo electrónico del administrador del dominio."],
+                correctAnswer: "B"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userAnswers = new Array(quizData.length).fill(null);
+        const quizContainer = document.getElementById('quizContainer');
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                showSummary();
+                return;
+            }
+
+            const questionData = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <div class="question-text">
+                        ${currentQuestionIndex + 1}. ${questionData.question}
+                    </div>
+                    <div class="options-container" id="optionsContainer">
+                        ${questionData.options.map((option, index) => `
+                            <button class="option-button" data-option="${String.fromCharCode(65 + index)}">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-message" id="feedbackMessage"></div>
+                </div>
+                <div class="navigation-buttons">
+                    <button class="nav-button prev" id="prevButton" ${currentQuestionIndex === 0 ? 'disabled' : ''}>
+                        Anterior
+                    </button>
+                    <button class="nav-button next" id="nextButton">
+                        ${currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente'}
+                    </button>
+                </div>
+            `;
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.addEventListener('click', handleOptionClick);
+
+            document.getElementById('prevButton').addEventListener('click', () => {
+                currentQuestionIndex--;
+                loadQuestion();
+            });
+
+            document.getElementById('nextButton').addEventListener('click', () => {
+                currentQuestionIndex++;
+                loadQuestion();
+            });
+
+            // Restore previous selection if exists
+            const selectedAnswer = userAnswers[currentQuestionIndex];
+            if (selectedAnswer) {
+                const selectedButton = optionsContainer.querySelector(`[data-option="${selectedAnswer}"]`);
+                if (selectedButton) {
+                    const isCorrect = selectedAnswer === questionData.correctAnswer;
+                    selectedButton.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    disableOptions();
+                    showFeedback(isCorrect);
+                }
+            }
+        }
+
+        function handleOptionClick(event) {
+            const selectedButton = event.target.closest('.option-button');
+            if (!selectedButton || selectedButton.classList.contains('disabled')) {
+                return;
+            }
+
+            const selectedOption = selectedButton.dataset.option;
+            const questionData = quizData[currentQuestionIndex];
+            const isCorrect = selectedOption === questionData.correctAnswer;
+
+            // Store user's answer
+            userAnswers[currentQuestionIndex] = selectedOption;
+
+            // Apply styling
+            selectedButton.classList.add(isCorrect ? 'correct' : 'incorrect');
+            if (!isCorrect) {
+                // Highlight the correct answer if the selected one was incorrect
+                const correctButton = document.querySelector(`[data-option="${questionData.correctAnswer}"]`);
+                if (correctButton) {
+                    correctButton.classList.add('correct');
+                }
+            }
+
+            // Disable all options after selection
+            disableOptions();
+
+            // Show feedback message
+            showFeedback(isCorrect);
+
+            // Update score if it's a new correct answer
+            if (isCorrect && userAnswers[currentQuestionIndex] === selectedOption) {
+                score++;
+            }
+        }
+
+        function disableOptions() {
+            const buttons = document.querySelectorAll('.option-button');
+            buttons.forEach(button => {
+                button.classList.add('disabled');
+            });
+        }
+
+        function showFeedback(isCorrect) {
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            feedbackMessage.style.display = 'block';
+            if (isCorrect) {
+                feedbackMessage.textContent = "¡Correcto!";
+                feedbackMessage.className = 'feedback-message correct';
+            } else {
+                feedbackMessage.textContent = "Incorrecto. La respuesta correcta es " + quizData[currentQuestionIndex].correctAnswer + ".";
+                feedbackMessage.className = 'feedback-message incorrect';
+            }
+        }
+
+        function showSummary() {
+            let correctCount = 0;
+            userAnswers.forEach((answer, index) => {
+                if (answer === quizData[index].correctAnswer) {
+                    correctCount++;
+                }
+            });
+
+            quizContainer.innerHTML = `
+                <div class="quiz-summary">
+                    <h2>Test Finalizado</h2>
+                    <p>Has respondido ${userAnswers.filter(a => a !== null).length} de ${quizData.length} preguntas.</p>
+                    <p>Respuestas correctas: ${correctCount}</p>
+                    <p>Respuestas incorrectas: ${quizData.length - correctCount}</p>
+                    <button onclick="restartQuiz()">Reiniciar Test</button>
+                </div>
+            `;
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            loadQuestion();
+        }
+
+        // Initial load
+        loadQuestion();
+    </script>
+</body>
+</html>

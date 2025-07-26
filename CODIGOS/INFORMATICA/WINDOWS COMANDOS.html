@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Comandos de Windows</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background-color: #ffffff;
+            font-size: 1rem;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #eef2ff;
+            border-color: #818cf8;
+        }
+        .options-container button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 500;
+        }
+        .options-container button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 500;
+        }
+        .solution-text {
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1f2937;
+            display: none; /* Hidden by default */
+        }
+        .solution-text.show {
+            display: block;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .navigation-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .navigation-buttons button:hover {
+            background-color: #4338ca;
+        }
+        .navigation-buttons button:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+        .results-summary {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e0f2fe;
+            border-radius: 10px;
+            border: 1px solid #90cdf4;
+        }
+        .results-summary h2 {
+            font-size: 1.8rem;
+            color: #2563eb;
+            margin-bottom: 15px;
+        }
+        .results-summary p {
+            font-size: 1.1rem;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .results-summary button {
+            margin-top: 20px;
+            padding: 10px 25px;
+            border-radius: 8px;
+            background-color: #22c55e;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .results-summary button:hover {
+            background-color: #16a34a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test de Comandos de Windows</h1>
+        <div id="quiz-container">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" disabled>Anterior</button>
+            <button id="next-btn">Siguiente</button>
+        </div>
+        <div id="results" class="results-summary hidden">
+            <h2>Resultados del Test</h2>
+            <p>Has respondido <span id="correct-count" class="font-bold"></span> preguntas correctamente de <span id="total-questions" class="font-bold"></span>.</p>
+            <p>Tu puntuación: <span id="score-percentage" class="font-bold"></span>%</p>
+            <button id="restart-btn">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Qué comando se utiliza para abrir el editor de políticas de grupo locales?",
+                options: ["a) gpupdate", "b) gpresult", "c) gpedit.msc", "d) net accounts"],
+                correctAnswer: "c) gpedit.msc"
+            },
+            {
+                question: "Para mostrar un resumen de las GPO's aplicadas tanto al usuario como al equipo, ¿qué comando utilizarías?",
+                options: ["a) gpresult /z", "b) gpresult /r", "c) gpresult /h informe_fichero.html", "d) gpresult /scope USER"],
+                correctAnswer: "b) gpresult /r"
+            },
+            {
+                question: "Si deseas ver información súper detallada de las GPO's aplicadas, ¿qué parámetro se añade a gpresult?",
+                options: ["a) /r", "b) /scope COMPUTER", "c) /x informe_fichero.xml", "d) /z"],
+                correctAnswer: "d) /z"
+            },
+            {
+                question: "¿Qué comando permite forzar la actualización de las directivas locales y de dominio en un equipo?",
+                options: ["a) gpupdate /boot", "b) gpupdate /logoff", "c) gpupdate /force", "d) gpupdate /target USER"],
+                correctAnswer: "c) gpupdate /force"
+            },
+            {
+                question: "¿Qué comando se utiliza para actualizar solo las directivas del usuario?",
+                options: ["a) gpupdate /force", "b) gpupdate /target COMPUTER", "c) gpupdate /target USER", "d) gpupdate /logoff"],
+                correctAnswer: "c) gpupdate /target USER"
+            },
+            {
+                question: "¿Qué comando de dsquery se utiliza para listar todos los controladores de dominio?",
+                options: ["a) dsquery computer domainroot", "b) dsquery user domainroot", "c) dsquery server domainroot", "d) dsquery group domainroot"],
+                correctAnswer: "c) dsquery server domainroot"
+            },
+            {
+                question: "¿Cómo buscarías todos los equipos en una Unidad Organizativa (OU) llamada \"Sales\" dentro del dominio \"Contoso.Com\"?",
+                options: ["a) dsquery user OU=Sales,DC=Contoso,DC=Com", "b) dsquery group OU=Sales,DC=Contoso,DC=Com", "c) dsquery computer OU=Sales,DC=Contoso,DC=Com", "d) dsquery server OU=Sales,DC=Contoso,DC=Com"],
+                correctAnswer: "c) dsquery computer OU=Sales,DC=Contoso,DC=Com"
+            },
+            {
+                question: "¿Qué comando utilizarías para buscar en el dominio actual todas las máquinas cuyo nombre comience con \"ServFichero\"?",
+                options: ["a) dsquery user domainroot -name ServFichero*", "b) dsquery computer domainroot -name ServFichero*", "c) dsquery group domainroot -name ServFichero*", "d) dsquery server domainroot -name ServFichero*"],
+                correctAnswer: "b) dsquery computer domainroot -name ServFichero*"
+            },
+            {
+                question: "Para mostrar todos los usuarios cuyo nombre termina en \"smith\" y que lleven más de 3 semanas de inactividad, ¿qué comando de dsquery emplearías?",
+                options: ["a) dsquery user domainroot -name smith* inactive 3", "b) dsquery user domainroot -name *smith inactive 3", "c) dsquery user domainroot --disabled inactive 3", "d) dsquery user domainroot --stalepwd 3"],
+                correctAnswer: "b) dsquery user domainroot -name *smith inactive 3"
+            },
+            {
+                question: "¿Qué parámetro se utiliza con dsquery user para buscar cuentas de usuario que estén desactivadas?",
+                options: ["a) --stalepwd", "b) --active", "c) --disabled", "d) --locked"],
+                correctAnswer: "c) --disabled"
+            },
+            {
+                question: "¿Cómo se buscarían usuarios que no hayan cambiado su contraseña en al menos 30 días usando dsquery user?",
+                options: ["a) dsquery user ... --inactive 30", "b) dsquery user ... --stalepwd 30", "c) dsquery user ... --passwordreq no", "d) dsquery user ... --expire 30"],
+                correctAnswer: "b) dsquery user ... --stalepwd 30"
+            },
+            {
+                question: "¿Qué comando se utiliza para visualizar, añadir, modificar, mover y borrar objetos del Active Directory?",
+                options: ["a) net", "b) ipconfig", "c) dsget, dsadd, dsmod, dsmove, dsrm", "d) sc"],
+                correctAnswer: "c) dsget, dsadd, dsmod, dsmove, dsrm"
+            },
+            {
+                question: "Para obtener la dirección de correo electrónico de un usuario específico usando su SAM-ID, ¿qué combinación de comandos utilizarías?",
+                options: ["a) dsquery user -samid \"username\" | dsget user -memberof", "b) dsquery user -samid \"username\" | dsget user -email", "c) dsget user -samid \"username\" -email", "d) dsquery user -email \"username\" | dsget user -samid"],
+                correctAnswer: "b) dsquery user -samid \"username\" | dsget user -email"
+            },
+            {
+                question: "¿Qué comando permite obtener todos los grupos a los que pertenece un usuario, incluidos los anidados?",
+                options: ["a) dsget user -samid \"username\" -memberof", "b) dsquery user -samid \"username\" | dsget user -memberof -expand", "c) dsquery user -samid \"username\" | dsget group -members", "d) dsget group -members \"username\""],
+                correctAnswer: "b) dsquery user -samid \"username\" | dsget user -memberof -expand"
+            },
+            {
+                question: "¿Cómo obtendrías los miembros de un grupo llamado \"DEVELOPERS\"?",
+                options: ["a) dsget user -samid \"DEVELOPERS\" -memberof", "b) dsquery group -samid \"DEVELOPERS\" | dsget group -members -expand", "c) dsquery user -memberof \"DEVELOPERS\"", "d) dsquery group -name \"DEVELOPERS\" | dsget user -members"],
+                correctAnswer: "b) dsquery group -samid \"DEVELOPERS\" | dsget group -members -expand"
+            },
+            {
+                question: "¿Qué parámetro de dsget user se utiliza para obtener la fecha de expiración de una cuenta?",
+                options: ["a) -disabled", "b) -mustchpwd", "c) -acctexpires", "d) -effectivepso"],
+                correctAnswer: "c) -acctexpires"
+            },
+            {
+                question: "Para verificar si un usuario debe cambiar la contraseña en el siguiente inicio de sesión, ¿qué parámetro de dsget user emplearías?",
+                options: ["a) -acctexpires", "b) -disabled", "c) -effectivepso", "d) -mustchpwd"],
+                correctAnswer: "d) -mustchpwd"
+            },
+            {
+                question: "¿Cómo deshabilitarías todos los equipos que hayan estado inactivos durante 4 o más semanas?",
+                options: ["a) dsquery computer inactive 4 dsmod computer -active no", "b) dsquery computer inactive 4 dsmod computer -disabled yes", "c) dsmod computer inactive 4 -disabled yes", "d) dsquery computer --disabled 4"],
+                correctAnswer: "b) dsquery computer inactive 4 dsmod computer -disabled yes"
+            },
+            {
+                question: "¿Qué comando se utiliza para añadir un usuario llamado \"Carlos\" en la OU \"Marketing\" del dominio \"ruinosa.com\"?",
+                options: ["a) dsadd computer \"CN=Carlos,OU=Marketing,DC=ruinosa,DC=com\"", "b) dsmod user \"CN=Carlos,OU=Marketing,DC=ruinosa,DC=com\"", "c) dsadd user \"CN=Carlos,OU=Marketing,DC=ruinosa,DC=com\"", "d) net user \"CN=Carlos,OU=Marketing,DC=ruinosa,DC=com\" /add"],
+                correctAnswer: "c) dsadd user \"CN=Carlos,OU=Marketing,DC=ruinosa,DC=com\""
+            },
+            {
+                question: "¿Cómo darías de alta un equipo llamado \"SALESWKSTN1\" en la OU \"Ventas\" del dominio \"ruinosa.com\"?",
+                options: ["a) dsadd user \"CN=SALESWKSTN1,OU=Ventas,DC=ruinosa,DC=com\"", "b) dsadd computer \"CN=SALESWKSTN1,OU=Ventas,DC=ruinosa,DC=com\"", "c) net computer \"CN=SALESWKSTN1,OU=Ventas,DC=ruinosa,DC=com\" /add", "d) dsmove computer \"CN=SALESWKSTN1,OU=Ventas,DC=ruinosa,DC=com\""],
+                correctAnswer: "b) dsadd computer \"CN=SALESWKSTN1,OU=Ventas,DC=ruinosa,DC=com\""
+            },
+            {
+                question: "Para añadir un usuario llamado \"Sara\" a un grupo llamado \"Marketing Users\" dentro del dominio \"ruinosa.com\", ¿qué comando usarías?",
+                options: ["a) dsadd group \"CN=Marketing Users,CN=users,DC=ruinosa,DC=com\" -addmbr \"CN=Sara,OU=Marketing,DC=ruinosa,DC=com\"", "b) dsmod user \"CN=Sara,OU=Marketing,DC=ruinosa,DC=com\" -addgroup \"CN=Marketing Users,CN=users,DC=ruinosa,DC=com\"", "c) dsmod group \"CN=Marketing Users,CN=users,DC=ruinosa,DC=com\" -addmbr \"CN=Sara,OU=Marketing,DC=ruinosa,DC=com\"", "d) net group \"Marketing Users\" Sara /add"],
+                correctAnswer: "c) dsmod group \"CN=Marketing Users,CN=users,DC=ruinosa,DC=com\" -addmbr \"CN=Sara,OU=Marketing,DC=ruinosa,DC=com\""
+            },
+            {
+                question: "¿Qué comando permite cambiar la contraseña de un usuario (\"Pepe\") y establecer la política para que deba cambiarla en el siguiente inicio de sesión?",
+                options: ["a) dsmod user \"CN=Pepe...\" -pwd Abcd123", "b) dsmod user \"CN=Pepe...\" -pwd Abcd123 -mustchpwd no", "c) dsmod user \"CN=Pepe,OU=Ventas,DC=ibm,DC=com\" -pwd Abcd123 -mustchpwd yes", "d) net user Pepe Abcd123 /mustchpwd:yes"],
+                correctAnswer: "c) dsmod user \"CN=Pepe,OU=Ventas,DC=ibm,DC=com\" -pwd Abcd123 -mustchpwd yes"
+            },
+            {
+                question: "¿Cómo borrarías toda una Unidad Organizativa (OU) llamada \"Marketing\" del dominio \"ruinosa.com\" sin pedir confirmación?",
+                options: ["a) dsrm \"OU=Marketing,DC=ruinosa,DC=com\"", "b) dsrm -noprompt \"OU=Marketing,DC=ruinosa,DC=com\"", "c) dsrm -subtree -noprompt -c \"OU=Marketing,DC=ruinosa,DC=com\"", "d) dsrm -r \"OU=Marketing,DC=ruinosa,DC=com\""],
+                correctAnswer: "c) dsrm -subtree -noprompt -c \"OU=Marketing,DC=ruinosa,DC=com\""
+            },
+            {
+                question: "¿Qué comando se utiliza para administrar recursos compartidos, usuarios, grupos, servicios, etc., a nivel local y de dominio?",
+                options: ["a) dsquery", "b) net", "c) sc", "d) ipconfig"],
+                correctAnswer: "b) net"
+            },
+            {
+                question: "¿Qué comando mostraría los usuarios locales creados en la máquina?",
+                options: ["a) net localgroup", "b) net user", "c) net accounts", "d) whoami"],
+                correctAnswer: "b) net user"
+            },
+            {
+                question: "Para ver información detallada de un usuario local llamado \"pepe\", ¿qué comando utilizarías?",
+                options: ["a) net user", "b) net user pepe", "c) net accounts pepe", "d) dsget user pepe"],
+                correctAnswer: "b) net user pepe"
+            },
+            {
+                question: "¿Cómo darías de alta a un usuario local llamado \"juan\" con la contraseña \"1234\"?",
+                options: ["a) net user juan 1234", "b) net user juan /add", "c) net user juan 1234 /add", "d) net add user juan 1234"],
+                correctAnswer: "c) net user juan 1234 /add"
+            },
+            {
+                question: "Si deseas añadir al usuario \"juan\" al dominio con la contraseña \"1234\", ¿qué comando emplearías?",
+                options: ["a) net user juan 1234 /add", "b) net user juan 1234 /add /domain", "c) dsadd user juan 1234", "d) net domain user juan 1234 /add"],
+                correctAnswer: "b) net user juan 1234 /add /domain"
+            },
+            {
+                question: "¿Qué comando permite cambiar la contraseña de un usuario local llamado \"fer\" de forma interactiva?",
+                options: ["a) net user fer", "b) net user fer password", "c) net user fer *", "d) net user fer /password"],
+                correctAnswer: "c) net user fer *"
+            },
+            {
+                question: "¿Qué parámetro de net user se utiliza para especificar si es obligatorio tener contraseña para una cuenta?",
+                options: ["a) /active:yes/no", "b) /expires:fecha/never", "c) /passwordchg:yes/no", "d) /passwordreq:yes/no"],
+                correctAnswer: "d) /passwordreq:yes/no"
+            },
+            {
+                question: "¿Cómo se configuraría una cuenta de usuario para que expire en una fecha determinada?",
+                options: ["a) net user usuario /active:no", "b) net user usuario /passwordreq:no", "c) net user usuario /expires:fecha", "d) net user usuario /times:never"],
+                correctAnswer: "c) net user usuario /expires:fecha"
+            },
+            {
+                question: "¿Qué comando se usa para activar o desactivar una cuenta de usuario?",
+                options: ["a) /passwordreq:yes/no", "b) /active:yes/no", "c) /passwordchg:yes/no", "d) /expires:fecha/never"],
+                correctAnswer: "b) /active:yes/no"
+            },
+            {
+                question: "¿Qué comando permite modificar políticas de cuentas y contraseñas a nivel local?",
+                options: ["a) gpedit.msc", "b) net user", "c) net accounts", "d) dsmod user"],
+                correctAnswer: "c) net accounts"
+            },
+            {
+                question: "Para establecer la longitud mínima de la contraseña a nivel de dominio, ¿qué comando y parámetro usarías?",
+                options: ["a) net accounts /MINPWLEN:longitudMinimaDeLaPassword", "b) net accounts /MINPWLEN:longitudMinimaDeLaPassword /domain", "c) gpedit.msc", "d) net user /MINPWLEN:longitudMinimaDeLaPassword /domain"],
+                correctAnswer: "b) net accounts /MINPWLEN:longitudMinimaDeLaPassword /domain"
+            },
+            {
+                question: "¿Cómo se establece el número de contraseñas únicas que deben usarse antes de poder reutilizar una anterior, afectando al dominio?",
+                options: ["a) net accounts /UNIQUEPW:numero /domain", "b) net accounts /UNIQUEPW:numero", "c) net user /UNIQUEPW:numero /domain", "d) gpedit.msc"],
+                correctAnswer: "a) net accounts /UNIQUEPW:numero /domain"
+            },
+            {
+                question: "¿Qué comando se utiliza para añadir o borrar una máquina del dominio?",
+                options: ["a) dsadd computer", "b) dsmove computer", "c) net computer \\\\equipo /add o /del", "d) net computer \\\\equipo /join o /leave"],
+                correctAnswer: "c) net computer \\\\equipo /add o /del"
+            },
+            {
+                question: "¿Qué comando mostraría un listado de los usuarios y desde qué máquinas están conectados a un servidor llamado \"servidorNominas\"?",
+                options: ["a) net user \\\\servidorNominas", "b) net view \\\\servidorNominas", "c) net session \\\\servidorNominas", "d) netstat -a \\\\servidorNominas"],
+                correctAnswer: "c) net session \\\\servidorNominas"
+            },
+            {
+                question: "¿Cómo se visualizan las colas de impresión compartidas en un equipo específico?",
+                options: ["a) net print", "b) net print \\\\equipo", "c) net share print", "d) net view \\\\equipo /ALL"],
+                correctAnswer: "b) net print \\\\equipo"
+            },
+            {
+                question: "Para retrasar o retener un trabajo de impresión particular, ¿qué opción se utiliza con net print?",
+                options: ["a) /delete", "b) /release", "c) /hold", "d) /restart"],
+                correctAnswer: "c) /hold"
+            },
+            {
+                question: "¿Qué comando se usa para gestionar recursos compartidos, mostrando los creados actualmente si no se especifican parámetros?",
+                options: ["a) net share", "b) net use", "c) net view", "d) net config server"],
+                correctAnswer: "a) net share"
+            },
+            {
+                question: "¿Cómo compartirías el directorio \"c:\\Data\" con el nombre público \"DataCompartido\"?",
+                options: ["a) net share c:\\Data", "b) net share DataCompartido", "c) net share DataCompartido=c:\\Data", "d) net share c:\\Data /name:DataCompartido"],
+                correctAnswer: "c) net share DataCompartido=c:\\Data"
+            },
+            {
+                question: "¿Qué parámetro de net share permite limitar el número máximo de usuarios simultáneos para un recurso compartido?",
+                options: ["a) /users:numeroMaximoUsuariosSimultaneos", "b) /limit:numeroMaximoUsuariosSimultaneos", "c) /maxusers:numeroMaximoUsuariosSimultaneos", "d) /count:numeroMaximoUsuariosSimultaneos"],
+                correctAnswer: "a) /users:numeroMaximoUsuariosSimultaneos"
+            },
+            {
+                question: "¿Cómo borrarías un recurso compartido?",
+                options: ["a) net share nombre_recurso /remove", "b) net share nombre_recurso /delete", "c) net share nombre_recurso /del", "d) net share nombre_recurso /disable"],
+                correctAnswer: "b) net share nombre_recurso /delete"
+            },
+            {
+                question: "¿Qué comando se utiliza para añadir un grupo llamado \"desarrolladores\" al dominio?",
+                options: ["a) net localgroup desarrolladores /add", "b) net group desarrolladores /add", "c) dsadd group desarrolladores", "d) net group \"desarrolladores\""],
+                correctAnswer: "b) net group desarrolladores /add"
+            },
+            {
+                question: "Para añadir un grupo local llamado \"desarrolladores\" a la máquina, ¿qué comando usarías?",
+                options: ["a) net group desarrolladores /add", "b) net localgroup desarrolladores /add", "c) dsadd localgroup desarrolladores", "d) net add localgroup desarrolladores"],
+                correctAnswer: "b) net localgroup desarrolladores /add"
+            },
+            {
+                question: "¿Cómo añadirías los usuarios \"pepe\" y \"luis\" al grupo \"desarrolladores\" en el dominio?",
+                options: ["a) net group desarrolladores /add pepe luis", "b) net group desarrolladores pepe luis /add", "c) net localgroup desarrolladores pepe luis /add", "d) dsmod group desarrolladores -addmbr pepe luis"],
+                correctAnswer: "b) net group desarrolladores pepe luis /add"
+            },
+            {
+                question: "¿Qué comando muestra la lista de máquinas del dominio actual?",
+                options: ["a) net session", "b) net computer", "c) net view", "d) net accounts"],
+                correctAnswer: "c) net view"
+            },
+            {
+                question: "Para mostrar todos los recursos compartidos de un equipo, incluyendo los ocultos, ¿qué comando y parámetro se utilizan con net view?",
+                options: ["a) net view \\\\equipo", "b) net view \\\\equipo /ALL", "c) net view \\\\equipo /hidden", "d) net view \\\\equipo /shares"],
+                correctAnswer: "b) net view \\\\equipo /ALL"
+            },
+            {
+                question: "¿Qué comando se utiliza para gestionar unidades mapeadas a recursos compartidos?",
+                options: ["a) net share", "b) net view", "c) net use", "d) net config"],
+                correctAnswer: "c) net use"
+            },
+            {
+                question: "¿Cómo mapearías la unidad \"e:\" al recurso compartido \"\\\\financiero\\cartas\"?",
+                options: ["a) net use e: \\\\financiero\\cartas", "b) net map e: \\\\financiero\\cartas", "c) net share e: \\\\financiero\\cartas", "d) net use \\\\financiero\\cartas e:"],
+                correctAnswer: "a) net use e: \\\\financiero\\cartas"
+            },
+            {
+                question: "¿Qué parámetro de net use asegura que el mapeo de unidad se realice en cada inicio de sesión?",
+                options: ["a) /permanent", "b) /persistent:yes", "c) /auto", "d) /save"],
+                correctAnswer: "b) /persistent:yes"
+            },
+            {
+                question: "¿Cómo realizarías un mapeo de unidad con credenciales específicas (usuario y contraseña)?",
+                options: ["a) net use e: \\\\servidor\\share /user:usuario /password:contraseña", "b) net use e: \\\\servidor\\share /cred usuario contraseña", "c) net use e: \\\\servidor\\share /user:usuario password", "d) net use e: \\\\servidor\\share /auth:usuario,contraseña"],
+                correctAnswer: "c) net use e: \\\\servidor\\share /user:usuario password"
+            },
+            {
+                question: "¿Qué comando se utiliza para cerrar sesiones inactivas en el servidor después de un cierto número de minutos?",
+                options: ["a) net config server /inactivetime:minutos", "b) net config server /autodisconnect:minutos", "c) net session /timeout:minutos", "d) net accounts /autologoff:minutos"],
+                correctAnswer: "b) net config server /autodisconnect:minutos"
+            },
+            {
+                question: "¿Qué comandos se utilizan para iniciar, detener, pausar o continuar un servicio específico?",
+                options: ["a) sc", "b) net services", "c) service control", "d) sys service"],
+                correctAnswer: "a) sc"
+            },
+            {
+                question: "¿Cómo se sincroniza la hora del equipo con la del dominio?",
+                options: ["a) net time /set", "b) net time /domain /set", "c) net time /sync", "d) w32tm /sync"],
+                correctAnswer: "b) net time /domain /set"
+            },
+            {
+                question: "¿Qué comando principal se utiliza para la configuración de red?",
+                options: ["a) ipconfig", "b) netstat", "c) netsh", "d) route"],
+                correctAnswer: "c) netsh"
+            },
+            {
+                question: "¿Cómo activarías el firewall de Windows usando netsh?",
+                options: ["a) netsh firewall set state on", "b) netsh advfirewall set currentprofile state on", "c) netsh firewall enable", "d) netsh advfirewall enable"],
+                correctAnswer: "b) netsh advfirewall set currentprofile state on"
+            },
+            {
+                question: "¿Qué comando se usa para añadir una regla al firewall que permita la entrada por el puerto 80 TCP, con el nombre \"Open Port 80\"?",
+                options: ["a) netsh advfirewall firewall add rule name=\"Open Port 80\" dir=in action=allow protocol=TCP localport=80", "b) netsh advfirewall add rule name=\"Open Port 80\" dir=in action=allow port=80", "c) netsh firewall add rule name=\"Open Port 80\" protocol=TCP port=80", "d) netsh advfirewall set rule name=\"Open Port 80\" enable=yes"],
+                correctAnswer: "a) netsh advfirewall firewall add rule name=\"Open Port 80\" dir=in action=allow protocol=TCP localport=80"
+            },
+            {
+                question: "Para activar el servicio de Escritorio Remoto (RDP) a través del firewall, ¿qué comando netsh utilizarías?",
+                options: ["a) netsh advfirewall firewall set rule group=\"remote desktop\" new enable=Yes", "b) netsh advfirewall firewall enable rule group=\"remote desktop\"", "c) netsh firewall set service \"remote desktop\" enable", "d) netsh advfirewall allow service \"remote desktop\""],
+                correctAnswer: "a) netsh advfirewall firewall set rule group=\"remote desktop\" new enable=Yes"
+            },
+            {
+                question: "¿Qué comando muestra la configuración TCP/IP de las interfaces de red?",
+                options: ["a) ipconfig /all", "b) netsh interface ip show config", "c) netsh interface ip show all", "d) netsh show interface ip"],
+                correctAnswer: "b) netsh interface ip show config"
+            },
+            {
+                question: "¿Cómo se borra la caché ARP usando netsh?",
+                options: ["a) netsh interface ip flush arpcache", "b) netsh interface ip delete arpcache", "c) netsh interface ip clear arpcache", "d) netsh ip delete arpcache"],
+                correctAnswer: "b) netsh interface ip delete arpcache"
+            },
+            {
+                question: "¿Qué comando se utiliza para configurar una dirección IP estática (ej. 192.168.0.10) con una máscara y puerta de enlace en la interfaz \"Local Area Connection\"?",
+                options: ["a) netsh interface ip set address \"Local Area Connection\" static 192.168.0.10 255.255.255.0 192.168.0.1", "b) netsh interface ip set address name=\"Local Area Connection\" source=static addr=192.168.0.10 mask=255.255.255.0 gateway=192.168.0.1 gwmetric=1", "c) netsh interface ip set static \"Local Area Connection\" 192.168.0.10 255.255.255.0 192.168.0.1", "d) netsh interface ip config address \"Local Area Connection\" static 192.168.0.10 255.255.255.0 192.168.0.1"],
+                correctAnswer: "b) netsh interface ip set address name=\"Local Area Connection\" source=static addr=192.168.0.10 mask=255.255.255.0 gateway=192.168.0.1 gwmetric=1"
+            },
+            {
+                question: "Para configurar una dirección IP dinámica (DHCP) en la interfaz \"Local Area Connection\", ¿qué comando netsh emplearías?",
+                options: ["a) netsh interface ip set address \"Local Area Connection\" dhcp", "b) netsh interface ip set address name=\"Local Area Connection\" source=dhcp", "c) netsh interface ip config address \"Local Area Connection\" dhcp", "d) netsh interface ip set dhcp \"Local Area Connection\""],
+                correctAnswer: "b) netsh interface ip set address name=\"Local Area Connection\" source=dhcp"
+            },
+            {
+                question: "¿Cómo añadirías un servidor DNS (ej. 10.0.0.1) a la configuración de la interfaz \"Local Area Connection\"?",
+                options: ["a) netsh interface ip add dnsservers \"Local Area Connection\" 10.0.0.1", "b) netsh interface ip set dnsservers \"Local Area Connection\" 10.0.0.1", "c) netsh interface ip add dns \"Local Area Connection\" 10.0.0.1", "d) netsh dns add server \"Local Area Connection\" 10.0.0.1"],
+                correctAnswer: "a) netsh interface ip add dnsservers \"Local Area Connection\" 10.0.0.1"
+            },
+            {
+                question: "¿Qué comando netsh permite trabajar contra un servidor remoto (ej. \"servidorNominas\")?",
+                options: ["a) netsh remote servidorNominas", "b) netsh connect servidorNominas", "c) netsh set machine servidorNominas", "d) netsh target servidorNominas"],
+                correctAnswer: "c) netsh set machine servidorNominas"
+            },
+            {
+                question: "¿Cómo bloquearías una red Wi-Fi por su SSID (\"WLAN name\")?",
+                options: ["a) netsh wlan block ssid=\"WLAN name\"", "b) netsh wlan set filter permission=block ssid=\"WLAN name\"", "c) netsh wlan add filter permission=block ssid=\"WLAN name\" networktype=infrastructure", "d) netsh wlan disable ssid=\"WLAN name\""],
+                correctAnswer: "c) netsh wlan add filter permission=block ssid=\"WLAN name\" networktype=infrastructure"
+            },
+            {
+                question: "¿Qué comando se utiliza para publicar una nueva IP de escucha (ej. 1.1.1.1) con netsh http?",
+                options: ["a) netsh http add iplisten address=1.1.1.1", "b) netsh http listen ip=1.1.1.1", "c) netsh http set iplisten address=1.1.1.1", "d) netsh http add ip address=1.1.1.1"],
+                correctAnswer: "a) netsh http add iplisten address=1.1.1.1"
+            },
+            {
+                question: "¿Qué comando permite realizar una copia de seguridad de la configuración de netsh en un archivo de texto?",
+                options: ["a) netsh save > copia_configuracion.txt", "b) netsh export > copia_configuracion.txt", "c) netsh dump > copia_configuracion.txt", "d) netsh backup > copia_configuracion.txt"],
+                correctAnswer: "c) netsh dump > copia_configuracion.txt"
+            },
+            {
+                question: "¿Cómo restaurarías una configuración de netsh desde un archivo de texto?",
+                options: ["a) netsh load copia_configuracion.txt", "b) netsh import copia_configuracion.txt", "c) netsh restore copia_configuracion.txt", "d) netsh exec copia_configuracion.txt"],
+                correctAnswer: "d) netsh exec copia_configuracion.txt"
+            },
+            {
+                question: "¿Qué comando se utiliza para copiar/backup de ficheros?",
+                options: ["a) copy", "b) xcopy", "c) robocopy", "d) backup"],
+                correctAnswer: "c) robocopy"
+            },
+            {
+                question: "¿Qué parámetro de robocopy copia subcarpetas, incluyendo las vacías?",
+                options: ["a) /S", "b) /MIR", "c) /E", "d) /MOV"],
+                correctAnswer: "c) /E"
+            },
+            {
+                question: "Si deseas mover archivos y eliminarlos del origen después de ser copiados, ¿qué parámetro de robocopy utilizarías?",
+                options: ["a) /MIR", "b) /E", "c) /MOV", "d) /MOVE"],
+                correctAnswer: "c) /MOV"
+            },
+            {
+                question: "¿Qué parámetro de robocopy se utiliza para realizar una simulación de la copia sin ejecutarla realmente?",
+                options: ["a) /Test", "b) /Simulate", "c) /L", "d) /Preview"],
+                correctAnswer: "c) /L"
+            },
+            {
+                question: "Para copiar archivos de un determinado tamaño, ¿qué parámetros de robocopy se emplean?",
+                options: ["a) /SIZE:bytes", "b) /MAX:bytes o /MIN:bytes", "c) /LENGTH:bytes", "d) /RANGE:bytes"],
+                correctAnswer: "b) /MAX:bytes o /MIN:bytes"
+            },
+            {
+                question: "¿Qué parámetro de robocopy conserva los permisos de los archivos al copiarlos?",
+                options: ["a) /PERMISSIONS", "b) /ACL", "c) /SEC o /COPYALL", "d) /ATTRIBUTES"],
+                correctAnswer: "c) /SEC o /COPYALL"
+            },
+            {
+                question: "¿Cómo se excluyen archivos que coinciden con un patrón específico al usar robocopy?",
+                options: ["a) /EXCLUDE patron", "b) /XF patron", "c) /SKIP patron", "d) /NOFILE patron"],
+                correctAnswer: "b) /XF patron"
+            },
+            {
+                question: "¿Qué comando se utiliza para la gestión de la tabla/caché ARP?",
+                options: ["a) ipconfig", "b) netsh", "c) arp", "d) route"],
+                correctAnswer: "c) arp"
+            },
+            {
+                question: "¿Cómo se muestran las entradas de la tabla ARP?",
+                options: ["a) arp /show", "b) arp -display", "c) arp -a", "d) arp -l"],
+                correctAnswer: "c) arp -a"
+            },
+            {
+                question: "Para eliminar una entrada ARP para una dirección IP específica, ¿qué comando utilizarías?",
+                options: ["a) arp -d direccion_ip", "b) arp -delete direccion_ip", "c) arp -remove direccion_ip", "d) arp -clear direccion_ip"],
+                correctAnswer: "a) arp -d direccion_ip"
+            },
+            {
+                question: "¿Qué comando se usa para agregar una entrada estática a la tabla ARP con una dirección IP y una dirección MAC?",
+                options: ["a) arp -add direccion_ip direccion_mac", "b) arp -s direccion_ip direccion_mac", "c) arp -set direccion_ip direccion_mac", "d) arp -i direccion_ip direccion_mac"],
+                correctAnswer: "b) arp -s direccion_ip direccion_mac"
+            },
+            {
+                question: "¿Qué comando se utiliza para la configuración de interfaces de red, incluyendo DNS y liberación/renovación de IP?",
+                options: ["a) netsh", "b) route", "c) ipconfig", "d) netstat"],
+                correctAnswer: "c) ipconfig"
+            },
+            {
+                question: "¿Cómo se borra la caché del DNS?",
+                options: ["a) ipconfig /cleardns", "b) ipconfig /flushdns", "c) ipconfig /resetdns", "d) ipconfig /deletedns"],
+                correctAnswer: "b) ipconfig /flushdns"
+            },
+            {
+                question: "¿Qué comando se utiliza para renovar la dirección IP de una interfaz?",
+                options: ["a) ipconfig /release", "b) ipconfig /renew", "c) ipconfig /reset", "d) ipconfig /get"],
+                correctAnswer: "b) ipconfig /renew"
+            },
+            {
+                question: "¿Qué comando se usa para obtener la dirección física/MAC de una serie de interfaces de red?",
+                options: ["a) ipconfig /all", "b) netstat -e", "c) getmac", "d) route print"],
+                correctAnswer: "c) getmac"
+            },
+            {
+                question: "¿Qué comando se utiliza para la administración de la tabla de enrutamiento?",
+                options: ["a) ipconfig", "b) netsh", "c) route", "d) netstat"],
+                correctAnswer: "c) route"
+            },
+            {
+                question: "¿Qué comandos muestran la ruta que siguen los datagramas IP entre dos extremos?",
+                options: ["a) ping", "b) tracert / pathping", "c) route print", "d) netstat -r"],
+                correctAnswer: "b) tracert / pathping"
+            },
+            {
+                question: "¿Qué parámetro de tracert o pathping evita la conversión de direcciones IP a nombres de host?",
+                options: ["a) -n", "b) -d", "c) -r", "d) -h"],
+                correctAnswer: "b) -d"
+            },
+            {
+                question: "¿Qué parámetro se utiliza para especificar el tiempo de espera en milisegundos para cada respuesta en tracert o pathping?",
+                options: ["a) -t milisegundos", "b) -w milisegundos", "c) -timeout milisegundos", "d) -delay milisegundos"],
+                correctAnswer: "b) -w milisegundos"
+            },
+            {
+                question: "¿Qué comando muestra todas las conexiones TCP/UDP y puertos de escucha?",
+                options: ["a) netstat -s", "b) netstat -r", "c) netstat -a", "d) netstat -n"],
+                correctAnswer: "c) netstat -a"
+            },
+            {
+                question: "Para mostrar el PID del proceso asociado a una conexión en netstat, ¿qué parámetro se utiliza?",
+                options: ["a) -p", "b) -i", "c) -o", "d) -b"],
+                correctAnswer: "c) -o"
+            },
+            {
+                question: "¿Qué comando se utiliza para la resolución de peticiones DNS?",
+                options: ["a) ipconfig", "b) ping", "c) nslookup", "d) dig"],
+                correctAnswer: "c) nslookup"
+            },
+            {
+                question: "¿Cómo se consulta los registros de tipo TXT de \"inap.es\" usando Google DNS (8.8.8.8) con un tiempo de espera de 10 segundos?",
+                options: ["a) nslookup inap.es 8.8.8.8 -type=TXT -timeout=10", "b) nslookup -querytype=TXT -timeout=10 inap.es 8.8.8.8", "c) nslookup -type=TXT inap.es 8.8.8.8 -wait=10", "d) nslookup -txt -wait=10 inap.es 8.8.8.8"],
+                correctAnswer: "b) nslookup -querytype=TXT -timeout=10 inap.es 8.8.8.8"
+            },
+            {
+                question: "¿Qué comando se utiliza para la gestión de certificados digitales?",
+                options: ["a) certmgr.msc", "b) openssl", "c) certutil", "d) mmc"],
+                correctAnswer: "c) certutil"
+            },
+            {
+                question: "¿Cómo se importaría un certificado de CA (MyCert.cer) al almacén raíz usando certutil?",
+                options: ["a) certutil -import MyCert.cer Root", "b) certutil.exe -addstore Root MyCert.cer", "c) certutil -addcert Root MyCert.cer", "d) certutil -install MyCert.cer -store Root"],
+                correctAnswer: "b) certutil.exe -addstore Root MyCert.cer"
+            },
+            {
+                question: "¿Qué comando muestra todos los certificados del almacén personal de un usuario?",
+                options: ["a) certutil -user -store MY", "b) certutil -local -store MY", "c) certutil -store MY", "d) certutil -list -user MY"],
+                correctAnswer: "a) certutil -user -store MY"
+            },
+            {
+                question: "¿Qué comando se utiliza para la gestión de servicios de Windows?",
+                options: ["a) services.msc", "b) net services", "c) sc", "d) tasklist /svc"],
+                correctAnswer: "c) sc"
+            },
+            {
+                question: "¿Cómo se crearía un nuevo servicio llamado \"NewService\" con una ruta binaria y configurado para iniciar automáticamente?",
+                options: ["a) sc new NewService binpath= c:\\...\\NewServ.exe start=auto", "b) sc create NewService binpath= c:\\...\\NewServ.exe type share start auto", "c) sc add NewService binpath= c:\\...\\NewServ.exe autostart", "d) sc config NewService binpath= c:\\...\\NewServ.exe start=auto"],
+                correctAnswer: "b) sc create NewService binpath= c:\\...\\NewServ.exe type share start auto"
+            },
+            {
+                question: "¿Qué comando se utiliza para mostrar información del usuario actual, incluyendo grupos y privilegios de seguridad?",
+                options: ["a) whoami", "b) net user", "c) query user", "d) id"],
+                correctAnswer: "a) whoami"
+            },
+            {
+                question: "¿Qué comando se utiliza para arrancar el cliente de escritorio remoto?",
+                options: ["a) remote.exe", "b) rdesktop", "c) mstsc", "d) tsclient"],
+                correctAnswer: "c) mstsc"
+            },
+            {
+                question: "¿Qué comando se utiliza para convertir un sistema de archivos de FAT16/32 a NTFS?",
+                options: ["a) format", "b) diskpart", "c) convert", "d) chkdsk"],
+                correctAnswer: "c) convert"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer for each question
+
+        const quizContainer = document.getElementById('quiz-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const resultsContainer = document.getElementById('results');
+        const correctCountSpan = document.getElementById('correct-count');
+        const totalQuestionsSpan = document.getElementById('total-questions');
+        const scorePercentageSpan = document.getElementById('score-percentage');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Function to render a question
+        function renderQuestion() {
+            // Hide results if shown
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            prevBtn.classList.remove('hidden');
+
+            const questionData = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${questionData.question}</p>
+                    <div class="options-container">
+                        ${questionData.options.map((option, index) => `
+                            <button data-option="${option}" ${userAnswers[currentQuestionIndex] !== null ? 'disabled' : ''}>${option}</button>
+                        `).join('')}
+                    </div>
+                    <p class="solution-text" id="solution-text-${currentQuestionIndex}">
+                        Respuesta correcta: <span class="font-bold">${questionData.correctAnswer}</span>
+                    </p>
+                </div>
+            `;
+
+            const optionButtons = quizContainer.querySelectorAll('.options-container button');
+            optionButtons.forEach(button => {
+                button.addEventListener('click', handleOptionClick);
+            });
+
+            // If an answer was previously selected, show the solution and mark the selected option
+            if (userAnswers[currentQuestionIndex] !== null) {
+                showSolution(questionData.correctAnswer);
+                const selectedOptionButton = Array.from(optionButtons).find(btn => btn.dataset.option === userAnswers[currentQuestionIndex]);
+                if (selectedOptionButton) {
+                    if (userAnswers[currentQuestionIndex] === questionData.correctAnswer) {
+                        selectedOptionButton.classList.add('correct');
+                    } else {
+                        selectedOptionButton.classList.add('incorrect');
+                        // Also highlight the correct answer if the user's answer was wrong
+                        const correctAnswerButton = Array.from(optionButtons).find(btn => btn.dataset.option === questionData.correctAnswer);
+                        if (correctAnswerButton) {
+                            correctAnswerButton.classList.add('correct');
+                        }
+                    }
+                }
+            }
+
+            updateNavigationButtons();
+        }
+
+        // Function to handle option click
+        function handleOptionClick(event) {
+            const selectedOption = event.target.dataset.option;
+            const questionData = quizData[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedOption; // Store the user's answer
+
+            // Disable all options for the current question
+            const optionButtons = quizContainer.querySelectorAll('.options-container button');
+            optionButtons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Highlight correct/incorrect answer
+            if (selectedOption === questionData.correctAnswer) {
+                event.target.classList.add('correct');
+                // Only increment score if this is the first time answering this question correctly
+                if (userAnswers[currentQuestionIndex] === selectedOption) {
+                    // This check is a bit redundant with the userAnswers array, but good for clarity
+                    // We'll calculate score at the end to be safe, or manage it more carefully
+                }
+            } else {
+                event.target.classList.add('incorrect');
+                // Highlight the correct answer
+                const correctAnswerButton = Array.from(optionButtons).find(button => button.dataset.option === questionData.correctAnswer);
+                if (correctAnswerButton) {
+                    correctAnswerButton.classList.add('correct');
+                }
+            }
+
+            showSolution(questionData.correctAnswer);
+        }
+
+        // Function to show the solution text
+        function showSolution(correctAnswer) {
+            const solutionTextElement = document.getElementById(`solution-text-${currentQuestionIndex}`);
+            if (solutionTextElement) {
+                solutionTextElement.classList.add('show');
+            }
+        }
+
+        // Function to update navigation button states
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null; // Disable next if on last question and answered
+            if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                nextBtn.textContent = 'Ver Resultados';
+            } else {
+                nextBtn.textContent = 'Siguiente';
+            }
+        }
+
+        // Event listener for Next button
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                // If on the last question and answered, show results
+                showResults();
+            }
+        });
+
+        // Event listener for Previous button
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        // Function to calculate and show results
+        function showResults() {
+            score = 0;
+            for (let i = 0; i < quizData.length; i++) {
+                if (userAnswers[i] === quizData[i].correctAnswer) {
+                    score++;
+                }
+            }
+
+            quizContainer.classList.add('hidden');
+            navigationButtons.classList.add('hidden'); // Hide navigation buttons when results are shown
+            resultsContainer.classList.remove('hidden');
+
+            correctCountSpan.textContent = score;
+            totalQuestionsSpan.textContent = quizData.length;
+            scorePercentageSpan.textContent = ((score / quizData.length) * 100).toFixed(2);
+        }
+
+        // Event listener for Restart button
+        restartBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null); // Reset all answers
+            renderQuestion();
+        });
+
+        // Initial render
+        renderQuestion();
+    </script>
+</body>
+</html>

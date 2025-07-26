@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Java</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        .question-number {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 15px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: #1f2937;
+            min-height: 80px; /* Ensure consistent height for questions */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .option-button {
+            background-color: #e0f2fe;
+            color: #1e40af;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 2px solid #bfdbfe;
+            cursor: pointer;
+            font-size: 1.1rem;
+            text-align: left;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover {
+            background-color: #bfdbfe;
+            border-color: #93c5fd;
+        }
+        .option-button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: bold;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: bold;
+        }
+        .feedback-message {
+            font-size: 1.2rem;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .feedback-message.correct {
+            color: #065f46;
+            background-color: #d1fae5;
+        }
+        .feedback-message.incorrect {
+            color: #991b1b;
+            background-color: #fee2e2;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .score-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-top: 20px;
+        }
+        .restart-button {
+            background-color: #10b981;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 30px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .restart-button:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="question-number" id="question-number"></div>
+        <div class="question-text" id="question-text"></div>
+        <div class="options-container" id="options-container"></div>
+        <div class="feedback-message" id="feedback-message"></div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button">Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+        <div id="quiz-results" class="hidden">
+            <div class="score-display" id="score-display"></div>
+            <button id="restart-button" class="restart-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Cuál es el propósito principal del Java Development Kit (JDK)?",
+                options: [
+                    "a) Ejecutar programas Java.",
+                    "b) Compilar y desarrollar programas Java.",
+                    "c) Solo para monitorizar la JVM.",
+                    "d) Empaquetar clases compiladas."
+                ],
+                correctAnswer: "b) Compilar y desarrollar programas Java."
+            },
+            {
+                question: "¿Qué herramienta del JDK se utiliza para compilar código fuente Java (.java) a bytecode (.class)?",
+                options: [
+                    "a) java",
+                    "b) javac",
+                    "c) jar",
+                    "d) javap"
+                ],
+                correctAnswer: "b) javac"
+            },
+            {
+                question: "El resultado de la compilación de un programa Java es un código intermedio. ¿Cómo se denomina este código?",
+                options: [
+                    "a) Código nativo",
+                    "b) Bytecode",
+                    "c) Lenguaje máquina",
+                    "d) Ensamblador"
+                ],
+                correctAnswer: "b) Bytecode"
+            },
+            {
+                question: "¿Qué componente del ecosistema Java Runtime Environment (JRE) es el software encargado de ejecutar el bytecode?",
+                options: [
+                    "a) Class Loader",
+                    "b) Just In Time Compiler (JIT)",
+                    "c) Java Virtual Machine (JVM)",
+                    "d) Garbage Collector (GC)"
+                ],
+                correctAnswer: "c) Java Virtual Machine (JVM)"
+            },
+            {
+                question: "¿Cuál es el nombre de la variable de entorno que usa la JVM para localizar y cargar clases que utiliza un programa Java (excepto las propias del programa o las de java.base)?",
+                options: [
+                    "a) JAVA_HOME",
+                    "b) PATH",
+                    "c) CLASSPATH",
+                    "d) JRE_HOME"
+                ],
+                correctAnswer: "c) CLASSPATH"
+            },
+            {
+                question: "En Java, ¿qué entidad es la única capaz de ejecutar el código de los métodos?",
+                options: [
+                    "a) Objeto",
+                    "b) Clase",
+                    "c) Hilo (Thread)",
+                    "d) JVM"
+                ],
+                correctAnswer: "c) Hilo (Thread)"
+            },
+            {
+                question: "¿Qué principio de la Programación Orientada a Objetos (POO) en Java busca que dos módulos conozcan lo mínimo posible el uno del otro, facilitando el mantenimiento?",
+                options: [
+                    "a) Herencia",
+                    "b) Polimorfismo",
+                    "c) Encapsulación",
+                    "d) Abstracción"
+                ],
+                correctAnswer: "c) Encapsulación"
+            },
+            {
+                question: "¿De qué clase heredan todas las clases en Java por defecto?",
+                options: [
+                    "a) Class",
+                    "b) Object",
+                    "c) System",
+                    "d) String"
+                ],
+                correctAnswer: "b) Object"
+            },
+            {
+                question: "¿Qué es un objeto en Java?",
+                options: [
+                    "a) Un método de una clase.",
+                    "b) Una instancia de una clase en memoria.",
+                    "c) Una definición de atributos.",
+                    "d) Un tipo de dato primitivo."
+                ],
+                correctAnswer: "b) Una instancia de una clase en memoria."
+            },
+            {
+                question: "¿Qué método de la clase Object es el encargado de eliminar un objeto de memoria y es llamado por el Garbage Collector?",
+                options: [
+                    "a) clone()",
+                    "b) equals()",
+                    "c) finalize()",
+                    "d) toString()"
+                ],
+                correctAnswer: "c) finalize()"
+            },
+            {
+                question: "En Java, ¿qué tipo de datos son la excepción a la regla de que 'todo son referencias'?",
+                options: [
+                    "a) Clases",
+                    "b) Interfaces",
+                    "c) Tipos de datos primitivos",
+                    "d) Arrays"
+                ],
+                correctAnswer: "c) Tipos de datos primitivos"
+            },
+            {
+                question: "¿Qué operador se utiliza en Java para comparar referencias de objetos, no sus contenidos?",
+                options: [
+                    "a) equals()",
+                    "b) ==",
+                    "c) !=",
+                    "d) compare()"
+                ],
+                correctAnswer: "b) =="
+            },
+            {
+                question: "¿Qué modificador se utiliza para indicar que una clase no permite herencia, un atributo no puede modificarse (actúa como constante) o un método no puede sobrescribirse?",
+                options: [
+                    "a) static",
+                    "b) abstract",
+                    "c) final",
+                    "d) private"
+                ],
+                correctAnswer: "c) final"
+            },
+            {
+                question: "Si un método es static en Java, ¿a qué entidad pertenece?",
+                options: [
+                    "a) A una instancia específica del objeto.",
+                    "b) A la clase en sí, siendo global.",
+                    "c) A la subclase que lo hereda.",
+                    "d) Al paquete donde se encuentra la clase."
+                ],
+                correctAnswer: "b) A la clase en sí, siendo global."
+            },
+            {
+                question: "¿Qué característica tiene una clase abstract en Java?",
+                options: [
+                    "a) Se pueden crear objetos directamente de ella.",
+                    "b) Debe implementar todos sus métodos.",
+                    "c) No se pueden crear objetos directamente de ella, sirve como base para herencia.",
+                    "d) Todos sus métodos deben ser static."
+                ],
+                correctAnswer: "c) No se pueden crear objetos directamente de ella, sirve como base para herencia."
+            },
+            {
+                question: "¿Qué modificador de acceso permite que un atributo o método solo se use dentro del ámbito de la clase, y aunque se hereda, no es accesible directamente por los hijos?",
+                options: [
+                    "a) public",
+                    "b) protected",
+                    "c) default",
+                    "d) private"
+                ],
+                correctAnswer: "d) private"
+            },
+            {
+                question: "¿Qué modificador de acceso permite que un atributo o método se use en la herencia y dentro del mismo paquete, pero no fuera de él?",
+                options: [
+                    "a) public",
+                    "b) private",
+                    "c) protected",
+                    "d) default"
+                ],
+                correctAnswer: "c) protected"
+            },
+            {
+                question: "¿Qué modificador se usa en un método para indicar que no se definirá en Java, sino en otro lenguaje (ej. C++)?",
+                options: [
+                    "a) volatile",
+                    "b) transient",
+                    "c) native",
+                    "d) synchronized"
+                ],
+                correctAnswer: "c) native"
+            },
+            {
+                question: "¿Cuál es la función del modificador volatile en una variable?",
+                options: [
+                    "a) Indica que la variable no debe serializarse.",
+                    "b) Garantiza que el valor de la variable local se busque en memoria principal para evitar inconsistencias por concurrencia.",
+                    "c) Permite que la variable sea accesible desde cualquier hilo sin restricciones.",
+                    "d) Define la variable como una constante."
+                ],
+                correctAnswer: "b) Garantiza que el valor de la variable local se busque en memoria principal para evitar inconsistencias por concurrencia."
+            },
+            {
+                question: "¿Qué hace el modificador synchronized cuando se aplica a un método o a un bloque de código?",
+                options: [
+                    "a) Permite que varios hilos lo ejecuten simultáneamente.",
+                    "b) Asegura que solo un hilo a la vez pueda ejecutar esa sección crítica.",
+                    "c) Lo marca para ser gestionado por el Garbage Collector.",
+                    "d) Lo convierte en un método estático."
+                ],
+                correctAnswer: "b) Asegura que solo un hilo a la vez pueda ejecutar esa sección crítica."
+            },
+            {
+                question: "Si no se especifica la visibilidad de un elemento en Java, ¿cuál es la visibilidad por defecto?",
+                options: [
+                    "a) public",
+                    "b) private",
+                    "c) protected",
+                    "d) Visibilidad a nivel de paquete."
+                ],
+                correctAnswer: "d) Visibilidad a nivel de paquete."
+            },
+            {
+                question: "¿Cuál es el propósito principal de los paquetes en Java?",
+                options: [
+                    "a) Definir la herencia entre clases.",
+                    "b) Agrupar clases.",
+                    "c) Controlar la serialización de objetos.",
+                    "d) Generar documentación HTML."
+                ],
+                correctAnswer: "b) Agrupar clases."
+            },
+            {
+                question: "¿Qué representa una interface en Java (hasta la versión 1.7)?",
+                options: [
+                    "a) Una clase con atributos y métodos implementados.",
+                    "b) Una definición funcional pura, un esqueleto funcional sin código.",
+                    "c) Una clase que no permite la herencia.",
+                    "d) Un tipo de dato primitivo."
+                ],
+                correctAnswer: "b) Una definición funcional pura, un esqueleto funcional sin código."
+            },
+            {
+                question: "¿Para qué se utilizan las anotaciones en Java?",
+                options: [
+                    "a) Para generar código automáticamente.",
+                    "b) Para configurar el código y añadir metainformación.",
+                    "c) Para definir interfaces funcionales.",
+                    "d) Para empaquetar archivos JAR."
+                ],
+                correctAnswer: "b) Para configurar el código y añadir metainformación."
+            },
+            {
+                question: "¿Qué librería de Java se utiliza para el manejo de información en formato JSON?",
+                options: [
+                    "a) Apache POI",
+                    "b) Gson y Jackson",
+                    "c) Apache Commons",
+                    "d) Bouncy Castle"
+                ],
+                correctAnswer: "b) Gson y Jackson"
+            },
+            {
+                question: "¿Qué herramienta de automatización de la construcción se basa en un fichero POM.xml y gestiona dependencias?",
+                options: [
+                    "a) Ant",
+                    "b) Gradle",
+                    "c) Maven",
+                    "d) Jenkins"
+                ],
+                correctAnswer: "c) Maven"
+            },
+            {
+                question: "¿Qué dos formas principales existen para crear hilos (Threads) en Java?",
+                options: [
+                    "a) Implementando la interfaz Serializable o extendiendo la clase Object.",
+                    "b) Heredando de la clase Thread o implementando la interfaz Runnable.",
+                    "c) Utilizando ExecutorService o ForkJoinPool.",
+                    "d) Mediante wait() y notify()."
+                ],
+                correctAnswer: "b) Heredando de la clase Thread o implementando la interfaz Runnable."
+            },
+            {
+                question: "¿Qué método se llama para poner un hilo en la cola de ejecución, y a su vez, el planificador de la JRE llamará al método run()?",
+                options: [
+                    "a) execute()",
+                    "b) start()",
+                    "c) run()",
+                    "d) yield()"
+                ],
+                correctAnswer: "b) start()"
+            },
+            {
+                question: "¿Qué métodos de la clase Object se utilizan para la sincronización de hilos y funcionar como monitor, controlando el flujo de ejecución cuando comparten un recurso?",
+                options: [
+                    "a) notify() y join()",
+                    "b) sleep() y interrupt()",
+                    "c) wait() y notify() / notifyAll()",
+                    "d) lock() y unlock()"
+                ],
+                correctAnswer: "c) wait() y notify() / notifyAll()"
+            },
+            {
+                question: "En persistencia Java, ¿qué API es de bajo nivel y permite el tratamiento directo con tablas de bases de datos relacionales, siendo más manual?",
+                options: [
+                    "a) JPA",
+                    "b) Hibernate",
+                    "c) JDBC",
+                    "d) Spring Data"
+                ],
+                correctAnswer: "c) JDBC"
+            },
+            {
+                question: "¿Cuál es el propósito de un DataSource en JDBC?",
+                options: [
+                    "a) Definir la estructura de la base de datos.",
+                    "b) Crear conexiones a la base de datos y gestionar un pool de conexiones.",
+                    "c) Ejecutar sentencias SQL.",
+                    "d) Mapear objetos a tablas de base de datos."
+                ],
+                correctAnswer: "b) Crear conexiones a la base de datos y gestionar un pool de conexiones."
+            },
+            {
+                question: "¿Qué novedad de Java 1.8 permite encadenar operaciones como map, filter, reduce y forEach, acercándose a la programación funcional?",
+                options: [
+                    "a) Anotaciones",
+                    "b) Módulos",
+                    "c) Streams",
+                    "d) Tipos genéricos"
+                ],
+                correctAnswer: "c) Streams"
+            },
+            {
+                question: "¿Qué novedad de Java 1.7 simplifica el manejo de recursos que deben cerrarse, como flujos de archivos, cerrándolos automáticamente al final del bloque try?",
+                options: [
+                    "a) Expresiones Lambda",
+                    "b) try-with-resources",
+                    "c) Optional",
+                    "d) Métodos default en interfaces"
+                ],
+                correctAnswer: "b) try-with-resources"
+            },
+            {
+                question: "¿Qué novedad de Java 1.8 permite definir métodos con código en interfaces?",
+                options: [
+                    "a) static methods",
+                    "b) abstract methods",
+                    "c) default methods",
+                    "d) private methods"
+                ],
+                correctAnswer: "c) default methods"
+            },
+            {
+                question: "¿Cuál es el resultado de la expresión 7 / 2 en Java?",
+                options: [
+                    "a) 3.5",
+                    "b) 3",
+                    "c) 4",
+                    "d) 2"
+                ],
+                correctAnswer: "b) 3"
+            },
+            {
+                question: "Si a = 5; y luego se ejecuta b = a++;, ¿cuáles serán los valores de a y b?",
+                options: [
+                    "a) a vale 5 y b vale 5",
+                    "b) a vale 6 y b vale 5",
+                    "c) a vale 5 y b vale 6",
+                    "d) a vale 6 y b vale 6"
+                ],
+                correctAnswer: "b) a vale 6 y b vale 5"
+            },
+            {
+                question: "¿Qué operador de relación en Java significa 'distinto que'?",
+                options: [
+                    "a) ==",
+                    "b) !=",
+                    "c) <>",
+                    "d) ==="
+                ],
+                correctAnswer: "b) !="
+            },
+            {
+                question: "¿Cuál es el resultado de la expresión booleana true && false?",
+                options: [
+                    "a) true",
+                    "b) false",
+                    "c) Error de compilación",
+                    "d) Depende del contexto"
+                ],
+                correctAnswer: "b) false"
+            },
+            {
+                question: "¿Qué operador se utiliza para la concatenación de cadenas en Java?",
+                options: [
+                    "a) -",
+                    "b) *",
+                    "c) +",
+                    "d) /"
+                ],
+                correctAnswer: "c) +"
+            },
+            {
+                question: "¿Qué separador se utiliza en Java para definir bloques de código y ámbitos, y para contener los valores iniciales de las variables array?",
+                options: [
+                    "a) ()",
+                    "b) {}",
+                    "c) []",
+                    "d) ;"
+                ],
+                correctAnswer: "b) {}"
+            },
+            {
+                question: "¿Cuál es el orden de prioridad más alto entre los operadores en Java?",
+                options: [
+                    "a) Operadores aritméticos de multiplicación/división.",
+                    "b) Operadores unarios (incremento/decremento, signo, negación).",
+                    "c) Operadores de relación.",
+                    "d) Operadores lógicos."
+                ],
+                correctAnswer: "b) Operadores unarios (incremento/decremento, signo, negación)."
+            },
+            {
+                question: "¿Cuál de las siguientes sentencias de control permite ejecutar un bloque de código al menos una vez antes de verificar la condición?",
+                options: [
+                    "a) if",
+                    "b) while",
+                    "c) for",
+                    "d) do-while"
+                ],
+                correctAnswer: "d) do-while"
+            },
+            {
+                question: "¿Qué sentencia de ramificación se utiliza en Java para salir de un bloque de sentencias (ej. de un bucle)?",
+                options: [
+                    "a) continue",
+                    "b) return",
+                    "c) break",
+                    "d) exit"
+                ],
+                correctAnswer: "c) break"
+            },
+            {
+                question: "¿Qué método de la clase Object devuelve una cadena que describe el objeto?",
+                options: [
+                    "a) getClass()",
+                    "b) hashCode()",
+                    "c) toString()",
+                    "d) clone()"
+                ],
+                correctAnswer: "c) toString()"
+            },
+            {
+                question: "¿Qué paradigma de programación se centra en describir 'qué hacer' en lugar de 'cómo hacerlo'?",
+                options: [
+                    "a) Imperativo",
+                    "b) Procedimental",
+                    "c) Declarativo",
+                    "d) Orientado a objetos"
+                ],
+                correctAnswer: "c) Declarativo"
+            },
+            {
+                question: "¿Qué componente de la JVM es responsable de cargar los archivos .class en memoria?",
+                options: [
+                    "a) Heap",
+                    "b) Stack",
+                    "c) Class Loader",
+                    "d) JIT"
+                ],
+                correctAnswer: "c) Class Loader"
+            },
+            {
+                question: "¿Dónde se almacenan los objetos instanciados en la memoria de la JVM?",
+                options: [
+                    "a) Stack",
+                    "b) Heap",
+                    "c) Registros",
+                    "d) Info de los hilos"
+                ],
+                correctAnswer: "b) Heap"
+            },
+            {
+                question: "¿Qué significa el acrónimo JIT en el contexto de la JVM?",
+                options: [
+                    "a) Java Interface Tool",
+                    "b) Just In Time Compiler",
+                    "c) Java Integration Test",
+                    "d) Join Interval Thread"
+                ],
+                correctAnswer: "b) Just In Time Compiler"
+            },
+            {
+                question: "¿Qué librería de clases base contiene los archivos .class esenciales para el tiempo de ejecución en Java (antes rt.jar)?",
+                options: [
+                    "a) java.util",
+                    "b) java.lang",
+                    "c) java.base (módulo actual)",
+                    "d) javax.swing"
+                ],
+                correctAnswer: "c) java.base (módulo actual)"
+            },
+            {
+                question: "¿Qué concepto de la POO en Java se refiere a la capacidad de un objeto de una clase de tomar muchas formas, es decir, ser tratado como una instancia de su propia clase o de cualquiera de sus superclases o interfaces que implemente?",
+                options: [
+                    "a) Encapsulación",
+                    "b) Herencia",
+                    "c) Polimorfismo",
+                    "d) Abstracción"
+                ],
+                correctAnswer: "c) Polimorfismo"
+            },
+            {
+                question: "En Java, ¿qué se entiende por 'ligadura dinámica' en el contexto del polimorfismo?",
+                options: [
+                    "a) La capacidad de enlazar una clase a un paquete en tiempo de compilación.",
+                    "b) La determinación del método a ejecutar en tiempo de ejecución, basada en el tipo real del objeto.",
+                    "c) La asignación de memoria a los objetos de forma dinámica.",
+                    "d) La conexión de la JVM con la capa de hardware."
+                ],
+                correctAnswer: "b) La determinación del método a ejecutar en tiempo de ejecución, basada en el tipo real del objeto."
+            },
+            {
+                question: "¿Qué representa this dentro de una clase en Java?",
+                options: [
+                    "a) Una referencia al objeto padre.",
+                    "b) Una referencia al objeto actual.",
+                    "c) Una referencia a la clase estática.",
+                    "d) Un marcador de final de método."
+                ],
+                correctAnswer: "b) Una referencia al objeto actual."
+            },
+            {
+                question: "¿Qué es un constructor en Java?",
+                options: [
+                    "a) Un método que destruye un objeto.",
+                    "b) Un método especial utilizado para inicializar un objeto.",
+                    "c) Un método que siempre devuelve un valor.",
+                    "d) Un método que solo se puede llamar una vez."
+                ],
+                correctAnswer: "b) Un método especial utilizado para inicializar un objeto."
+            },
+            {
+                question: "Si una clase tiene un constructor codificado por el desarrollador, ¿qué sucede con el constructor por defecto que Java crea?",
+                options: [
+                    "a) Se fusiona con el constructor codificado.",
+                    "b) Se mantiene como una opción adicional.",
+                    "c) Se elimina.",
+                    "d) Se hace privado automáticamente."
+                ],
+                correctAnswer: "c) Se elimina."
+            },
+            {
+                question: "¿Qué es el 'Casting' en Java?",
+                options: [
+                    "a) El proceso de crear un nuevo objeto a partir de uno existente.",
+                    "b) La conversión de un objeto de una clase a otra.",
+                    "c) La serialización de un objeto.",
+                    "d) La asignación de un valor a una variable."
+                ],
+                correctAnswer: "b) La conversión de un objeto de una clase a otra."
+            },
+            {
+                question: "¿Qué significa el uso de <T> en la declaración de una clase como public class Box<T> {...}?",
+                options: [
+                    "a) La clase Box solo puede contener objetos de tipo String.",
+                    "b) Indica que la clase Box es un tipo genérico.",
+                    "c) Restringe el tipo de dato que puede almacenar.",
+                    "d) Define una interfaz funcional."
+                ],
+                correctAnswer: "b) Indica que la clase Box es un tipo genérico."
+            },
+            {
+                question: "¿Qué significa T extends Integer en una declaración de tipo genérico como public class NaturalNumber<T extends Integer>?",
+                options: [
+                    "a) T debe ser exactamente un Integer.",
+                    "b) T puede ser cualquier tipo de dato.",
+                    "c) T debe ser un tipo que herede de Integer (o Integer mismo).",
+                    "d) T es un tipo de dato primitivo."
+                ],
+                correctAnswer: "c) T debe ser un tipo que herede de Integer (o Integer mismo)."
+            },
+            {
+                question: "En cuanto a los modificadores, ¿cuál es la diferencia principal entre los métodos de instancia y los métodos static?",
+                options: [
+                    "a) Los métodos de instancia pueden acceder a atributos static, los static no.",
+                    "b) Los métodos de instancia se ejecutan sobre un objeto concreto, los static pertenecen a la clase y no están asociados a ninguna instancia.",
+                    "c) Los métodos static se heredan, los de instancia no.",
+                    "d) Los métodos de instancia no pueden ser private."
+                ],
+                correctAnswer: "b) Los métodos de instancia se ejecutan sobre un objeto concreto, los static pertenecen a la clase y no están asociados a ninguna instancia."
+            },
+            {
+                question: "Si una clase es abstract, ¿qué ocurre con sus métodos abstract en las subclases?",
+                options: [
+                    "a) Las subclases pueden elegir implementarlos o no.",
+                    "b) Las subclases están obligadas a implementarlos o definirlos nuevamente como abstract.",
+                    "c) Los métodos abstract se heredan automáticamente con una implementación vacía.",
+                    "d) Los métodos abstract son ignorados por las subclases."
+                ],
+                correctAnswer: "b) Las subclases están obligadas a implementarlos o definirlos nuevamente como abstract."
+            },
+            {
+                question: "¿Cuál es el propósito de la anotación @Override?",
+                options: [
+                    "a) Marcar un método como static.",
+                    "b) Indicar que un método es abstracto.",
+                    "c) Confirmar que un método sobrescribe un método de una superclase o interfaz.",
+                    "d) Definir un nuevo método en una clase."
+                ],
+                correctAnswer: "c) Confirmar que un método sobrescribe un método de una superclase o interfaz."
+            },
+            {
+                question: "¿Cómo acceden los hijos a los atributos private de su clase padre?",
+                options: [
+                    "a) Directamente, ya que la herencia los hace accesibles.",
+                    "b) A través de métodos públicos o protegidos definidos en la clase padre.",
+                    "c) No pueden acceder a ellos de ninguna manera.",
+                    "d) Mediante el operador super."
+                ],
+                correctAnswer: "b) A través de métodos públicos o protegidos definidos en la clase padre."
+            },
+            {
+                question: "¿Qué es un Enum en Java?",
+                options: [
+                    "a) Una colección de objetos de diferentes tipos.",
+                    "b) Un tipo especial de clase que representa un conjunto fijo de constantes.",
+                    "c) Una interfaz para definir métodos vacíos.",
+                    "d) Una anotación para configurar el código."
+                ],
+                correctAnswer: "b) Un tipo especial de clase que representa un conjunto fijo de constantes."
+            },
+            {
+                question: "¿Qué representa la API de Java?",
+                options: [
+                    "a) El conjunto de herramientas para la construcción de software.",
+                    "b) Un entorno de desarrollo integrado (IDE).",
+                    "c) Un conjunto de clases e interfaces predefinidas, organizadas en paquetes.",
+                    "d) Un compilador de código fuente."
+                ],
+                correctAnswer: "c) Un conjunto de clases e interfaces predefinidas, organizadas en paquetes."
+            },
+            {
+                question: "¿Qué paquete de la API de Java contiene las clases fundamentales como Object, String, System, Thread, Math?",
+                options: [
+                    "a) java.util",
+                    "b) java.io",
+                    "c) java.lang",
+                    "d) java.net"
+                ],
+                correctAnswer: "c) java.lang"
+            },
+            {
+                question: "¿Qué interfaz en java.util es el padre de todas las colecciones?",
+                options: [
+                    "a) List",
+                    "b) Set",
+                    "c) Map",
+                    "d) Iterable"
+                ],
+                correctAnswer: "d) Iterable"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre ArrayList y LinkedList?",
+                options: [
+                    "a) ArrayList es una lista fija, LinkedList es dinámica.",
+                    "b) ArrayList es dinámico, LinkedList es una lista doblemente enlazada.",
+                    "c) ArrayList es thread-safe, LinkedList no.",
+                    "d) ArrayList permite elementos nulos, LinkedList no."
+                ],
+                correctAnswer: "b) ArrayList es dinámico, LinkedList es una lista doblemente enlazada."
+            },
+            {
+                question: "¿Qué tipo de colección Map no hereda de Collection ni de Iterable?",
+                options: [
+                    "a) HashMap",
+                    "b) ArrayList",
+                    "c) HashSet",
+                    "d) Vector"
+                ],
+                correctAnswer: "a) HashMap"
+            },
+            {
+                question: "¿Cuál es la jerarquía correcta de las excepciones y errores en Java?",
+                options: [
+                    "a) Error -> Exception -> RuntimeException",
+                    "b) Object -> Throwable -> Exception / Error",
+                    "c) Throwable -> Error -> RuntimeException -> Exception",
+                    "d) Exception -> Error -> Throwable"
+                ],
+                correctAnswer: "b) Object -> Throwable -> Exception / Error"
+            },
+            {
+                question: "¿Qué tipo de excepciones en Java heredan de Exception y deben ser tratadas explícitamente (checked exceptions)?",
+                options: [
+                    "a) Las que heredan de RuntimeException.",
+                    "b) Las que se lanzan con throw new Error().",
+                    "c) Las que requieren try/catch o throws en la firma del método.",
+                    "d) Las que solo afectan al rendimiento."
+                ],
+                correctAnswer: "c) Las que requieren try/catch o throws en la firma del método."
+            },
+            {
+                question: "¿Qué tipo de excepciones en Java heredan de RuntimeException y no obligan a los métodos intermedios a usar try/catch (unchecked exceptions)?",
+                options: [
+                    "a) Las que se lanzan con throw.",
+                    "b) Las que se pueden recuperar fácilmente.",
+                    "c) Las que no es necesario declarar en la firma del método.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswer: "c) Las que no es necesario declarar en la firma del método."
+            },
+            {
+                question: "¿Cuál es la superclase de todos los errores y excepciones en Java?",
+                options: [
+                    "a) Exception",
+                    "b) RuntimeException",
+                    "c) Throwable",
+                    "d) Error"
+                ],
+                correctAnswer: "c) Throwable"
+            },
+            {
+                question: "Si no se captura una RuntimeException, ¿qué sucede con la ejecución del programa?",
+                options: [
+                    "a) Se ignora y el programa continúa.",
+                    "b) Aborta la ejecución de forma no controlada.",
+                    "c) Se registra automáticamente y se recupera.",
+                    "d) Se convierte en una Checked Exception."
+                ],
+                correctAnswer: "b) Aborta la ejecución de forma no controlada."
+            },
+            {
+                question: "¿Qué librería de terceros se utiliza como 'fachada' para independizarse de la implementación de logging subyacente?",
+                options: [
+                    "a) Log4j",
+                    "b) Logback",
+                    "c) SLF4J",
+                    "d) Apache Commons Logging"
+                ],
+                correctAnswer: "c) SLF4J"
+            },
+            {
+                question: "¿Qué concepto de logging se encarga de indicar el destino de los mensajes (consola, fichero, BBDD)?",
+                options: [
+                    "a) Logger",
+                    "b) Level",
+                    "c) Appender",
+                    "d) Layout"
+                ],
+                correctAnswer: "c) Appender"
+            },
+            {
+                question: "Si el nivel de un logger está configurado en WARN, ¿qué mensajes se procesarán además de los WARN?",
+                options: [
+                    "a) TRACE y DEBUG",
+                    "b) INFO",
+                    "c) ERROR y FATAL",
+                    "d) Todos los niveles inferiores"
+                ],
+                correctAnswer: "c) ERROR y FATAL"
+            },
+            {
+                question: "Cuando se crea un hilo extendiendo la clase Thread, ¿qué método se debe sobrescribir para definir el cuerpo del hilo?",
+                options: [
+                    "a) start()",
+                    "b) run()",
+                    "c) execute()",
+                    "d) init()"
+                ],
+                correctAnswer: "b) run()"
+            },
+            {
+                question: "¿Cuál es el problema que surge cuando varios hilos comparten atributos de un objeto en el Heap sin control?",
+                options: [
+                    "a) Desperdicio de memoria.",
+                    "b) Problemas de concurrencia e inconsistencia de datos.",
+                    "c) Bloqueo del planificador de hilos.",
+                    "d) Duplicación de objetos."
+                ],
+                correctAnswer: "b) Problemas de concurrencia e inconsistencia de datos."
+            },
+            {
+                question: "¿Qué API en Java/JEE se conoce como ORM (Object Relational Mapping) y permite traducir el mundo de la Orientación a Objetos al mundo de las tablas?",
+                options: [
+                    "a) JDBC",
+                    "b) JPA",
+                    "c) JAXB",
+                    "d) JNDI"
+                ],
+                correctAnswer: "b) JPA"
+            },
+            {
+                question: "¿Cuál es la parte crítica en el modelo de persistencia de alto nivel (JPA/ORM)?",
+                options: [
+                    "a) La necesidad de escribir SQL manualmente.",
+                    "b) La pérdida de control de las sentencias SQL generadas automáticamente.",
+                    "c) El mapeo de objetos a tablas.",
+                    "d) La configuración del DataSource."
+                ],
+                correctAnswer: "b) La pérdida de control de las sentencias SQL generadas automáticamente."
+            },
+            {
+                question: "¿Cuáles son las tres coordenadas que identifican un artefacto de Maven?",
+                options: [
+                    "a) name, version, type",
+                    "b) groupid, artifactid, version",
+                    "c) path, filename, extension",
+                    "d) src, main, java"
+                ],
+                correctAnswer: "b) groupid, artifactid, version"
+            },
+            {
+                question: "¿Qué comando de Maven se utiliza para construir un archivo JAR/WAR en el directorio target?",
+                options: [
+                    "a) mvn compile",
+                    "b) mvn test",
+                    "c) mvn install",
+                    "d) mvn package"
+                ],
+                correctAnswer: "d) mvn package"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre Maven y Ant?",
+                options: [
+                    "a) Maven es para Java, Ant es para C++.",
+                    "b) Maven es un IDE, Ant es un compilador.",
+                    "c) Maven tiene un gestor de dependencias, Ant no.",
+                    "d) Ant es más moderno que Maven."
+                ],
+                correctAnswer: "c) Maven tiene un gestor de dependencias, Ant no."
+            },
+            {
+                question: "¿Qué es una 'expresión lambda' en Java?",
+                options: [
+                    "a) Una sentencia de control de flujo.",
+                    "b) Una forma de declarar una variable.",
+                    "c) Una función anónima, a menudo usada con Streams.",
+                    "d) Un tipo de excepción."
+                ],
+                correctAnswer: "c) Una función anónima, a menudo usada con Streams."
+            },
+            {
+                question: "¿Qué clase de java.util.concurrent se utiliza para la programación asíncrona y patrones de diseño concurrentes?",
+                options: [
+                    "a) ArrayList",
+                    "b) HashMap",
+                    "c) CompletableFuture",
+                    "d) ThreadLocal"
+                ],
+                correctAnswer: "c) CompletableFuture"
+            },
+            {
+                question: "¿Qué novedad de Java 1.8 fue influenciada por la librería Joda-Time para el manejo de fechas y horas?",
+                options: [
+                    "a) java.io",
+                    "b) java.time",
+                    "c) java.util.Date",
+                    "d) java.sql.Timestamp"
+                ],
+                correctAnswer: "b) java.time"
+            },
+            {
+                question: "¿Qué operador se utiliza para determinar si un objeto es una instancia de una clase o interfaz concreta en tiempo de ejecución?",
+                options: [
+                    "a) equals()",
+                    "b) typeof",
+                    "c) instanceof",
+                    "d) getClass()"
+                ],
+                correctAnswer: "c) instanceof"
+            },
+            {
+                question: "¿Qué patrón de diseño se introdujo en Java para evitar los Null Pointer Exception?",
+                options: [
+                    "a) Singleton",
+                    "b) Factory",
+                    "c) Observer",
+                    "d) Optional"
+                ],
+                correctAnswer: "d) Optional"
+            },
+            {
+                question: "¿Cuál es el resultado de la expresión 20 % 7?",
+                options: [
+                    "a) 2",
+                    "b) 6",
+                    "c) 7",
+                    "d) 13"
+                ],
+                correctAnswer: "b) 6"
+            },
+            {
+                question: "Si a = 5; y luego se ejecuta b = ++a;, ¿cuáles serán los valores de a y b?",
+                options: [
+                    "a) a vale 5 y b vale 5",
+                    "b) a vale 6 y b vale 5",
+                    "c) a vale 5 y b vale 6",
+                    "d) a vale 6 y b vale 6"
+                ],
+                correctAnswer: "d) a vale 6 y b vale 6"
+            },
+            {
+                question: "¿Cuál es la descripción del operador >> (desplazamiento a la derecha) en Java?",
+                options: [
+                    "a) Desplaza a la derecha los bits, por la izquierda siempre entra un cero.",
+                    "b) Desplaza a la derecha los bits, por la izquierda entra siempre el mismo bit más significativo anterior (con signo).",
+                    "c) Desplaza a la izquierda los bits, por la derecha siempre entra un cero.",
+                    "d) Desplaza a la izquierda los bits, por la derecha entra siempre el mismo bit más significativo anterior."
+                ],
+                correctAnswer: "b) Desplaza a la derecha los bits, por la izquierda entra siempre el mismo bit más significativo anterior (con signo)."
+            },
+            {
+                question: "¿Qué separador se utiliza en Java para declarar variables de tipo array (vectores o matrices) y referenciar sus elementos?",
+                options: [
+                    "a) ()",
+                    "b) {}",
+                    "c) []",
+                    "d) ;"
+                ],
+                correctAnswer: "c) []"
+            },
+            {
+                question: "En la prioridad de operadores, ¿qué categoría tiene mayor prioridad que la multiplicación y división?",
+                options: [
+                    "a) Suma y resta.",
+                    "b) Operadores lógicos.",
+                    "c) Operadores unarios (++, --, +, -, ~, !).",
+                    "d) Operadores de asignación."
+                ],
+                correctAnswer: "c) Operadores unarios (++, --, +, -, ~, !)."
+            },
+            {
+                question: "¿Qué sentencia de control de flujo se utiliza cuando se tiene un conjunto fijo de valores para comparar una expresión?",
+                options: [
+                    "a) if-else if-else",
+                    "b) while",
+                    "c) switch",
+                    "d) for"
+                ],
+                correctAnswer: "c) switch"
+            },
+            {
+                question: "¿Cuál es el propósito del método void wait() de la clase Object?",
+                options: [
+                    "a) Reiniciar la ejecución de un hilo.",
+                    "b) Esperar en otro subproceso de ejecución.",
+                    "c) Crear un nuevo hilo.",
+                    "d) Detener la JVM."
+                ],
+                correctAnswer: "b) Esperar en otro subproceso de ejecución."
+            },
+            {
+                question: "¿Qué paradigma de programación describe los pasos exactos que la máquina debe seguir, en un orden específico?",
+                options: [
+                    "a) Declarativo",
+                    "b) Funcional",
+                    "c) Imperativo",
+                    "d) Lógico"
+                ],
+                correctAnswer: "c) Imperativo"
+            },
+            {
+                question: "¿Cuál es la principal utilidad de la herramienta jar del JDK?",
+                options: [
+                    "a) Compilar archivos Java.",
+                    "b) Ejecutar programas Java.",
+                    "c) Empaquetar clases compiladas y otros ficheros en un solo archivo.",
+                    "d) Generar documentación HTML."
+                ],
+                correctAnswer: "c) Empaquetar clases compiladas y otros ficheros en un solo archivo."
+            },
+            {
+                question: "¿Qué herramienta del JDK se usa para la generación de documentación HTML a partir de los fuentes .java?",
+                options: [
+                    "a) javadoc",
+                    "b) jshell",
+                    "c) jdb",
+                    "d) jdeps"
+                ],
+                correctAnswer: "a) javadoc"
+            },
+            {
+                question: "¿Qué herramienta del JDK se introdujo a partir de Java 9 para realizar pruebas de comandos interactivos (REPL)?",
+                options: [
+                    "a) javac",
+                    "b) java",
+                    "c) jshell",
+                    "d) jar"
+                ],
+                correctAnswer: "c) jshell"
+            },
+            {
+                question: "¿Qué se entiende por 'Write once, run anywhere' en Java?",
+                options: [
+                    "a) Que los programas Java solo se pueden escribir una vez.",
+                    "b) Que los programas Java se compilan una vez y pueden ejecutarse en cualquier plataforma que tenga una JVM.",
+                    "c) Que solo se puede usar un IDE para escribir código Java.",
+                    "d) Que el código Java es específico de un procesador."
+                ],
+                correctAnswer: "b) Que los programas Java se compilan una vez y pueden ejecutarse en cualquier plataforma que tenga una JVM."
+            },
+            {
+                question: "¿Qué se almacena en el Stack de la JVM para cada hilo?",
+                options: [
+                    "a) Los objetos instanciados.",
+                    "b) Información sobre las variables locales de cada hilo y el rastro de la pila de llamadas.",
+                    "c) El bytecode de las clases.",
+                    "d) Los datos compartidos entre hilos."
+                ],
+                correctAnswer: "b) Información sobre las variables locales de cada hilo y el rastro de la pila de llamadas."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer for each question
+        let answeredCorrectly = new Array(quizData.length).fill(false); // To track if the question was answered correctly
+
+        const questionNumberElement = document.getElementById('question-number');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const quizResults = document.getElementById('quiz-results');
+        const scoreDisplay = document.getElementById('score-display');
+        const restartButton = document.getElementById('restart-button');
+
+        // Function to load a question
+        function loadQuestion() {
+            // Clear previous feedback and options
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.className = 'feedback-message';
+            optionsContainer.innerHTML = '';
+            quizResults.classList.add('hidden'); // Hide results when loading a question
+
+            const question = quizData[currentQuestionIndex];
+            questionNumberElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+            questionTextElement.textContent = question.question;
+
+            // Create option buttons
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.option = option; // Store the option text
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainer.appendChild(button);
+
+                // If user has already answered this question, show their selection and feedback
+                if (userAnswers[currentQuestionIndex] === option) {
+                    // Disable all buttons once an answer is selected
+                    Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+                    if (option === question.correctAnswer) {
+                        button.classList.add('correct');
+                        feedbackMessageElement.textContent = '¡Correcto!';
+                        feedbackMessageElement.classList.add('correct');
+                    } else {
+                        button.classList.add('incorrect');
+                        feedbackMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${question.correctAnswer}`;
+                        feedbackMessageElement.classList.add('incorrect');
+                        // Highlight the correct answer if the user chose incorrectly
+                        Array.from(optionsContainer.children).forEach(btn => {
+                            if (btn.dataset.option === question.correctAnswer) {
+                                btn.classList.add('correct');
+                            }
+                        });
+                    }
+                }
+            });
+
+            updateNavigationButtons();
+        }
+
+        // Function to handle answer selection
+        function selectAnswer(selectedButton, selectedOption) {
+            // Disable all buttons once an answer is selected
+            Array.from(optionsContainer.children).forEach(button => button.disabled = true);
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedOption; // Store the user's answer
+
+            // Check if the selected answer is correct
+            if (selectedOption === currentQuestion.correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackMessageElement.textContent = '¡Correcto!';
+                feedbackMessageElement.classList.add('correct');
+                if (!answeredCorrectly[currentQuestionIndex]) { // Only increment score if not already answered correctly
+                    score++;
+                    answeredCorrectly[currentQuestionIndex] = true;
+                }
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${currentQuestion.correctAnswer}`;
+                feedbackMessageElement.classList.add('incorrect');
+                // Highlight the correct answer
+                Array.from(optionsContainer.children).forEach(button => {
+                    if (button.dataset.option === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+                answeredCorrectly[currentQuestionIndex] = false; // Mark as incorrectly answered
+            }
+        }
+
+        // Function to update navigation button states
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+
+            // If it's the last question and an answer has been selected, enable showing results
+            if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                nextButton.textContent = 'Ver Resultados';
+                nextButton.onclick = showResults;
+            } else {
+                nextButton.textContent = 'Siguiente';
+                nextButton.onclick = () => {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                };
+            }
+        }
+
+        // Function to show quiz results
+        function showResults() {
+            questionNumberElement.textContent = '';
+            questionTextElement.textContent = '';
+            optionsContainer.innerHTML = '';
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.className = 'feedback-message';
+            document.querySelector('.navigation-buttons').classList.add('hidden'); // Hide navigation buttons
+
+            quizResults.classList.remove('hidden');
+            scoreDisplay.textContent = `Tu puntuación final: ${score} de ${quizData.length}`;
+        }
+
+        // Function to restart the quiz
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            answeredCorrectly.fill(false);
+            document.querySelector('.navigation-buttons').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        // Event listeners for navigation buttons
+        prevButton.addEventListener('click', () => {
+            currentQuestionIndex--;
+            loadQuestion();
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex === quizData.length - 1) {
+                showResults();
+            } else {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        restartButton.addEventListener('click', restartQuiz);
+
+        // Initial load of the first question
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>

@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Redes de Conmutación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background-color: #f7fafc;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .option-label:hover {
+            background-color: #edf2f7;
+            border-color: #a0aec0;
+        }
+        .option-label input[type="radio"] {
+            margin-right: 12px;
+            accent-color: #4299e1;
+        }
+        .option-label.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .option-label.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 500;
+            padding: 8px 0;
+        }
+        .feedback.correct-text {
+            color: #28a745;
+        }
+        .feedback.incorrect-text {
+            color: #dc3545;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content.space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:active {
+            transform: translateY(1px);
+        }
+        .nav-button.prev {
+            background-color: #a0aec0;
+            color: #ffffff;
+            border: none;
+        }
+        .nav-button.prev:hover {
+            background-color: #718096;
+        }
+        .nav-button.next {
+            background-color: #4299e1;
+            color: #ffffff;
+            border: none;
+        }
+        .nav-button.next:hover {
+            background-color: #3182ce;
+        }
+        .nav-button:disabled {
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .restart-button {
+            background-color: #e53e3e;
+            color: #ffffff;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+            border: none;
+        }
+        .restart-button:hover {
+            background-color: #c53030;
+        }
+        .restart-button:active {
+            transform: translateY(1px);
+        }
+        .results-card {
+            background-color: #e6fffa;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+            text-align: center;
+            color: #234e52;
+        }
+        .results-card h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2c5282;
+        }
+        .results-item {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #b2f5ea;
+        }
+        .results-item:last-child {
+            border-bottom: none;
+        }
+        .results-item span:first-child {
+            font-weight: 600;
+        }
+        .results-item .correct-count {
+            color: #28a745;
+        }
+        .results-item .incorrect-count {
+            color: #dc3545;
+        }
+        .results-item .unanswered-count {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test de Redes de Conmutación</h1>
+        <div id="quiz-container">
+            <!-- Las preguntas se cargarán aquí -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="nav-button prev" disabled>Anterior</button>
+            <button id="next-btn" class="nav-button next">Siguiente</button>
+        </div>
+        <button id="restart-btn" class="restart-button">Reiniciar Test</button>
+        <div id="results-container" class="results-card hidden">
+            <h2>Resultados del Test</h2>
+            <div class="results-item">
+                <span>Respuestas Correctas:</span>
+                <span id="correct-count" class="correct-count">0</span>
+            </div>
+            <div class="results-item">
+                <span>Respuestas Incorrectas:</span>
+                <span id="incorrect-count" class="incorrect-count">0</span>
+            </div>
+            <div class="results-item">
+                <span>Preguntas No Contestadas:</span>
+                <span id="unanswered-count" class="unanswered-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos para las preguntas y sus opciones
+        const questions = [
+            {
+                question: "En las redes de conmutación de circuitos, ¿qué sucede con los recursos una vez establecida la comunicación entre dos usuarios?",
+                options: [
+                    "a) Se liberan inmediatamente después de cada envío.",
+                    "b) Se reservan y permanecen asignados durante toda la \"sesión\".",
+                    "c) Se comparten dinámicamente con otros usuarios.",
+                    "d) Se asignan solo cuando hay datos para transmitir."
+                ],
+                correctAnswer: "b) Se reservan y permanecen asignados durante toda la \"sesión\"."
+            },
+            {
+                question: "¿Cuál es una desventaja de las redes de conmutación de circuitos en relación con el ancho de banda?",
+                options: [
+                    "a) No se aprovecha completamente cuando hay mucho tráfico.",
+                    "b) El ancho de banda se ajusta dinámicamente.",
+                    "c) Se reservan los recursos solo para esa comunicación, no aprovechando el ancho de banda cuando no hay nada que decir.",
+                    "d) Son demasiado complejas para optimizar el ancho de banda."
+                ],
+                correctAnswer: "c) Se reservan los recursos solo para esa comunicación, no aprovechando el ancho de banda cuando no hay nada que decir."
+            },
+            {
+                question: "En las redes de conmutación de paquetes, ¿cómo se gestiona el mensaje para su transmisión?",
+                options: [
+                    "a) Se transmite como una única unidad completa.",
+                    "b) Se divide en unidades pequeñas y se utiliza multiplexación.",
+                    "c) Se envía en ráfagas de datos sin división.",
+                    "d) Se almacena completamente antes de ser transmitido."
+                ],
+                correctAnswer: "b) Se divide en unidades pequeñas y se utiliza multiplexación."
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones es característica de los datagramas en redes de conmutación de paquetes?",
+                options: [
+                    "a) Están orientados a conexión.",
+                    "b) Garantizan la entrega de los paquetes en orden.",
+                    "c) No hay garantía de entrega y los paquetes pueden llegar desordenados.",
+                    "d) Establecen una ruta fija antes de la transmisión."
+                ],
+                correctAnswer: "c) No hay garantía de entrega y los paquetes pueden llegar desordenados."
+            },
+            {
+                question: "¿Qué tipo de circuito virtual se debe abrir en cada sesión?",
+                options: [
+                    "a) PVC (Permanent Virtual Circuit).",
+                    "b) SVC (Switched Virtual Circuit).",
+                    "c) VPI (Virtual Path Identifier).",
+                    "d) VCI (Virtual Channel Identifier)."
+                ],
+                correctAnswer: "b) SVC (Switched Virtual Circuit)."
+            },
+            {
+                question: "¿Qué tecnología se menciona como un ejemplo de red de conmutación de paquetes con circuitos virtuales antiguos?",
+                options: [
+                    "a) Ethernet.",
+                    "b) Wi-Fi.",
+                    "c) X.25.",
+                    "d) Bluetooth."
+                ],
+                correctAnswer: "c) X.25."
+            },
+            {
+                question: "Un ejemplo de red de difusión es:",
+                options: [
+                    "a) LAN Estrella.",
+                    "b) LAN BUS.",
+                    "c) ATM.",
+                    "d) RDSI."
+                ],
+                correctAnswer: "b) LAN BUS."
+            },
+            {
+                question: "¿Qué tipo de modulación se utiliza para convertir una señal analógica a digital?",
+                options: [
+                    "a) Amplitud (AM).",
+                    "b) Fase (PM).",
+                    "c) Frecuencia (FM).",
+                    "d) Muestreo / Cuantificación / Codificación (PCM)."
+                ],
+                correctAnswer: "d) Muestreo / Cuantificación / Codificación (PCM)."
+            },
+            {
+                question: "Según el Teorema de Nyquist-Shannon, la frecuencia de muestreo (Fm) debe ser:",
+                options: [
+                    "a) Menor que el ancho de banda (B).",
+                    "b) Mayor que 2 veces el ancho de banda (2×B).",
+                    "c) Exactamente igual al ancho de banda (B).",
+                    "d) Independiente del ancho de banda."
+                ],
+                correctAnswer: "b) Mayor que 2 veces el ancho de banda (2×B)."
+            },
+            {
+                question: "¿Cuál es la fórmula del Teorema de Shannon para la capacidad del canal (C)?",
+                options: [
+                    "a) C=B×(S/N).",
+                    "b) C=B/log2 ​ (1+S/N).",
+                    "c) C=B×log2 ​ (1+S/N).",
+                    "d) C=B+log2 ​ (S/N)."
+                ],
+                correctAnswer: "c) C=B×log2 ​ (1+S/N)."
+            },
+            {
+                question: "¿Qué caracteriza a la comunicación semi-dúplex?",
+                options: [
+                    "a) La comunicación ocurre en un solo sentido.",
+                    "b) La comunicación ocurre en ambos sentidos simultáneamente.",
+                    "c) La comunicación ocurre en ambos sentidos, pero no simultáneamente.",
+                    "d) No permite la corrección de errores."
+                ],
+                correctAnswer: "c) La comunicación ocurre en ambos sentidos, pero no simultáneamente."
+            },
+            {
+                question: "En los medios guiados, ¿qué factor afecta la atenuación y la diafonía en el par trenzado?",
+                options: [
+                    "a) La longitud del cable.",
+                    "b) La calidad del cable.",
+                    "c) El tipo de conector.",
+                    "d) La temperatura ambiente."
+                ],
+                correctAnswer: "b) La calidad del cable."
+            },
+            {
+                question: "¿Qué clasificación de par trenzado UTP se menciona?",
+                options: [
+                    "a) Categoría 2.",
+                    "b) Categoría 6a.",
+                    "c) Categoría 1.",
+                    "d) Categoría 7."
+                ],
+                correctAnswer: "c) Categoría 1."
+            },
+            {
+                question: "¿Qué tipo de fibra óptica necesita un láser para su funcionamiento?",
+                options: [
+                    "a) Multimodo.",
+                    "b) Monomodo.",
+                    "c) Ambas, dependiendo de la distancia.",
+                    "d) Ninguna, solo necesitan un LED."
+                ],
+                correctAnswer: "b) Monomodo."
+            },
+            {
+                question: "Según la clasificación ISO, ¿cuál de las siguientes es una categoría de fibra multimodo?",
+                options: [
+                    "a) OS1.",
+                    "b) OS2.",
+                    "c) OM3.",
+                    "d) OM5."
+                ],
+                correctAnswer: "c) OM3."
+            },
+            {
+                question: "¿Qué velocidad de datos tiene un Canal B en RDSI?",
+                options: [
+                    "a) 16 Kbps.",
+                    "b) 64 Kbps.",
+                    "c) 128 Kbps.",
+                    "d) 2 Mbps."
+                ],
+                correctAnswer: "b) 64 Kbps."
+            },
+            {
+                question: "¿Para qué se utiliza el Canal D en RDSI?",
+                options: [
+                    "a) Para datos de voz.",
+                    "b) Para señalización.",
+                    "c) Para datos de vídeo.",
+                    "d) Para transmisión de archivos."
+                ],
+                correctAnswer: "b) Para señalización."
+            },
+            {
+                question: "¿Qué protocolo es la base de la mayoría de los protocolos de nivel de enlace?",
+                options: [
+                    "a) PPP.",
+                    "b) LAPD.",
+                    "c) HDLC.",
+                    "d) X.25."
+                ],
+                correctAnswer: "c) HDLC."
+            },
+            {
+                question: "¿Cuál es la velocidad del Acceso Primario de RDSI?",
+                options: [
+                    "a) 160 Kbps.",
+                    "b) 64 Kbps.",
+                    "c) 2 Mbps.",
+                    "d) 10 Mbps."
+                ],
+                correctAnswer: "c) 2 Mbps."
+            },
+            {
+                question: "¿Qué se contrata para una casa en RDSI?",
+                options: [
+                    "a) Acceso Primario.",
+                    "b) Acceso Básico.",
+                    "c) 30B+D.",
+                    "d) Canal D de 64 Kbps."
+                ],
+                correctAnswer: "b) Acceso Básico."
+            },
+            {
+                question: "¿Qué tecnología se creó para proporcionar distintos tipos de servicios a las aplicaciones sobre ella y tipifica el tráfico?",
+                options: [
+                    "a) Frame Relay.",
+                    "b) MPLS.",
+                    "c) ATM.",
+                    "d) RDSI."
+                ],
+                correctAnswer: "c) ATM."
+            },
+            {
+                question: "En ATM, ¿qué significa que un PVC (Permanent Virtual Circuit) esté \"siempre abierto\"?",
+                options: [
+                    "a) Debe establecerse en cada sesión.",
+                    "b) Permanece activo sin necesidad de ser abierto en cada sesión.",
+                    "c) Es un circuito temporal.",
+                    "d) Se cierra automáticamente después de un período de inactividad."
+                ],
+                correctAnswer: "b) Permanece activo sin necesidad de ser abierto en cada sesión."
+            },
+            {
+                question: "¿Cuál es la interfaz entre el cliente final y la red del proveedor en ATM?",
+                options: [
+                    "a) NNI.",
+                    "b) UNI.",
+                    "c) VPI.",
+                    "d) VCI."
+                ],
+                correctAnswer: "b) UNI."
+            },
+            {
+                question: "¿Cuál es el tamaño de una celda ATM?",
+                options: [
+                    "a) 48 octetos.",
+                    "b) 5 octetos.",
+                    "c) 53 octetos.",
+                    "d) 64 octetos."
+                ],
+                correctAnswer: "c) 53 octetos."
+            },
+            {
+                question: "En una celda ATM, ¿cuántos octetos están destinados al \"payload\" (carga útil)?",
+                options: [
+                    "a) 5.",
+                    "b) 48.",
+                    "c) 53.",
+                    "d) No tiene payload."
+                ],
+                correctAnswer: "b) 48."
+            },
+            {
+                question: "¿Qué campo en la cabecera de una celda UNI ATM se utiliza para el control de flujo?",
+                options: [
+                    "a) VPI.",
+                    "b) VCI.",
+                    "c) GFC.",
+                    "d) HEC."
+                ],
+                correctAnswer: "c) GFC."
+            },
+            {
+                question: "¿Qué característica principal define a Frame Relay en cuanto al tamaño de los paquetes de datos?",
+                options: [
+                    "a) Tamaño fijo.",
+                    "b) Tamaño variable.",
+                    "c) Solo paquetes pequeños.",
+                    "d) Solo paquetes grandes."
+                ],
+                correctAnswer: "b) Tamaño variable."
+            },
+            {
+                question: "¿Cuántos octetos tiene la cabecera de Frame Relay?",
+                options: [
+                    "a) 4.",
+                    "b) 6.",
+                    "c) 8.",
+                    "d) 16."
+                ],
+                correctAnswer: "b) 6."
+            },
+            {
+                question: "En Frame Relay, ¿qué significa CIR?",
+                options: [
+                    "a) Identificador de Cliente.",
+                    "b) Ancho de Banda Garantizado.",
+                    "c) Congestion Indication Rate.",
+                    "d) Circuito de Interconexión Remota."
+                ],
+                correctAnswer: "b) Ancho de Banda Garantizado."
+            },
+            {
+                question: "¿Qué bits en Frame Relay se utilizan para la notificación de congestión?",
+                options: [
+                    "a) C/R y EA.",
+                    "b) DLCI y CIR.",
+                    "c) FECN y BECN.",
+                    "d) HEC y PTI."
+                ],
+                correctAnswer: "c) FECN y BECN."
+            },
+            {
+                question: "¿Qué protocolo de enlace se utiliza en el plano de usuario para el intercambio de datos en Frame Relay?",
+                options: [
+                    "a) LAPD.",
+                    "b) LAPB.",
+                    "c) LAPF.",
+                    "d) HDLC."
+                ],
+                correctAnswer: "c) LAPF."
+            },
+            {
+                question: "¿Cuál es el propósito principal de MPLS?",
+                options: [
+                    "a) Reemplazar IP completamente.",
+                    "b) Unir el transporte entre redes basadas en circuitos y en paquetes.",
+                    "c) Solo para redes inalámbricas.",
+                    "d) Mejorar la seguridad a nivel de aplicación."
+                ],
+                correctAnswer: "b) Unir el transporte entre redes basadas en circuitos y en paquetes."
+            },
+            {
+                question: "¿Qué hace el tráfico cuando entra en una red MPLS?",
+                options: [
+                    "a) Se desencamina inmediatamente.",
+                    "b) Se etiqueta para que no se enrute.",
+                    "c) Se convierte a un formato propietario.",
+                    "d) Se fragmenta en paquetes más pequeños."
+                ],
+                correctAnswer: "b) Se etiqueta para que no se enrute."
+            },
+            {
+                question: "¿En qué capa del modelo OSI se sitúa MPLS?",
+                options: [
+                    "a) Capa 1.",
+                    "b) Capa 2.",
+                    "c) Capa 2.5.",
+                    "d) Capa 3."
+                ],
+                correctAnswer: "c) Capa 2.5."
+            },
+            {
+                question: "¿Qué tipo de tráfico puede encapsular MPLS?",
+                options: [
+                    "a) Solo IPv4.",
+                    "b) Solo IPv6.",
+                    "c) IPv4 e IPv6.",
+                    "d) Solo tráfico de control."
+                ],
+                correctAnswer: "c) IPv4 e IPv6."
+            },
+            {
+                question: "¿Cuál es el primer router que atiende al cliente en una red MPLS y etiqueta el tráfico entrante?",
+                options: [
+                    "a) LSR (Label Switch Router).",
+                    "b) P (Provider Router).",
+                    "c) PE (Provider Edge Router).",
+                    "d) LER (Label Edge Router)."
+                ],
+                correctAnswer: "d) LER (Label Edge Router)."
+            },
+            {
+                question: "¿Cómo se denomina el camino que sigue la información en MPLS?",
+                options: [
+                    "a) FEC.",
+                    "b) LDP.",
+                    "c) LSP.",
+                    "d) TDP."
+                ],
+                correctAnswer: "c) LSP."
+            },
+            {
+                question: "¿Qué protocolo utiliza multicast para el intercambio de etiquetas en MPLS?",
+                options: [
+                    "a) TDP.",
+                    "b) LDP.",
+                    "c) IP.",
+                    "d) BGP."
+                ],
+                correctAnswer: "b) LDP."
+            },
+            {
+                question: "¿Cuántos bits ocupa una etiqueta MPLS?",
+                options: [
+                    "a) 8 bits.",
+                    "b) 20 bits.",
+                    "c) 32 bits.",
+                    "d) 48 bits."
+                ],
+                correctAnswer: "b) 20 bits."
+            },
+            {
+                question: "En una etiqueta MPLS, ¿qué indica el bit \"S\" (Bottom of Stack)?",
+                options: [
+                    "a) Si es una etiqueta de seguridad.",
+                    "b) Si es la última etiqueta en una pila.",
+                    "c) Si el paquete es de servicio.",
+                    "d) Si la etiqueta es simétrica."
+                ],
+                correctAnswer: "b) Si es la última etiqueta en una pila."
+            },
+            {
+                question: "¿Qué se entiende por \"frecuencia\" de una señal analógica?",
+                options: [
+                    "a) La altura máxima de la onda.",
+                    "b) El tiempo que tarda en completar un ciclo.",
+                    "c) El número de periodos por segundo.",
+                    "d) La distancia entre dos puntos equifásicos."
+                ],
+                correctAnswer: "c) El número de periodos por segundo."
+            },
+            {
+                question: "¿Qué es el \"Periodo\" de una señal analógica?",
+                options: [
+                    "a) El número de ciclos por segundo.",
+                    "b) El tiempo, en segundos, que necesita una señal para completar un ciclo.",
+                    "c) La amplitud de la señal.",
+                    "d) La velocidad de propagación."
+                ],
+                correctAnswer: "b) El tiempo, en segundos, que necesita una señal para completar un ciclo."
+            },
+            {
+                question: "¿Qué es la modulación por impulso codificado (PCM)?",
+                options: [
+                    "a) Un método para transmitir señales analógicas por medios analógicos.",
+                    "b) Un método para convertir señales digitales en analógicas.",
+                    "c) Un método para transmitir una señal analógica por un medio digital.",
+                    "d) Un método para comprimir datos."
+                ],
+                correctAnswer: "c) Un método para transmitir una señal analógica por un medio digital."
+            },
+            {
+                question: "¿Cuál es la primera fase de la modulación por impulso codificado (PCM)?",
+                options: [
+                    "a) Cuantificación.",
+                    "b) Codificación.",
+                    "c) Muestreo.",
+                    "d) Filtrado."
+                ],
+                correctAnswer: "c) Muestreo."
+            },
+            {
+                question: "¿Por qué es un problema un \"tren de 0s o 1s\" en la codificación digital?",
+                options: [
+                    "a) Aumenta la atenuación.",
+                    "b) Se pierde el sincronismo entre emisor y receptor.",
+                    "c) Genera interferencias.",
+                    "d) Disminuye la velocidad de transmisión."
+                ],
+                correctAnswer: "b) Se pierde el sincronismo entre emisor y receptor."
+            },
+            {
+                question: "¿Qué fenómeno ocurre si no se muestrea a más del doble de la frecuencia máxima en señales cercanas, según Nyquist-Shannon?",
+                options: [
+                    "a) Ruido.",
+                    "b) Atenuación.",
+                    "c) Aliasing.",
+                    "d) Desfase."
+                ],
+                correctAnswer: "c) Aliasing."
+            },
+            {
+                question: "¿Qué es la \"longitud de onda\" de una señal?",
+                options: [
+                    "a) El número de oscilaciones por segundo.",
+                    "b) La distancia entre dos puntos equifásicos consecutivos de la misma.",
+                    "c) La pérdida de potencia.",
+                    "d) La superposición de señales."
+                ],
+                correctAnswer: "b) La distancia entre dos puntos equifásicos consecutivos de la misma."
+            },
+            {
+                question: "¿Qué es la diafonía o \"crosstalk\"?",
+                options: [
+                    "a) Una señal externa que se suma a la transmitida.",
+                    "b) La pérdida de potencia de la señal.",
+                    "c) Parte de una señal de un circuito que se acopla en otro próximo.",
+                    "d) El desfase de la señal."
+                ],
+                correctAnswer: "c) Parte de una señal de un circuito que se acopla en otro próximo."
+            },
+            {
+                question: "¿Qué tipo de diafonía es causada por la cercanía de otros cables de red, por ejemplo, en los racks de planta?",
+                options: [
+                    "a) NEXT (Near-end crosstalk).",
+                    "b) Power-Sum NEXT.",
+                    "c) Alien Crosstalk.",
+                    "d) FEXT (Far-end crosstalk)."
+                ],
+                correctAnswer: "c) Alien Crosstalk."
+            },
+            {
+                question: "¿Qué se suma a la señal transmitida corrompiéndola y, si su nivel es elevado, puede hacer ininteligible la comunicación?",
+                options: [
+                    "a) Atenuación.",
+                    "b) Diafonía.",
+                    "c) Ruido.",
+                    "d) Desfase."
+                ],
+                correctAnswer: "c) Ruido."
+            },
+            {
+                question: "¿Qué dispositivo amplifica la señal y el ruido?",
+                options: [
+                    "a) Repetidor.",
+                    "b) Amplificador.",
+                    "c) Múltiplexor.",
+                    "d) Demultiplexor."
+                ],
+                correctAnswer: "b) Amplificador."
+            },
+            {
+                question: "¿Cuál es el propósito de la \"codificación de línea o canal\"?",
+                options: [
+                    "a) Comprimir los datos.",
+                    "b) Garantizar que en la transmisión haya cambios para evitar la desincronización.",
+                    "c) Enviar los datos en paralelo.",
+                    "d) Reducir la atenuación."
+                ],
+                correctAnswer: "b) Garantizar que en la transmisión haya cambios para evitar la desincronización."
+            },
+            {
+                question: "¿Qué tipo de codificación utiliza un solo nivel de voltaje para representar datos (1=corriente; 0=ausencia de corriente) y no soluciona el problema de sincronismo?",
+                options: [
+                    "a) Codificación polar.",
+                    "b) Codificación unipolar.",
+                    "c) Codificación bipolar.",
+                    "d) Codificación multinivel."
+                ],
+                correctAnswer: "b) Codificación unipolar."
+            },
+            {
+                question: "En la codificación Polar NRZ, ¿cuántos niveles de tensión se utilizan para representar los valores binarios?",
+                options: [
+                    "a) Uno.",
+                    "b) Dos.",
+                    "c) Tres.",
+                    "d) Cero."
+                ],
+                correctAnswer: "b) Dos."
+            },
+            {
+                question: "¿Qué característica tiene la codificación Manchester en relación con el sincronismo?",
+                options: [
+                    "a) No tiene sincronización.",
+                    "b) Requiere un reloj externo.",
+                    "c) Es autosincronizable (Self-clocking).",
+                    "d) Pierde sincronismo con trenes de 0s."
+                ],
+                correctAnswer: "c) Es autosincronizable (Self-clocking)."
+            },
+            {
+                question: "¿Qué codificación utiliza 3 niveles de voltaje (positivo, negativo y cero), donde el voltaje cero representa el 0 binario y el bit 1 se representa alternando los voltajes positivo y negativo?",
+                options: [
+                    "a) Unipolar.",
+                    "b) Polar.",
+                    "c) Bipolar.",
+                    "d) Multinivel."
+                ],
+                correctAnswer: "c) Bipolar."
+            },
+            {
+                question: "¿Qué codificación por bloques se menciona que manda 5 bits por cada 4 bits de información y es autosincronizable?",
+                options: [
+                    "a) 8b/10b.",
+                    "b) 128b/130b.",
+                    "c) 4B5B.",
+                    "d) Manchester."
+                ],
+                correctAnswer: "c) 4B5B."
+            },
+            {
+                question: "En la transmisión en paralelo, ¿cuál es una de las principales dificultades?",
+                options: [
+                    "a) Menor ancho de banda.",
+                    "b) Facilidad de sincronización.",
+                    "c) Dificultad para sincronizar bits si no llegan a la vez.",
+                    "d) Menos problemas de ruidos."
+                ],
+                correctAnswer: "c) Dificultad para sincronizar bits si no llegan a la vez."
+            },
+            {
+                question: "¿En qué modo de transmisión serie no existe ningún mecanismo para reconocer el inicio y fin de los bits, y el receptor es el encargado de reconocer y separar los bits en bytes?",
+                options: [
+                    "a) Asíncrono.",
+                    "b) Síncrono.",
+                    "c) Simplex.",
+                    "d) Semi-dúplex."
+                ],
+                correctAnswer: "b) Síncrono."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un tipo de multiplexación mencionado?",
+                options: [
+                    "a) Por frecuencia.",
+                    "b) Por longitud de onda (WDM).",
+                    "c) Por amplitud.",
+                    "d) Por tiempo."
+                ],
+                correctAnswer: "c) Por amplitud."
+            },
+            {
+                question: "¿Qué elemento es necesario para la multiplexación para tomar la información del medio y distribuirla a sus destinos?",
+                options: [
+                    "a) Multiplexor (MUX).",
+                    "b) Demultiplexor (DEMUX).",
+                    "c) Amplificador.",
+                    "d) Repetidor."
+                ],
+                correctAnswer: "b) Demultiplexor (DEMUX)."
+            },
+            {
+                question: "¿Qué material o soporte compone el canal por el cual se envían datos?",
+                options: [
+                    "a) Multiplexor.",
+                    "b) Medio de transmisión.",
+                    "c) Conmutador.",
+                    "d) Enrutador."
+                ],
+                correctAnswer: "b) Medio de transmisión."
+            },
+            {
+                question: "En el cable de par trenzado, ¿cuántos pares de hilos se usan habitualmente para datos?",
+                options: [
+                    "a) 1 par.",
+                    "b) 2 pares.",
+                    "c) 4 pares.",
+                    "d) 8 pares."
+                ],
+                correctAnswer: "c) 4 pares."
+            },
+            {
+                question: "¿Qué tipo de cable de par trenzado tiene blindaje individual en cada par, mejorando la protección frente a la diafonía?",
+                options: [
+                    "a) UTP.",
+                    "b) FTP.",
+                    "c) STP.",
+                    "d) SFTP."
+                ],
+                correctAnswer: "c) STP."
+            },
+            {
+                question: "¿Qué categoría de cable FTP se menciona?",
+                options: [
+                    "a) Categoría 1.",
+                    "b) Categoría 2.",
+                    "c) Categoría 3.",
+                    "d) Categoría 6a."
+                ],
+                correctAnswer: "c) Categoría 3."
+            },
+            {
+                question: "¿Qué norma define las categorías de los cables de par trenzado?",
+                options: [
+                    "a) ISO/IEC 11801.",
+                    "b) IEEE 802.3.",
+                    "c) TIA/EIA 568.",
+                    "d) ITU-T."
+                ],
+                correctAnswer: "c) TIA/EIA 568."
+            },
+            {
+                question: "Según la tabla de categorías, ¿qué categoría de cable de par trenzado puede alcanzar velocidades de 10 Gbps a 100 m?",
+                options: [
+                    "a) Categoría 5e.",
+                    "b) Categoría 6.",
+                    "c) Categoría 6a.",
+                    "d) Categoría 7."
+                ],
+                correctAnswer: "c) Categoría 6a."
+            },
+            {
+                question: "¿Cuál es una característica de la fibra monomodo en comparación con la multimodo?",
+                options: [
+                    "a) Mayor facilidad de conexionado.",
+                    "b) Necesita un diodo LED.",
+                    "c) Mayor velocidad y anchos de banda.",
+                    "d) Menor coste de equipamiento."
+                ],
+                correctAnswer: "c) Mayor velocidad y anchos de banda."
+            },
+            {
+                question: "¿Qué componente rodea el núcleo de fibra de vidrio en un cable de fibra óptica y tiene un menor índice de refracción?",
+                options: [
+                    "a) Cubierta opaca.",
+                    "b) Revestimiento.",
+                    "c) Fuente de luz.",
+                    "d) Conector."
+                ],
+                correctAnswer: "b) Revestimiento."
+            },
+            {
+                question: "¿Qué se produce si el rayo de luz choca con la interfaz que separa el núcleo del revestimiento en la fibra óptica?",
+                options: [
+                    "a) Absorción.",
+                    "b) Dispersión.",
+                    "c) Reflexión.",
+                    "d) Atenuación."
+                ],
+                correctAnswer: "c) Reflexión."
+            },
+            {
+                question: "¿Cuál es una ventaja de la fibra óptica frente a los cables de cobre?",
+                options: [
+                    "a) Menor ancho de banda.",
+                    "b) Mayor atenuación.",
+                    "c) Inmunidad a interferencias electromagnéticas.",
+                    "d) Menor seguridad."
+                ],
+                correctAnswer: "c) Inmunidad a interferencias electromagnéticas."
+            },
+            {
+                question: "¿Qué tipo de fibra multimodo es más antigua, con un \"salto de índice o escalonada\"?",
+                options: [
+                    "a) De índice gradual.",
+                    "b) De índice escalonado.",
+                    "c) OM3.",
+                    "d) OM4."
+                ],
+                correctAnswer: "b) De índice escalonado."
+            },
+            {
+                question: "Según la tabla, ¿qué distancia máxima y velocidad puede alcanzar la fibra multimodo OM4?",
+                options: [
+                    "a) 300 m a 1 Gbps.",
+                    "b) 500 m a 1 Gbps.",
+                    "c) 550 m a 10 Gbps.",
+                    "d) 1 km a 100 Mbps."
+                ],
+                correctAnswer: "c) 550 m a 10 Gbps."
+            },
+            {
+                question: "¿Qué ventana de atenuación de la fibra óptica se estandariza con el nombre de banda O (Original) y se emplea en redes de área extensa?",
+                options: [
+                    "a) 1ª ventana (850 nm).",
+                    "b) 2ª ventana (1310 nm).",
+                    "c) 3ª ventana (1550 nm).",
+                    "d) Banda U (1600 nm)."
+                ],
+                correctAnswer: "b) 2ª ventana (1310 nm)."
+            },
+            {
+                question: "¿Qué causa el \"pico de agua\" en la atenuación de la fibra óptica?",
+                options: [
+                    "a) Dispersión intrínseca.",
+                    "b) Absorción de agua de la fibra.",
+                    "c) Dispersión cromática.",
+                    "d) Microcurvaturas."
+                ],
+                correctAnswer: "b) Absorción de agua de la fibra."
+            },
+            {
+                question: "¿Qué conector de fibra óptica se hizo popular en la década de 2000 y se utiliza con SFP?",
+                options: [
+                    "a) ST/BFOC.",
+                    "b) FC.",
+                    "c) SC.",
+                    "d) LC."
+                ],
+                correctAnswer: "d) LC."
+            },
+            {
+                question: "¿Qué es un transceptor en el contexto de la fibra óptica?",
+                options: [
+                    "a) Un tipo de cable.",
+                    "b) Un adaptador de medios para dar conectividad de fibra a un switch.",
+                    "c) Un tipo de conector.",
+                    "d) Un dispositivo para medir la atenuación."
+                ],
+                correctAnswer: "b) Un adaptador de medios para dar conectividad de fibra a un switch."
+            },
+            {
+                question: "¿Qué significa FTTH en el contexto de la \"Last Mile\" de fibra óptica?",
+                options: [
+                    "a) Fiber-To-The-House.",
+                    "b) Fiber-To-The-Home.",
+                    "c) Fiber-To-The-Hotel.",
+                    "d) Fiber-To-The-Hospital."
+                ],
+                correctAnswer: "b) Fiber-To-The-Home."
+            },
+            {
+                question: "¿Qué tipo de red de fibra óptica se utiliza en FTTH y no tiene elementos activos como routers hasta casa del usuario?",
+                options: [
+                    "a) Redes activas.",
+                    "b) Redes pasivas (PON).",
+                    "c) Redes híbridas.",
+                    "d) Redes metropolitanas."
+                ],
+                correctAnswer: "b) Redes pasivas (PON)."
+            },
+            {
+                question: "En GPON, ¿qué dispositivo se conecta al OLT y representa el terminal de fibra en casa del usuario?",
+                options: [
+                    "a) Splitter.",
+                    "b) ONT.",
+                    "c) HBA.",
+                    "d) NIC."
+                ],
+                correctAnswer: "b) ONT."
+            },
+            {
+                question: "¿Para qué se utiliza WDM (Wavelength Division Multiplexing) en GPON?",
+                options: [
+                    "a) Para multiplexar por tiempo.",
+                    "b) Para multiplexar por frecuencia.",
+                    "c) Para mezclar varios canales de varios usuarios utilizando diferentes longitudes de onda.",
+                    "d) Para dividir una señal en múltiples hilos."
+                ],
+                correctAnswer: "c) Para mezclar varios canales de varios usuarios utilizando diferentes longitudes de onda."
+            },
+            {
+                question: "¿Qué tipo de tarjeta de red se utiliza para interconectar Ethernet y Fibre Channel?",
+                options: [
+                    "a) NIC.",
+                    "b) HBA.",
+                    "c) CNA.",
+                    "d) LAN."
+                ],
+                correctAnswer: "c) CNA."
+            },
+            {
+                question: "En las redes de conmutación de circuitos, ¿qué significa la reserva de recursos?",
+                options: [
+                    "a) Que el ancho de banda no es exclusivo.",
+                    "b) Que los recursos se asignan exclusivamente a una comunicación durante su duración.",
+                    "c) Que los recursos se liberan cada vez que no hay datos.",
+                    "d) Que se utilizan recursos virtuales."
+                ],
+                correctAnswer: "b) Que los recursos se asignan exclusivamente a una comunicación durante su duración."
+            },
+            {
+                question: "¿Cuál es el propósito de los \"Circuitos Virtuales\" en las redes de conmutación de paquetes?",
+                options: [
+                    "a) Establecer una ruta dinámica para cada paquete.",
+                    "b) Orientar la conexión y establecer una ruta antes de la transmisión.",
+                    "c) Eliminar la necesidad de encaminamiento.",
+                    "d) Garantizar que los paquetes lleguen desordenados."
+                ],
+                correctAnswer: "b) Orientar la conexión y establecer una ruta antes de la transmisión."
+            },
+            {
+                question: "¿Cuál es el número de octetos que corresponden a la cabecera de una celda ATM?",
+                options: [
+                    "a) 48.",
+                    "b) 5.",
+                    "c) 53.",
+                    "d) 0."
+                ],
+                correctAnswer: "b) 5."
+            },
+            {
+                question: "¿Qué categoría de cable de par trenzado UTP se considera la de peor aislamiento frente a interferencias?",
+                options: [
+                    "a) Categoría 7.",
+                    "b) Categoría 6a.",
+                    "c) Categoría 2.",
+                    "d) Categoría 1."
+                ],
+                correctAnswer: "d) Categoría 1."
+            },
+            {
+                question: "¿Qué tipo de fibra óptica necesita un LED?",
+                options: [
+                    "a) Monomodo.",
+                    "b) Multimodo.",
+                    "c) Ambas.",
+                    "d) Ninguna de las anteriores."
+                ],
+                correctAnswer: "b) Multimodo."
+            },
+            {
+                question: "¿Cuál es la velocidad de la fibra monomodo según la clasificación ISO OS1?",
+                options: [
+                    "a) 100 Mbps.",
+                    "b) 1 Gbps a 10 Gbps.",
+                    "c) 40 Gbps.",
+                    "d) 100 Gbps."
+                ],
+                correctAnswer: "b) 1 Gbps a 10 Gbps."
+            },
+            {
+                question: "¿Qué protocolo es \"la madre de casi todos los protocolos de nivel enlace\"?",
+                options: [
+                    "a) PPP.",
+                    "b) Ethernet.",
+                    "c) HDLC.",
+                    "d) LAPF."
+                ],
+                correctAnswer: "c) HDLC."
+            },
+            {
+                question: "En MPLS, ¿qué es el LER (Label Edge Router)?",
+                options: [
+                    "a) Un router intermedio que reenvía etiquetas.",
+                    "b) El router que etiqueta el tráfico saliente de la red MPLS.",
+                    "c) El primer router que atiende al cliente y etiqueta el tráfico entrante.",
+                    "d) El router central que gestiona todas las etiquetas."
+                ],
+                correctAnswer: "c) El primer router que atiende al cliente y etiqueta el tráfico entrante."
+            },
+            {
+                question: "¿Qué característica tienen las señales digitales en cuanto a sus valores?",
+                options: [
+                    "a) Pueden cambiar continuamente y tomar cualquier valor.",
+                    "b) Se componen de un conjunto determinado de valores discretos.",
+                    "c) Solo pueden tomar valores positivos.",
+                    "d) Tienen una amplitud constante."
+                ],
+                correctAnswer: "b) Se componen de un conjunto determinado de valores discretos."
+            },
+            {
+                question: "¿Qué es la \"atenuación\" en una señal transmitida?",
+                options: [
+                    "a) Aumento de potencia de la señal.",
+                    "b) Cambio de fase de la señal.",
+                    "c) Pérdida de potencia de la señal.",
+                    "d) Aumento del ruido."
+                ],
+                correctAnswer: "c) Pérdida de potencia de la señal."
+            },
+            {
+                question: "¿Qué dispositivo interpreta la señal y la regenera, limpiándola de ruido?",
+                options: [
+                    "a) Amplificador.",
+                    "b) Atenuador.",
+                    "c) Repetidor.",
+                    "d) Modulador."
+                ],
+                correctAnswer: "c) Repetidor."
+            },
+            {
+                question: "En la codificación polar, ¿qué significa \"NRZ-L\"?",
+                options: [
+                    "a) Polar con retorno a cero.",
+                    "b) Polar sin retorno a cero - Nivel.",
+                    "c) Polar con múltiples niveles.",
+                    "d) Polar con línea de base."
+                ],
+                correctAnswer: "b) Polar sin retorno a cero - Nivel."
+            },
+            {
+                question: "¿Qué tipo de codificación se usó en la primera versión de Ethernet y se caracteriza por una transición en mitad del intervalo del bit?",
+                options: [
+                    "a) Manchester diferencial.",
+                    "b) NRZ-L.",
+                    "c) Manchester.",
+                    "d) Bipolar AMI."
+                ],
+                correctAnswer: "c) Manchester."
+            },
+            {
+                question: "¿Cuál es una ventaja de la transmisión serie sobre la paralela?",
+                options: [
+                    "a) Mayor ancho de banda teórico.",
+                    "b) Menor problema de ruidos e interferencias.",
+                    "c) Facilidad para sincronizar bits.",
+                    "d) Bits organizados en grupos de longitud fija."
+                ],
+                correctAnswer: "b) Menor problema de ruidos e interferencias."
+            },
+            {
+                question: "¿Cuál es el sentido de transmisión donde la información discurre en los dos sentidos pero no a la vez?",
+                options: [
+                    "a) Simplex.",
+                    "b) Dúplex.",
+                    "c) Semi-dúplex.",
+                    "d) Multiplex."
+                ],
+                correctAnswer: "c) Semi-dúplex."
+            },
+            {
+                question: "¿Qué es un \"medio de transmisión\"?",
+                options: [
+                    "a) El software que gestiona la red.",
+                    "b) El material o soporte que compone el canal por el cual enviamos datos.",
+                    "c) Un protocolo de comunicación.",
+                    "d) Un dispositivo para medir el tráfico de red."
+                ],
+                correctAnswer: "b) El material o soporte que compone el canal por el cual enviamos datos."
+            },
+            {
+                question: "En cuanto a los cables de par trenzado, ¿qué tipo tiene apantallamiento exterior de aluminio y plástico para el conjunto de cables?",
+                options: [
+                    "a) UTP.",
+                    "b) STP.",
+                    "c) FTP.",
+                    "d) SSTP."
+                ],
+                correctAnswer: "c) FTP."
+            },
+            {
+                question: "¿Qué se define por la norma ISO/IEC 11801 y establece una serie de prestaciones para el conjunto de los elementos que intervienen en una conexión?",
+                options: [
+                    "a) Categoría.",
+                    "b) Clase.",
+                    "c) Tipo de apantallamiento.",
+                    "d) Longitud máxima."
+                ],
+                correctAnswer: "b) Clase."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Para almacenar las respuestas del usuario
+        let quizCompleted = false; // Bandera para saber si el test ha finalizado
+
+        const quizContainer = document.getElementById('quiz-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const resultsContainer = document.getElementById('results-container');
+
+        // Función para cargar el estado del test desde localStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedCompleted = localStorage.getItem('quizCompleted');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Inicializar userAnswers si no hay nada guardado
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            if (savedCompleted === 'true') {
+                quizCompleted = true;
+            }
+        }
+
+        // Función para guardar el estado del test en localStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizCompleted', quizCompleted);
+        }
+
+        // Función para mostrar una pregunta
+        function displayQuestion() {
+            // Ocultar los resultados si se está mostrando una pregunta
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+
+            const questionData = questions[currentQuestionIndex];
+            const questionHtml = `
+                <div class="question-card">
+                    <p class="question-text">Pregunta ${currentQuestionIndex + 1} de ${questions.length}: ${questionData.question}</p>
+                    <div class="options-group">
+                        ${questionData.options.map((option, index) => `
+                            <label class="option-label" data-option="${option}">
+                                <input type="radio" name="question-${currentQuestionIndex}" value="${option}" ${userAnswers[currentQuestionIndex] === option ? 'checked' : ''} ${quizCompleted ? 'disabled' : ''}>
+                                ${option}
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+            quizContainer.innerHTML = questionHtml;
+
+            // Añadir event listeners a las opciones
+            document.querySelectorAll(`.options-group input[name="question-${currentQuestionIndex}"]`).forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    if (!quizCompleted) { // Solo permitir selección si el test no ha finalizado
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        checkAnswer(currentQuestionIndex, event.target.value);
+                        saveQuizState(); // Guardar el estado cada vez que se selecciona una respuesta
+                    }
+                });
+            });
+
+            // Si el test está completado, mostrar el feedback para la pregunta actual
+            if (quizCompleted && userAnswers[currentQuestionIndex] !== null) {
+                checkAnswer(currentQuestionIndex, userAnswers[currentQuestionIndex]);
+            } else if (quizCompleted && userAnswers[currentQuestionIndex] === null) {
+                // Si la pregunta no fue contestada y el test está completo, deshabilitar opciones
+                document.querySelectorAll(`.options-group input[name="question-${currentQuestionIndex}"]`).forEach(radio => {
+                    radio.disabled = true;
+                });
+                const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+                feedbackDiv.textContent = "No contestada.";
+                feedbackDiv.classList.add('incorrect-text'); // Usar color de incorrecta para no contestadas
+            }
+
+
+            updateNavigationButtons();
+            highlightSelectedAnswer();
+        }
+
+        // Función para resaltar la respuesta seleccionada y mostrar feedback
+        function highlightSelectedAnswer() {
+            const selectedAnswer = userAnswers[currentQuestionIndex];
+            const questionData = questions[currentQuestionIndex];
+            const options = document.querySelectorAll(`#quiz-container .option-label`);
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+
+            options.forEach(optionLabel => {
+                const radio = optionLabel.querySelector('input[type="radio"]');
+                optionLabel.classList.remove('correct', 'incorrect');
+                radio.disabled = quizCompleted; // Deshabilitar si el test está completo
+
+                if (quizCompleted) {
+                    // Si el test está completado, mostrar todas las respuestas correctas e incorrectas
+                    if (optionLabel.dataset.option === questionData.correctAnswer) {
+                        optionLabel.classList.add('correct');
+                    } else if (optionLabel.dataset.option === selectedAnswer && selectedAnswer !== questionData.correctAnswer) {
+                        optionLabel.classList.add('incorrect');
+                    }
+                } else {
+                    // Durante el test, solo resaltar la seleccionada
+                    if (optionLabel.dataset.option === selectedAnswer) {
+                        // No añadir clases de correcto/incorrecto aquí para evitar dar la respuesta
+                    }
+                }
+            });
+
+            // Mostrar feedback de la respuesta si ya se contestó o si el test está completo
+            if (selectedAnswer !== null) {
+                checkAnswer(currentQuestionIndex, selectedAnswer);
+            } else if (quizCompleted) {
+                 // Si el test está completo y la pregunta no fue contestada
+                feedbackDiv.textContent = "No contestada.";
+                feedbackDiv.classList.add('incorrect-text');
+            }
+        }
+
+
+        // Función para verificar la respuesta y dar feedback
+        function checkAnswer(qIndex, selectedOption) {
+            const questionData = questions[qIndex];
+            const feedbackDiv = document.getElementById(`feedback-${qIndex}`);
+            const options = document.querySelectorAll(`#quiz-container .option-label`);
+
+            // Limpiar clases anteriores
+            options.forEach(label => {
+                label.classList.remove('correct', 'incorrect');
+            });
+
+            // Deshabilitar todas las opciones para la pregunta actual si se ha seleccionado una respuesta
+            document.querySelectorAll(`input[name="question-${qIndex}"]`).forEach(radio => {
+                radio.disabled = true;
+            });
+
+            if (selectedOption === questionData.correctAnswer) {
+                feedbackDiv.textContent = "¡Correcto!";
+                feedbackDiv.classList.remove('incorrect-text');
+                feedbackDiv.classList.add('correct-text');
+                // Resaltar la opción correcta
+                document.querySelector(`label[data-option="${selectedOption}"]`).classList.add('correct');
+            } else {
+                feedbackDiv.textContent = "Incorrecto. La respuesta correcta es: " + questionData.correctAnswer;
+                feedbackDiv.classList.remove('correct-text');
+                feedbackDiv.classList.add('incorrect-text');
+                // Resaltar la opción incorrecta seleccionada por el usuario
+                document.querySelector(`label[data-option="${selectedOption}"]`).classList.add('incorrect');
+                // Resaltar la opción correcta
+                document.querySelector(`label[data-option="${questionData.correctAnswer}"]`).classList.add('correct');
+            }
+        }
+
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questions.length - 1 && !quizCompleted;
+
+            if (currentQuestionIndex === questions.length - 1 && !quizCompleted) {
+                nextBtn.textContent = "Finalizar Test";
+            } else if (quizCompleted) {
+                nextBtn.textContent = "Siguiente";
+                nextBtn.disabled = currentQuestionIndex === questions.length - 1; // Deshabilitar si es la última y ya se completó
+            }
+            else {
+                nextBtn.textContent = "Siguiente";
+            }
+        }
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            quizCompleted = true;
+            saveQuizState(); // Guardar el estado de completado
+
+            quizContainer.classList.add('hidden');
+            prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach((answer, index) => {
+                if (answer === null) {
+                    unansweredCount++;
+                } else if (answer === questions[index].correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('correct-count').textContent = correctCount;
+            document.getElementById('incorrect-count').textContent = incorrectCount;
+            document.getElementById('unanswered-count').textContent = unansweredCount;
+        }
+
+        // Event Listeners para los botones de navegación
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+                saveQuizState();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+                saveQuizState();
+            } else if (currentQuestionIndex === questions.length - 1) {
+                // Si es la última pregunta y se presiona "Finalizar Test"
+                showResults();
+            }
+        });
+
+        // Event Listener para el botón de reiniciar test
+        restartBtn.addEventListener('click', () => {
+            if (confirm("¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.")) {
+                localStorage.removeItem('currentQuestionIndex');
+                localStorage.removeItem('userAnswers');
+                localStorage.removeItem('quizCompleted');
+                currentQuestionIndex = 0;
+                userAnswers = new Array(questions.length).fill(null);
+                quizCompleted = false;
+                displayQuestion();
+            }
+        });
+
+        // Inicializar el test al cargar la página
+        window.onload = () => {
+            loadQuizState();
+            if (quizCompleted) {
+                showResults(); // Si el test ya estaba completado, mostrar los resultados
+            } else {
+                displayQuestion(); // Si no, mostrar la pregunta actual
+            }
+        };
+    </script>
+</body>
+</html>

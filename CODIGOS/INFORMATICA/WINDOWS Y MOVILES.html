@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo de Windows y Móviles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .question-container {
+            margin-bottom: 25px;
+            min-height: 120px; /* Ensure consistent height for questions */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .option-button {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            border: 2px solid transparent;
+        }
+        .option-button:hover {
+            background-color: #c7d2fe;
+            border-color: #4338ca;
+        }
+        .option-button.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-color: #065f46;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #991b1b;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            background-color: #4338ca;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+        .nav-button:hover {
+            background-color: #3730a3;
+        }
+        .nav-button:disabled {
+            background-color: #a78bfa;
+            cursor: not-allowed;
+        }
+        .result-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-height: 30px; /* Ensure consistent height for messages */
+        }
+        .result-message.correct-text {
+            color: #065f46;
+        }
+        .result-message.incorrect-text {
+            color: #991b1b;
+        }
+        .score-display {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        .restart-button {
+            background-color: #10b981;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+            margin-top: 20px;
+        }
+        .restart-button:hover {
+            background-color: #059669;
+        }
+        @media (min-width: 640px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="question-container" id="question-container">
+            <div class="question-text" id="question-text"></div>
+            <div class="options-grid" id="options-grid"></div>
+        </div>
+        <div class="result-message" id="result-message"></div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+        <div class="score-display" id="score-display">Puntuación: 0 / 0</div>
+        <button id="restart-button" class="restart-button hidden">Reiniciar Test</button>
+    </div>
+
+    <script>
+        // Array of questions and their correct answers
+        const questions = [
+            { question: "¿Qué interfaz gráfica se introdujo con Windows XP?", options: ["a) Aero", "b) ModernUI", "c) Luna", "d) Fluent Design"], answer: "c) Luna" },
+            { question: "¿Cuál de las siguientes versiones de Windows Server es la más reciente mencionada en el documento?", options: ["a) Windows Server 2012", "b) Windows Server 2016", "c) Windows Server 2019", "d) Windows Server 2022"], answer: "d) Windows Server 2022" },
+            { question: "¿Qué rol de Windows Server permite la gestión de máquinas virtuales?", options: ["a) Active Directory", "b) File Services", "c) Hyper-V", "d) Web Server"], answer: "c) Hyper-V" },
+            { question: "¿Cuál de los siguientes no es un tipo de grupo en Active Directory?", options: ["a) Locales", "b) Globales", "c) Internos", "d) Universales"], answer: "c) Internos" },
+            { question: "¿Qué tecnología utiliza Active Directory para la gestión de dominios?", options: ["a) LDAP", "b) Kerberos", "c) DNS", "d) Todas las anteriores"], answer: "d) Todas las anteriores" },
+            { question: "¿Cuál es la herramienta de cifrado de volúmenes en Windows que utiliza AES y puede operar en modo transparente con TPM?", options: ["a) EFS", "b) AppLocker", "c) BitLocker", "d) UAC"], answer: "c) BitLocker" },
+            { question: "¿Qué comando se utiliza para editar las directivas de grupo locales en Windows?", options: ["a) gpupdate /force", "b) gpresult /r", "c) regedit.exe", "d) gpedit.msc"], answer: "d) gpedit.msc" },
+            { question: "¿Qué gestor de paquetes de Windows es de Microsoft y se utiliza con el comando winget?", options: ["a) Chocolatey", "b) Scoop", "c) WinGet", "d) NPM"], answer: "c) WinGet" },
+            { question: "¿Cuál es el nombre del cargador de arranque actual en Windows, que reemplazó a NTLDR?", options: ["a) boot.ini", "b) BCD", "c) bootmgr", "d) winload.exe"], answer: "c) bootmgr" },
+            { question: "¿En qué clave del registro de Windows se encuentra la configuración del equipo local?", options: ["a) HKCU", "b) HKCR", "c) HKLM", "d) HKCC"], answer: "c) HKLM" },
+            { question: "¿Cuál de los siguientes sistemas de ficheros en Windows ofrece seguridad, cuota y compresión?", options: ["a) FAT32", "b) exFAT", "c) ReFS", "d) NTFS"], answer: "d) NTFS" },
+            { question: "¿Cuál es el entorno de ejecución (Runtime) principal de Android actualmente, que reemplazó a Dalvik?", options: ["a) ART", "b) ART", "c) JVM", "d) ART"], answer: "a) ART" },
+            { question: "¿Qué herramienta de consola se utiliza en Android para enviar comandos al smartphone cuando está en modo depuración USB?", options: ["a) Android Studio", "b) Android SDK", "c) ADB", "d) Jetpack Compose"], answer: "c) ADB" },
+            { question: "¿Qué lenguaje de programación es el principal para el desarrollo de aplicaciones nativas en iOS?", options: ["a) Java", "b) Kotlin", "c) Swift", "d) C#"], answer: "c) Swift" },
+            { question: "¿Cuál es el sistema de ficheros utilizado por macOS que reemplaza a HFS+?", options: ["a) APFS", "b) NTFS", "c) ext4", "d) ZFS"], answer: "a) APFS" },
+            { question: "¿Qué componente de la arquitectura del Kernel de Windows incluye el HAL?", options: ["a) Win32", "b) Modo Usuario", "c) µKernel", "d) API Nativa de Windows"], answer: "c) µKernel" },
+            { question: "¿Qué servicio de Windows Server se encarga de los servicios de ficheros compartidos SMB/CIFS?", options: ["a) Web Server", "b) DHCP Server", "c) File Services", "d) DNS Server"], answer: "c) File Services" },
+            { question: "¿Qué significa SAM en el contexto de Active Directory?", options: ["a) Security Access Management", "b) Security Account Manager", "c) System Administration Module", "d) Service Account Management"], answer: "b) Security Account Manager" },
+            { question: "¿Cuál de las siguientes no es una medida de seguridad asociada a AppLocker?", options: ["a) Configuración de Seguridad", "b) Gestión de la Configuración", "c) Protección frente a código dañino", "d) Uso de PIN"], answer: "d) Uso de PIN" },
+            { question: "¿Qué significa UAC en Windows?", options: ["a) User Access Control", "b) Unified Account Configuration", "c) User Account Control", "d) Universal Application Compatibility"], answer: "c) User Account Control" },
+            { question: "¿Qué tipo de archivo es un empaquetado de aplicaciones Android que incluye el código compilado para cada plataforma y todos los recursos necesarios?", options: ["a) .APK", "b) .DEX", "c) .AAB", "d) .JAR"], answer: "c) .AAB" },
+            { question: "¿Cuál es el kernel utilizado por macOS?", options: ["a) Linux Kernel", "b) NT Kernel", "c) XNU", "d) FreeBSD Kernel"], answer: "c) XNU" },
+            { question: "¿Qué herramienta de macOS se utiliza para realizar copias de seguridad?", options: ["a) FileVault", "b) TimeMachine", "c) Bootcamp", "d) Llaveros"], answer: "b) TimeMachine" },
+            { question: "¿Qué tecnología permite que un teléfono actúe como un punto de acceso (Access Point) para compartir su conexión a internet?", options: ["a) Videollamadas", "b) SQLite", "c) Tethering", "d) Webkit"], answer: "c) Tethering" },
+            { question: "¿Qué interfaz de usuario de Windows Server está orientada a la nube y contenedores, sin pantalla?", options: ["a) Server Core", "b) Nano Server", "c) Ambas a y b", "d) Ninguna de las anteriores"], answer: "c) Ambas a y b" },
+            { question: "¿Cuál es el orden de precedencia de las GPO, de menor a mayor?", options: ["a) OU, Dominio, Site, Local", "b) Local, Site, Dominio, OU", "c) Site, Local, Dominio, OU", "d) Dominio, Site, OU, Local"], answer: "b) Local, Site, Dominio, OU" },
+            { question: "¿Qué tipo de objeto en Active Directory indica el tipo de objeto, como dispositivo, persona u OU?", options: ["a) Atributo", "b) Security Principal", "c) ObjectClass", "d) Recursos"], answer: "c) ObjectClass" },
+            { question: "¿Qué protocolo utiliza Kerberos en Active Directory?", options: ["a) LDAP", "b) Token", "c) DNS", "d) Todas las anteriores"], answer: "b) Token" },
+            { question: "¿Qué versión de Windows introdujo la interfaz gráfica Aero?", options: ["a) Windows XP", "b) Windows 7", "c) Windows Vista", "d) Ambas b y c"], answer: "d) Ambas b y c" },
+            { question: "¿Qué función tiene el comando gpupdate /force en Windows?", options: ["a) Consultar el resultado del procesamiento de GPO", "b) Forzar la actualización y aplicación de directivas", "c) Editar las directivas de grupo locales", "d) Deshabilitar las directivas de grupo"], answer: "b) Forzar la actualización y aplicación de directivas" },
+            { question: "¿Qué rol de Windows Server se encarga de la gestión de identidades y acceso?", options: ["a) Hyper-V", "b) File Services", "c) Active Directory", "d) Web Server"], answer: "c) Active Directory" },
+            { question: "¿Qué significa BYOD en el contexto de la gestión de dispositivos móviles?", options: ["a) Bring Your Own Device", "b) Build Your Own Device", "c) Business Year Operations Data", "d) Basic Yet Optimized Deployment"], answer: "a) Bring Your Own Device" },
+            { question: "¿Cuál de las siguientes no es una herramienta de desarrollo multiplataforma mencionada?", options: ["a) Xamarin", "b) Flutter", "c) React Native", "d) Android Studio"], answer: "d) Android Studio" },
+            { question: "¿Qué tipo de aplicaciones se programan en HTML, CSS y JS y se empaquetan junto con el componente Webview y el plugin Native Bridge?", options: ["a) Aplicaciones nativas", "b) Aplicaciones híbridas", "c) Progressive Web Apps", "d) Aplicaciones web"], answer: "b) Aplicaciones híbridas" },
+            { question: "¿Qué lenguaje de programación utiliza Flutter?", options: ["a) JavaScript", "b) TypeScript", "c) Dart", "d) C#"], answer: "c) Dart" },
+            { question: "¿Qué componente de Windows permite la virtualización y la ejecución de sistemas Linux?", options: ["a) Microsoft Edge", "b) Cortana", "c) Windows Subsystem for Linux (WSL)", "d) Windows Defender"], answer: "c) Windows Subsystem for Linux (WSL)" },
+            { question: "¿Cuál es el propósito de las Unidades Organizativas (OU) en Active Directory?", options: ["a) Unir distintos árboles de dominio", "b) Guardar usuarios, grupos y máquinas", "c) Organizar objetos jerárquicamente y aplicar políticas de grupo", "d) Gestionar las relaciones de confianza entre dominios"], answer: "c) Organizar objetos jerárquicamente y aplicar políticas de grupo" },
+            { question: "¿Qué herramienta de macOS permite el arranque dual con Windows?", options: ["a) TimeMachine", "b) FileVault", "c) Bootcamp", "d) Finder"], answer: "c) Bootcamp" },
+            { question: "¿Qué sistema de ficheros de Windows está diseñado para memoria flash y no soporta permisos?", options: ["a) FAT", "b) NTFS", "c) exFAT", "d) ReFS"], answer: "c) exFAT" },
+            { question: "¿Cuál es el propósito del comando syskey en Windows?", options: ["a) Editar el registro", "b) Mejorar la seguridad de la SAM (encriptación)", "c) Crear un nuevo usuario", "d) Cambiar la contraseña"], answer: "b) Mejorar la seguridad de la SAM (encriptación)" },
+            { question: "¿Qué servicio de Windows se utiliza para gestionar los servicios, arrancarlos, pararlos, etc.?", options: ["a) svchost.exe", "b) installutil", "c) services.msc", "d) sc.exe"], answer: "c) services.msc" },
+            { question: "¿Qué significa WMI en Windows?", options: ["a) Windows Management Interface", "b) Windows Mobile Instrumentation", "c) Windows Management Instrumentation", "d) Web Management Information"], answer: "c) Windows Management Instrumentation" },
+            { question: "¿Cuál es la herramienta de edición del registro de Windows?", options: ["a) gpedit.msc", "b) services.msc", "c) regedit.exe", "d) wmic"], answer: "c) regedit.exe" },
+            { question: "¿Qué clave del registro de Windows almacena información sobre las aplicaciones instaladas/registradas?", options: ["a) HKLM", "b) HKCU", "c) HKCR", "d) HKCC"], answer: "c) HKCR" },
+            { question: "¿Qué formato de archivo de instalación es común en macOS?", options: ["a) .exe", "b) .msi", "c) .dmg", "d) .apk"], answer: "c) .dmg" },
+            { question: "¿Cuál de las siguientes versiones de Android es la más reciente mencionada en el documento?", options: ["a) Android 13 (Tiramisu)", "b) Android 14 (Upside Down Cake)", "c) Android 15 (Vanilla Ice Cream)", "d) Android 12 (Snow Cone)"], answer: "c) Android 15 (Vanilla Ice Cream)" },
+            { question: "¿Qué es un Cmdlet en PowerShell?", options: ["a) Un módulo para ampliar funcionalidades", "b) Un elemento de administración", "c) Un script de Vbscript", "d) Un formato de nombre"], answer: "b) Un elemento de administración" },
+            { question: "¿Qué tecnología se utiliza para cifrar parte de un volumen en Windows, a diferencia de BitLocker que cifra todo el volumen?", options: ["a) AppLocker", "b) EFS", "c) TPM", "d) UAC"], answer: "b) EFS" },
+            { question: "¿Qué gestor de contraseñas y certificados se utiliza en macOS?", options: ["a) Finder", "b) Llaveros", "c) TimeMachine", "d) FileVault"], answer: "b) Llaveros" },
+            { question: "¿Qué significa EMM en el contexto de la gestión de dispositivos móviles?", options: ["a) Employee Mobile Management", "b) Enterprise Mobility Management", "c) Endpoint Mobile Monitoring", "d) Enhanced Mobile Management"], answer: "b) Enterprise Mobility Management" },
+            { question: "¿Cuál es el propósito de la opción /generalize en Microsoft Sysprep?", options: ["a) Instalar drivers adecuados", "b) Limpiar drivers y otros datos de la instalación, dejando el sistema preparado para iniciar por primera vez y detectar hardware diferente.", "c) Clonar el sistema operativo", "d) Crear una imagen de recuperación"], answer: "b) Limpiar drivers y otros datos de la instalación, dejando el sistema preparado para iniciar por primera vez y detectar hardware diferente." },
+            { question: "¿Qué componente de Android se encarga de definir los permisos de la aplicación?", options: ["a) classes.dex", "b) AndroidManifest.xml", "c) Lib", "d) Manifest.mf"], answer: "b) AndroidManifest.xml" },
+            { question: "¿Qué versión de macOS es \"Big Sur\"?", options: ["a) Versión 10", "b) Versión 11", "c) Versión 12", "d) Versión 13"], answer: "b) Versión 11" },
+            { question: "¿Qué tipo de gestión de dispositivos móviles implica que la empresa es dueña del dispositivo y solo se permite el uso corporativo?", options: ["a) BYOD", "b) CYOD", "c) COPE", "d) COBO"], answer: "d) COBO" },
+            { question: "¿Qué guía del CCN está dedicada a la seguridad de las comunicaciones móviles?", options: ["a) CCN-STIC-457", "b) CCN-STIC-45X", "c) CCN-STIC-496", "d) CCN-STIC-450"], answer: "c) CCN-STIC-496" },
+            { question: "¿Cuál es el propósito del rol Web Server en Windows Server?", options: ["a) Servidor DHCP", "b) Servidor DNS", "c) Servidor FTP y servidor de aplicaciones ASP.NET", "d) Controlador de dominio"], answer: "c) Servidor FTP y servidor de aplicaciones ASP.NET" },
+            { question: "¿Qué arquitectura de Windows se caracteriza por tener un µKernel con muy pocas cosas y el resto son módulos y servicios ejecutivos?", options: ["a) Arquitectura 95", "b) Arquitectura ME", "c) Arquitectura NT", "d) Arquitectura XP"], answer: "c) Arquitectura NT" },
+            { question: "¿Cuál es la API nativa de Windows sobre la que se construye Win32?", options: ["a) API Win32", "b) API Linux", "c) API Nativa de Windows", "d) API .NET"], answer: "c) API Nativa de Windows" },
+            { question: "¿Cuál de los siguientes no es un gestor de paquetes de Windows?", options: ["a) WinGet", "b) Chocolatey", "c) Scoop", "d) APT"], answer: "d) APT" },
+            { question: "¿Qué herramienta de macOS es el explorador de ficheros?", options: ["a) Llaveros", "b) Finder", "c) Bootcamp", "d) TimeMachine"], answer: "b) Finder" },
+            { question: "¿Qué librería en iOS se utiliza para crear interfaces gráficas de forma declarativa?", options: ["a) UIKit", "b) SwiftUI", "c) Cocoa Touch", "d) Foundation"], answer: "b) SwiftUI" },
+            { question: "¿Qué tipo de compilación se utiliza en ART (Android RunTime) para compilar el código de la aplicación antes de la ejecución?", options: ["a) JIT", "b) AOT", "c) Dalvik", "d) DEX"], answer: "b) AOT" },
+            { question: "¿Qué formato de publicación de Android incluye el código compilado para cada plataforma y todos los recursos necesarios para la app?", options: ["a) .APK", "b) .DEX", "c) .AAB", "d) .JAR"], answer: "c) .AAB" },
+            { question: "¿Qué tipo de aplicaciones móviles no requiere instalación y utiliza HTML, CSS y JS?", options: ["a) Aplicaciones nativas", "b) Aplicaciones híbridas", "c) Progressive Web Apps (PWA)", "d) Aplicaciones web"], answer: "c) Progressive Web Apps (PWA)" },
+            { question: "¿Qué significa MIM en el contexto de la gestión de dispositivos móviles?", options: ["a) Mobile Information Management", "b) Mobile Identity Management", "c) Mobile Infrastructure Management", "d) Mobile Inventory Management"], answer: "a) Mobile Information Management" },
+            { question: "¿Qué componente de Windows 10 permite ejecutar un entorno de línea de comandos de Linux?", options: ["a) Microsoft Edge", "b) Cortana", "c) Windows Subsystem for Linux (WSL)", "d) Windows Defender"], answer: "c) Windows Subsystem for Linux (WSL)" },
+            { question: "¿Qué capa de la arquitectura NT de Windows es una capa de abstracción del hardware?", options: ["a) µKernel", "b) Executive Services", "c) HAL", "d) Drivers"], answer: "c) HAL" },
+            { question: "¿Qué herramienta de cifrado de Windows permite el uso de un USB para desencriptar la unidad?", options: ["a) EFS", "b) BitLocker", "c) AppLocker", "d) UAC"], answer: "b) BitLocker" },
+            { question: "¿Qué sistema de ficheros de Windows es una versión simplificada de NTFS?", options: ["a) FAT", "b) exFAT", "c) HPFS", "d) ReFS"], answer: "d) ReFS" },
+            { question: "¿Qué comando de Android Debug Bridge (ADB) se utiliza para instalar un archivo .apk?", options: ["a) ADB push", "b) ADB pull", "c) ADB install", "d) ADB shell"], answer: "c) ADB install" },
+            { question: "¿Cuál es el nombre de la herramienta de macOS para gestionar paquetes al estilo apt de Linux?", options: ["a) Finder", "b) HomeBrew", "c) Llaveros", "d) TimeMachine"], answer: "b) HomeBrew" },
+            { question: "¿Qué API ofrece macOS?", options: ["a) Win32", "b) .NET", "c) Cocoa y Carbon", "d) OpenGL"], answer: "c) Cocoa y Carbon" },
+            { question: "¿Qué versión de macOS es \"Monterey\"?", options: ["a) Versión 11", "b) Versión 12", "c) Versión 13", "d) Versión 14"], answer: "b) Versión 12" },
+            { question: "¿Qué herramienta de gestión de Windows Server permite la gestión de servicios (services.msc) y certificados digitales (certmgr.msc)?", options: ["a) PowerShell", "b) Vbscript", "c) MMC", "d) MS Config"], answer: "c) MMC" },
+            { question: "¿Qué significa GPO en el contexto de la seguridad de Windows?", options: ["a) Global Policy Object", "b) Group Policy Option", "c) Group Policy Object", "d) General Policy Operation"], answer: "c) Group Policy Object" },
+            { question: "¿Qué servicio de Windows Server es un controlador de dominio?", options: ["a) Hyper-V", "b) File Services", "c) Active Directory", "d) Web Server"], answer: "c) Active Directory" },
+            { question: "¿Cuál es el propósito del Site-Link en la estructura física de los DC?", options: ["a) Configurar la replicación entre DCs", "b) Indicar qué DC deben autenticarse los clientes", "c) Quién está conectado con quién", "d) Definir la ubicación física de los servidores"], answer: "c) Quién está conectado con quién" },
+            { question: "¿Qué tipo de grupo en Active Directory abarca todos los dominios de un bosque?", options: ["a) Locales", "b) Globales", "c) Universales", "d) De dominio"], answer: "c) Universales" },
+            { question: "¿Qué herramienta de Windows permite bloquear la ejecución de ciertas aplicaciones y es una especie de AntiMalware?", options: ["a) BitLocker", "b) EFS", "c) AppLocker", "d) UAC"], answer: "c) AppLocker" },
+            { question: "¿Qué significa COPE en el contexto de la gestión de dispositivos móviles?", options: ["a) Corporate Owned, Personally Enabled", "b) Choose Your Own Personal Equipment", "c) Company Operated Personal Environment", "d) Corporate Ownership, Private Use Excluded"], answer: "a) Corporate Owned, Personally Enabled" },
+            { question: "¿Cuál de las siguientes no es una opción de software de Android mencionada?", options: ["a) Jetpack Compose", "b) Android SDK", "c) Android Studio", "d) XCode"], answer: "d) XCode" },
+            { question: "¿Qué herramienta de macOS permite cifrar ficheros?", options: ["a) Llaveros", "b) Finder", "c) FileVault", "d) TimeMachine"], answer: "c) FileVault" },
+            { question: "¿Qué capa de la arquitectura de iOS contiene el Kernel y los Drivers?", options: ["a) Cocoa Touch", "b) Media", "c) Core Services", "d) Core OS"], answer: "d) Core OS" },
+            { question: "¿Qué es un bosque en Active Directory?", options: ["a) Un grupo de usuarios", "b) Una manera de unir distintos árboles de dominio que no comparten raíz", "c) Una base de datos jerárquica", "d) Un sitio físico"], answer: "b) Una manera de unir distintos árboles de dominio que no comparten raíz" },
+            { question: "¿Qué comando de Windows permite consultar el resultado del procesamiento de las políticas de grupo?", options: ["a) gpupdate /force", "b) gpresult /r", "c) gpedit.msc", "d) regedit.exe"], answer: "b) gpresult /r" },
+            { question: "¿Cuál es el nombre de la asistente personal de Windows 10?", options: ["a) Siri", "b) Google Assistant", "c) Cortana", "d) Alexa"], answer: "c) Cortana" },
+            { question: "¿Qué tipo de aplicaciones móviles permiten tener reglas para ejecutables, instaladores, ficheros de script y ficheros empaquetados?", options: ["a) BitLocker", "b) EFS", "c) AppLocker", "d) UAC"], answer: "c) AppLocker" },
+            { question: "¿Qué clave del registro de Windows es el HKCU de cada usuario que se ha logado alguna vez en la máquina?", options: ["a) HKLM", "b) HKCR", "c) HKU", "d) HKCC"], answer: "c) HKU" },
+            { question: "¿Qué gestor de paquetes de Windows utiliza el comando choco install?", options: ["a) WinGet", "b) Chocolatey", "c) Scoop", "d) NPM"], answer: "b) Chocolatey" },
+            { question: "¿Qué versión de Android es \"Quince Tart\"?", options: ["a) Versión 10", "b) Versión 11", "c) Versión 12", "d) Versión 13"], answer: "a) Versión 10" },
+            { question: "¿Qué librería de Android se utiliza para crear interfaces gráficas de forma declarativa?", options: ["a) Android SDK", "b) Android Studio", "c) Jetpack Compose", "d) ADB"], answer: "c) Jetpack Compose" },
+            { question: "¿Qué significa wmic en Windows?", options: ["a) Windows Mobile Interface Command", "b) Windows Management Instrumentation Command", "c) Windows Main Internet Connection", "d) Windows Memory Information Control"], answer: "b) Windows Management Instrumentation Command" },
+            { question: "¿Qué servicio de Windows Server se encarga de IIS?", options: ["a) File Services", "b) DHCP Server", "c) Web Server", "d) DNS Server"], answer: "c) Web Server" },
+            { question: "¿Qué versión de Windows Phone introdujo la interfaz ModernUI o Metro?", options: ["a) Windows 7", "b) Windows 8", "c) Windows 10", "d) Windows 11"], answer: "b) Windows 8" },
+            { question: "¿Qué herramienta de creación de imágenes/maquetas de Microsoft limpia el SID (identificador único de seguridad)?", options: ["a) Norton Ghost", "b) Acronis True Image", "c) Microsoft Sysprep", "d) Windows Backup"], answer: "c) Microsoft Sysprep" },
+            { question: "¿Qué formato de archivo de aplicaciones es específico de iOS?", options: ["a) .APK", "b) .IPA", "c) .DEX", "d) .AAB"], answer: "b) .IPA" },
+            { question: "¿Qué API es el equivalente a las llamadas int 80h de Linux en Windows?", options: ["a) Win32", "b) API Nativa de Windows", "c) .NET", "d) PowerShell"], answer: "b) API Nativa de Windows" },
+            { question: "¿Qué significa MDM en el contexto de la gestión de dispositivos móviles?", options: ["a) Mobile Device Monitoring", "b) Mobile Data Management", "c) Mobile Device Management", "d) Main Device Module"], answer: "c) Mobile Device Management" },
+            { question: "¿Qué lenguaje de programación se utiliza en Xamarin?", options: ["a) Java", "b) Kotlin", "c) Swift", "d) C#"], answer: "d) C#" },
+            { question: "¿Cuál de las siguientes es una versión \"Server Core\" o \"Nano Server\" de Windows, sin interfaz gráfica?", options: ["a) Windows Server 2003", "b) Windows Server 2008", "c) Windows Server 2012", "d) Windows Server 2019"], answer: "b) Windows Server 2008" }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null); // To store user's selected option index
+        let answeredCorrectly = new Array(questions.length).fill(false); // To track if question was answered correctly
+
+        const questionTextElement = document.getElementById('question-text');
+        const optionsGridElement = document.getElementById('options-grid');
+        const resultMessageElement = document.getElementById('result-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const scoreDisplay = document.getElementById('score-display');
+        const restartButton = document.getElementById('restart-button');
+
+        // Function to load a question
+        function loadQuestion() {
+            const question = questions[currentQuestionIndex];
+            questionTextElement.textContent = question.question;
+            optionsGridElement.innerHTML = ''; // Clear previous options
+            resultMessageElement.textContent = ''; // Clear previous message
+            resultMessageElement.className = 'result-message'; // Reset message class
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.index = index; // Store original index for reference
+                button.addEventListener('click', () => selectOption(option, button));
+                optionsGridElement.appendChild(button);
+
+                // If user has already answered this question, show their selection and correct/incorrect status
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    disableOptions();
+                    const selectedOption = question.options[userAnswers[currentQuestionIndex]];
+                    if (selectedOption === question.answer) {
+                        button.classList.add('correct');
+                        resultMessageElement.textContent = '¡Correcto!';
+                        resultMessageElement.classList.add('correct-text');
+                    } else {
+                        button.classList.add('incorrect');
+                        resultMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${question.answer}`;
+                        resultMessageElement.classList.add('incorrect-text');
+                    }
+                    // Highlight the correct answer if it's not the one selected
+                    if (option === question.answer && selectedOption !== question.answer) {
+                        button.classList.add('correct');
+                    } else if (option === selectedOption && selectedOption !== question.answer) {
+                        button.classList.add('incorrect');
+                    }
+                }
+            });
+            updateNavigationButtons();
+            updateScoreDisplay();
+        }
+
+        // Function to handle option selection
+        function selectOption(selectedOption, clickedButton) {
+            // If already answered, do nothing
+            if (userAnswers[currentQuestionIndex] !== null) {
+                return;
+            }
+
+            disableOptions(); // Disable all options after selection
+
+            userAnswers[currentQuestionIndex] = parseInt(clickedButton.dataset.index); // Store the index of the selected option
+
+            const question = questions[currentQuestionIndex];
+            if (selectedOption === question.answer) {
+                clickedButton.classList.add('correct');
+                resultMessageElement.textContent = '¡Correcto!';
+                resultMessageElement.classList.add('correct-text');
+                if (!answeredCorrectly[currentQuestionIndex]) {
+                    score++;
+                    answeredCorrectly[currentQuestionIndex] = true;
+                }
+            } else {
+                clickedButton.classList.add('incorrect');
+                resultMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${question.answer}`;
+                resultMessageElement.classList.add('incorrect-text');
+                // Highlight the correct answer
+                Array.from(optionsGridElement.children).forEach(button => {
+                    if (button.textContent === question.answer) {
+                        button.classList.add('correct');
+                    }
+                });
+                answeredCorrectly[currentQuestionIndex] = false; // Mark as incorrectly answered
+            }
+            updateScoreDisplay();
+        }
+
+        // Function to disable all option buttons
+        function disableOptions() {
+            Array.from(optionsGridElement.children).forEach(button => {
+                button.disabled = true;
+            });
+        }
+
+        // Function to update navigation button states
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                restartButton.classList.remove('hidden');
+            } else {
+                restartButton.classList.add('hidden');
+            }
+        }
+
+        // Function to update score display
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Puntuación: ${score} / ${questions.length}`;
+        }
+
+        // Event listeners for navigation buttons
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        // Event listener for restart button
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            answeredCorrectly.fill(false);
+            loadQuestion();
+            restartButton.classList.add('hidden');
+        });
+
+        // Initial load of the first question
+        loadQuestion();
+    </script>
+</body>
+</html>

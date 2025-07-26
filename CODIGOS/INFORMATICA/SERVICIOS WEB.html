@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Servicios Web</title>
+    <!-- Incluye Tailwind CSS para un estilo rápido y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f4f8; /* Un gris azulado claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* Bordes más redondeados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+            padding: 30px;
+            max-width: 800px; /* Ancho máximo para el contenedor */
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-text {
+            font-size: 1.5rem; /* Tamaño de fuente más grande para la pregunta */
+            font-weight: 600; /* Seminegrita */
+            color: #2c3e50; /* Color oscuro para el texto */
+            margin-bottom: 25px; /* Más espacio debajo de la pregunta */
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Espacio entre las opciones */
+        }
+        .option-button {
+            background-color: #e2e8f0; /* Un gris más suave para los botones */
+            color: #4a5568; /* Texto gris oscuro */
+            padding: 15px 20px;
+            border-radius: 10px; /* Bordes redondeados para los botones */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Transición suave para hover y feedback */
+            border: 2px solid transparent; /* Borde transparente por defecto */
+            font-size: 1.1rem;
+            text-align: left; /* Alineación de texto a la izquierda */
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #cbd5e0; /* Un gris un poco más oscuro al pasar el ratón */
+            border-color: #a0aec0; /* Borde más visible al pasar el ratón */
+        }
+        .option-button.correct {
+            background-color: #d4edda; /* Verde claro para la respuesta correcta */
+            color: #155724; /* Verde oscuro para el texto */
+            border-color: #28a745; /* Borde verde */
+            font-weight: bold;
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da; /* Rojo claro para la respuesta incorrecta */
+            color: #721c24; /* Rojo oscuro para el texto */
+            border-color: #dc3545; /* Borde rojo */
+            font-weight: bold;
+        }
+        .feedback-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #333;
+        }
+        .next-button {
+            background-color: #4299e1; /* Azul vibrante */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            border: none;
+        }
+        .next-button:hover {
+            background-color: #3182ce; /* Azul más oscuro al pasar el ratón */
+        }
+        .quiz-progress {
+            font-size: 1rem;
+            color: #718096; /* Gris para el progreso */
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-progress" id="quiz-progress"></div>
+        <div class="question-text" id="question-text"></div>
+        <div class="options-container" id="options-container"></div>
+        <div class="feedback-message" id="feedback-message"></div>
+        <button class="next-button" id="next-button" style="display: none;">Siguiente Pregunta</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Cuál de las siguientes afirmaciones es correcta respecto a la historia de la distribución de funcionalidades en aplicaciones?",
+                options: [
+                    "a) Antes, las funcionalidades se distribuían entre múltiples máquinas.",
+                    "b) RPC es un protocolo que opera sobre HTTP.",
+                    "c) CORBA permite la interoperabilidad entre clientes Java y servidores C++.",
+                    "d) DCOM es un producto de código abierto."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué tipo de cliente y servidor se asocian típicamente con RMI (Remote Method Invocation)?",
+                options: [
+                    "a) Cliente C++ y Servidor Java.",
+                    "b) Cliente Java JRE y Servidor Java.",
+                    "c) Cliente .NET y Servidor .NET.",
+                    "d) Cliente Python y Servidor Python."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Según el documento, ¿cuáles son los estándares de la W3C para servicios web?",
+                options: [
+                    "a) REST y GraphQL.",
+                    "b) WSDL y SOAP.",
+                    "c) gRPC y DCOM.",
+                    "d) RMI y CORBA."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones describe correctamente REST?",
+                options: [
+                    "a) Es un estándar de la W3C.",
+                    "b) Utiliza XML como formato principal.",
+                    "c) No es un estándar y se basa en HTTP + JSON.",
+                    "d) Generalmente soporta múltiples endpoints para una API."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Quién desarrolló GraphQL y qué característica distintiva ofrece a los clientes?",
+                options: [
+                    "a) Google; busca el rendimiento.",
+                    "b) Microsoft; ofrece una API unificada.",
+                    "c) Facebook; permite a cada cliente especificar la petición de datos.",
+                    "d) W3C; define la descripción de servicios."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿gRPC, desarrollado por Google, se caracteriza por?",
+                options: [
+                    "a) Su base en XML sobre HTTP/1.1.",
+                    "b) Ser un protocolo sin estado sobre TCP.",
+                    "c) Ser como RPC sobre HTTP y buscar el rendimiento.",
+                    "d) Ser un estándar de la W3C para la descripción de servicios."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el propósito principal de la WS-I Basic Profile?",
+                options: [
+                    "a) Definir lenguajes de programación.",
+                    "b) Asegurar la interoperabilidad de los servicios web.",
+                    "c) Establecer un registro centralizado de servicios.",
+                    "d) Promover el uso de RESTful APIs."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Según el documento, ¿qué describe el lenguaje WSDL?",
+                options: [
+                    "a) El registro de servicios.",
+                    "b) El protocolo de seguridad.",
+                    "c) La descripción de servicios.",
+                    "d) El formato de intercambio de datos binarios."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un estándar de la W3C, según el documento, sino de OASIS, y no se utiliza?",
+                options: [
+                    "a) WSDL.",
+                    "b) SOAP.",
+                    "c) UDDI.",
+                    "d) WS-Security."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el API de Java que se utiliza para conectarse a un servicio UDDI?",
+                options: [
+                    "a) JAX-WS.",
+                    "b) JAXR.",
+                    "c) JAX-RS.",
+                    "d) JAXB."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "En el contexto de UDDI, ¿qué tipo de información se encontraría en las 'Páginas Verdes'?",
+                options: [
+                    "a) Información de contacto.",
+                    "b) Categorización de servicios.",
+                    "c) Información técnica de acceso al servicio.",
+                    "d) Datos de autenticación."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "El protocolo SOAP se basa en:",
+                options: [
+                    "a) JSON sobre HTTP.",
+                    "b) XML sobre HTTP.",
+                    "c) Binary sobre TCP.",
+                    "d) HTML sobre SMTP."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es el API de Java para crear e invocar servicios SOAP?",
+                options: [
+                    "a) JAX-RS.",
+                    "b) JAXB.",
+                    "c) JAX-WS.",
+                    "d) JAXR."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué ventaja ofrece JAX-WS en cuanto a la definición de servicios, según el texto?",
+                options: [
+                    "a) Requiere la edición manual de archivos XML.",
+                    "b) Permite definir servicios solo con anotaciones en Java.",
+                    "c) Solo soporta servicios REST.",
+                    "d) Está obsoleto en la versión 2.0."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué estándar creó OASIS para añadir seguridad a los mensajes SOAP?",
+                options: [
+                    "a) WS-Basic Profile.",
+                    "b) XML Signature.",
+                    "c) WS-Security.",
+                    "d) MTOM."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "WS-Security añade seguridad a los mensajes SOAP mediante:",
+                options: [
+                    "a) El cifrado de la comunicación HTTP.",
+                    "b) Una cabecera específica en el mensaje SOAP.",
+                    "c) Un nuevo protocolo de transporte.",
+                    "d) La integración con OAuth."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Para enviar credenciales en la autenticación de clientes con WS-Security, se utiliza:",
+                options: [
+                    "a) BinarySecurityToken.",
+                    "b) XML Encryption.",
+                    "c) UsernameToken.",
+                    "d) SAML Token."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Para qué se utiliza MTOM en el contexto de los servicios web?",
+                options: [
+                    "a) Para cifrar mensajes SOAP.",
+                    "b) Para la firma digital de documentos XML.",
+                    "c) Para el envío de datos binarios.",
+                    "d) Para definir la interfaz de un servicio."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "MTOM está incluido en la versión:",
+                options: [
+                    "a) 1.0 de WS-I Basic Profile.",
+                    "b) 1.2 de WS-I Basic Profile.",
+                    "c) 2.0 de WSDL.",
+                    "d) 1.1 de SOAP."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se utiliza para definir los tipos usados en los mensajes WSDL, según el documento?",
+                options: [
+                    "a) XML Signature.",
+                    "b) XSD (XML Schema Definition).",
+                    "c) SOAPAction.",
+                    "d) MIME."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "En WSDL 2.0, ¿cómo se denomina el elemento que en WSDL 1.1 se llamaba portType?",
+                options: [
+                    "a) definitions.",
+                    "b) message.",
+                    "c) interface.",
+                    "d) binding."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cómo realizan las peticiones los servicios web SOAP por HTTP y qué códigos de respuesta generan típicamente?",
+                options: [
+                    "a) GET; códigos 200 o 404.",
+                    "b) POST; códigos 200 o 500.",
+                    "c) PUT; códigos 201 o 400.",
+                    "d) DELETE; códigos 202 o 503."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Por qué los servicios web SOAP siempre se invocan con POST, según el texto?",
+                options: [
+                    "a) Para mejorar el rendimiento.",
+                    "b) Porque no tienen estado.",
+                    "c) Porque mandan cuerpo del mensaje.",
+                    "d) Para cumplir con el estándar W3C."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué es XSD (XML Schema Definition)?",
+                options: [
+                    "a) Un protocolo de comunicación.",
+                    "b) Un lenguaje de esquema para describir la estructura y restricciones de documentos XML.",
+                    "c) Una herramienta para pruebas de servicios web.",
+                    "d) Un API de Java para la creación de servicios."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué herramienta se menciona para crear los archivos Java y .class a partir de un WSDL ya publicado en la parte cliente Java?",
+                options: [
+                    "a) SoapUI.",
+                    "b) AXIS2.",
+                    "c) wsimport.",
+                    "d) JbossWS."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué anotación JAX-WS se utiliza para especificar que una clase debe convertirse en un servicio web?",
+                options: [
+                    "a) @WebMethod.",
+                    "b) @WebParam.",
+                    "c) @WebService.",
+                    "d) @WebResult."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué propiedad de la anotación @WebService equivale a wsdl:portType?",
+                options: [
+                    "a) serviceName.",
+                    "b) targetNamespace.",
+                    "c) name.",
+                    "d) portName."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué propiedad de la anotación @WebService permite desligar la interfaz de la implementación?",
+                options: [
+                    "a) serviceName.",
+                    "b) endpointinterface.",
+                    "c) wsdlLocation.",
+                    "d) targetNamespace."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué anotación JAX-WS se coloca sobre un método para exponerlo en el servicio web?",
+                options: [
+                    "a) @WebService.",
+                    "b) @WebParam.",
+                    "c) @WebMethod.",
+                    "d) @WebResult."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Si se desea excluir una operación del servicio web, ¿qué propiedad de @WebMethod se debe establecer y a qué valor?",
+                options: [
+                    "a) action a \"false\".",
+                    "b) exclude a \"true\".",
+                    "c) operationName a \"null\".",
+                    "d) name a \"none\"."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "La anotación @WebParam se utiliza para:",
+                options: [
+                    "a) Exponer una operación en el servicio web.",
+                    "b) Personalizar el mapeo de un parámetro.",
+                    "c) Especificar el tipo de respuesta.",
+                    "d) Indicar la ruta de acceso al servicio."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué es REST según el documento?",
+                options: [
+                    "a) Un protocolo de seguridad.",
+                    "b) Un estilo de arquitectura para servicios hipermedia.",
+                    "c) Una herramienta para probar servicios SOAP.",
+                    "d) Un lenguaje de descripción de interfaces."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Uno de los principios fundamentales de REST es un protocolo Cliente-Servidor sin estado, como:",
+                options: [
+                    "a) FTP.",
+                    "b) SMTP.",
+                    "c) HTTP.",
+                    "d) TCP."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué significa HATEOAS en el contexto de REST?",
+                options: [
+                    "a) Hypertext Application Transfer Object And State.",
+                    "b) Hypermedia As The Engine Of Application State.",
+                    "c) High Availability Transfer Of Application Services.",
+                    "d) Hierarchical Access To Encapsulated Object State."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué API de Java se utiliza para servicios REST?",
+                options: [
+                    "a) JAX-WS.",
+                    "b) JAXB.",
+                    "c) JAX-RS.",
+                    "d) JAXR."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "En el contexto de las APIs REST, ¿cuál de las siguientes es considerada una mala práctica según la teoría?",
+                options: [
+                    "a) Utilizar JSON para el cuerpo de la respuesta.",
+                    "b) Meter verbos en las URIs (Ej: /borrar_usuario).",
+                    "c) Utilizar GET para consultas.",
+                    "d) Devolver recursos con \"links\"."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se utiliza comúnmente para la autenticación en REST?",
+                options: [
+                    "a) WS-Security.",
+                    "b) OAuth / JWT / HTTP Basic.",
+                    "c) SAML Token.",
+                    "d) Kerberos Ticket."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué significa la \"Signature\" en un token JWT?",
+                options: [
+                    "a) Un número aleatorio para identificar el token.",
+                    "b) El resultado de un HMAC generado usando el algoritmo definido en la cabecera y una clave secreta del servidor.",
+                    "c) Información del usuario codificada en Base64.",
+                    "d) Los metadatos del token."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se informa en el Payload de un token JWT?",
+                options: [
+                    "a) La clave secreta del servidor.",
+                    "b) Metadatos e información no sensible como el rol de una persona.",
+                    "c) La firma digital del token.",
+                    "d) El algoritmo de cifrado."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué \"claim\" en JWT identifica la marca temporal a partir de la cual el JWT no tiene que ser aceptado?",
+                options: [
+                    "a) sub.",
+                    "b) iat.",
+                    "c) exp.",
+                    "d) aud."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es la razón principal por la que un usuario manda el token JWT en cada petición?",
+                options: [
+                    "a) Para garantizar la confidencialidad de los datos.",
+                    "b) Para autenticarse, ya que el servicio es stateless.",
+                    "c) Para solicitar nuevos privilegios.",
+                    "d) Para verificar la integridad de la petición."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué anotación JAX-RS se utiliza para especificar la ruta de acceso relativa para una clase recurso o método?",
+                options: [
+                    "a) @GET.",
+                    "b) @Produces.",
+                    "c) @Path.",
+                    "d) @QueryParam."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Para especificar los tipos de medios MIME de respuesta en JAX-RS, se utiliza la anotación:",
+                options: [
+                    "a) @Consumes.",
+                    "b) @Produces.",
+                    "c) @Path.",
+                    "d) @HeaderParam."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué anotación JAX-RS enlaza el parámetro a un segmento de ruta?",
+                options: [
+                    "a) @QueryParam.",
+                    "b) @FormParam.",
+                    "c) @PathParam.",
+                    "d) @MatrixParam."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué anotación JAX-RS enlaza el parámetro al valor de un parámetro de consulta?",
+                options: [
+                    "a) @CookieParam.",
+                    "b) @HeaderParam.",
+                    "c) @QueryParam.",
+                    "d) @FormParam."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué se indica cuando un archivo .NET WS termina en .asmx?",
+                options: [
+                    "a) Que es un servicio RESTful.",
+                    "b) Que es un servicio web de .NET.",
+                    "c) Que utiliza GraphQL.",
+                    "d) Que es un servicio gRPC."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué permite GraphQL a cada cliente, según el documento?",
+                options: [
+                    "a) Seleccionar el endpoint de acceso.",
+                    "b) Especificar la petición de datos.",
+                    "c) Definir nuevos esquemas de datos en tiempo real.",
+                    "d) Controlar el protocolo de comunicación."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "En GraphQL, ¿cómo se definen las operaciones de consulta?",
+                options: [
+                    "a) Con Mutations.",
+                    "b) Con Queries.",
+                    "c) Con Subscriptions.",
+                    "d) Con Directives."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué son las Mutations en GraphQL?",
+                options: [
+                    "a) Operaciones que consultan información.",
+                    "b) Operaciones que alteran la información del servicio web.",
+                    "c) Definiciones de tipos de datos.",
+                    "d) Esquemas de autenticación."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué utiliza gRPC para la definición de mensajes y el formato de intercambio de datos?",
+                options: [
+                    "a) XML Schema.",
+                    "b) JSON.",
+                    "c) Protocol Buffers o Protobuf.",
+                    "d) WSDL."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Sobre qué protocolo se manda la información en gRPC y en qué formato?",
+                options: [
+                    "a) HTTP/1.1 en formato JSON.",
+                    "b) HTTP/2 en formato binario.",
+                    "c) TCP en formato XML.",
+                    "d) UDP en formato texto."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué es la Arquitectura Orientada a Servicios (SOA)?",
+                options: [
+                    "a) Un lenguaje de programación.",
+                    "b) Un tipo de diseño de software que permite reutilizar elementos mediante interfaces de servicios que se comunican a través de una red con un lenguaje común.",
+                    "c) Una base de datos distribuida.",
+                    "d) Un protocolo de enrutamiento de red."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "La arquitectura SOA se rige por:",
+                options: [
+                    "a) Las especificaciones de la W3C.",
+                    "b) Los principios descritos en el manifiesto SOA.",
+                    "c) Los estándares de OASIS.",
+                    "d) Las directrices de la WS-I Basic Profile."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué es un ESB (Bus de Servicio Empresarial)?",
+                options: [
+                    "a) Un protocolo de comunicación.",
+                    "b) Un modelo de arquitectura de software que gestiona la comunicación entre servicios web.",
+                    "c) Una base de datos centralizada.",
+                    "d) Una herramienta de desarrollo de APIs."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Una de las funciones principales del ESB es:",
+                options: [
+                    "a) Crear nuevas funcionalidades de negocio.",
+                    "b) Recibir mensajes en diferentes estándares y transformarlos para permitir el entendimiento entre sistemas.",
+                    "c) Almacenar grandes volúmenes de datos.",
+                    "d) Proporcionar seguridad de punto a punto para los servicios."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué tecnología se menciona como \"Remote Procedure Call\" y va sobre TCP?",
+                options: [
+                    "a) CORBA.",
+                    "b) RMI.",
+                    "c) RPC.",
+                    "d) DCOM."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre WSDL 1.1 y WSDL 2.0 que se observa en los nombres de las secciones?",
+                options: [
+                    "a) definitions pasa a ser description y portType a interface.",
+                    "b) message pasa a ser payload.",
+                    "c) binding pasa a ser protocol.",
+                    "d) service pasa a ser endpoint."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "Si en una respuesta REST se observa la inclusión de \"links\", ¿qué principio se está utilizando?",
+                options: [
+                    "a) Atomicity.",
+                    "b) Idempotency.",
+                    "c) HATEOAS.",
+                    "d) Statelessness."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué herramientas se mencionan como API managers para gobernar y gestionar APIs?",
+                options: [
+                    "a) SoapUI.",
+                    "b) SwagerHub / OpenAPI.",
+                    "c) JAX-WS y JAX-RS.",
+                    "d) wsimport y Apache CXF."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de las siguientes anotaciones JAX-WS se utiliza para personalizar el mapeo del resultado de un método?",
+                options: [
+                    "a) @WebMethod.",
+                    "b) @WebParam.",
+                    "c) @WebResult.",
+                    "d) @RequestWrapper."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué información se incluye en el Header de un token JWT?",
+                options: [
+                    "a) La clave secreta del servidor.",
+                    "b) El algoritmo que se usa para generar la Signature.",
+                    "c) Los datos sensibles del usuario.",
+                    "d) El tiempo de expiración del token."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué significa el \"claim\" sub en un JWT?",
+                options: [
+                    "a) Subject, identifica el objeto o usuario en nombre del cual fue emitido el JWT.",
+                    "b) Subscriber, identifica al destinatario del JWT.",
+                    "c) Substring, indica una porción del token.",
+                    "d) Submission, marca el momento de envío."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "Las consultas en REST se realizan siempre con el verbo HTTP:",
+                options: [
+                    "a) POST.",
+                    "b) PUT.",
+                    "c) GET.",
+                    "d) DELETE."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Si se realiza una petición PUT a /users/123 con un cuerpo JSON, ¿qué código de respuesta HTTP indica que el recurso fue actualizado o creado?",
+                options: [
+                    "a) 404.",
+                    "b) 500.",
+                    "c) 200 o 201.",
+                    "d) 40X."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué frameworks o productos se mencionan como implementaciones de JAX-RS?",
+                options: [
+                    "a) AXIS2, CXF, JbossWS.",
+                    "b) Jersey, RESTeasy, Restlet.",
+                    "c) Orbix, Metro.",
+                    "d) Lighthouse, Apollo Client."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un principio fundamental de REST?",
+                options: [
+                    "a) Protocolo Cliente-Servidor sin estado.",
+                    "b) Operaciones bien definidas (verbos HTTP + Recursos).",
+                    "c) Navegación hipermedia (HATEOAS).",
+                    "d) Acoplamiento fuerte entre cliente y servidor."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué tipo de información se encontraría en las \"Páginas Amarillas\" de UDDI?",
+                options: [
+                    "a) Información de contacto.",
+                    "b) Categorización de servicios.",
+                    "c) Información técnica de acceso.",
+                    "d) Historial de uso del servicio."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "En la arquitectura SOA, un \"Servicio\" se define como:",
+                options: [
+                    "a) Una aplicación monolítica.",
+                    "b) Un conjunto de interfaces de usuario.",
+                    "c) Representación lógica de una actividad de negocio con un resultado de negocio específico.",
+                    "d) Un componente de hardware."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre UDDI es correcta según el documento?",
+                options: [
+                    "a) Es un estándar de la W3C.",
+                    "b) Es de OASIS y no se usa.",
+                    "c) Es el API de Java para SOAP.",
+                    "d) Es un protocolo de seguridad."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se utiliza en WS-Security para mandar certificados X509, SAML Token o Kerberos Ticket?",
+                options: [
+                    "a) UsernameToken.",
+                    "b) BinarySecurityToken.",
+                    "c) XML Signature.",
+                    "d) XML Encryption."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la anotación JAX-WS que indica la clase Java que mapea la petición del WS para un método?",
+                options: [
+                    "a) @WebMethod.",
+                    "b) @WebResult.",
+                    "c) @RequestWrapper.",
+                    "d) @WebParam."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué propiedad de @RequestWrapper define el nombre de la operación tal y como estará definida en el WSDL que se genere?",
+                options: [
+                    "a) className.",
+                    "b) targetNamespace.",
+                    "c) localName.",
+                    "d) action."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de las siguientes es una anotación JAX-RS para los parámetros que enlaza el parámetro al valor de un parámetro de matriz?",
+                options: [
+                    "a) @QueryParam.",
+                    "b) @PathParam.",
+                    "c) @MatrixParam.",
+                    "d) @HeaderParam."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "Si un servicio web utiliza MTOM, ¿por qué se considera \"liviano\"?",
+                options: [
+                    "a) Porque solo envía metadatos.",
+                    "b) Porque el archivo binario va por fuera, por HTTP.",
+                    "c) Porque usa compresión XML.",
+                    "d) Porque el tamaño del mensaje SOAP es muy pequeño."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se menciona como un servidor GraphQL conocido para PHP que se integra con Laravel?",
+                options: [
+                    "a) Apollo Client.",
+                    "b) Lighthouse.",
+                    "c) gRPC.",
+                    "d) Protobuf."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál es la herramienta cliente GraphQL para Java?",
+                options: [
+                    "a) Lighthouse.",
+                    "b) Apollo Client.",
+                    "c) SoapUI.",
+                    "d) wsimport."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se define en el binding de un WSDL?",
+                options: [
+                    "a) Los tipos de datos.",
+                    "b) Las operaciones.",
+                    "c) Los protocolos de comunicación usados.",
+                    "d) Las direcciones de acceso."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un \"claim\" estandarizado por IANA para JWT según el documento?",
+                options: [
+                    "a) sub.",
+                    "b) exp.",
+                    "c) iat.",
+                    "d) hash."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "Un documento SOAP es un documento de tipo:",
+                options: [
+                    "a) HTML.",
+                    "b) JSON.",
+                    "c) XML.",
+                    "d) Texto plano."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué tipo de información se encontraría en las \"Páginas Blancas\" de UDDI?",
+                options: [
+                    "a) Información de contacto.",
+                    "b) Datos de ubicación geográfica.",
+                    "c) Especificaciones técnicas.",
+                    "d) Historial de transacciones."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cómo se generan los WSDL automáticamente, según el texto?",
+                options: [
+                    "a) A partir de un XML predefinido.",
+                    "b) A partir del código fuente del servicio.",
+                    "c) Mediante un proceso manual.",
+                    "d) Desde la interfaz de usuario."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué significa el \"claim\" iat en un JWT?",
+                options: [
+                    "a) Identification and Access Time.",
+                    "b) Issued At, identifica la marca temporal en la que el JWT fue emitido.",
+                    "c) Internal Access Token.",
+                    "d) Internationalization Attribute."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes frameworks no se menciona como una implementación de JAX-WS?",
+                options: [
+                    "a) AXIS2.",
+                    "b) CXF.",
+                    "c) Metro.",
+                    "d) Jersey."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué lenguaje de descripción de interfaces (IDL) utiliza gRPC?",
+                options: [
+                    "a) WSDL.",
+                    "b) OpenAPI.",
+                    "c) Uno basado en Protocol Buffers.",
+                    "d) RAML."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "La comunicación entre Kubernetes y los contenedores se realiza mediante:",
+                options: [
+                    "a) SOAP.",
+                    "b) REST.",
+                    "c) gRPC.",
+                    "d) RMI."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál de las siguientes no es una anotación JAX-RS para los parámetros?",
+                options: [
+                    "a) @PathParam.",
+                    "b) @RequestWrapper.",
+                    "c) @HeaderParam.",
+                    "d) @CookieParam."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué anotación JAX-RS especifica los tipos de medios de petición aceptados?",
+                options: [
+                    "a) @Produces.",
+                    "b) @Consumes.",
+                    "c) @Path.",
+                    "d) @GET."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué indica la anotación @DefaultValue en JAX-RS?",
+                options: [
+                    "a) Que el valor del parámetro es obligatorio.",
+                    "b) Un valor por defecto para los enlaces de parámetros cuando la clave no es encontrada.",
+                    "c) Que el parámetro debe ser nulo por defecto.",
+                    "d) Que el servicio web utiliza un valor predefinido."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Cuál de los siguientes es un ejemplo de \"Distributed Component Object Model\"?",
+                options: [
+                    "a) RPC.",
+                    "b) CORBA.",
+                    "c) DCOM.",
+                    "d) RMI."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué lenguaje de descripción de APIs se menciona como una alternativa a WSDL 2.0 para documentar APIs?",
+                options: [
+                    "a) XSD.",
+                    "b) UDDI.",
+                    "c) RAML.",
+                    "d) JAX-WS."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué se define en la sección message de un WSDL?",
+                options: [
+                    "a) Los protocolos de comunicación.",
+                    "b) Las operaciones.",
+                    "c) Las entradas y salidas de las operaciones.",
+                    "d) Los tipos de datos."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Qué atributo en un wsdl:binding indica el protocolo de transporte?",
+                options: [
+                    "a) name.",
+                    "b) type.",
+                    "c) transport.",
+                    "d) style."
+                ],
+                correctAnswer: "c)"
+            },
+            {
+                question: "¿Cuál es el nombre por defecto del serviceName en la anotación @WebService?",
+                options: [
+                    "a) El nombre de la clase.",
+                    "b) El nombre de la clase más sufijo \"Service\".",
+                    "c) El nombre del puerto.",
+                    "d) El targetNamespace."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "La anotación @Context en JAX-RS se utiliza para:",
+                options: [
+                    "a) Enlazar un parámetro a un valor de cabecera.",
+                    "b) Devolver el contexto del objeto (ej. HttpServletRequest).",
+                    "c) Especificar el tipo de petición HTTP.",
+                    "d) Definir la ruta de acceso al recurso."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué se menciona como un servicio/estándar definido con gRPC?",
+                options: [
+                    "a) RESTful API.",
+                    "b) CRI.",
+                    "c) SOA.",
+                    "d) WSDL."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Quién es el autor y su contacto de Telegram según el pie de página?",
+                options: [
+                    "a) CARLOS VELILLA GARCIA - Telegram @CARLOSVELILLA.",
+                    "b) Juan Perez - Telegram @juanp.",
+                    "c) Maria Lopez - Telegram @marial.",
+                    "d) Google - Telegram @googledev."
+                ],
+                correctAnswer: "a)"
+            },
+            {
+                question: "¿Cuál es la diferencia principal entre OAuth y JWT en términos de la estructura del token?",
+                options: [
+                    "a) OAuth usa una estructura definida mientras que JWT es un número sin significado.",
+                    "b) JWT tiene una estructura definida (Header.Payload.Signature) mientras que OAuth es un número que no significa nada.",
+                    "c) Ambos son números sin significado.",
+                    "d) Ambos tienen una estructura definida, pero diferente algoritmo."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "Un servicio es una representación lógica de:",
+                options: [
+                    "a) Un componente de hardware.",
+                    "b) Una actividad de negocio que tiene un resultado de negocio específico.",
+                    "c) Una base de datos.",
+                    "d) Una interfaz de usuario."
+                ],
+                correctAnswer: "b)"
+            },
+            {
+                question: "¿Qué API de Java no está dentro de los servidores de aplicación (Weblogic, Websphere) según el documento?",
+                options: [
+                    "a) Jersey.",
+                    "b) RESTeasy.",
+                    "c) Restlet.",
+                    "d) Apache CXF."
+                ],
+                correctAnswer: "d)"
+            },
+            {
+                question: "¿Qué es un espacio de nombres (namespace) en el contexto de los servicios web .NET, y por qué es importante cambiar el http://tempuri.org/ por defecto?",
+                options: [
+                    "a) Es un identificador único para el servicio web, importante para distinguirlo de otros servicios.",
+                    "b) Es la URL real del servicio web.",
+                    "c) Es un protocolo de seguridad.",
+                    "d) Es el formato de los mensajes de error."
+                ],
+                correctAnswer: "a)"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let answered = false;
+
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const nextButton = document.getElementById('next-button');
+        const quizProgress = document.getElementById('quiz-progress');
+
+        function loadQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const q = questions[currentQuestionIndex];
+                questionText.textContent = q.question;
+                optionsContainer.innerHTML = '';
+                feedbackMessage.textContent = '';
+                nextButton.style.display = 'none';
+                answered = false;
+
+                quizProgress.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+
+                q.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-button');
+                    button.addEventListener('click', () => checkAnswer(button, option, q.correctAnswer));
+                    optionsContainer.appendChild(button);
+                });
+            } else {
+                questionText.textContent = "¡Has completado el test!";
+                optionsContainer.innerHTML = '';
+                feedbackMessage.textContent = '¡Felicidades por terminar el test!';
+                nextButton.style.display = 'none';
+                quizProgress.textContent = '';
+            }
+        }
+
+        function checkAnswer(selectedButton, selectedOption, correctAnswer) {
+            if (answered) return; // Evita múltiples clics en la misma pregunta
+            answered = true;
+
+            const allButtons = optionsContainer.querySelectorAll('.option-button');
+            allButtons.forEach(button => {
+                // Deshabilita todos los botones después de una selección
+                button.removeEventListener('click', () => {});
+                button.style.cursor = 'default';
+
+                if (button.textContent.startsWith(correctAnswer)) {
+                    button.classList.add('correct');
+                } else if (button === selectedButton) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            if (selectedOption.startsWith(correctAnswer)) {
+                feedbackMessage.textContent = "¡Correcto!";
+                feedbackMessage.style.color = '#28a745'; // Verde
+            } else {
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta era: ${correctAnswer}`;
+                feedbackMessage.style.color = '#dc3545'; // Rojo
+            }
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            loadQuestion();
+        });
+
+        // Carga la primera pregunta al iniciar
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>

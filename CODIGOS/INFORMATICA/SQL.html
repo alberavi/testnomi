@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo de SQL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #edf2f7;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #d6e4f0;
+            border-color: #90cdf4;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #28a745;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+            font-weight: 600;
+        }
+        .feedback {
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+        .feedback.correct-feedback {
+            background-color: #c3e6cb;
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+        .feedback.incorrect-feedback {
+            background-color: #f5c6cb;
+            color: #721c24;
+            border: 1px solid #dc3545;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .navigation-buttons button:disabled {
+            background-color: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .navigation-buttons .prev-btn {
+            background-color: #4299e1;
+            color: white;
+        }
+        .navigation-buttons .prev-btn:hover:not(:disabled) {
+            background-color: #3182ce;
+        }
+        .navigation-buttons .next-btn {
+            background-color: #38a169;
+            color: white;
+        }
+        .navigation-buttons .next-btn:hover:not(:disabled) {
+            background-color: #2f855a;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        .quiz-summary {
+            text-align: center;
+            padding: 30px;
+            background-color: #edf2f7;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .quiz-summary h2 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        .quiz-summary p {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 20px;
+        }
+        .quiz-summary button {
+            background-color: #4299e1;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .quiz-summary button:hover {
+            background-color: #3182ce;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="quiz-container">
+        <!-- Contenido del quiz se renderizará aquí -->
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Qué tipo de lenguaje es SQL y qué extensión procedural incluye?",
+                options: [
+                    "a) Lenguaje de programación de bajo nivel + C++",
+                    "b) Lenguaje declarativo 4GL + SQL/PSM",
+                    "c) Lenguaje imperativo + Java",
+                    "d) Lenguaje de scripting + Python"
+                ],
+                correctAnswer: "b) Lenguaje declarativo 4GL + SQL/PSM"
+            },
+            {
+                question: "¿Cuál es el estándar ANSI más conocido de SQL?",
+                options: [
+                    "a) ANSI-86",
+                    "b) ANSI-92",
+                    "c) ANSI-99",
+                    "d) ANSI-2003"
+                ],
+                correctAnswer: "b) ANSI-92"
+            },
+            {
+                question: "¿Qué versión del estándar ISO 9075 SQL introdujo los triggers?",
+                options: [
+                    "a) ISO 9075 SQL:2003",
+                    "b) ISO 9075 SQL:2006",
+                    "c) ISO 9075 SQL:1999 (SQL 3)",
+                    "d) ISO 9075 SQL:2008"
+                ],
+                correctAnswer: "c) ISO 9075 SQL:1999 (SQL 3)"
+            },
+            {
+                question: "¿Qué versión del estándar ISO 9075 SQL introdujo el objeto SEQUENCE?",
+                options: [
+                    "a) ISO 9075 SQL:1999",
+                    "b) ISO 9075 SQL:2003",
+                    "c) ISO 9075 SQL:2006",
+                    "d) ISO 9075 SQL:2016"
+                ],
+                correctAnswer: "b) ISO 9075 SQL:2003"
+            },
+            {
+                question: "¿Qué versión del estándar ISO 9075 SQL incluyó soporte para XML nativo?",
+                options: [
+                    "a) ISO 9075 SQL:1999",
+                    "b) ISO 9075 SQL:2003",
+                    "c) ISO 9075 SQL:2006",
+                    "d) ISO 9075 SQL:2008"
+                ],
+                correctAnswer: "c) ISO 9075 SQL:2006"
+            },
+            {
+                question: "¿Qué versión del estándar ISO 9075 SQL introdujo la sentencia TRUNCATE?",
+                options: [
+                    "a) ISO 9075 SQL:2003",
+                    "b) ISO 9075 SQL:2006",
+                    "c) ISO 9075 SQL:2008",
+                    "d) ISO 9075 SQL:2016"
+                ],
+                correctAnswer: "c) ISO 9075 SQL:2008"
+            },
+            {
+                question: "¿Qué versión del estándar ISO 9075 SQL añadió compatibilidad con JSON?",
+                options: [
+                    "a) ISO 9075 SQL:2008",
+                    "b) ISO 9075 SQL:2016",
+                    "c) ISO 9075 SQL:2003",
+                    "d) ISO 9075 SQL:1999"
+                ],
+                correctAnswer: "b) ISO 9075 SQL:2016"
+            },
+            {
+                question: "¿Cuál de los siguientes no es un producto o gestor de bases de datos que implemente SQL?",
+                options: [
+                    "a) Oracle",
+                    "b) Apache Kafka",
+                    "c) Microsoft SQL Server",
+                    "d) PostgreSQL"
+                ],
+                correctAnswer: "b) Apache Kafka (es una plataforma de streaming de eventos, no un SGBD relacional)"
+            },
+            {
+                question: "¿Qué es el DDL en SQL?",
+                options: [
+                    "a) Lenguaje de Manipulación de Datos",
+                    "b) Lenguaje de Control de Transacciones",
+                    "c) Lenguaje de Definición de Datos",
+                    "d) Lenguaje de Consulta de Datos"
+                ],
+                correctAnswer: "c) Lenguaje de Definición de Datos"
+            },
+            {
+                question: "¿Cuál de los siguientes objetos NO se crea, borra o modifica con DDL?",
+                options: [
+                    "a) TABLE",
+                    "b) PROCEDURE",
+                    "c) RECORD",
+                    "d) VIEW"
+                ],
+                correctAnswer: "c) RECORD (no es un objeto DDL estándar para crear/modificar/borrar como los otros)"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre SQLite es FALSA?",
+                options: [
+                    "a) Es un gestor de BD no C/S.",
+                    "b) Es local, no se usa por red.",
+                    "c) Es muy usado en Android.",
+                    "d) No es compatible con ACID."
+                ],
+                correctAnswer: "d) No es compatible con ACID."
+            },
+            {
+                question: "¿Qué significa la 'C' en el acrónimo ACID?",
+                options: [
+                    "a) Concurrencia",
+                    "b) Consistencia",
+                    "c) Conectividad",
+                    "d) Coordinación"
+                ],
+                correctAnswer: "b) Consistencia"
+            },
+            {
+                question: "¿Qué es una transacción en SQL?",
+                options: [
+                    "a) Una única sentencia SQL.",
+                    "b) Un conjunto de sentencias SQL que se tienen que hacer todas o ninguna.",
+                    "c) Una consulta que devuelve múltiples resultados.",
+                    "d) Un procedimiento almacenado."
+                ],
+                correctAnswer: "b) Un conjunto de sentencias SQL que se tienen que hacer todas o ninguna."
+            },
+            {
+                question: "¿Cuál es el propósito de la sentencia TRUNCATE?",
+                options: [
+                    "a) Eliminar filas específicas de una tabla.",
+                    "b) Vaciar la tabla completamente.",
+                    "c) Renombrar una tabla.",
+                    "d) Crear una nueva tabla."
+                ],
+                correctAnswer: "b) Vaciar la tabla completamente."
+            },
+            {
+                question: "¿La sentencia TRUNCATE soporta transaccionalidad y es recuperable?",
+                options: [
+                    "a) Sí, ambas.",
+                    "b) Sí, solo soporta transaccionalidad.",
+                    "c) No, ninguna de las dos.",
+                    "d) Sí, solo es recuperable."
+                ],
+                correctAnswer: "c) No, ninguna de las dos."
+            },
+            {
+                question: "¿Qué son los triggers en SQL?",
+                options: [
+                    "a) Funciones que retornan un valor.",
+                    "b) Procedimientos que se ejecutan a partir de un evento.",
+                    "c) Sentencias para controlar transacciones.",
+                    "d) Restricciones de integridad referencial."
+                ],
+                correctAnswer: "b) Procedimientos que se ejecutan a partir de un evento."
+            },
+            {
+                question: "¿Qué es un Schema en SQL?",
+                options: [
+                    "a) Un tipo de dato.",
+                    "b) Una estructura de datos para agilizar búsquedas.",
+                    "c) Una forma de agrupar tablas.",
+                    "d) Una restricción para validar datos."
+                ],
+                correctAnswer: "c) Una forma de agrupar tablas."
+            },
+            {
+                question: "¿Para qué sirve un Index en SQL?",
+                options: [
+                    "a) Para definir los tipos de datos.",
+                    "b) Para agrupar usuarios y permisos.",
+                    "c) Para agilizar búsquedas mediante el uso de árboles B.",
+                    "d) Para controlar el acceso a los datos."
+                ],
+                correctAnswer: "c) Para agilizar búsquedas mediante el uso de árboles B."
+            },
+            {
+                question: "¿Qué define un Domain en SQL?",
+                options: [
+                    "a) Un tipo de procedimiento.",
+                    "b) Un dominio de valores.",
+                    "c) Un esquema de base de datos.",
+                    "d) Una clave primaria."
+                ],
+                correctAnswer: "b) Un dominio de valores."
+            },
+            {
+                question: "¿Cuál es el propósito de los Roles en SQL?",
+                options: [
+                    "a) Definir tipos de datos personalizados.",
+                    "b) Agrupar tablas en un esquema.",
+                    "c) Dar de alta permisos y funcionalidades a usuarios.",
+                    "d) Crear vistas de la base de datos."
+                ],
+                correctAnswer: "c) Dar de alta permisos y funcionalidades a usuarios."
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un tipo de CONSTRAINT en SQL?",
+                options: [
+                    "a) PRIMARY KEY",
+                    "b) FOREIGN KEY",
+                    "c) AUTO_INCREMENT",
+                    "d) UNIQUE"
+                ],
+                correctAnswer: "c) AUTO_INCREMENT (es una propiedad o atributo de columna, no un tipo de CONSTRAINT en sí mismo, como los otros que son tipos de restricciones de integridad)"
+            },
+            {
+                question: "¿Qué tipo de CONSTRAINT asegura que un valor sea único, admitiendo un único null?",
+                options: [
+                    "a) PRIMARY KEY",
+                    "b) FOREIGN KEY",
+                    "c) CHECK",
+                    "d) UNIQUE"
+                ],
+                correctAnswer: "d) UNIQUE"
+            },
+            {
+                question: "¿Qué es el DML en SQL?",
+                options: [
+                    "a) Lenguaje de Definición de Datos",
+                    "b) Lenguaje de Manipulación de Datos",
+                    "c) Lenguaje de Control de Datos",
+                    "d) Lenguaje de Control de Transacciones"
+                ],
+                correctAnswer: "b) Lenguaje de Manipulación de Datos"
+            },
+            {
+                question: "¿Cuál de las siguientes operaciones es una funcionalidad del DML?",
+                options: [
+                    "a) CREATE TABLE",
+                    "b) GRANT",
+                    "c) SELECT",
+                    "d) COMMIT"
+                ],
+                correctAnswer: "c) SELECT"
+            },
+            {
+                question: "¿Qué es el DCL en SQL?",
+                options: [
+                    "a) Lenguaje de Consulta de Datos",
+                    "b) Lenguaje de Definición de Datos",
+                    "c) Lenguaje de Control de Datos",
+                    "d) Lenguaje de Manipulación de Datos"
+                ],
+                correctAnswer: "c) Lenguaje de Control de Datos"
+            },
+            {
+                question: "¿Cuál de las siguientes sentencias NO pertenece al DCL?",
+                options: [
+                    "a) GRANT",
+                    "b) REVOKE",
+                    "c) ROLLBACK",
+                    "d) ALL"
+                ],
+                correctAnswer: "c) ROLLBACK"
+            },
+            {
+                question: "¿Qué es el TCL en SQL?",
+                options: [
+                    "a) Una parte del DML.",
+                    "b) Una parte del DDL.",
+                    "c) Una parte del DCL.",
+                    "d) Un lenguaje independiente."
+                ],
+                correctAnswer: "c) Una parte del DCL."
+            },
+            {
+                question: "¿Qué sentencia del TCL se utiliza para confirmar los cambios de una transacción?",
+                options: [
+                    "a) ROLLBACK",
+                    "b) SAVEPOINT",
+                    "c) COMMIT",
+                    "d) SET TRANSACTION"
+                ],
+                correctAnswer: "c) COMMIT"
+            },
+            {
+                question: "¿Qué función tiene SAVEPOINT en las transacciones?",
+                options: [
+                    "a) Confirmar todos los cambios.",
+                    "b) Deshacer todos los cambios.",
+                    "c) Crear un punto de salvaguarda para deshacer hasta él.",
+                    "d) Iniciar una nueva transacción."
+                ],
+                correctAnswer: "c) Crear un punto de salvaguarda para deshacer hasta él."
+            },
+            {
+                question: "¿Cómo se elimina un SAVEPOINT?",
+                options: [
+                    "a) Con COMMIT.",
+                    "b) Con ROLLBACK.",
+                    "c) Con RELEASE SAVEPOINT.",
+                    "d) No se pueden eliminar."
+                ],
+                correctAnswer: "c) Con RELEASE SAVEPOINT."
+            },
+            {
+                question: "¿Qué sentencia se utiliza para configurar una transacción?",
+                options: [
+                    "a) START TRANSACTION",
+                    "b) COMMIT",
+                    "c) SET TRANSACTION",
+                    "d) END TRANSACTION"
+                ],
+                correctAnswer: "c) SET TRANSACTION"
+            },
+            {
+                question: "¿Cómo se inicia una transacción en SQL?",
+                options: [
+                    "a) COMMIT",
+                    "b) START TRANSACTION",
+                    "c) SAVEPOINT",
+                    "d) ROLLBACK"
+                ],
+                correctAnswer: "b) START TRANSACTION"
+            },
+            {
+                question: "En la creación de una tabla, ¿qué cláusula se utiliza para definir una clave primaria?",
+                options: [
+                    "a) FOREIGN KEY",
+                    "b) UNIQUE",
+                    "c) PRIMARY KEY",
+                    "d) CHECK"
+                ],
+                correctAnswer: "c) PRIMARY KEY"
+            },
+            {
+                question: "En la creación de una tabla, ¿qué cláusula se utiliza para establecer una restricción de clave externa?",
+                options: [
+                    "a) PRIMARY KEY",
+                    "b) UNIQUE",
+                    "c) FOREIGN KEY",
+                    "d) CHECK"
+                ],
+                correctAnswer: "c) FOREIGN KEY"
+            },
+            {
+                question: "¿Qué tipo de CONSTRAINT se usaría para asegurar que el código postal (zip) en una tabla solo contenga 5 dígitos numéricos?",
+                options: [
+                    "a) PRIMARY KEY",
+                    "b) FOREIGN KEY",
+                    "c) UNIQUE",
+                    "d) CHECK"
+                ],
+                correctAnswer: "d) CHECK"
+            },
+            {
+                question: "¿Qué son las transacciones distribuidas?",
+                options: [
+                    "a) Transacciones que se ejecutan en un solo servidor.",
+                    "b) Transacciones que se realizan en bloques de X registros.",
+                    "c) Transacciones que involucran múltiples SGBD.",
+                    "d) Transacciones que solo afectan a una fila."
+                ],
+                correctAnswer: "c) Transacciones que involucran múltiples SGBD."
+            },
+            {
+                question: "¿Cuál es un ejemplo de Monitor Transaccional mencionado en el documento?",
+                options: [
+                    "a) MySQL",
+                    "b) PostgreSQL",
+                    "c) CICS",
+                    "d) SQLite"
+                ],
+                correctAnswer: "c) CICS"
+            },
+            {
+                question: "¿Cuál es la API de Java para interactuar con el monitor transaccional?",
+                options: [
+                    "a) JDBC",
+                    "b) JPA",
+                    "c) JTA",
+                    "d) JNDI"
+                ],
+                correctAnswer: "c) JTA"
+            },
+            {
+                question: "¿Qué nivel de aislamiento permite 'lecturas sucias'?",
+                options: [
+                    "a) READ COMMITTED",
+                    "b) REPEATABLE READ",
+                    "c) READ UNCOMMITTED",
+                    "d) SERIALIZABLE"
+                ],
+                correctAnswer: "c) READ UNCOMMITTED"
+            },
+            {
+                question: "¿Cuál es el nivel de aislamiento por defecto que evita las lecturas sucias?",
+                options: [
+                    "a) READ UNCOMMITTED",
+                    "b) READ COMMITTED",
+                    "c) REPEATABLE READ",
+                    "d) SERIALIZABLE"
+                ],
+                correctAnswer: "b) READ COMMITTED"
+            },
+            {
+                question: "¿Qué problema de concurrencia describe la situación en la que una transacción (tx1) consulta datos, otra transacción (tx2) los cambia y confirma, y cuando tx1 vuelve a leer, los datos han cambiado?",
+                options: [
+                    "a) Lectura sucia",
+                    "b) Lectura no repetible",
+                    "c) Lectura fantasma",
+                    "d) Bloqueo mutuo"
+                ],
+                correctAnswer: "b) Lectura no repetible"
+            },
+            {
+                question: "¿Qué problema de concurrencia se produce cuando una transacción puede recuperar un rango de datos, y otra transacción inserta un nuevo registro dentro de ese rango que la primera transacción no ve si vuelve a leer?",
+                options: [
+                    "a) Lectura sucia",
+                    "b) Lectura no repetible",
+                    "c) Lectura fantasma",
+                    "d) Interbloqueo"
+                ],
+                correctAnswer: "c) Lectura fantasma"
+            },
+            {
+                question: "¿Cuál es el nivel de aislamiento que previene todos los problemas de concurrencia (lectura sucia, no repetible y fantasma)?",
+                options: [
+                    "a) READ UNCOMMITTED",
+                    "b) READ COMMITTED",
+                    "c) REPEATABLE READ",
+                    "d) SERIALIZABLE"
+                ],
+                correctAnswer: "d) SERIALIZABLE"
+            },
+            {
+                question: "¿Qué tipo de bloqueo se consigue con el nivel de aislamiento SERIALIZABLE que no se consigue con otros?",
+                options: [
+                    "a) Bloqueo de filas",
+                    "b) Bloqueo de columnas",
+                    "c) Bloqueo de tablas",
+                    "d) Bloqueo de índices"
+                ],
+                correctAnswer: "c) Bloqueo de tablas"
+            },
+            {
+                question: "¿Cuál es la sintaxis correcta para insertar valores específicos en una tabla?",
+                options: [
+                    "a) INSERT INTO <tabla> VALUES ('...')",
+                    "b) INSERT INTO <tabla> (col1, col2, ...) SELECT ...",
+                    "c) INSERT INTO <tabla> (col1, col2, ...) VALUES ('value1', 'value2', ...)",
+                    "d) INSERT TABLE <tabla> VALUES ('...')"
+                ],
+                correctAnswer: "c) INSERT INTO <tabla> (col1, col2, ...) VALUES ('value1', 'value2', ...)"
+            },
+            {
+                question: "¿Cuál es la sintaxis correcta para actualizar datos en una tabla?",
+                options: [
+                    "a) UPDATE <tabla> SET col1 = val1 WHERE <condicion>",
+                    "b) MODIFY <tabla> SET col1 = val1",
+                    "c) UPDATE <tabla> VALUES (col1 = val1)",
+                    "d) ALTER <tabla> SET col1 = val1"
+                ],
+                correctAnswer: "a) UPDATE <tabla> SET col1 = val1 WHERE <condicion>"
+            },
+            {
+                question: "¿Cuál es la sintaxis correcta para borrar filas de una tabla?",
+                options: [
+                    "a) REMOVE FROM <tabla> WHERE <condicion>",
+                    "b) DELETE <tabla> WHERE <condicion>",
+                    "c) DELETE FROM <tabla> WHERE <condicion>",
+                    "d) DROP FROM <tabla> WHERE <condicion>"
+                ],
+                correctAnswer: "c) DELETE FROM <tabla> WHERE <condicion>"
+            },
+            {
+                question: "En una sentencia SELECT, ¿qué hace la cláusula DISTINCT?",
+                options: [
+                    "a) Ordena los resultados.",
+                    "b) Filtra filas basándose en una condición.",
+                    "c) Devuelve solo filas únicas.",
+                    "d) Agrupa filas con valores idénticos."
+                ],
+                correctAnswer: "c) Devuelve solo filas únicas."
+            },
+            {
+                question: "¿Cuál de las siguientes NO es una función de agregado?",
+                options: [
+                    "a) SUM",
+                    "b) AVG",
+                    "c) ROUND",
+                    "d) COUNT"
+                ],
+                correctAnswer: "c) ROUND (es una función escalar, no de agregado)"
+            },
+            {
+                question: "¿Cuál es la diferencia entre COUNT(*) y COUNT(columna)?",
+                options: [
+                    "a) COUNT(*) cuenta solo valores no nulos, COUNT(columna) cuenta todos.",
+                    "b) COUNT(*) cuenta solo filas distintas, COUNT(columna) cuenta todas las filas.",
+                    "c) COUNT(*) cuenta nulos, COUNT(columna) no cuenta nulos.",
+                    "d) No hay diferencia, son idénticas."
+                ],
+                correctAnswer: "c) COUNT(*) cuenta nulos, COUNT(columna) no cuenta nulos."
+            },
+            {
+                question: "¿Qué cláusulas de SELECT siempre van de la mano y se usan para agrupar resultados y filtrar esos grupos?",
+                options: [
+                    "a) WHERE y ORDER BY",
+                    "b) GROUP BY y HAVING",
+                    "c) SELECT y FROM",
+                    "d) JOIN y ON"
+                ],
+                correctAnswer: "b) GROUP BY y HAVING"
+            },
+            {
+                question: "¿Cuál es la finalidad de la cláusula ORDER BY en una sentencia SELECT?",
+                options: [
+                    "a) Filtrar las filas resultantes.",
+                    "b) Agrupar las filas por una columna.",
+                    "c) Ordenar el resultado de la consulta.",
+                    "d) Unir tablas."
+                ],
+                correctAnswer: "c) Ordenar el resultado de la consulta."
+            },
+            {
+                question: "¿Qué operador se usa comúnmente con una subconsulta correlacionada para verificar si devuelve filas?",
+                options: [
+                    "a) IN",
+                    "b) ANY",
+                    "c) EXISTS",
+                    "d) ALL"
+                ],
+                correctAnswer: "c) EXISTS"
+            },
+            {
+                question: "¿Qué operador se utiliza en subconsultas para verificar si un valor está dentro de un conjunto de resultados?",
+                options: [
+                    "a) EXISTS",
+                    "b) ANY",
+                    "c) IN",
+                    "d) SOME"
+                ],
+                correctAnswer: "c) IN"
+            },
+            {
+                question: "¿Qué tipo de JOIN es el producto cartesiano de las tablas?",
+                options: [
+                    "a) INNER JOIN",
+                    "b) LEFT JOIN",
+                    "c) CROSS JOIN",
+                    "d) FULL JOIN"
+                ],
+                correctAnswer: "c) CROSS JOIN"
+            },
+            {
+                question: "¿Qué tipo de JOIN devuelve solo las filas coincidentes según la condición?",
+                options: [
+                    "a) LEFT JOIN",
+                    "b) INNER JOIN",
+                    "c) RIGHT JOIN",
+                    "d) FULL JOIN"
+                ],
+                correctAnswer: "b) INNER JOIN"
+            },
+            {
+                question: "¿Qué tipo de JOIN retorna todas las filas de la tabla de la izquierda y las filas coincidentes de la derecha, rellenando con NULL si no hay coincidencia?",
+                options: [
+                    "a) INNER JOIN",
+                    "b) RIGHT JOIN",
+                    "c) LEFT [OUTER] JOIN",
+                    "d) FULL JOIN"
+                ],
+                correctAnswer: "c) LEFT [OUTER] JOIN"
+            },
+            {
+                question: "Si un JOIN devuelve todas las filas de la tabla de la derecha y las filas coincidentes de la izquierda, rellenando con NULL si no hay coincidencia, ¿de qué tipo de JOIN se trata?",
+                options: [
+                    "a) LEFT [OUTER] JOIN",
+                    "b) RIGHT [OUTER] JOIN",
+                    "c) INNER JOIN",
+                    "d) CROSS JOIN"
+                ],
+                correctAnswer: "b) RIGHT [OUTER] JOIN"
+            },
+            {
+                question: "¿Qué tipo de JOIN retorna todas las filas de ambas tablas y rellena con nulos cuando los registros de una tabla no cumplen la condición?",
+                options: [
+                    "a) INNER JOIN",
+                    "b) LEFT JOIN",
+                    "c) RIGHT JOIN",
+                    "d) FULL [OUTER] JOIN"
+                ],
+                correctAnswer: "d) FULL [OUTER] JOIN"
+            },
+            {
+                question: "¿Qué JOIN se utiliza cuando los nombres de los campos en ambas tablas tienen los mismos nombres y el propio gestor hace el match?",
+                options: [
+                    "a) INNER JOIN",
+                    "b) CROSS JOIN",
+                    "c) NATURAL JOIN",
+                    "d) OUTER JOIN"
+                ],
+                correctAnswer: "c) NATURAL JOIN"
+            },
+            {
+                question: "¿Cuál de los siguientes es un operador de conjuntos además de UNION?",
+                options: [
+                    "a) MERGE",
+                    "b) EXCEPT",
+                    "c) JOIN",
+                    "d) GROUP BY"
+                ],
+                correctAnswer: "b) EXCEPT"
+            },
+            {
+                question: "¿Qué requisito deben cumplir las queries que se unen con el operador UNION?",
+                options: [
+                    "a) Deben tener un número diferente de campos.",
+                    "b) Deben tener tipos de datos incompatibles.",
+                    "c) Deben ser compatibles, con la misma estructura (mismo nº de campos y tipo).",
+                    "d) Deben ser subconsultas correlacionadas."
+                ],
+                correctAnswer: "c) Deben ser compatibles, con la misma estructura (mismo nº de campos y tipo)."
+            },
+            {
+                question: "¿Cuál es la diferencia entre UNION y UNION ALL?",
+                options: [
+                    "a) UNION no permite ordenar, UNION ALL sí.",
+                    "b) UNION ALL elimina filas duplicadas, UNION no.",
+                    "c) UNION ALL no elimina filas duplicadas, UNION sí.",
+                    "d) UNION solo funciona con dos tablas, UNION ALL con más."
+                ],
+                correctAnswer: "c) UNION ALL no elimina filas duplicadas, UNION sí."
+            },
+            {
+                question: "¿Cuál es la funcionalidad principal de la sentencia MERGE?",
+                options: [
+                    "a) Eliminar registros duplicados.",
+                    "b) Mezclar registros de una tabla sobre otra.",
+                    "c) Crear una nueva tabla a partir de dos existentes.",
+                    "d) Comparar dos tablas y reportar diferencias."
+                ],
+                correctAnswer: "b) Mezclar registros de una tabla sobre otra."
+            },
+            {
+                question: "En una sentencia MERGE, ¿qué ocurre si un registro existe tanto en la tabla origen (source) como en la tabla destino (target)?",
+                options: [
+                    "a) Se inserta en el destino.",
+                    "b) Se elimina del destino.",
+                    "c) Se actualiza el destino.",
+                    "d) No se realiza ninguna acción."
+                ],
+                correctAnswer: "c) Se actualiza el destino."
+            },
+            {
+                question: "En una sentencia MERGE, ¿qué ocurre si un registro existe solo en la tabla origen (source)?",
+                options: [
+                    "a) Se actualiza el destino.",
+                    "b) Se elimina del destino.",
+                    "c) Se inserta en el destino.",
+                    "d) Se produce un error."
+                ],
+                correctAnswer: "c) Se inserta en el destino."
+            },
+            {
+                question: "Según el documento, ¿qué hace TRUNCATE en lugar de borrar y luego crear la tabla?",
+                options: [
+                    "a) Hace un borrado lento registro a registro.",
+                    "b) Realiza un borrado rápido, marcando zonas de memoria de golpe.",
+                    "c) Mueve los datos a una tabla de respaldo.",
+                    "d) Compacta la tabla sin eliminar datos."
+                ],
+                correctAnswer: "b) Realiza un borrado rápido, marcando zonas de memoria de golpe."
+            },
+            {
+                question: "¿Cuál es una diferencia clave de TRUNCATE respecto a DELETE en cuanto a los controles y logs?",
+                options: [
+                    "a) TRUNCATE respeta más controles.",
+                    "b) TRUNCATE genera más entradas en el fichero de log.",
+                    "c) TRUNCATE se salta los controles y no deja registros en el fichero de log.",
+                    "d) TRUNCATE siempre es más lento."
+                ],
+                correctAnswer: "c) TRUNCATE se salta los controles y no deja registros en el fichero de log."
+            },
+            {
+                question: "¿Puede la sentencia TRUNCATE utilizar una cláusula WHERE?",
+                options: [
+                    "a) Sí, para filtrar los registros a borrar.",
+                    "b) No, vacía la tabla completa sin filtros.",
+                    "c) Solo si se combina con DELETE.",
+                    "d) Depende del gestor de base de datos."
+                ],
+                correctAnswer: "b) No, vacía la tabla completa sin filtros."
+            },
+            {
+                question: "En Oracle, ¿TRUNCATE realiza un COMMIT automático?",
+                options: [
+                    "a) No, siempre requiere un COMMIT explícito.",
+                    "b) Sí, hace COMMIT automáticamente y no se puede deshacer.",
+                    "c) Solo si la tabla está vacía.",
+                    "d) Solo si es parte de una transacción."
+                ],
+                correctAnswer: "b) Sí, hace COMMIT automáticamente y no se puede deshacer."
+            },
+            {
+                question: "En MySQL, ¿qué privilegio se necesita para usar TRUNCATE?",
+                options: [
+                    "a) INSERT",
+                    "b) UPDATE",
+                    "c) DELETE",
+                    "d) DROP"
+                ],
+                correctAnswer: "d) DROP"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones es verdadera sobre los triggers?",
+                options: [
+                    "a) Aceptan parámetros de entrada y salida.",
+                    "b) Pueden usar START TRANSACTION y COMMIT.",
+                    "c) Se ejecutan a partir de un evento sobre determinados objetos.",
+                    "d) Son funciones que siempre retornan un valor."
+                ],
+                correctAnswer: "c) Se ejecutan a partir de un evento sobre determinados objetos."
+            },
+            {
+                question: "¿Cuál de las siguientes pseudotablas se utiliza en triggers de Oracle para referirse a los valores anteriores de las filas afectadas por una operación UPDATE o DELETE?",
+                options: [
+                    "a) New",
+                    "b) Inserted",
+                    "c) Old",
+                    "d) Deleted"
+                ],
+                correctAnswer: "c) Old"
+            },
+            {
+                question: "¿Cuál de las siguientes pseudotablas se utiliza en triggers de MS SQL Server para referirse a los valores nuevos de las filas insertadas o actualizadas?",
+                options: [
+                    "a) Old",
+                    "b) Deleted",
+                    "c) Inserted",
+                    "d) New"
+                ],
+                correctAnswer: "c) Inserted"
+            },
+            {
+                question: "¿Qué tipos de triggers existen?",
+                options: [
+                    "a) Triggers de consulta y de modificación.",
+                    "b) Triggers de sesión y de usuario.",
+                    "c) Triggers de fila o de sentencia.",
+                    "d) Triggers síncronos y asíncronos."
+                ],
+                correctAnswer: "c) Triggers de fila o de sentencia."
+            },
+            {
+                question: "¿Qué momento de ejecución de un trigger indica que la lógica se ejecutará después de la operación que lo disparó?",
+                options: [
+                    "a) BEFORE",
+                    "b) AFTER",
+                    "c) INSTEAD OF",
+                    "d) ON"
+                ],
+                correctAnswer: "b) AFTER"
+            },
+            {
+                question: "¿Qué operaciones de manipulación de datos pueden disparar un trigger?",
+                options: [
+                    "a) SELECT, INSERT, UPDATE",
+                    "b) INSERT, UPDATE, DELETE",
+                    "c) CREATE, ALTER, DROP",
+                    "d) GRANT, REVOKE"
+                ],
+                correctAnswer: "b) INSERT, UPDATE, DELETE"
+            },
+            {
+                question: "¿Pueden los triggers aceptar parámetros?",
+                options: [
+                    "a) Sí, de entrada y salida.",
+                    "b) Sí, solo de entrada.",
+                    "c) No, no aceptan parámetros.",
+                    "d) Solo si son triggers de sentencia."
+                ],
+                correctAnswer: "c) No, no aceptan parámetros."
+            },
+            {
+                question: "¿Pueden los triggers contener sentencias de control de transacciones como START TRANSACTION, COMMIT o ROLLBACK?",
+                options: [
+                    "a) Sí, siempre.",
+                    "b) Solo COMMIT.",
+                    "c) No, no pueden usarse transacciones dentro de ellos.",
+                    "d) Solo si son triggers BEFORE."
+                ],
+                correctAnswer: "c) No, no pueden usarse transacciones dentro de ellos."
+            },
+            {
+                question: "¿Qué efecto tiene la cláusula INSTEAD OF en un trigger?",
+                options: [
+                    "a) Ejecuta el cuerpo del trigger además de la sentencia disparadora.",
+                    "b) Anula la sentencia disparadora y solo tiene efecto el cuerpo del trigger.",
+                    "c) Solo se ejecuta si la sentencia disparadora falla.",
+                    "d) Permite que el trigger devuelva un valor."
+                ],
+                correctAnswer: "b) Anula la sentencia disparadora y solo tiene efecto el cuerpo del trigger."
+            },
+            {
+                question: "¿Qué son los procedimientos almacenados (PROCEDURES) en SQL?",
+                options: [
+                    "a) Funciones que retornan un valor.",
+                    "b) Objetos que almacenan datos.",
+                    "c) Scripts de base de datos que se ejecutan en el ámbito del SGBBDD.",
+                    "d) Sentencias SQL precompiladas para consultas."
+                ],
+                correctAnswer: "c) Scripts de base de datos que se ejecutan en el ámbito del SGBBDD."
+            },
+            {
+                question: "¿Cuál es la diferencia principal entre un procedimiento almacenado y una función en SQL en cuanto al retorno de valores?",
+                options: [
+                    "a) Los procedimientos retornan un valor, las funciones no.",
+                    "b) Las funciones retornan un valor, los procedimientos no.",
+                    "c) Ambos retornan un valor.",
+                    "d) Ninguno de los dos retorna un valor."
+                ],
+                correctAnswer: "b) Las funciones retornan un valor, los procedimientos no."
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un tipo de parámetro que pueden aceptar los procedimientos almacenados?",
+                options: [
+                    "a) IN",
+                    "b) OUT",
+                    "c) REF",
+                    "d) INOUT"
+                ],
+                correctAnswer: "c) REF"
+            },
+            {
+                question: "¿Qué es un cursor en SQL?",
+                options: [
+                    "a) Un tipo de dato numérico.",
+                    "b) Un objeto que permite recorrer el resultado de una sentencia.",
+                    "c) Una función de agregado.",
+                    "d) Un tipo de índice."
+                ],
+                correctAnswer: "b) Un objeto que permite recorrer el resultado de una sentencia."
+            },
+            {
+                question: "Si el registro de transacciones se llena, ¿qué sucede con la sentencia que se está ejecutando?",
+                options: [
+                    "a) Se confirma automáticamente.",
+                    "b) Se pausa hasta que haya espacio.",
+                    "c) Falla y se deshace la operación.",
+                    "d) Se registra en un log de errores."
+                ],
+                correctAnswer: "c) Falla y se deshace la operación."
+            },
+            {
+                question: "¿Para qué se utiliza la sentencia EXPLAIN PLAN?",
+                options: [
+                    "a) Para optimizar el diseño de la base de datos.",
+                    "b) Para mostrar el plan de ejecución que seguirá el SGBD para una sentencia.",
+                    "c) Para generar reportes de rendimiento.",
+                    "d) Para definir permisos de usuario."
+                ],
+                correctAnswer: "b) Para mostrar el plan de ejecución que seguirá el SGBD para una sentencia."
+            },
+            {
+                question: "¿Qué tipo de operaciones de SQL son compatibles con EXPLAIN PLAN?",
+                options: [
+                    "a) Solo SELECT.",
+                    "b) SELECT, INSERT, UPDATE, DELETE.",
+                    "c) Solo DDL.",
+                    "d) GRANT y REVOKE."
+                ],
+                correctAnswer: "b) SELECT, INSERT, UPDATE, DELETE."
+            },
+            {
+                question: "¿Cómo se crea un índice en SQL?",
+                options: [
+                    "a) CREATE INDEX <nom_indice> FROM <nom_tabla>;",
+                    "b) CREATE INDEX <nom_indice> ON <nom_tabla> (<nom_campo1>, <nom_campo2>);",
+                    "c) ALTER TABLE <nom_tabla> ADD INDEX <nom_indice>;",
+                    "d) INSERT INDEX <nom_indice> INTO <nom_tabla>;"
+                ],
+                correctAnswer: "b) CREATE INDEX <nom_indice> ON <nom_tabla> (<nom_campo1>, <nom_campo2>);"
+            },
+            {
+                question: "¿Cómo se crea una vista en SQL?",
+                options: [
+                    "a) CREATE TABLE <nom_vista> AS <sentencia_select>;",
+                    "b) CREATE VIEW <nom_vista> AS <sentencia_select>;",
+                    "c) SELECT INTO <nom_vista> FROM <tabla>;",
+                    "d) DEFINE VIEW <nom_vista> FROM <sentencia_select>;"
+                ],
+                correctAnswer: "b) CREATE VIEW <nom_vista> AS <sentencia_select>;"
+            },
+            {
+                question: "¿Qué hace la cláusula WITH CHECK OPTION al crear una vista?",
+                options: [
+                    "a) Requiere una confirmación antes de cualquier operación.",
+                    "b) No permite insertar ni actualizar registros si no cumplen la sentencia de la vista.",
+                    "c) Realiza una validación de datos en el origen.",
+                    "d) Permite auditorías de los cambios realizados a través de la vista."
+                ],
+                correctAnswer: "b) No permite insertar ni actualizar registros si no cumplen la sentencia de la vista."
+            },
+            {
+                question: "¿Cómo se llama un procedimiento almacenado en SQL?",
+                options: [
+                    "a) RUN <nom_procedure>;",
+                    "b) EXECUTE <nom_procedure> (<lista_params>);",
+                    "c) CALL <nom_procedure> [(<lista_params>)];",
+                    "d) GET <nom_procedure>;"
+                ],
+                correctAnswer: "c) CALL <nom_procedure> [(<lista_params>)];"
+            },
+            {
+                question: "¿Cómo se añade una nueva columna a una tabla existente?",
+                options: [
+                    "a) ADD COLUMN nom_col <tipo>;",
+                    "b) ALTER TABLE nom_tabla ADD COLUMN nom_col <tipo>;",
+                    "c) INSERT COLUMN nom_col <tipo> INTO nom_tabla;",
+                    "d) MODIFY TABLE nom_tabla ADD COLUMN nom_col <tipo>;"
+                ],
+                correctAnswer: "b) ALTER TABLE nom_tabla ADD COLUMN nom_col <tipo>;"
+            },
+            {
+                question: "¿Cómo se modifica el valor por defecto de una columna en una tabla existente?",
+                options: [
+                    "a) ALTER COLUMN nom_col DEFAULT valor;",
+                    "b) ALTER TABLE nom_tabla SET DEFAULT nom_col valor;",
+                    "c) ALTER TABLE nom_tabla ALTER COLUMN nom_col SET DEFAULT valor;",
+                    "d) UPDATE TABLE nom_tabla SET DEFAULT nom_col valor;"
+                ],
+                correctAnswer: "c) ALTER TABLE nom_tabla ALTER COLUMN nom_col SET DEFAULT valor;"
+            },
+            {
+                question: "¿Cómo se elimina una columna de una tabla existente?",
+                options: [
+                    "a) REMOVE COLUMN nom_col FROM nom_tabla;",
+                    "b) DELETE COLUMN nom_col FROM nom_tabla;",
+                    "c) ALTER TABLE nom_tabla DROP COLUMN nom_col;",
+                    "d) DROP COLUMN nom_col FROM nom_tabla;"
+                ],
+                correctAnswer: "c) ALTER TABLE nom_tabla DROP COLUMN nom_col;"
+            },
+            {
+                question: "¿Cómo se añade una restricción (CONSTRAINT) a una tabla existente?",
+                options: [
+                    "a) ADD CONSTRAINT <restriccion> TO <nom_tabla>;",
+                    "b) ALTER TABLE <nom_tabla> ADD <restriccion>;",
+                    "c) CREATE CONSTRAINT <restriccion> ON <nom_tabla>;",
+                    "d) INSERT CONSTRAINT <restriccion> INTO <nom_tabla>;"
+                ],
+                correctAnswer: "b) ALTER TABLE <nom_tabla> ADD <restriccion>;"
+            },
+            {
+                question: "¿Cómo se establece una columna como NOT NULL en una tabla existente?",
+                options: [
+                    "a) ALTER TABLE nom_tabla SET nom_col NOT NULL;",
+                    "b) ALTER COLUMN nom_col SET NOT NULL;",
+                    "c) ALTER TABLE nom_tabla ALTER COLUMN nom_col SET NOT NULL;",
+                    "d) UPDATE nom_tabla SET nom_col NOT NULL;"
+                ],
+                correctAnswer: "c) ALTER TABLE nom_tabla ALTER COLUMN nom_col SET NOT NULL;"
+            },
+            {
+                question: "¿Cómo se cambia el tipo de dato de una columna en una tabla existente?",
+                options: [
+                    "a) MODIFY COLUMN nom_col <tipo>;",
+                    "b) ALTER TABLE nom_tabla CHANGE COLUMN nom_col <tipo>;",
+                    "c) ALTER TABLE nom_tabla ALTER COLUMN nom_col SET DATA TYPE <tipo>;",
+                    "d) UPDATE TABLE nom_tabla SET TYPE nom_col <tipo>;"
+                ],
+                correctAnswer: "c) ALTER TABLE nom_tabla ALTER COLUMN nom_col SET DATA TYPE <tipo>;"
+            },
+            {
+                question: "¿Qué significa la cláusula WITH GRANT OPTION al otorgar permisos con GRANT?",
+                options: [
+                    "a) El grantee debe aceptar explícitamente los permisos.",
+                    "b) El grantee puede delegar esos permisos a otros.",
+                    "c) Los permisos se otorgan solo para una sesión.",
+                    "d) Los permisos se revocan automáticamente después de un tiempo."
+                ],
+                correctAnswer: "b) El grantee puede delegar esos permisos a otros."
+            },
+            {
+                question: "En una sentencia CREATE TRIGGER, ¿qué indica FOR EACH ROW?",
+                options: [
+                    "a) El trigger se ejecuta una vez por cada sentencia que lo dispara.",
+                    "b) El trigger se ejecuta una vez por cada fila afectada por la sentencia.",
+                    "c) El trigger se ejecuta antes de cada fila.",
+                    "d) El trigger se ejecuta después de cada fila."
+                ],
+                correctAnswer: "b) El trigger se ejecuta una vez por cada fila afectada por la sentencia."
+            },
+            {
+                question: "¿Qué objeto permite realizar transacciones en bloques de X registros para operaciones de inserción, actualización o borrado?",
+                options: [
+                    "a) Vistas",
+                    "b) Triggers",
+                    "c) Cursores",
+                    "d) Funciones de agregado"
+                ],
+                correctAnswer: "c) Cursores"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null); // Para almacenar las respuestas del usuario
+        let quizCompleted = false;
+
+        const appDiv = document.getElementById('app');
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showSummary();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            const hasAnswered = userAnswers[currentQuestionIndex] !== null;
+
+            appDiv.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${q.question}</p>
+                    <div class="options-container">
+                        ${q.options.map((option, index) => `
+                            <button
+                                class="rounded-lg ${hasAnswered ? (option === q.correctAnswer ? 'correct' : (userAnswers[currentQuestionIndex] === option ? 'incorrect' : '')) : ''}"
+                                data-option="${option}"
+                                ${hasAnswered ? 'disabled' : ''}
+                            >
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    ${hasAnswered ? `<div class="feedback ${userAnswers[currentQuestionIndex] === q.correctAnswer ? 'correct-feedback' : 'incorrect-feedback'}">
+                        ${userAnswers[currentQuestionIndex] === q.correctAnswer ? '¡Correcto!' : `Incorrecto. La respuesta correcta es: ${q.correctAnswer}`}
+                    </div>` : ''}
+                </div>
+                <div class="progress-indicator">
+                    Pregunta ${currentQuestionIndex + 1} de ${questions.length}
+                </div>
+                <div class="navigation-buttons">
+                    <button class="prev-btn rounded-lg" ${currentQuestionIndex === 0 ? 'disabled' : ''}>Anterior</button>
+                    <button class="next-btn rounded-lg">${currentQuestionIndex === questions.length - 1 ? 'Finalizar' : 'Siguiente'}</button>
+                </div>
+            `;
+
+            attachEventListeners();
+        }
+
+        function attachEventListeners() {
+            const optionButtons = appDiv.querySelectorAll('.options-container button');
+            optionButtons.forEach(button => {
+                button.addEventListener('click', handleOptionClick);
+            });
+
+            const prevBtn = appDiv.querySelector('.prev-btn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    currentQuestionIndex--;
+                    renderQuestion();
+                });
+            }
+
+            const nextBtn = appDiv.querySelector('.next-btn');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (currentQuestionIndex === questions.length - 1) {
+                        showSummary();
+                    } else {
+                        currentQuestionIndex++;
+                        renderQuestion();
+                    }
+                });
+            }
+        }
+
+        function handleOptionClick(event) {
+            if (quizCompleted) return; // Evitar clics después de finalizar el quiz
+
+            const selectedOption = event.target.dataset.option;
+            const currentQuestion = questions[currentQuestionIndex];
+
+            // Almacenar la respuesta del usuario
+            userAnswers[currentQuestionIndex] = selectedOption;
+
+            // Deshabilitar todos los botones de opción después de seleccionar una
+            const optionButtons = appDiv.querySelectorAll('.options-container button');
+            optionButtons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Marcar la respuesta correcta e incorrecta
+            optionButtons.forEach(button => {
+                if (button.dataset.option === currentQuestion.correctAnswer) {
+                    button.classList.add('correct');
+                } else if (button.dataset.option === selectedOption) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            // Mostrar feedback
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.classList.add('feedback', 'rounded-lg');
+            if (selectedOption === currentQuestion.correctAnswer) {
+                feedbackDiv.classList.add('correct-feedback');
+                feedbackDiv.textContent = '¡Correcto!';
+                score++; // Incrementar puntuación solo si es la primera vez que se responde correctamente
+            } else {
+                feedbackDiv.classList.add('incorrect-feedback');
+                feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${currentQuestion.correctAnswer}`;
+            }
+            appDiv.querySelector('.question-card').appendChild(feedbackDiv);
+        }
+
+        function showSummary() {
+            quizCompleted = true;
+            appDiv.innerHTML = `
+                <div class="quiz-summary">
+                    <h2>¡Test Completado!</h2>
+                    <p>Has respondido ${score} de ${questions.length} preguntas correctamente.</p>
+                    <button class="rounded-lg" onclick="restartQuiz()">Reiniciar Test</button>
+                </div>
+            `;
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            quizCompleted = false;
+            renderQuestion();
+        }
+
+        // Renderizar la primera pregunta al cargar
+        document.addEventListener('DOMContentLoaded', renderQuestion);
+    </script>
+</body>
+</html>

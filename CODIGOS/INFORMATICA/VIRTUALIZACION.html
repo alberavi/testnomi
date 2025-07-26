@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Virtualización</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .answer-button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background-color: #ffffff;
+            text-align: left;
+            font-size: 1rem;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .answer-button:hover {
+            background-color: #eef2ff;
+            border-color: #a7b7ed;
+        }
+        .answer-button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .answer-button.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .answer-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .solution-text {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #6b7280;
+            font-style: italic;
+            display: none; /* Hidden by default */
+        }
+        .answer-button.incorrect + .solution-text {
+            display: block; /* Show solution for incorrect answers */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 10px 20px;
+            background-color: #4f46e5;
+            color: white;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .nav-button:hover {
+            background-color: #4338ca;
+        }
+        .nav-button:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+        .quiz-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="quiz-title">Test de Virtualización</h1>
+        <div class="progress-indicator" id="progressIndicator"></div>
+        <div id="quizContent"></div>
+        <div class="navigation-buttons">
+            <button id="prevButton" class="nav-button" disabled>Anterior</button>
+            <button id="nextButton" class="nav-button">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Qué es una virtualización?",
+                options: [
+                    "a) Un programa que elimina virus del sistema.",
+                    "b) Una abstracción, algo que no existe pero simula serlo.",
+                    "c) Un dispositivo físico que almacena datos.",
+                    "d) Un tipo de conexión de red inalámbrica."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización es una abstracción de recursos físicos, permitiendo que un único hardware simule múltiples entornos."
+            },
+            {
+                question: "¿Cuál es el propósito principal de la virtualización?",
+                options: [
+                    "a) Mejorar la velocidad de internet.",
+                    "b) Multiplexar recursos de hardware entre varios clientes mediante una capa de abstracción.",
+                    "c) Diseñar interfaces gráficas de usuario.",
+                    "d) Proteger los sistemas contra ciberataques."
+                ],
+                correctAnswer: "b",
+                solution: "El propósito principal es optimizar el uso del hardware al permitir que múltiples sistemas operativos o aplicaciones compartan los mismos recursos físicos de manera eficiente."
+            },
+            {
+                question: "¿Cómo se denomina al software que permite crear máquinas virtuales y multiplexar recursos de hardware?",
+                options: [
+                    "a) Compilador.",
+                    "b) Hipervisor o VMM (Virtual Machine Monitor).",
+                    "c) Sistema Operativo.",
+                    "d) Firewall."
+                ],
+                correctAnswer: "b",
+                solution: "Un hipervisor es el software que permite la creación y gestión de máquinas virtuales, asignando recursos de hardware."
+            },
+            {
+                question: "¿Cuál de las siguientes es una ventaja de la virtualización?",
+                options: [
+                    "a) Mayor consumo energético del hardware.",
+                    "b) Menor aislamiento entre máquinas.",
+                    "c) Optimización del uso de HW.",
+                    "d) Dificultad en la administración del entorno."
+                ],
+                correctAnswer: "c",
+                solution: "La virtualización permite una mejor utilización de los recursos de hardware, reduciendo costos y energía."
+            },
+            {
+                question: "En el contexto de la virtualización, ¿qué beneficio se obtiene respecto al aislamiento entre máquinas?",
+                options: [
+                    "a) Si una máquina cae, afecta a las otras.",
+                    "b) No hay aislamiento, todas las máquinas comparten el mismo espacio.",
+                    "c) Aislamiento entre máquinas (si cae una no afecta a las otras).",
+                    "d) El aislamiento solo es posible si se usan diferentes sistemas operativos."
+                ],
+                correctAnswer: "c",
+                solution: "El aislamiento es clave; si una máquina virtual falla, no afecta a las demás que se ejecutan en el mismo hardware físico."
+            },
+            {
+                question: "Una de las ventajas de la virtualización es la mejora en el aprovisionamiento y administración del entorno. ¿Qué permite esto?",
+                options: [
+                    "a) Solo ampliar los recursos, no reducirlos.",
+                    "b) Solo reducir los recursos, no ampliarlos.",
+                    "c) Ampliar y reducir los recursos bajo demanda.",
+                    "d) La administración solo se realiza de forma manual."
+                ],
+                correctAnswer: "c",
+                solution: "La virtualización facilita la escalabilidad, permitiendo ajustar los recursos (ampliar o reducir) según las necesidades."
+            },
+            {
+                question: "¿Cuál es una característica principal de Cloud en relación con la gestión de la demanda?",
+                options: [
+                    "a) Gestión manual de la demanda sin tarificación.",
+                    "b) Tarificación fija independientemente del consumo.",
+                    "c) Gestión de la demanda y tarificación por consumo.",
+                    "d) Ausencia de sistemas de autoescalado."
+                ],
+                correctAnswer: "c",
+                solution: "Cloud Computing se caracteriza por la flexibilidad en la gestión de la demanda y un modelo de pago por uso."
+            },
+            {
+                question: "En Cloud, ¿qué sistema se utiliza para gestionar el aumento de la demanda?",
+                options: [
+                    "a) Sistemas de autoescalado.",
+                    "b) Gestión manual por parte de un administrador.",
+                    "c) Reducción automática de servicios.",
+                    "d) Un sistema de alertas para el usuario."
+                ],
+                correctAnswer: "a",
+                solution: "Los sistemas de autoescalado en la nube permiten ajustar automáticamente los recursos para satisfacer la demanda."
+            },
+            {
+                question: "¿Cuál es una diferencia clave entre la virtualización tradicional y Cloud en cuanto a la disponibilidad de recursos?",
+                options: [
+                    "a) En la virtualización es casi imposible quedarse sin recursos, en Cloud es común.",
+                    "b) La virtualización y Cloud tienen la misma disponibilidad de recursos.",
+                    "c) En la virtualización te podías quedar sin recursos, en Cloud es casi imposible.",
+                    "d) En Cloud siempre hay recursos ilimitados, en virtualización no se especifica."
+                ],
+                correctAnswer: "c",
+                solution: "En la virtualización tradicional, los recursos son finitos y pueden agotarse, mientras que en la nube, la disponibilidad es mucho mayor debido a la elasticidad."
+            },
+            {
+                question: "¿Qué tipo de virtualización requiere que el hardware tenga ciertas características específicas?",
+                options: [
+                    "a) Virtualización del almacenamiento.",
+                    "b) Virtualización del backup.",
+                    "c) Virtualización de máquinas.",
+                    "d) Virtualización de aplicaciones."
+                ],
+                correctAnswer: "c",
+                solution: "La virtualización de máquinas a menudo requiere soporte de hardware (como VT-x o AMD-V) para un rendimiento óptimo."
+            },
+            {
+                question: "¿Qué tecnología de Intel se utiliza específicamente para la virtualización de máquinas?",
+                options: [
+                    "a) VT-d.",
+                    "b) VT-c.",
+                    "c) VT-X.",
+                    "d) AMD-V."
+                ],
+                correctAnswer: "c",
+                solution: "Intel VT-x es la tecnología de virtualización de hardware de Intel para máquinas virtuales."
+            },
+            {
+                question: "Para la virtualización de entrada/salida, ¿qué tecnología de Intel es relevante?",
+                options: [
+                    "a) VT-X.",
+                    "b) VT-d.",
+                    "c) VT-c.",
+                    "d) AMD-V."
+                ],
+                correctAnswer: "b",
+                solution: "Intel VT-d se enfoca en la virtualización de E/S, permitiendo que las máquinas virtuales accedan directamente a los dispositivos de hardware."
+            },
+            {
+                question: "La virtualización de red se beneficia de la tecnología Intel denominada:",
+                options: [
+                    "a) VT-X.",
+                    "b) VT-d.",
+                    "c) VT-c.",
+                    "d) AMD-V."
+                ],
+                correctAnswer: "c",
+                solution: "Intel VT-c (Virtualization Technology for Connectivity) mejora el rendimiento de la red en entornos virtualizados."
+            },
+            {
+                question: "¿Cuál es la tecnología de virtualización desarrollada por AMD?",
+                options: [
+                    "a) VT-X.",
+                    "b) VT-d.",
+                    "c) VT-c.",
+                    "d) AMD-V."
+                ],
+                correctAnswer: "d",
+                solution: "AMD-V es la tecnología de virtualización de hardware desarrollada por AMD, equivalente a Intel VT-x."
+            },
+            {
+                question: "¿Qué tipo de hipervisor es comúnmente utilizado en el ámbito doméstico y es menos optimizado?",
+                options: [
+                    "a) Hipervisor de tipo 1.",
+                    "b) Hipervisor de tipo 2.",
+                    "c) Hipervisor de red.",
+                    "d) Hipervisor de almacenamiento."
+                ],
+                correctAnswer: "b",
+                solution: "Los hipervisores de tipo 2 se ejecutan sobre un sistema operativo anfitrión y son comunes en entornos de escritorio."
+            },
+            {
+                question: "¿Qué característica principal distingue a los hipervisores de tipo 1 de los de tipo 2?",
+                options: [
+                    "a) Los de tipo 1 son menos optimizados.",
+                    "b) Los de tipo 1 se instalan sobre un sistema operativo.",
+                    "c) Los de tipo 1 son una mezcla y optimización del HW y SO del tipo 2, y su diseño está orientado a la virtualización.",
+                    "d) Los de tipo 1 solo son compatibles con Windows."
+                ],
+                correctAnswer: "c",
+                solution: "Los hipervisores de tipo 1 se ejecutan directamente sobre el hardware, lo que les permite ser más eficientes y optimizados para la virtualización."
+            },
+            {
+                question: "¿Cómo se instala Hyper-V en relación con el sistema operativo y el hardware?",
+                options: [
+                    "a) Se instala como una aplicación más dentro de Windows.",
+                    "b) Se instala sobre Windows y se sitúa encima del HW, por debajo del SO.",
+                    "c) Se instala directamente en el hardware, sin necesidad de un SO.",
+                    "d) Se instala en la nube como un servicio."
+                ],
+                correctAnswer: "b",
+                solution: "Hyper-V es un hipervisor de tipo 1 que se integra con Windows, pero se ejecuta directamente sobre el hardware."
+            },
+            {
+                question: "¿Cuál de los siguientes es un ejemplo de hipervisor de Tipo 1?",
+                options: [
+                    "a) VirtualBox.",
+                    "b) VMWare Player.",
+                    "c) KVM.",
+                    "d) Parallels."
+                ],
+                correctAnswer: "c",
+                solution: "KVM (Kernel-based Virtual Machine) es un hipervisor de tipo 1 integrado en el kernel de Linux."
+            },
+            {
+                question: "¿Cuál de los siguientes es un ejemplo de hipervisor de Tipo 2?",
+                options: [
+                    "a) Hyper-V.",
+                    "b) VMWare ESX.",
+                    "c) VirtualBox.",
+                    "d) XCP-ng."
+                ],
+                correctAnswer: "c",
+                solution: "VirtualBox es un popular hipervisor de tipo 2, utilizado para ejecutar máquinas virtuales en un sistema operativo existente."
+            },
+            {
+                question: "La virtualización del almacenamiento a nivel de bloque incluye:",
+                options: [
+                    "a) NAS.",
+                    "b) NFS.",
+                    "c) LVM.",
+                    "d) AFP."
+                ],
+                correctAnswer: "c",
+                solution: "LVM (Logical Volume Manager) es una tecnología que permite la virtualización del almacenamiento a nivel de bloque en sistemas Linux."
+            },
+            {
+                question: "En la virtualización de red, específicamente SAN y VSAN, ¿qué se utiliza para la abstracción?",
+                options: [
+                    "a) RAID.",
+                    "b) LVM.",
+                    "c) LUNs.",
+                    "d) NAS."
+                ],
+                correctAnswer: "c",
+                solution: "Las LUNs (Logical Unit Numbers) son unidades lógicas de almacenamiento que se utilizan para abstraer el almacenamiento en entornos SAN y VSAN."
+            },
+            {
+                question: "¿Qué tecnología se asocia con la virtualización del almacenamiento a nivel de fichero?",
+                options: [
+                    "a) SAN.",
+                    "b) VSAN.",
+                    "c) NAS (NFS/CIFS/AFP).",
+                    "d) RAID."
+                ],
+                correctAnswer: "c",
+                solution: "NAS (Network Attached Storage) proporciona almacenamiento a nivel de fichero a través de protocolos como NFS, CIFS y AFP."
+            },
+            {
+                question: "¿Qué emula la virtualización del backup?",
+                options: [
+                    "a) Una impresora.",
+                    "b) La interface de la librería de cintas con discos (VTL).",
+                    "c) Un sistema de almacenamiento en la nube.",
+                    "d) Un disco duro externo."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización del backup a menudo emula una librería de cintas virtual (VTL) para optimizar los procesos de copia de seguridad."
+            },
+            {
+                question: "¿Qué tipo de infraestructura se utiliza para crear escritorios virtuales para usuarios?",
+                options: [
+                    "a) Infraestructura LAN.",
+                    "b) Infraestructura VDI.",
+                    "c) Infraestructura WAN.",
+                    "d) Infraestructura de servidores físicos."
+                ],
+                correctAnswer: "b",
+                solution: "VDI (Virtual Desktop Infrastructure) permite la creación y gestión centralizada de escritorios virtuales."
+            },
+            {
+                question: "¿Cuál de los siguientes es un producto para la virtualización del puesto de usuario (escritorio)?",
+                options: [
+                    "a) Citrix XenApp.",
+                    "b) VMWare Horizon.",
+                    "c) Docker.",
+                    "d) Kubernetes."
+                ],
+                correctAnswer: "b",
+                solution: "VMWare Horizon es una solución popular para la virtualización de escritorios y aplicaciones."
+            },
+            {
+                question: "¿Qué muestra la virtualización de aplicaciones al usuario?",
+                options: [
+                    "a) La aplicación instalada localmente.",
+                    "b) Un acceso, una interface para acceder a la aplicación.",
+                    "c) El código fuente de la aplicación.",
+                    "d) Un hipervisor."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización de aplicaciones proporciona un acceso o una interfaz para usar la aplicación sin instalarla localmente."
+            },
+            {
+                question: "¿Cuál es un producto conocido para la virtualización de aplicaciones?",
+                options: [
+                    "a) VirtualBox.",
+                    "b) VMWare ESX.",
+                    "c) Citrix XenApp.",
+                    "d) Docker."
+                ],
+                correctAnswer: "c",
+                solution: "Citrix XenApp es una solución ampliamente utilizada para la virtualización y entrega de aplicaciones."
+            },
+            {
+                question: "¿Qué significa el formato de archivo VMDK?",
+                options: [
+                    "a) Un formato para documentos de texto.",
+                    "b) Formato de código abierto para almacenamiento de datos de las MV (VMWare).",
+                    "c) Un formato de imagen de disco duro físico.",
+                    "d) Un formato para archivos de audio."
+                ],
+                correctAnswer: "b",
+                solution: "VMDK es un formato de archivo de disco virtual utilizado por VMware y otras plataformas de virtualización."
+            },
+            {
+                question: "¿Para qué se utiliza el formato OVF (Open Virtualization Format)?",
+                options: [
+                    "a) Para comprimir archivos.",
+                    "b) Para distribuir MV (Virtual Appliance).",
+                    "c) Para cifrar datos.",
+                    "d) Para crear copias de seguridad de bases de datos."
+                ],
+                correctAnswer: "b",
+                solution: "OVF es un estándar abierto para empaquetar y distribuir máquinas virtuales o 'virtual appliances'."
+            },
+            {
+                question: "¿Qué es un archivo OVA (Open Virtualization Appliance)?",
+                options: [
+                    "a) Un archivo de video.",
+                    "b) Un OVF empaquetado en TAR.",
+                    "c) Un archivo de sistema operativo.",
+                    "d) Un formato de base de datos."
+                ],
+                correctAnswer: "b",
+                solution: "Un archivo OVA es un paquete OVF comprimido en formato TAR, facilitando su distribución."
+            },
+            {
+                question: "¿Qué contiene un archivo VMEM?",
+                options: [
+                    "a) El volcado de la memoria principal de la MV cuando se pausa.",
+                    "b) La configuración de red de la MV.",
+                    "c) Los registros de eventos de la MV.",
+                    "d) El disco duro virtual de la MV."
+                ],
+                correctAnswer: "a",
+                solution: "Un archivo VMEM contiene el estado de la memoria de una máquina virtual cuando está en pausa o suspendida."
+            },
+            {
+                question: "¿Qué empresa está asociada con el formato de imágenes VDI?",
+                options: [
+                    "a) Microsoft.",
+                    "b) Oracle (VirtualBox).",
+                    "c) IBM.",
+                    "d) Google."
+                ],
+                correctAnswer: "b",
+                solution: "VDI (Virtual Disk Image) es el formato de disco virtual nativo de VirtualBox, un producto de Oracle."
+            },
+            {
+                question: "¿A qué está asociado el formato de almacenamiento VHD?",
+                options: [
+                    "a) VirtualBox.",
+                    "b) VMWare.",
+                    "c) Hyper-V.",
+                    "d) Xen."
+                ],
+                correctAnswer: "c",
+                solution: "VHD (Virtual Hard Disk) es el formato de disco virtual utilizado por Microsoft Hyper-V."
+            },
+            {
+                question: "¿Para qué es ideal la virtualización ligera?",
+                options: [
+                    "a) Para servicios pesados como bases de datos Oracle.",
+                    "b) Para aplicaciones.",
+                    "c) Para sistemas operativos completos.",
+                    "d) Para entornos de desarrollo de bajo rendimiento."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización ligera, como los contenedores, es ideal para empaquetar y ejecutar aplicaciones de manera eficiente."
+            },
+            {
+                question: "La virtualización clásica se utiliza principalmente para:",
+                options: [
+                    "a) Aplicaciones web ligeras.",
+                    "b) Servicios, como Oracle, Correo, DNS, etc.",
+                    "c) Juegos de alta gama.",
+                    "d) Dispositivos móviles."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización clásica (máquinas virtuales) es adecuada para servicios que requieren un sistema operativo completo y mayor aislamiento."
+            },
+            {
+                question: "En la virtualización ligera, ¿qué componente se virtualiza en lugar de utilizar un hipervisor?",
+                options: [
+                    "a) La tarjeta gráfica.",
+                    "b) Una capa de acceso al kernel/gestor de contenedores.",
+                    "c) La memoria RAM.",
+                    "d) El disco duro físico."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización ligera se enfoca en virtualizar el kernel del sistema operativo a través de una capa de acceso o gestor de contenedores."
+            },
+            {
+                question: "Al virtualizar el kernel del SO en la virtualización ligera, ¿qué se crea?",
+                options: [
+                    "a) Máquinas virtuales.",
+                    "b) Contenedores o EV (Entorno Virtual).",
+                    "c) Dispositivos físicos.",
+                    "d) Servidores dedicados."
+                ],
+                correctAnswer: "b",
+                solution: "La virtualización del kernel da lugar a contenedores, que son entornos virtuales aislados pero que comparten el kernel del host."
+            },
+            {
+                question: "¿Qué partes del sistema operativo y utilidades básicas se encuentran dentro de un contenedor?",
+                options: [
+                    "a) El kernel completo del SO.",
+                    "b) Parte del SO, las utilities (paquetería básica).",
+                    "c) Solo el software de aplicación.",
+                    "d) El hardware subyacente."
+                ],
+                correctAnswer: "b",
+                solution: "Los contenedores incluyen solo las partes del sistema operativo y las utilidades necesarias para que la aplicación funcione, no el kernel completo."
+            },
+            {
+                question: "¿Qué componente del sistema operativo NO se encuentra dentro de un contenedor?",
+                options: [
+                    "a) Las utilities.",
+                    "b) El kernel.",
+                    "c) Las aplicaciones.",
+                    "d) Parte del SO."
+                ],
+                correctAnswer: "b",
+                solution: "Los contenedores comparten el kernel del sistema operativo anfitrión, por lo que no lo incluyen dentro de sí mismos."
+            },
+            {
+                question: "¿Por qué los contenedores son fáciles de distribuir?",
+                options: [
+                    "a) Porque requieren hardware muy específico.",
+                    "b) Porque ejecutan cosas pequeñas, ligeras.",
+                    "c) Porque son solo para sistemas operativos Windows.",
+                    "d) Porque no necesitan conexión a internet."
+                ],
+                correctAnswer: "b",
+                solution: "Los contenedores son ligeros y contienen solo lo esencial para la aplicación, lo que facilita su distribución y despliegue."
+            },
+            {
+                question: "¿Cuál de los siguientes es un producto popular de virtualización ligera (contenedores)?",
+                options: [
+                    "a) VMWare ESX.",
+                    "b) VirtualBox.",
+                    "c) Docker.",
+                    "d) Hyper-V."
+                ],
+                correctAnswer: "c",
+                solution: "Docker es la plataforma más conocida para la creación y gestión de contenedores."
+            },
+            {
+                question: "¿Para qué tipo de consumo no están pensados los contenedores?",
+                options: [
+                    "a) Para alojar un servicio.",
+                    "b) Para ser distribuidos en muchos hosts.",
+                    "c) Para ser consumidos por humanos.",
+                    "d) Para ejecutar cosas pequeñas y ligeras."
+                ],
+                correctAnswer: "c",
+                solution: "Los contenedores están diseñados para ejecutar servicios y aplicaciones, no para ser interactuados directamente por usuarios finales como un escritorio."
+            },
+            {
+                question: "¿Para qué están diseñados los contenedores en relación con los servicios y hosts?",
+                options: [
+                    "a) Para ser interfaces de usuario directas.",
+                    "b) Para alojar un servicio que sea distribuido en muchos hosts.",
+                    "c) Para reemplazar completamente las máquinas virtuales.",
+                    "d) Para almacenar grandes volúmenes de datos."
+                ],
+                correctAnswer: "b",
+                solution: "Los contenedores son ideales para desplegar servicios que pueden ser distribuidos y escalados en múltiples hosts."
+            },
+            {
+                question: "En el funcionamiento con Docker, ¿qué es una imagen?",
+                options: [
+                    "a) Una representación de la imagen en memoria, en ejecución.",
+                    "b) Una entidad dinámica que cambia constantemente.",
+                    "c) Una entidad estática.",
+                    "d) Un volumen de almacenamiento."
+                ],
+                correctAnswer: "c",
+                solution: "Una imagen Docker es una plantilla estática e inmutable que contiene todo lo necesario para ejecutar una aplicación."
+            },
+            {
+                question: "En el funcionamiento con Docker, ¿qué es un contenedor?",
+                options: [
+                    "a) Una imagen estática.",
+                    "b) Un fichero de configuración.",
+                    "c) La representación de la imagen en memoria, en ejecución.",
+                    "d) Un repositorio de imágenes."
+                ],
+                correctAnswer: "c",
+                solution: "Un contenedor es una instancia en ejecución de una imagen Docker, un proceso aislado en el sistema."
+            },
+            {
+                question: "¿Qué fichero se utiliza para configurar una imagen Docker?",
+                options: [
+                    "a) docker-compose.yml.",
+                    "b) Dockerfile.",
+                    "c) Kubernetes.yaml.",
+                    "d) VMDK."
+                ],
+                correctAnswer: "b",
+                solution: "El Dockerfile es un archivo de texto que contiene las instrucciones para construir una imagen Docker."
+            },
+            {
+                question: "En un Dockerfile, ¿qué instrucción se utiliza para indicar la imagen base sobre la cual se construye la nueva imagen?",
+                options: [
+                    "a) RUN.",
+                    "b) EXPOSE.",
+                    "c) FROM.",
+                    "d) CMD."
+                ],
+                correctAnswer: "c",
+                solution: "La instrucción FROM especifica la imagen base a partir de la cual se construirá la nueva imagen."
+            },
+            {
+                question: "¿Qué crea cada comando ejecutado en un Dockerfile?",
+                options: [
+                    "a) Un nuevo contenedor.",
+                    "b) Una nueva imagen completa.",
+                    "c) Una capa.",
+                    "d) Un volumen."
+                ],
+                correctAnswer: "c",
+                solution: "Cada instrucción en un Dockerfile crea una nueva capa de solo lectura en la imagen."
+            },
+            {
+                question: "¿Cuál es el estado de lectura de la mayoría de las capas en un Dockerfile?",
+                options: [
+                    "a) Lectura/Escritura (R/W).",
+                    "b) Solo Escritura (W).",
+                    "c) Solo Lectura (R).",
+                    "d) Ninguno, son efímeras."
+                ],
+                correctAnswer: "c",
+                solution: "La mayoría de las capas de una imagen Docker son de solo lectura, lo que contribuye a su inmutabilidad."
+            },
+            {
+                question: "¿Cuál es el estado de lectura de la última capa en un Dockerfile?",
+                options: [
+                    "a) Solo Lectura (R).",
+                    "b) Solo Escritura (W).",
+                    "c) Lectura/Escritura (R/W).",
+                    "d) Depende del sistema operativo."
+                ],
+                correctAnswer: "c",
+                solution: "La última capa de un contenedor es de lectura/escritura, lo que permite que el contenedor realice cambios en tiempo de ejecución."
+            },
+            {
+                question: "¿Cuál de las siguientes es una imagen de Linux muy ligera para Docker?",
+                options: [
+                    "a) Ubuntu.",
+                    "b) Debian.",
+                    "c) Alpine.",
+                    "d) CentOS."
+                ],
+                correctAnswer: "c",
+                solution: "Alpine Linux es conocida por ser una distribución muy ligera, ideal para imágenes Docker pequeñas."
+            },
+            {
+                question: "¿Qué comando de Docker se utiliza para comprobar vulnerabilidades (CVEs) en cada capa de una imagen?",
+                options: [
+                    "a) docker images.",
+                    "b) docker pull.",
+                    "c) docker scout.",
+                    "d) docker logs."
+                ],
+                correctAnswer: "c",
+                solution: "Docker Scout es una herramienta que ayuda a analizar y escanear imágenes Docker en busca de vulnerabilidades."
+            },
+            {
+                question: "¿Qué instrucción en un Dockerfile se utiliza para indicar almacenamiento persistente, incluso si el contenedor se elimina?",
+                options: [
+                    "a) EXPOSE.",
+                    "b) CMD.",
+                    "c) VOLUME.",
+                    "d) WORKDIR."
+                ],
+                correctAnswer: "c",
+                solution: "La instrucción VOLUME se utiliza para crear puntos de montaje para volúmenes persistentes, asegurando que los datos no se pierdan al eliminar el contenedor."
+            },
+            {
+                question: "¿Cuál es la filosofía de almacenamiento por defecto en los contenedores?",
+                options: [
+                    "a) Almacenamiento persistente por defecto.",
+                    "b) Filosofía de usar y tirar (almacenamiento efímero).",
+                    "c) Almacenamiento en la nube obligatorio.",
+                    "d) Almacenamiento solo en discos duros SSD."
+                ],
+                correctAnswer: "b",
+                solution: "Por defecto, los contenedores están diseñados para ser efímeros, lo que significa que los datos no persistirán a menos que se use un volumen."
+            },
+            {
+                question: "¿Qué comando Docker se utiliza para construir una imagen a partir de un Dockerfile?",
+                options: [
+                    "a) docker run.",
+                    "b) docker stop.",
+                    "c) docker build.",
+                    "d) docker push."
+                ],
+                correctAnswer: "c",
+                solution: "El comando `docker build` se utiliza para construir una imagen Docker a partir de un Dockerfile y un contexto."
+            },
+            {
+                question: "¿Qué comando Docker se utiliza para levantar un contenedor en memoria a partir de una imagen construida?",
+                options: [
+                    "a) docker build.",
+                    "b) docker rmi.",
+                    "c) docker run.",
+                    "d) docker ps."
+                ],
+                correctAnswer: "c",
+                solution: "El comando `docker run` crea y ejecuta un nuevo contenedor a partir de una imagen Docker."
+            },
+            {
+                question: "¿Qué herramienta se utiliza para la orquestación de muchos contenedores y muchos nodos donde distribuirlos?",
+                options: [
+                    "a) Docker Compose.",
+                    "b) VirtualBox.",
+                    "c) Kubernetes / Docker Swarm.",
+                    "d) VMware Workstation."
+                ],
+                correctAnswer: "c",
+                solution: "Kubernetes y Docker Swarm son herramientas de orquestación para gestionar y escalar contenedores en clústeres de nodos."
+            },
+            {
+                question: "¿Cuál de las siguientes es una ventaja de Kubernetes en relación con la escalabilidad de contenedores?",
+                options: [
+                    "a) Solo permite escalar de forma manual.",
+                    "b) Me permite escalar.",
+                    "c) Reduce automáticamente el número de contenedores.",
+                    "d) No tiene capacidad de escalado."
+                ],
+                correctAnswer: "b",
+                solution: "Kubernetes ofrece capacidades avanzadas de escalado automático de contenedores para adaptarse a la demanda."
+            },
+            {
+                question: "¿Qué capacidad de Kubernetes se relaciona con la seguridad en caso de caída de un nodo?",
+                options: [
+                    "a) Ignora la caída de nodos.",
+                    "b) Impide la caída de nodos.",
+                    "c) Meter seguridad para que si se cae un nodo replique ese contenedor en otro nodo.",
+                    "d) Envía una notificación al administrador."
+                ],
+                correctAnswer: "c",
+                solution: "Kubernetes asegura la alta disponibilidad replicando contenedores en otros nodos si uno falla."
+            },
+            {
+                question: "¿Qué hace Kubernetes con las ejecuciones de contenedores entre varios nodos?",
+                options: [
+                    "a) Las mantiene en un solo nodo.",
+                    "b) Las balancea.",
+                    "c) Las interrumpe.",
+                    "d) Las reasigna manualmente."
+                ],
+                correctAnswer: "b",
+                solution: "Kubernetes balancea la carga de las ejecuciones de contenedores entre los nodos para optimizar el rendimiento y la disponibilidad."
+            },
+            {
+                question: "Si un contenedor concreto está en una máquina, ¿qué puede hacer Kubernetes con él?",
+                options: [
+                    "a) Nada, el contenedor está anclado a esa máquina.",
+                    "b) Replicarlo en varias y llevárselo a otra menos saturada.",
+                    "c) Eliminarlo automáticamente.",
+                    "d) Reducir su rendimiento."
+                ],
+                correctAnswer: "b",
+                solution: "Kubernetes puede replicar y reubicar contenedores para garantizar la resiliencia y el balanceo de carga."
+            },
+            {
+                question: "¿Qué se instala en el servidor central de Kubernetes?",
+                options: [
+                    "a) El agente Kubelet.",
+                    "b) Kubernetes.",
+                    "c) Docker Compose.",
+                    "d) Un hipervisor."
+                ],
+                correctAnswer: "b",
+                solution: "El servidor central de Kubernetes, conocido como el plano de control, es donde se instalan los componentes principales de Kubernetes."
+            },
+            {
+                question: "¿Qué se instala en los nodos de Kubernetes?",
+                options: [
+                    "a) El servidor central de Kubernetes.",
+                    "b) El agente Kubelet.",
+                    "c) Docker Swarm.",
+                    "d) Un sistema operativo completo."
+                ],
+                correctAnswer: "b",
+                solution: "Kubelet es el agente que se ejecuta en cada nodo de un clúster de Kubernetes y se encarga de gestionar los pods y contenedores."
+            },
+            {
+                question: "En Kubernetes, ¿qué es un 'pod'?",
+                options: [
+                    "a) Un contenedor individual.",
+                    "b) Una máquina virtual.",
+                    "c) Una agrupación de contenedores para administrarlos de forma agrupada.",
+                    "d) Un volumen de almacenamiento persistente."
+                ],
+                correctAnswer: "c",
+                solution: "Un pod es la unidad más pequeña y básica de despliegue en Kubernetes, que agrupa uno o más contenedores."
+            },
+            {
+                question: "¿Qué se agrupa en un mismo pod en Kubernetes?",
+                options: [
+                    "a) Solo máquinas virtuales.",
+                    "b) Contenedores y volúmenes.",
+                    "c) Solo redes.",
+                    "d) Hardware físico."
+                ],
+                correctAnswer: "b",
+                solution: "Los pods agrupan contenedores y los volúmenes de almacenamiento asociados, permitiendo que compartan recursos y se comuniquen fácilmente."
+            },
+            {
+                question: "¿Qué es una 'IP flotante' en el contexto de Kubernetes?",
+                options: [
+                    "a) Una IP que cambia constantemente.",
+                    "b) Una IP que se asigna solo a un contenedor.",
+                    "c) Una misma IP para varias máquinas o para varios contenedores.",
+                    "d) Una IP que no tiene conexión a internet."
+                ],
+                correctAnswer: "c",
+                solution: "Una IP flotante permite que múltiples contenedores o servicios compartan una misma dirección IP, facilitando el balanceo de carga y la alta disponibilidad."
+            },
+            {
+                question: "¿Qué proyecto de Linux Foundation define especificaciones relativas a los contenedores para estandarizar ejecución, imagen y distribución?",
+                options: [
+                    "a) Apache Foundation.",
+                    "b) Open Container Initiative (OCI).",
+                    "c) Cloud Native Computing Foundation (CNCF).",
+                    "d) Eclipse Foundation."
+                ],
+                correctAnswer: "b",
+                solution: "La Open Container Initiative (OCI) es un proyecto de Linux Foundation que establece estándares para el formato de imagen y el tiempo de ejecución de contenedores."
+            },
+            {
+                question: "¿Qué especificación de OCI se refiere al entorno de ejecución de contenedores?",
+                options: [
+                    "a) OCI Image Format.",
+                    "b) OCI Distribution Specification.",
+                    "c) OCI Runtime Specification.",
+                    "d) OCI Networking."
+                ],
+                correctAnswer: "c",
+                solution: "La OCI Runtime Specification define cómo debe ser un entorno de ejecución de contenedores."
+            },
+            {
+                question: "¿Qué interfaz se creó para permitir a Kubernetes ser multicontenedor, más allá de Docker?",
+                options: [
+                    "a) Docker Compose.",
+                    "b) Open Container Initiative (OCI).",
+                    "c) Container Runtime Interface (CRI).",
+                    "d) Virtual Machine Monitor (VMM)."
+                ],
+                correctAnswer: "c",
+                solution: "La Container Runtime Interface (CRI) es una API que permite a Kubernetes interactuar con diferentes runtimes de contenedores."
+            },
+            {
+                question: "¿Qué componente de OCI implementa la especificación de entorno de ejecución y es fundamental para cualquier contenedor?",
+                options: [
+                    "a) Kubernetes.",
+                    "b) runc.",
+                    "c) Docker.",
+                    "d) CRI-O."
+                ],
+                correctAnswer: "b",
+                solution: "runc es una implementación de la OCI Runtime Specification, un componente de bajo nivel para ejecutar contenedores."
+            },
+            {
+                question: "¿Qué pasa por runc en relación con los contenedores?",
+                options: [
+                    "a) Solo la configuración de red.",
+                    "b) Casi todo lo que se hace con los contenedores.",
+                    "c) Solo la creación de volúmenes.",
+                    "d) Las actualizaciones del sistema operativo."
+                ],
+                correctAnswer: "b",
+                solution: "runc es un componente fundamental que maneja la ejecución de contenedores, siendo utilizado por la mayoría de las herramientas de contenedores."
+            },
+            {
+                question: "¿Qué especificación de OCI se refiere al formato de imagen, para poder usar una misma imagen con Docker u otros?",
+                options: [
+                    "a) OCI Distribution Specification.",
+                    "b) OCI Runtime Specification.",
+                    "c) OCI Image Format.",
+                    "d) OCI Registry."
+                ],
+                correctAnswer: "c",
+                solution: "La OCI Image Format Specification define un formato estándar para las imágenes de contenedores."
+            },
+            {
+                question: "¿Qué especificación de OCI afecta a los repositorios de imágenes como DockerHub, Artifactory, Nexus o Archiva?",
+                options: [
+                    "a) OCI Image Format.",
+                    "b) OCI Distribution Specification.",
+                    "c) OCI Runtime Specification.",
+                    "d) OCI Security."
+                ],
+                correctAnswer: "b",
+                solution: "La OCI Distribution Specification se refiere a la forma en que las imágenes de contenedores se distribuyen y almacenan en registros."
+            },
+            {
+                question: "¿Qué herramienta permite gestionar varios contenedores a la vez en una sola máquina?",
+                options: [
+                    "a) Kubernetes.",
+                    "b) Docker Swarm.",
+                    "c) Docker Compose.",
+                    "d) Hypervisor."
+                ],
+                correctAnswer: "c",
+                solution: "Docker Compose es una herramienta para definir y ejecutar aplicaciones Docker multi-contenedor en una sola máquina."
+            },
+            {
+                question: "¿Qué archivo define los contenedores deseados en Docker Compose?",
+                options: [
+                    "a) Dockerfile.",
+                    "b) docker-compose.yml.",
+                    "c) main.py.",
+                    "d) config.ini."
+                ],
+                correctAnswer: "b",
+                solution: "El archivo `docker-compose.yml` se utiliza para configurar los servicios, redes y volúmenes de una aplicación multi-contenedor."
+            },
+            {
+                question: "¿Para qué se utiliza Docker Compose en un entorno de desarrollo?",
+                options: [
+                    "a) Para distribuir contenedores en múltiples máquinas.",
+                    "b) Para crear una sola máquina virtual.",
+                    "c) Para levantar todo de golpe y tener un entorno de trabajo para desarrolladores.",
+                    "d) Para monitorizar el rendimiento del sistema."
+                ],
+                correctAnswer: "c",
+                solution: "Docker Compose es ideal para configurar rápidamente entornos de desarrollo locales con múltiples servicios."
+            },
+            {
+                question: "¿Cuál es la diferencia principal entre Docker Compose y Kubernetes en cuanto a la distribución de contenedores?",
+                options: [
+                    "a) Docker Compose distribuye contenedores en múltiples máquinas, Kubernetes no.",
+                    "b) Kubernetes gestiona varios contenedores en una máquina, Docker Compose los distribuye.",
+                    "c) Docker Compose gestiona varios contenedores en una máquina y Kubernetes los distribuye.",
+                    "d) Ambos hacen exactamente lo mismo."
+                ],
+                correctAnswer: "c",
+                solution: "Docker Compose se usa para gestionar múltiples contenedores en una sola máquina, mientras que Kubernetes está diseñado para la orquestación en clústeres distribuidos."
+            },
+            {
+                question: "¿Qué significa IaaS?",
+                options: [
+                    "a) Integrated Application as a Service.",
+                    "b) Infrastructure as a Service.",
+                    "c) Internet and Application Software.",
+                    "d) Information and Access Systems."
+                ],
+                correctAnswer: "b",
+                solution: "IaaS (Infrastructure as a Service) es un modelo de servicio en la nube que proporciona recursos de infraestructura virtualizados."
+            },
+            {
+                question: "¿Cuál de los siguientes es un servicio de IaaS de Amazon AWS para máquinas virtuales?",
+                options: [
+                    "a) S3.",
+                    "b) EC2.",
+                    "c) EBS.",
+                    "d) RDS."
+                ],
+                correctAnswer: "b",
+                solution: "Amazon EC2 (Elastic Compute Cloud) es el servicio de IaaS de AWS para máquinas virtuales."
+            },
+            {
+                question: "¿Qué servicio de IaaS de Amazon AWS se utiliza para almacenamiento en modo objeto?",
+                options: [
+                    "a) EC2.",
+                    "b) EBS.",
+                    "c) S3.",
+                    "d) VPC."
+                ],
+                correctAnswer: "c",
+                solution: "Amazon S3 (Simple Storage Service) es un servicio de almacenamiento de objetos escalable."
+            },
+            {
+                question: "¿Qué servicio de IaaS de Amazon AWS se utiliza para almacenamiento en modo bloque?",
+                options: [
+                    "a) S3.",
+                    "b) EC2.",
+                    "c) EBS.",
+                    "d) Lambda."
+                ],
+                correctAnswer: "c",
+                solution: "Amazon EBS (Elastic Block Store) proporciona volúmenes de almacenamiento a nivel de bloque para instancias EC2."
+            },
+            {
+                question: "¿Qué componente de Red Hat OpenStack se encarga de las máquinas virtuales?",
+                options: [
+                    "a) Swift.",
+                    "b) Cinder.",
+                    "c) NOVA.",
+                    "d) Neutron."
+                ],
+                correctAnswer: "c",
+                solution: "NOVA es el componente de computación de OpenStack, responsable de la gestión de máquinas virtuales."
+            },
+            {
+                question: "¿Qué componente de Red Hat OpenStack gestiona el almacenamiento en modo objeto?",
+                options: [
+                    "a) NOVA.",
+                    "b) Cinder.",
+                    "c) Swift.",
+                    "d) Neutron."
+                ],
+                correctAnswer: "c",
+                solution: "Swift es el servicio de almacenamiento de objetos de OpenStack."
+            },
+            {
+                question: "¿Qué componente de Red Hat OpenStack se encarga del almacenamiento en modo bloque?",
+                options: [
+                    "a) NOVA.",
+                    "b) Cinder.",
+                    "c) Swift.",
+                    "d) Neutron."
+                ],
+                correctAnswer: "b",
+                solution: "Cinder es el servicio de almacenamiento en bloque de OpenStack."
+            },
+            {
+                question: "¿Qué componente de Red Hat OpenStack gestiona los recursos de red?",
+                options: [
+                    "a) NOVA.",
+                    "b) Cinder.",
+                    "c) Swift.",
+                    "d) Neutron."
+                ],
+                correctAnswer: "d",
+                solution: "Neutron es el componente de red de OpenStack, que proporciona servicios de red virtualizados."
+            },
+            {
+                question: "¿Qué interfaz web se utiliza en Red Hat OpenStack como cuadro de mandos?",
+                options: [
+                    "a) Azure Portal.",
+                    "b) Google Cloud Console.",
+                    "c) Horizon.",
+                    "d) AWS Management Console."
+                ],
+                correctAnswer: "c",
+                solution: "Horizon es el panel de control web de OpenStack, que permite a los usuarios gestionar los recursos de la nube."
+            },
+            {
+                question: "¿Cuál de los siguientes es un proveedor de servicios en la nube?",
+                options: [
+                    "a) Microsoft Office.",
+                    "b) Google Cloud.",
+                    "c) Adobe Photoshop.",
+                    "d) Mozilla Firefox."
+                ],
+                correctAnswer: "b",
+                solution: "Google Cloud es uno de los principales proveedores de servicios de computación en la nube."
+            },
+            {
+                question: "¿Qué significa PaaS?",
+                options: [
+                    "a) Private Application as a Service.",
+                    "b) Platform as a Service.",
+                    "c) Public Access Software.",
+                    "d) Personal Automation System."
+                ],
+                correctAnswer: "b",
+                solution: "PaaS (Platform as a Service) es un modelo de servicio en la nube que proporciona una plataforma para desarrollar, ejecutar y gestionar aplicaciones."
+            },
+            {
+                question: "¿Qué ofrece PaaS para los equipos de desarrollo?",
+                options: [
+                    "a) Hardware físico dedicado.",
+                    "b) Un entorno de ejecución para montar a través de una consola web.",
+                    "c) Solo servicios de almacenamiento.",
+                    "d) La gestión completa de la red física."
+                ],
+                correctAnswer: "b",
+                solution: "PaaS ofrece un entorno de desarrollo y despliegue listo para usar, abstraído de la infraestructura subyacente."
+            },
+            {
+                question: "¿Qué herramienta utiliza PaaS para crear y distribuir los contenedores necesarios?",
+                options: [
+                    "a) Docker Compose.",
+                    "b) VirtualBox.",
+                    "c) Kubernetes.",
+                    "d) Un hipervisor de Tipo 2."
+                ],
+                correctAnswer: "c",
+                solution: "Muchas plataformas PaaS utilizan Kubernetes internamente para orquestar y gestionar los contenedores de las aplicaciones."
+            },
+            {
+                question: "¿Cuál de los siguientes es un producto de PaaS?",
+                options: [
+                    "a) Amazon EC2.",
+                    "b) Microsoft Word.",
+                    "c) OpenShift.",
+                    "d) Oracle Database."
+                ],
+                correctAnswer: "c",
+                solution: "OpenShift de Red Hat es una plataforma PaaS basada en Kubernetes."
+            },
+            {
+                question: "¿Qué producto es similar a OpenShift pero solo se usa en modo nube?",
+                options: [
+                    "a) Cloud Foundry.",
+                    "b) Heroku.",
+                    "c) Docker Desktop.",
+                    "d) Kubernetes."
+                ],
+                correctAnswer: "b",
+                solution: "Heroku es una plataforma PaaS que se enfoca exclusivamente en el despliegue de aplicaciones en la nube."
+            },
+            {
+                question: "¿Qué significan las siglas CaaS/KaaS?",
+                options: [
+                    "a) Cloud as a Service / Kernel as a Service.",
+                    "b) Containers as a Service / Kubernetes as a Service.",
+                    "c) Computing as a Service / Key as a Service.",
+                    "d) Code as a Service / Knowledge as a Service."
+                ],
+                correctAnswer: "b",
+                solution: "CaaS (Containers as a Service) y KaaS (Kubernetes as a Service) son modelos de servicio que ofrecen contenedores y Kubernetes como servicios gestionados."
+            },
+            {
+                question: "¿Qué ofrece Cloud Foundry a los desarrolladores?",
+                options: [
+                    "a) Solo gestión de bases de datos.",
+                    "b) Solo infraestructura de red.",
+                    "c) El ciclo de vida completo para el desarrollador.",
+                    "d) Hardware on-premise."
+                ],
+                correctAnswer: "c",
+                solution: "Cloud Foundry proporciona una plataforma completa para el ciclo de vida de desarrollo, despliegue y gestión de aplicaciones."
+            },
+            {
+                question: "Según el diagrama de virtualización ligera, ¿qué dos tecnologías se combinan para formar la base de la orquestación de contenedores?",
+                options: [
+                    "a) containerd y CRI-O.",
+                    "b) Docker y Kubernetes.",
+                    "c) runc y OCI spec.",
+                    "d) Host Operating System e Infrastructure."
+                ],
+                correctAnswer: "b",
+                solution: "Docker y Kubernetes son las tecnologías fundamentales para la orquestación de contenedores en la virtualización ligera."
+            },
+            {
+                question: "En el diagrama de virtualización ligera, ¿qué capa se encuentra por debajo de Docker y Kubernetes?",
+                options: [
+                    "a) Container Runtime Interface.",
+                    "b) Host Operating System.",
+                    "c) Infrastructure.",
+                    "d) Open Container Initiative (OCI) spec."
+                ],
+                correctAnswer: "a",
+                solution: "La Container Runtime Interface (CRI) se encuentra debajo de Docker y Kubernetes, interactuando con los runtimes de contenedores."
+            },
+            {
+                question: "En el diagrama de virtualización ligera, ¿qué interfaz se sitúa entre Kubernetes/Docker y containerd/CRI-O?",
+                options: [
+                    "a) Open Container Initiative (OCI) spec.",
+                    "b) Container Runtime Interface (CRI).",
+                    "c) runc.",
+                    "d) Host Operating System."
+                ],
+                correctAnswer: "b",
+                solution: "La Container Runtime Interface (CRI) es la interfaz que permite la comunicación entre orquestadores (Kubernetes/Docker) y runtimes de contenedores (containerd/CRI-O)."
+            },
+            {
+                question: "En el diagrama de virtualización ligera, ¿qué especificación se encuentra por debajo de containerd y CRI-O?",
+                options: [
+                    "a) Container Runtime Interface (CRI).",
+                    "b) Open Container Initiative (OCI) spec.",
+                    "c) Host Operating System.",
+                    "d) Docker."
+                ],
+                correctAnswer: "b",
+                solution: "La Open Container Initiative (OCI) spec define los estándares para el formato de imagen y el tiempo de ejecución de contenedores, y se encuentra por debajo de containerd y CRI-O."
+            },
+            {
+                question: "En la capa más baja del diagrama de virtualización ligera, ¿qué dos elementos se muestran como el resultado final de la virtualización?",
+                options: [
+                    "a) containerd y CRI-O.",
+                    "b) Kubernetes y Docker.",
+                    "c) container y container.",
+                    "d) OCI spec y runc."
+                ],
+                correctAnswer: "c",
+                solution: "En la virtualización ligera, el resultado final son los 'containers' (contenedores) que se ejecutan."
+            },
+            {
+                question: "En el diagrama de virtualización clásica (parte derecha), ¿qué se sitúa por debajo del hipervisor?",
+                options: [
+                    "a) SO (Sistema Operativo).",
+                    "b) APP (Aplicaciones).",
+                    "c) HARDWARE.",
+                    "d) MV (Máquina Virtual)."
+                ],
+                correctAnswer: "c",
+                solution: "En la virtualización clásica, el hipervisor se instala directamente sobre el hardware."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        const quizContent = document.getElementById('quizContent');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressIndicator = document.getElementById('progressIndicator');
+
+        function renderQuestion() {
+            const questionData = questions[currentQuestionIndex];
+            quizContent.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text">${questionData.question}</p>
+                    <div id="optionsContainer">
+                        ${questionData.options.map((option, index) => `
+                            <button class="answer-button" data-index="${index}" data-correct="${option.startsWith(questionData.correctAnswer)}">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <p class="solution-text" id="solutionText">
+                        <strong>Solución:</strong> ${questionData.solution}
+                    </p>
+                </div>
+            `;
+
+            // Add event listeners to answer buttons
+            const answerButtons = quizContent.querySelectorAll('.answer-button');
+            answerButtons.forEach(button => {
+                button.addEventListener('click', handleAnswerClick);
+            });
+
+            updateNavigationButtons();
+            updateProgressIndicator();
+        }
+
+        function handleAnswerClick(event) {
+            const clickedButton = event.target;
+            const isCorrect = clickedButton.dataset.correct === 'true';
+            const solutionText = document.getElementById('solutionText');
+            const optionsContainer = document.getElementById('optionsContainer');
+
+            // Disable all answer buttons for the current question
+            optionsContainer.querySelectorAll('.answer-button').forEach(button => {
+                button.disabled = true;
+            });
+
+            if (isCorrect) {
+                clickedButton.classList.add('correct');
+            } else {
+                clickedButton.classList.add('incorrect');
+                // Find and highlight the correct answer
+                optionsContainer.querySelectorAll('.answer-button').forEach(button => {
+                    if (button.dataset.correct === 'true') {
+                        button.classList.add('correct');
+                    }
+                });
+                solutionText.style.display = 'block'; // Show solution for incorrect answers
+            }
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+        }
+
+        function updateProgressIndicator() {
+            progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        // Initial render
+        renderQuestion();
+    </script>
+</body>
+</html>

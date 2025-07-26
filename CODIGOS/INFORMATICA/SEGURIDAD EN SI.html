@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Seguridad en SI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+        }
+        .question-card {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            border: 1px solid #e5e5e5;
+            transition: all 0.3s ease;
+        }
+        .question-card.correct {
+            background-color: #e6ffe6; /* Light green for correct */
+            border-color: #4CAF50;
+        }
+        .question-card.incorrect {
+            background-color: #ffe6e6; /* Light red for incorrect */
+            border-color: #F44336;
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            color: #4a5568;
+            background-color: #edf2f7;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button:hover:not(.disabled) {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+            transform: translateY(-1px);
+        }
+        .options-container button.selected {
+            font-weight: 600;
+        }
+        .options-container button.correct-answer {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .options-container button.incorrect-answer {
+            background-color: #F44336;
+            color: white;
+            border-color: #F44336;
+        }
+        .options-container button.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: none; /* Hidden by default */
+        }
+        .feedback.correct {
+            color: #1a531a;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback.incorrect {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .navigation-buttons button.prev {
+            background-color: #cbd5e0;
+            color: #2d3748;
+            border: 1px solid #a0aec0;
+        }
+        .navigation-buttons button.prev:hover {
+            background-color: #a0aec0;
+            transform: translateY(-1px);
+        }
+        .navigation-buttons button.next {
+            background-color: #4299e1;
+            color: white;
+            border: 1px solid #3182ce;
+        }
+        .navigation-buttons button.next:hover {
+            background-color: #3182ce;
+            transform: translateY(-1px);
+        }
+        .navigation-buttons button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4299e1;
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+        .score-container {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-top: 20px;
+        }
+        .restart-button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .restart-button:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Test de Seguridad en Sistemas de Información</h1>
+
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div id="question-display">
+            <!-- Questions will be loaded here -->
+        </div>
+
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="prev" disabled>Anterior</button>
+            <button id="next-btn" class="next">Siguiente</button>
+        </div>
+
+        <div id="score-display" class="score-container hidden">
+            <!-- Score will be displayed here -->
+        </div>
+        <button id="restart-btn" class="restart-button hidden">Reiniciar Test</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Cuál es el objetivo principal de la seguridad en sistemas de información (SI)?",
+                options: ["a) Proteger el hardware.", "b) Proteger los activos.", "c) Proteger el software.", "d) Proteger la red."],
+                correctAnswer: "b) Proteger los activos."
+            },
+            {
+                question: "Según el documento proporcionado, ¿qué elementos se consideran activos en seguridad de la información?",
+                options: ["a) Solo la información.", "b) Solo los servicios.", "c) Información y servicios.", "d) Hardware y software."],
+                correctAnswer: "c) Información y servicios."
+            },
+            {
+                question: "¿Qué guía del CCN (Centro Criptológico Nacional) se menciona en relación con la seguridad en sistemas de información?",
+                options: ["a) CCN-STIC-100.", "b) CCN-STIC-400.", "c) CCN-STIC-700.", "d) CCN-STIC-900."],
+                correctAnswer: "d) CCN-STIC-900."
+            },
+            {
+                question: "¿En qué se basa la metodología SGSI (Sistemas de Gestión de la Seguridad de la Información) según ISO/IEC 27001 y 27002?",
+                options: ["a) En el ciclo Scrum.", "b) En la estrategia de mejora continua PDCA (Plan Do Check Act).", "c) En el modelo en cascada.", "d) En la metodología Kanban."],
+                correctAnswer: "b) En la estrategia de mejora continua PDCA (Plan Do Check Act)."
+            },
+            {
+                question: "¿Cuál es la naturaleza del ENS (Esquema Nacional de Seguridad) para la Administración Pública en España?",
+                options: ["a) Voluntario.", "b) Recomendado.", "c) Obligado cumplimiento.", "d) Opcional."],
+                correctAnswer: "c) Obligado cumplimiento."
+            },
+            {
+                question: "¿Qué metodología de análisis y gestión de riesgos es una herramienta de apoyo a PILAR y µPILAR?",
+                options: ["a) OCTAVE.", "b) CRAMM.", "c) MAGERIT.", "d) MEHARI."],
+                correctAnswer: "c) MAGERIT."
+            },
+            {
+                question: "¿Qué certificación de seguridad es utilizada para la construcción del eDNI y tiene niveles EAL 1-7?",
+                options: ["a) ISO 27001.", "b) Common Criteria.", "c) ENS.", "d) Cobit."],
+                correctAnswer: "b) Common Criteria."
+            },
+            {
+                question: "¿Qué triada de atributos core se debe proteger en seguridad de la información?",
+                options: ["a) Confidencialidad, Integridad, Autenticidad.", "b) Confidencialidad, Integridad, Disponibilidad.", "c) Autenticidad, Disponibilidad, Trazabilidad.", "d) Secreto, Cifrado, No Repudio."],
+                correctAnswer: "b) Confidencialidad, Integridad, Disponibilidad."
+            },
+            {
+                question: "La 'Disponibilidad' se refiere a la protección de:",
+                options: ["a) El dato.", "b) El servicio.", "c) El cifrado.", "d) El no repudio."],
+                correctAnswer: "b) El servicio."
+            },
+            {
+                question: "¿Qué concepto se define como un evento que puede darse aprovechando una vulnerabilidad?",
+                options: ["a) Riesgo.", "b) Impacto.", "c) Amenaza.", "d) Salvaguarda."],
+                correctAnswer: "c) Amenaza."
+            },
+            {
+                question: "¿Qué es una 'vulnerabilidad' en el contexto de seguridad?",
+                options: ["a) El daño producido por una amenaza.", "b) La probabilidad de ocurrencia/materialización de una amenaza o debilidad del sistema.", "c) Una medida para evitar el riesgo.", "d) Un recurso a proteger."],
+                correctAnswer: "b) La probabilidad de ocurrencia/materialización de una amenaza o debilidad del sistema."
+            },
+            {
+                question: "¿Cómo se define el 'riesgo' en seguridad de la información según la fórmula F (Probabilidad x Impacto)?",
+                options: ["a) El daño producido por una amenaza.", "b) La medida prevista para evitar el riesgo.", "c) Lo probable que es una amenaza junto con el impacto que tendría.", "d) La debilidad del sistema."],
+                correctAnswer: "c) Lo probable que es una amenaza junto con el impacto que tendría."
+            },
+            {
+                question: "¿Qué término describe el riesgo antes de aplicar salvaguardas?",
+                options: ["a) Riesgo residual.", "b) Riesgo potencial.", "c) Riesgo aceptable.", "d) Riesgo inherente."],
+                correctAnswer: "d) Riesgo inherente."
+            },
+            {
+                question: "¿Qué artículo del RGPD (Reglamento General de Protección de Datos) se menciona en relación con la evaluación del impacto?",
+                options: ["a) Artículo 15.", "b) Artículo 25.", "c) Artículo 35.", "d) Artículo 45."],
+                correctAnswer: "c) Artículo 35."
+            },
+            {
+                question: "¿Qué sistema de energía eléctrica se menciona como parte de la seguridad física en un CPD (Centro de Procesamiento de Datos) para un apagado controlado?",
+                options: ["a) Generadores diésel.", "b) SAIs (Sistemas de Alimentación Ininterrumpida).", "c) Transformadores.", "d) Paneles solares."],
+                correctAnswer: "b) SAIs (Sistemas de Alimentación Ininterrumpida)."
+            },
+            {
+                question: "La 'MFA/2FA' es una medida de seguridad de tipo:",
+                options: ["a) Física.", "b) Lógica.", "c) Procedimental.", "d) Ambiental."],
+                correctAnswer: "b) Lógica."
+            },
+            {
+                question: "¿Qué tipo de herramienta es Nmap?",
+                options: ["a) Detector de vulnerabilidades.", "b) Test de penetración.", "c) Auditoría de seguridad para escanear puertos.", "d) Captura de paquetes."],
+                correctAnswer: "c) Auditoría de seguridad para escanear puertos."
+            },
+            {
+                question: "¿Qué herramienta se utiliza para la detección de vulnerabilidades, específicamente mencionada como alternativa a Nessus?",
+                options: ["a) Metasploit.", "b) OpenVAS.", "c) Snort.", "d) Tcpdump."],
+                correctAnswer: "b) OpenVAS."
+            },
+            {
+                question: "¿Qué sistema operativo Linux se menciona como herramienta para auditoría y seguridad informática?",
+                options: ["a) Ubuntu.", "b) Debian.", "c) Linux Kali.", "d) Fedora."],
+                correctAnswer: "c) Linux Kali."
+            },
+            {
+                question: "¿Qué tipo de malware se duplica en RAM/RED sin necesidad de ficheros?",
+                options: ["a) Virus.", "b) Troyanos.", "c) Gusanos.", "d) Rootkits."],
+                correctAnswer: "c) Gusanos."
+            },
+            {
+                question: "¿Qué es un 'backdoor' en seguridad informática?",
+                options: ["a) Un programa que muestra publicidad.", "b) Un acceso sin autenticación al sistema.", "c) Un software que recopila datos.", "d) Un bulo o mensaje con falsas advertencias."],
+                correctAnswer: "b) Un acceso sin autenticación al sistema."
+            },
+            {
+                question: "¿Qué organismos publican las Common Vulnerability Exposures (CVE)?",
+                options: ["a) ENISA.", "b) NIST.", "c) MITRE.", "d) ISO."],
+                correctAnswer: "c) MITRE."
+            },
+            {
+                question: "¿Qué herramientas se mencionan para el cracking de contraseñas por fuerza bruta y diccionarios?",
+                options: ["a) Nikto y Shodan.", "b) John the Ripper, Hydra, Ncrack, Medusa.", "c) Metasploit y Snort.", "d) Wireshark y Tcpdump."],
+                correctAnswer: "b) John the Ripper, Hydra, Ncrack, Medusa."
+            },
+            {
+                question: "¿Qué tipo de malware cifra archivos para pedir rescate?",
+                options: ["a) Spyware.", "b) Adware.", "c) Ransomware.", "d) Keylogger."],
+                correctAnswer: "c) Ransomware."
+            },
+            {
+                question: "¿Qué ataque consiste en la ejecución de código SQL no autorizado por falta de validación en las entradas de una aplicación web?",
+                options: ["a) XSS (Cross Site Scripting).", "b) Phishing.", "c) SQL Injection.", "d) Pharming."],
+                correctAnswer: "c) SQL Injection."
+            },
+            {
+                question: "¿Qué técnica de seguridad evita el XSS (Cross Site Scripting) restringiendo los orígenes de los contenidos?",
+                options: ["a) SSL.", "b) VPN.", "c) Content Security Policy (CSP).", "d) MFA."],
+                correctAnswer: "c) Content Security Policy (CSP)."
+            },
+            {
+                question: "¿Qué tipo de ataque se caracteriza por la suplantación de identidad, por ejemplo, al recibir un email supuestamente de un banco?",
+                options: ["a) Pharming.", "b) Spoofing.", "c) Phishing.", "d) DoS."],
+                correctAnswer: "c) Phishing."
+            },
+            {
+                question: "¿Qué es un 'Botnet' en el contexto de un ataque DDoS (Denegación de Servicio Distribuido)?",
+                options: ["a) Una red de servidores legítimos.", "b) Una herramienta de auditoría de seguridad.", "c) Una red de equipos infectados (bots/zombies).", "d) Un tipo de malware de rescate."],
+                correctAnswer: "c) Una red de equipos infectados (bots/zombies)."
+            },
+            {
+                question: "¿Qué equipo se especializa en ataques informáticos para detectar vulnerabilidades en empresas (seguridad ofensiva)?",
+                options: ["a) Blue Team.", "b) Purple Team.", "c) Red Team.", "d) Green Team."],
+                correctAnswer: "c) Red Team."
+            },
+            {
+                question: "¿Qué plataforma del CCN está destinada al análisis avanzado de malware e integra MARIA y MARTA?",
+                options: ["a) AMPARO.", "b) ADA.", "c) ANA.", "d) ANGELES."],
+                correctAnswer: "a) AMPARO."
+            },
+            {
+                question: "¿Qué herramienta del CCN se encarga de la automatización y normalización de auditorías, y detección de vulnerabilidades?",
+                options: ["a) ATENEA.", "b) CARLA.", "c) ANA.", "d) CARMEN."],
+                correctAnswer: "d) CARMEN."
+            },
+            {
+                question: "¿Qué dispositivo del CCN se sitúa en la DMZ para analizar el tráfico de red y defenderse de ataques avanzados/APT?",
+                options: ["a) CLARA.", "b) CLAUDIA.", "c) CARMEN.", "d) GLORIA."],
+                correctAnswer: "b) CLAUDIA."
+            },
+            {
+                question: "¿Qué herramienta del CCN es un Centro de Vacunación?",
+                options: ["a) CLAUDIA.", "b) microCLAUDIA.", "c) ELENA.", "d) ELSA."],
+                correctAnswer: "c) ELENA."
+            },
+            {
+                question: "¿Qué herramienta del CCN es un gestor de logs para responder ante incidentes y amenazas, y funciona como SIEM?",
+                options: ["a) INES.", "b) IRIS.", "c) GLORIA.", "d) LORETO."],
+                correctAnswer: "d) LORETO."
+            },
+            {
+                question: "¿Qué portal del CCN ofrece un conocimiento rápido e intuitivo del nivel de adecuación al ENS?",
+                options: ["a) IRIS.", "b) INES.", "c) LUCIA.", "d) MÓNICA."],
+                correctAnswer: "c) LUCIA."
+            },
+            {
+                question: "¿Qué herramienta del CCN permite el borrado seguro de datos?",
+                options: ["a) metaOLVIDO.", "b) OLVIDO.", "c) PILAR.", "d) REYES."],
+                correctAnswer: "b) OLVIDO."
+            },
+            {
+                question: "¿Qué herramienta del CCN ayuda a prevenir fugas de información y limpia metadatos en ficheros ofimáticos?",
+                options: ["a) OLVIDO.", "b) metaOLVIDO.", "c) PILAR.", "d) REYES."],
+                correctAnswer: "b) metaOLVIDO."
+            },
+            {
+                question: "¿Qué herramienta del CCN permite el análisis y gestión de riesgos siguiendo la metodología Magerit?",
+                options: ["a) REYES.", "b) ROCIO.", "c) PILAR.", "d) VANESA."],
+                correctAnswer: "c) PILAR."
+            },
+            {
+                question: "¿Qué sistema de cableado estructurado se menciona para los CPD (Centros de Procesamiento de Datos)?",
+                options: ["a) TIA 942.", "b) TIA 568.", "c) NFPA 75.", "d) ISO 27001."],
+                correctAnswer: "a) TIA 942."
+            },
+            {
+                question: "En un CPD, ¿qué norma establece la alternancia de pasillos fríos y calientes para la circulación del aire?",
+                options: ["a) NFPA 75.", "b) TIA 942.", "c) TIA 568.", "d) ISO 27001."],
+                correctAnswer: "a) NFPA 75."
+            },
+            {
+                question: "¿Cuál es la temperatura y humedad relativa recomendadas para la climatización en un CPD?",
+                options: ["a) 18º C con 60% HR.", "b) 25º C con 40% HR.", "c) 21º C con 50% HR.", "d) 20º C con 30% HR."],
+                correctAnswer: "c) 21º C con 50% HR."
+            },
+            {
+                question: "¿Qué norma clasifica los CPD en Tiers (I-IV) según la redundancia de componentes y disponibilidad?",
+                options: ["a) ISO 27002.", "b) TIA 942.", "c) NFPA 75.", "d) CCN-STIC-400."],
+                correctAnswer: "b) TIA 942."
+            },
+            {
+                question: "¿Qué significan las siglas EPO en el contexto de un CPD?",
+                options: ["a) Emergency Power On.", "b) Emergency Power Off.", "c) Electrical Power Optimization.", "d) Environmental Protection Operations."],
+                correctAnswer: "b) Emergency Power Off."
+            },
+            {
+                question: "¿Qué métrica se utiliza para medir la eficiencia del uso de energía en un CPD, con valores de 1 a 2, donde 1 es mejor?",
+                options: ["a) CUE.", "b) ERE.", "c) PUE.", "d) WUE."],
+                correctAnswer: "c) PUE."
+            },
+            {
+                question: "¿Qué métrica relacionada con la eficiencia energética en un CPD debe tender a 0?",
+                options: ["a) PUE.", "b) CUE.", "c) OCE.", "d) WUE."],
+                correctAnswer: "b) CUE."
+            },
+            {
+                question: "¿Qué herramienta de gestión de incidencias/ticketing se menciona como soporte al SLA (Service Level Agreement)?",
+                options: ["a) GLPI.", "b) JIRA.", "c) Remedy.", "d) OTRS."],
+                correctAnswer: "d) OTRS."
+            },
+            {
+                question: "¿Qué protocolo de control remoto utiliza el puerto 5900 y funciona en un esquema Cliente/Servidor?",
+                options: ["a) RDP.", "b) SSH.", "c) VNC.", "d) TeamViewer."],
+                correctAnswer: "c) VNC."
+            },
+            {
+                question: "¿Qué protocolo de control remoto utiliza el puerto 3389 y está asociado al servidor MS Terminal Server?",
+                options: ["a) VNC.", "b) RDP.", "c) SSH.", "d) Citrix."],
+                correctAnswer: "b) RDP."
+            },
+            {
+                question: "¿Cuál de las siguientes no es una herramienta de control remoto de puestos mencionada en el texto?",
+                options: ["a) AnyDesk.", "b) Zoom.", "c) TeamViewer.", "d) Chrome Remote Desktop."],
+                correctAnswer: "b) Zoom."
+            },
+            {
+                question: "¿Qué tipo de autenticación combina 'lo que sé', 'lo que tengo' y 'lo que soy'?",
+                options: ["a) Autenticación simple.", "b) Autenticación multifactor (MFA).", "c) Autenticación de un solo factor.", "d) Autenticación biométrica."],
+                correctAnswer: "b) Autenticación multifactor (MFA)."
+            },
+            {
+                question: "¿Qué es un 'hoax' en el contexto de software malicioso?",
+                options: ["a) Un programa que permite acceso remoto.", "b) Un bulo, un mensaje que da falsas advertencias.", "c) Un software que se oculta con permisos de root.", "d) Un programa que cifra archivos."],
+                correctAnswer: "b) Un bulo, un mensaje que da falsas advertencias."
+            },
+            {
+                question: "¿Qué significa 'no repudio' en relación con la 'autenticidad'?",
+                options: ["a) Que el dato no ha sido modificado.", "b) Que el origen de la información no puede ser negado.", "c) Que el dato es secreto.", "d) Que el servicio está disponible."],
+                correctAnswer: "b) Que el origen de la información no puede ser negado."
+            },
+            {
+                question: "¿Qué término describe el riesgo que permanece después de haber aplicado las salvaguardas?",
+                options: ["a) Riesgo potencial.", "b) Riesgo inherente.", "c) Riesgo residual.", "d) Riesgo aceptable."],
+                correctAnswer: "c) Riesgo residual."
+            },
+            {
+                question: "¿Qué tipo de seguridad se encarga de los sistemas contra incendios y el control de acceso a edificios?",
+                options: ["a) Seguridad lógica.", "b) Seguridad física.", "c) Seguridad de la información.", "d) Seguridad perimetral."],
+                correctAnswer: "b) Seguridad física."
+            },
+            {
+                question: "¿Cuál de las siguientes no es una herramienta de seguridad lógica mencionada en el texto?",
+                options: ["a) Firewalls.", "b) CCTV.", "c) Antivirus.", "d) IDS/IPS."],
+                correctAnswer: "b) CCTV."
+            },
+            {
+                question: "¿Qué tipo de actor en ciberseguridad alardea pero utiliza software de otros?",
+                options: ["a) Hacker.", "b) Cracker.", "c) Lamer.", "d) Phreaker."],
+                correctAnswer: "c) Lamer."
+            },
+            {
+                question: "¿Qué tipo de actor en ciberseguridad está especializado en el área de telefonía?",
+                options: ["a) ScriptKiddie.", "b) Phreaker.", "c) CopyHacker.", "d) Newbie."],
+                correctAnswer: "b) Phreaker."
+            },
+            {
+                question: "¿Qué herramienta se utiliza para test de penetración?",
+                options: ["a) Nessus.", "b) Metasploit.", "c) Snort.", "d) Tcpdump."],
+                correctAnswer: "b) Metasploit."
+            },
+            {
+                question: "¿Qué herramienta es un NIDS (Network Intrusion Detection System) e IPS (Intrusion Prevention System)?",
+                options: ["a) Wireshark.", "b) Snort.", "c) OpenVAS.", "d) Metasploit."],
+                correctAnswer: "b) Snort."
+            },
+            {
+                question: "¿Qué tipo de malware permite la administración remota de un sistema?",
+                options: ["a) Gusanos.", "b) Troyanos.", "c) Rootkits.", "d) Hoaxes."],
+                correctAnswer: "b) Troyanos."
+            },
+            {
+                question: "¿Qué es un 'keylogger' o 'stealer'?",
+                options: ["a) Un programa que muestra publicidad.", "b) Un software que cifra archivos para pedir rescate.", "c) Un software que roba información sensible.", "d) Un antivirus falso."],
+                correctAnswer: "c) Un software que roba información sensible."
+            },
+            {
+                question: "¿Qué ataque de suplantación de identidad es una vulnerabilidad en servidores DNS y redirige tráfico web?",
+                options: ["a) Phishing.", "b) Spoofing.", "c) Pharming.", "d) Hijacking."],
+                correctAnswer: "c) Pharming."
+            },
+            {
+                question: "¿Qué tipo de ataque DoS (Denegación de Servicio) se basa en la fragmentación IP?",
+                options: ["a) SYN flood.", "b) ICMP Flood.", "c) Teardrop.", "d) UDP Flood."],
+                correctAnswer: "c) Teardrop."
+            },
+            {
+                question: "¿Qué equipo de ciberseguridad se especializa en analizar sistemas, detectar fallos e implementar medidas de seguridad (seguridad defensiva)?",
+                options: ["a) Red Team.", "b) Purple Team.", "c) Blue Team.", "d) Green Team."],
+                correctAnswer: "c) Blue Team."
+            },
+            {
+                question: "¿Qué concepto se refiere a la compartición de información entre el Red Team y el Blue Team?",
+                options: ["a) Green Team.", "b) Purple Team.", "c) Yellow Team.", "d) White Team."],
+                correctAnswer: "b) Purple Team."
+            },
+            {
+                question: "¿Qué herramienta del CCN permite la implantación de seguridad y la conformidad del ENS?",
+                options: ["a) ADA.", "b) AMPARO.", "c) ANA.", "d) ANGELES."],
+                correctAnswer: "c) ANA."
+            },
+            {
+                question: "¿Qué herramienta del CCN es un portal de formación en ciberseguridad?",
+                options: ["a) ATENEA.", "b) CARLA.", "c) ANGELES.", "d) CLARA."],
+                correctAnswer: "c) ANGELES."
+            },
+            {
+                question: "¿Qué herramienta del CCN se enfoca en la protección y trazabilidad del dato?",
+                options: ["a) CARMEN.", "b) CLARA.", "c) CARLA.", "d) CLAUDIA."],
+                correctAnswer: "c) CARLA."
+            },
+            {
+                question: "¿Qué herramienta del CCN es para la detección de amenazas complejas en el puesto de usuario?",
+                options: ["a) microCLAUDIA.", "b) CLAUDIA.", "c) ELENA.", "d) ELSA."],
+                correctAnswer: "a) microCLAUDIA."
+            },
+            {
+                question: "¿Qué herramienta del CCN simula técnicas de cibervigilancia?",
+                options: ["a) ELSA.", "b) EMMA.", "c) ELENA.", "d) GLORIA."],
+                correctAnswer: "b) EMMA."
+            },
+            {
+                question: "¿Qué herramienta del CCN detecta vectores de ataque y analiza vulnerabilidades para reducir ciberataques?",
+                options: ["a) EMMA.", "b) GLORIA.", "c) ELSA.", "d) INES."],
+                correctAnswer: "c) ELSA."
+            },
+            {
+                question: "¿Qué herramienta del CCN es un sistema de gestión federada de tickets para incidentes y amenazas?",
+                options: ["a) MÓNICA.", "b) OLVIDO.", "c) LUCIA.", "d) REYES."],
+                correctAnswer: "d) REYES."
+            },
+            {
+                question: "¿Qué herramienta del CCN es un NG SIEM (Next Generation Security Information and Event Management)?",
+                options: ["a) GLORIA.", "b) MÓNICA.", "c) REYES.", "d) LUCIA."],
+                correctAnswer: "a) GLORIA."
+            },
+            {
+                question: "¿Qué herramienta del CCN permite el intercambio de información de ciberamenazas y análisis de ciberincidentes?",
+                options: ["a) ROCIO.", "b) VANESA.", "c) REYES.", "d) PILAR."],
+                correctAnswer: "c) REYES."
+            },
+            {
+                question: "¿Qué se utiliza en un CPD para activar la interrupción del sistema de energía de emergencia?",
+                options: ["a) SAI.", "b) Grupo electrógeno.", "c) EPO (Emergency Power Off).", "d) Cuadro eléctrico."],
+                correctAnswer: "c) EPO (Emergency Power Off)."
+            },
+            {
+                question: "¿Cuál es la disponibilidad anual de un Tier IV en un CPD?",
+                options: ["a) 99,671%.", "b) 99,741%.", "c) 99,982%.", "d) 99,995%."],
+                correctAnswer: "d) 99,995%."
+            },
+            {
+                question: "¿Cuántas paradas por mantenimiento se permiten al año en un Tier I de un CPD?",
+                options: ["a) Ninguna.", "b) 2 al año de 12 horas.", "c) 3 cada 2 años de 12 horas.", "d) 1 al año de 24 horas."],
+                correctAnswer: "d) 1 al año de 24 horas."
+            },
+            {
+                question: "¿Qué significa que un CPD tiene componentes redundantes N+1?",
+                options: ["a) No tiene componentes redundantes.", "b) Tiene un componente redundante para cada componente activo.", "c) Tiene el doble de componentes.", "d) Todo está duplicado."],
+                correctAnswer: "b) Tiene un componente redundante para cada componente activo."
+            },
+            {
+                question: "¿Qué métrica de 'Green Computing' se relaciona con la reutilización de energía?",
+                options: ["a) PUE.", "b) CUE.", "c) ERE (Energy Reuse Effectiveness).", "d) WUE."],
+                correctAnswer: "c) ERE (Energy Reuse Effectiveness)."
+            },
+            {
+                question: "¿Qué herramienta de gestión de incidencias se menciona para el seguimiento de bugs?",
+                options: ["a) GLPI.", "b) Bugzilla.", "c) JIRA.", "d) Request Tracker."],
+                correctAnswer: "b) Bugzilla."
+            },
+            {
+                question: "¿Qué es un 'sniffer' o 'capturador de paquetes'?",
+                options: ["a) Una herramienta para test de penetración.", "b) Un detector de vulnerabilidades.", "c) Una herramienta para capturar el tráfico de red.", "d) Un cracker de contraseñas."],
+                correctAnswer: "c) Una herramienta para capturar el tráfico de red."
+            },
+            {
+                question: "¿Qué tipo de malware se hace pasar por un antivirus para engañar al usuario?",
+                options: ["a) Adware.", "b) Spyware.", "c) Rogue.", "d) Hoax."],
+                correctAnswer: "c) Rogue."
+            },
+            {
+                question: "¿Qué ataque permite a un tercero inyectar código JavaScript malicioso en páginas web?",
+                options: ["a) SQL Injection.", "b) Phishing.", "c) XSS (Cross Site Scripting).", "d) Hijacking."],
+                correctAnswer: "c) XSS (Cross Site Scripting)."
+            },
+            {
+                question: "¿Qué término se refiere al robo de una sesión ya iniciada?",
+                options: ["a) Phishing.", "b) Pharming.", "c) Hijacking.", "d) Spoofing."],
+                correctAnswer: "c) Hijacking."
+            },
+            {
+                question: "¿Qué tipo de distribución de energía tiene un Tier III de un CPD?",
+                options: ["a) Única.", "b) 1 activa y 1 pasiva (backup).", "c) 2 activas.", "d) Ninguna."],
+                correctAnswer: "b) 1 activa y 1 pasiva (backup)."
+            },
+            {
+                question: "¿Qué término se utiliza para describir un CPD de respaldo que es igual que el CPD principal?",
+                options: ["a) Sala de backup.", "b) Sala caliente.", "c) Sala blanca.", "d) Sala fría."],
+                correctAnswer: "b) Sala caliente."
+            },
+            {
+                question: "¿Qué se busca en la ubicación física de un CPD para evitar interferencias y canales de agua cerca?",
+                options: ["a) Plantas bajas.", "b) Plantas intermedias.", "c) Plantas altas.", "d) Zonas con alta humedad."],
+                correctAnswer: "b) Plantas intermedias."
+            },
+            {
+                question: "¿Qué herramienta se utiliza para auditorías de configuración de dispositivos de red?",
+                options: ["a) REYES.", "b) ROCIO.", "c) VANESA.", "d) MÓNICA."],
+                correctAnswer: "c) VANESA."
+            },
+            {
+                question: "¿Qué sistema de autenticación se menciona que utiliza tickets?",
+                options: ["a) SAML.", "b) OAuth.", "c) Radius / Kerberos.", "d) OpenId."],
+                correctAnswer: "c) Radius / Kerberos."
+            },
+            {
+                question: "¿Qué se entiende por 'impacto acumulado'?",
+                options: ["a) El impacto solo sobre el activo principal.", "b) El impacto sobre el activo y sobre los dependientes.", "c) El daño potencial.", "d) El daño residual."],
+                correctAnswer: "b) El impacto sobre el activo y sobre los dependientes."
+            },
+            {
+                question: "¿Qué tipo de ataque se basa en inundaciones (flooding) con paquetes SYN?",
+                options: ["a) Teardrop.", "b) ICMP Flood.", "c) SYN flood.", "d) UDP Flood."],
+                correctAnswer: "c) SYN flood."
+            },
+            {
+                question: "¿Qué significa 'CVE' en el contexto de seguridad?",
+                options: ["a) Common Vulnerability Exchange.", "b) Common Verification and Exposure.", "c) Common Vulnerability Exposure.", "d) Certified Vulnerability Expert."],
+                correctAnswer: "c) Common Vulnerability Exposure."
+            },
+            {
+                question: "¿Qué herramienta del CCN permite grabaciones y emisiones de vídeo en streaming para formación y sensibilización?",
+                options: ["a) REYES.", "b) ROCIO.", "c) VANESA.", "d) ANGELES."],
+                correctAnswer: "d) ANGELES."
+            },
+            {
+                question: "¿Cuál de las siguientes es una medida de seguridad física mencionada en el texto?",
+                options: ["a) MFA.", "b) Antivirus.", "c) Sistemas de vigilancia (CCTV).", "d) Backups."],
+                correctAnswer: "c) Sistemas de vigilancia (CCTV)."
+            },
+            {
+                question: "¿Qué método/herramienta de seguridad se utiliza para construir el eDNI?",
+                options: ["a) ITSEC.", "b) CTCPSEC.", "c) Common Criteria.", "d) TCSEC."],
+                correctAnswer: "c) Common Criteria."
+            },
+            {
+                question: "¿Qué se entiende por 'salvaguarda' en seguridad de la información?",
+                options: ["a) Un evento que aprovecha una vulnerabilidad.", "b) El daño producido por una amenaza.", "c) Una medida prevista para evitar/reducir el riesgo.", "d) La probabilidad de ocurrencia de una amenaza."],
+                correctAnswer: "c) Una medida prevista para evitar/reducir el riesgo."
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas NO es una metodología o estándar de gestión de seguridad?",
+                options: ["a) ISO/IEC 27001.", "b) ENS.", "c) MAGERIT.", "d) Nmap."],
+                correctAnswer: "d) Nmap."
+            },
+            {
+                question: "¿Qué métrica de 'Green Computing' se relaciona con la eficiencia del uso del agua?",
+                options: ["a) PUE.", "b) CUE.", "c) ERE.", "d) WUE (Water Usage Effectiveness)."],
+                correctAnswer: "d) WUE (Water Usage Effectiveness)."
+            },
+            {
+                question: "¿Qué sistema de autenticación se asocia con el concepto de SSO (Single Sign-On) y CI@ve?",
+                options: ["a) Biométricos.", "b) Radius.", "c) SAML.", "d) OAuth."],
+                correctAnswer: "c) SAML."
+            },
+            {
+                question: "¿Cuál de las siguientes herramientas es un motor de búsqueda de routers, servidores, webcams, etc.?",
+                options: ["a) Nikto.", "b) Shodan.", "c) Metasploit.", "d) Nessus."],
+                correctAnswer: "b) Shodan."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userAnswers = new Array(questions.length).fill(null);
+
+        const questionDisplay = document.getElementById('question-display');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const scoreDisplay = document.getElementById('score-display');
+        const restartBtn = document.getElementById('restart-btn');
+
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            questionDisplay.innerHTML = `
+                <div class="question-card" id="question-${currentQuestionIndex}">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${q.question}</p>
+                    <div class="options-container">
+                        ${q.options.map((option, index) => `
+                            <button data-option="${option}" data-index="${index}">${option}</button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+
+            const optionsButtons = questionDisplay.querySelectorAll('.options-container button');
+            optionsButtons.forEach(button => {
+                button.addEventListener('click', handleAnswerClick);
+            });
+
+            // Restore previous selection and feedback if available
+            if (userAnswers[currentQuestionIndex] !== null) {
+                const selectedOption = userAnswers[currentQuestionIndex];
+                optionsButtons.forEach(button => {
+                    if (button.dataset.option === selectedOption) {
+                        button.classList.add('selected');
+                    }
+                    button.classList.add('disabled'); // Disable all after an answer is selected
+                });
+                showFeedback(selectedOption);
+            }
+
+            updateNavigationButtons();
+            updateProgressBar();
+        }
+
+        function handleAnswerClick(event) {
+            const selectedOption = event.target.dataset.option;
+            const currentQuestion = questions[currentQuestionIndex];
+            const feedbackElement = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const questionCard = document.getElementById(`question-${currentQuestionIndex}`);
+            const optionsButtons = questionDisplay.querySelectorAll('.options-container button');
+
+            // Disable all options after one is selected
+            optionsButtons.forEach(button => {
+                button.classList.add('disabled');
+            });
+
+            // Mark selected option
+            event.target.classList.add('selected');
+
+            // Store user's answer
+            userAnswers[currentQuestionIndex] = selectedOption;
+
+            // Show feedback
+            showFeedback(selectedOption);
+
+            // Update score if it's a new correct answer
+            if (selectedOption === currentQuestion.correctAnswer) {
+                if (!questionCard.classList.contains('correct') && !questionCard.classList.contains('incorrect')) {
+                    score++;
+                }
+                questionCard.classList.add('correct');
+                questionCard.classList.remove('incorrect');
+            } else {
+                if (questionCard.classList.contains('correct')) {
+                    score--; // Decrement if it was previously correct and now changed to incorrect
+                }
+                questionCard.classList.add('incorrect');
+                questionCard.classList.remove('correct');
+            }
+        }
+
+        function showFeedback(selectedOption) {
+            const currentQuestion = questions[currentQuestionIndex];
+            const feedbackElement = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const optionsButtons = questionDisplay.querySelectorAll('.options-container button');
+
+            optionsButtons.forEach(button => {
+                if (button.dataset.option === currentQuestion.correctAnswer) {
+                    button.classList.add('correct-answer');
+                } else if (button.dataset.option === selectedOption) {
+                    button.classList.add('incorrect-answer');
+                }
+            });
+
+            if (selectedOption === currentQuestion.correctAnswer) {
+                feedbackElement.textContent = "¡Correcto!";
+                feedbackElement.className = 'feedback correct';
+            } else {
+                feedbackElement.textContent = `Incorrecto. La respuesta correcta es: ${currentQuestion.correctAnswer}`;
+                feedbackElement.className = 'feedback incorrect';
+            }
+            feedbackElement.style.display = 'block';
+        }
+
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null; // Allow next only if answered
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Ver Resultados';
+            } else {
+                nextBtn.textContent = 'Siguiente';
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function showResults() {
+            questionDisplay.classList.add('hidden');
+            prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            progressBar.classList.add('hidden');
+            scoreDisplay.classList.remove('hidden');
+            restartBtn.classList.remove('hidden');
+
+            scoreDisplay.innerHTML = `
+                <p>Has completado el test.</p>
+                <p>Tu puntuación final es: ${score} de ${questions.length}</p>
+                <p>${(score / questions.length * 100).toFixed(2)}% de acierto.</p>
+            `;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                // If on the last question and answered, show results
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    showResults();
+                }
+            }
+        });
+
+        restartBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            questionDisplay.classList.remove('hidden');
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            progressBar.classList.remove('hidden');
+            scoreDisplay.classList.add('hidden');
+            restartBtn.classList.add('hidden');
+            renderQuestion();
+        });
+
+        // Initial render
+        renderQuestion();
+    </script>
+</body>
+</html>

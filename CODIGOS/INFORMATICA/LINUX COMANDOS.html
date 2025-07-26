@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Comandos Linux</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .option-button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 2px solid #cbd5e0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            text-align: left;
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        .option-button:hover {
+            background-color: #d1d8e0;
+            border-color: #a0aec0;
+            transform: translateY(-2px);
+        }
+        .option-button.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: bold;
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: bold;
+        }
+        .option-button.disabled {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        .feedback-message {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+        .feedback-message.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+        .feedback-message.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #dc3545;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background-color: #4299e1;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .nav-button:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .current-question-indicator {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 10px;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 20px;
+                gap: 15px;
+            }
+            .question-text {
+                font-size: 1.2rem;
+            }
+            .option-button {
+                font-size: 1rem;
+                padding: 12px 15px;
+            }
+            .nav-button {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="question-text" id="question-text"></div>
+        <div class="options-container" id="options-container"></div>
+        <div class="feedback-message" id="feedback-message"></div>
+        <div class="current-question-indicator" id="question-indicator"></div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Qué comando se utiliza para añadir una ACL de permiso de lectura y escritura para el usuario 'pepe' sobre un fichero?",
+                options: [
+                    "a) setfacl -m u:pepe:r fichero",
+                    "b) setfacl -mu:pepe:rw /path/fichero",
+                    "c) getfacl u:pepe:rw fichero",
+                    "d) chmod u:pepe:rw fichero"
+                ],
+                correctAnswer: "b) setfacl -mu:pepe:rw /path/fichero"
+            },
+            {
+                question: "Para borrar todas las ACLs de un fichero, ¿qué comando se debe usar?",
+                options: [
+                    "a) setfacl -x all fichero",
+                    "b) setfacl -b fichero",
+                    "c) setfacl -B fichero",
+                    "d) getfacl -b fichero"
+                ],
+                correctAnswer: "b) setfacl -b fichero"
+            },
+            {
+                question: "El comando chmod 1755 fichero activa permisos rwx r-x r-x y, adicionalmente, ¿qué bit activa?",
+                options: [
+                    "a) El bit SetUID",
+                    "b) El bit SetGID",
+                    "c) El bit sticky",
+                    "d) El bit de ejecución especial"
+                ],
+                correctAnswer: "c) El bit sticky"
+            },
+            {
+                question: "¿Qué comando permite copiar los permisos de un fichero_origen a un fichero_destino?",
+                options: [
+                    "a) chmod --copy fichero_origen fichero_destino",
+                    "b) chmod --reference fichero_origen fichero_destino",
+                    "c) cp --permisos fichero_origen fichero_destino",
+                    "d) stat --copy-mode fichero_origen fichero_destino"
+                ],
+                correctAnswer: "b) chmod --reference fichero_origen fichero_destino"
+            },
+            {
+                question: "Para obtener información detallada sobre un fichero o directorio, como el tamaño, los bloques, el inodo y los tiempos de acceso, modificación y cambio, ¿qué comando se utiliza?",
+                options: [
+                    "a) ls -l",
+                    "b) du -h",
+                    "c) stat",
+                    "d) file"
+                ],
+                correctAnswer: "c) stat"
+            },
+            {
+                question: "Si se desea cambiar el usuario y grupo propietario de ficheros y directorios de forma recursiva a pepe y dev respectivamente, ¿qué comando se emplearía?",
+                options: [
+                    "a) chown pepe:dev /path -R",
+                    "b) chown -R pepe:dev /path",
+                    "c) chgrp -R dev /path && chown -R pepe /path",
+                    "d) chown -r pepe:dev /path"
+                ],
+                correctAnswer: "b) chown -R pepe:dev /path"
+            },
+            {
+                question: "¿Qué comando se utiliza para listar los ficheros abiertos por un usuario específico?",
+                options: [
+                    "a) lsof -u <usuario>",
+                    "b) lsof <usuario>",
+                    "c) lsof -user <usuario>",
+                    "d) lsof --user <usuario>"
+                ],
+                correctAnswer: "b) lsof <usuario> (o más comúnmente, lsof -u <usuario>)"
+            },
+            {
+                question: "Para listar los ficheros abiertos por un proceso con un PID determinado, ¿qué opción se usa con el comando lsof?",
+                options: [
+                    "a) -p",
+                    "b) -P",
+                    "c) -pid",
+                    "d) -id"
+                ],
+                correctAnswer: "a) -p"
+            },
+            {
+                question: "¿Qué comando permite crear un enlace simbólico que funcione tanto con directorios como con ficheros?",
+                options: [
+                    "a) ln origen nombre_enlace",
+                    "b) ln -h origen nombre_enlace",
+                    "c) ln -s origen nombre_enlace",
+                    "d) link -s origen nombre_enlace"
+                ],
+                correctAnswer: "c) ln -s origen nombre_enlace"
+            },
+            {
+                question: "Los enlaces duros (hard links) en Linux, ¿son válidos para directorios?",
+                options: [
+                    "a) Sí, siempre.",
+                    "b) Sí, pero solo si el directorio está vacío.",
+                    "c) No.",
+                    "d) Depende del sistema de ficheros."
+                ],
+                correctAnswer: "c) No."
+            },
+            {
+                question: "¿Qué comando se utiliza para crear particiones en discos SATA o SCSI?",
+                options: [
+                    "a) fdisk /dev/hdb",
+                    "b) fdisk /dev/sdb",
+                    "c) gdisk /dev/sdb",
+                    "d) parted /dev/sdb"
+                ],
+                correctAnswer: "b) fdisk /dev/sdb"
+            },
+            {
+                question: "En fdisk, los números de particiones primarias o extendidas van del 1 al:",
+                options: [
+                    "a) 2",
+                    "b) 3",
+                    "c) 4",
+                    "d) 5"
+                ],
+                correctAnswer: "c) 4"
+            },
+            {
+                question: "¿Qué tipo de partición corresponde a Linux LVM?",
+                options: [
+                    "a) 82",
+                    "b) 83",
+                    "c) 8e",
+                    "d) fd"
+                ],
+                correctAnswer: "c) 8e"
+            },
+            {
+                question: "Para manipular particiones GPT, ¿qué comandos se recomiendan?",
+                options: [
+                    "a) fdisk y cfdisk",
+                    "b) gdisk y parted",
+                    "c) sfdisk y df",
+                    "d) mkfs y mount"
+                ],
+                correctAnswer: "b) gdisk y parted"
+            },
+            {
+                question: "¿Qué comando muestra un listado de todos los dispositivos de bloque (discos, etc.)?",
+                options: [
+                    "a) df -h",
+                    "b) lsblk",
+                    "c) fdisk -l",
+                    "d) cat /proc/partitions"
+                ],
+                correctAnswer: "b) lsblk"
+            },
+            {
+                question: "Para crear un RAID de discos con mdadm, ¿qué opción se usa para especificar el nivel de RAID deseado?",
+                options: [
+                    "a) -n",
+                    "b) -c",
+                    "c) -l",
+                    "d) -Cv"
+                ],
+                correctAnswer: "c) -l (mencionado como -lx, donde x es el nivel)"
+            },
+            {
+                question: "¿Qué opción de mdadm permite especificar el número de discos empleados en la creación de un RAID?",
+                options: [
+                    "a) -z",
+                    "b) -n",
+                    "c) -l",
+                    "d) -C"
+                ],
+                correctAnswer: "b) -n (mencionado como -ny, donde y es el número de discos)"
+            },
+            {
+                question: "Para montar un sistema de ficheros ext4 ubicado en /dev/sdb1 en el directorio /var/log, ¿qué comando se utilizaría?",
+                options: [
+                    "a) mount /dev/sdb1 /var/log",
+                    "b) mount -t ext4 /dev/sdb1 /var/log",
+                    "c) mount ext4 /dev/sdb1 /var/log",
+                    "d) mount --type ext4 /dev/sdb1 /var/log"
+                ],
+                correctAnswer: "b) mount -t ext4 /dev/sdb1 /var/log"
+            },
+            {
+                question: "¿Qué opción se pasa con -o al comando mount para realizar un montaje de solo lectura?",
+                options: [
+                    "a) rw",
+                    "b) exec",
+                    "c) ro",
+                    "d) sync"
+                ],
+                correctAnswer: "c) ro"
+            },
+            {
+                question: "Para montajes permanentes de sistemas de ficheros, ¿qué fichero de configuración debe modificarse?",
+                options: [
+                    "a) /etc/mtab",
+                    "b) /etc/fstab",
+                    "c) /etc/filesystems",
+                    "d) /etc/defaults/mount"
+                ],
+                correctAnswer: "b) /etc/fstab"
+            },
+            {
+                question: "Antes de utilizar cifs para montar un recurso compartido de red, ¿qué comando debe ejecutarse para cargar el módulo en el kernel?",
+                options: [
+                    "a) modprobe smb",
+                    "b) insmod cifs",
+                    "c) loadmod cifs",
+                    "d) modprobe cifs"
+                ],
+                correctAnswer: "d) modprobe cifs"
+            },
+            {
+                question: "¿Qué comando se utiliza para crear un volumen físico a partir de un disco entero o una partición en la gestión de volúmenes lógicos (LVM)?",
+                options: [
+                    "a) vgcreate",
+                    "b) lvcreate",
+                    "c) pvcreate",
+                    "d) mkfs"
+                ],
+                correctAnswer: "c) pvcreate"
+            },
+            {
+                question: "Para crear un grupo de volúmenes físicos a partir de volúmenes físicos existentes, ¿qué comando se emplea?",
+                options: [
+                    "a) lvcreate",
+                    "b) pvcreate",
+                    "c) vgcreate",
+                    "d) mkfs.lvm"
+                ],
+                correctAnswer: "c) vgcreate"
+            },
+            {
+                question: "Si se desea ampliar un grupo de volúmenes (VG) con un volumen físico adicional, ¿qué comando se utilizaría?",
+                options: [
+                    "a) vgreduce",
+                    "b) vgextend",
+                    "c) lvreduce",
+                    "d) lvextend"
+                ],
+                correctAnswer: "b) vgextend"
+            },
+            {
+                question: "Después de ampliar un volumen lógico (LV) con lvextend, ¿qué comando es necesario ejecutar para que el filesystem actualice sus metadatos y refleje el nuevo tamaño?",
+                options: [
+                    "a) fsck",
+                    "b) mount -a",
+                    "c) resize2fs",
+                    "d) sync"
+                ],
+                correctAnswer: "c) resize2fs"
+            },
+            {
+                question: "¿Qué comando se utiliza para formatear dispositivos con sistemas de ficheros, por ejemplo, con ext4?",
+                options: [
+                    "a) format.ext4",
+                    "b) fdisk.ext4",
+                    "c) mkfs.ext4",
+                    "d) mke2fs"
+                ],
+                correctAnswer: "c) mkfs.ext4"
+            },
+            {
+                question: "¿Qué opción del comando resize2fs permite reducir el filesystem hasta el mínimo posible?",
+                options: [
+                    "a) -S",
+                    "b) -M",
+                    "c) -R",
+                    "d) --shrink"
+                ],
+                correctAnswer: "b) -M"
+            },
+            {
+                question: "¿Cuál es un requisito previo para poder reparar un sistema de ficheros con el comando e2fsck?",
+                options: [
+                    "a) El sistema de ficheros debe estar montado en modo de solo lectura.",
+                    "b) El sistema de ficheros debe estar desmontado.",
+                    "c) El sistema de ficheros debe estar montado en modo de lectura-escritura.",
+                    "d) El sistema de ficheros debe estar en uso por un proceso."
+                ],
+                correctAnswer: "b) El sistema de ficheros debe estar desmontado."
+            },
+            {
+                question: "El comando rsync con la opción -a (archive mode), ¿qué propiedades de los ficheros y directorios conserva al copiarlos recursivamente?",
+                options: [
+                    "a) Solo permisos y propietario.",
+                    "b) Solo enlaces simbólicos.",
+                    "c) Enlaces, permisos, propietarios, etc.",
+                    "d) Solo los datos del fichero."
+                ],
+                correctAnswer: "c) Enlaces, permisos, propietarios, etc."
+            },
+            {
+                question: "¿Qué opción de rsync permite comprimir los datos durante la transferencia?",
+                options: [
+                    "a) -v",
+                    "b) -h",
+                    "c) -z",
+                    "d) -e"
+                ],
+                correctAnswer: "c) -z"
+            },
+            {
+                question: "Si se desea que rsync borre los ficheros en el destino si no existen en el origen, ¿qué opción se debe utilizar?",
+                options: [
+                    "a) --exclude",
+                    "b) --remove-source-files",
+                    "c) --delete",
+                    "d) --dry-run"
+                ],
+                correctAnswer: "c) --delete"
+            },
+            {
+                question: "Para empaquetar ficheros en un solo archivo sin comprimir, ¿qué comando tar se usaría?",
+                options: [
+                    "a) tar czvf file.tar *.c",
+                    "b) tar cvf file.tar *.c",
+                    "c) tar cjf file.tar *.c",
+                    "d) tar xvf file.tar *.c"
+                ],
+                correctAnswer: "b) tar cvf file.tar *.c"
+            },
+            {
+                question: "¿Qué opción se utiliza con tar para empaquetar y comprimir un fichero usando bzip2?",
+                options: [
+                    "a) -z",
+                    "b) -j",
+                    "c) -J",
+                    "d) -f"
+                ],
+                correctAnswer: "b) -j"
+            },
+            {
+                question: "Para listar el contenido de un archivo empaquetado o comprimido con tar, ¿qué opción se debe usar?",
+                options: [
+                    "a) -x",
+                    "b) -v",
+                    "c) -f",
+                    "d) -t"
+                ],
+                correctAnswer: "d) -t"
+            },
+            {
+                question: "En la salida del comando top, ¿qué columna muestra la memoria consumida por el proceso en RAM?",
+                options: [
+                    "a) VIRT",
+                    "b) SHR",
+                    "c) RES",
+                    "d) %MEM"
+                ],
+                correctAnswer: "c) RES"
+            },
+            {
+                question: "Según la tabla de top, ¿qué campo indica el porcentaje de CPU utilizado por el proceso?",
+                options: [
+                    "a) TIME+",
+                    "b) PR",
+                    "c) %CPU",
+                    "d) S"
+                ],
+                correctAnswer: "c) %CPU"
+            },
+            {
+                question: "¿Qué comando se utiliza para modificar la prioridad de planificación de un proceso?",
+                options: [
+                    "a) kill",
+                    "b) nice/renice",
+                    "c) ps",
+                    "d) top"
+                ],
+                correctAnswer: "b) nice/renice"
+            },
+            {
+                question: "El valor nice en Linux toma valores entre:",
+                options: [
+                    "a) 0 y 10",
+                    "b) -10 y 10",
+                    "c) -20 y 19",
+                    "d) 0 y 20"
+                ],
+                correctAnswer: "c) -20 y 19"
+            },
+            {
+                question: "Para cambiar la prioridad de un proceso con un PID específico (ej. 1055) a un valor nice de -12, ¿qué comando se utilizaría?",
+                options: [
+                    "a) nice -n -12 -p 1055",
+                    "b) renice -n -12 -p 1055",
+                    "c) setnice -12 1055",
+                    "d) kill -PRIORITY -12 1055"
+                ],
+                correctAnswer: "b) renice -n -12 -p 1055"
+            },
+            {
+                question: "¿Qué comando se usa para listar las dependencias (librerías dinámicas) que utiliza un programa o librería?",
+                options: [
+                    "a) ldconfig",
+                    "b) objdump",
+                    "c) nm",
+                    "d) ldd"
+                ],
+                correctAnswer: "d) ldd"
+            },
+            {
+                question: "Para localizar la ruta del binario de un comando, ¿qué comandos pueden ser útiles?",
+                options: [
+                    "a) find y locate",
+                    "b) whereis, which y type",
+                    "c) ls -F y readlink",
+                    "d) path y env"
+                ],
+                correctAnswer: "b) whereis, which y type"
+            },
+            {
+                question: "¿Qué señal se utiliza con el comando kill para terminar un proceso de forma forzada (no puede ser ignorada)?",
+                options: [
+                    "a) SIGTERM",
+                    "b) SIGHUP",
+                    "c) SIGINT",
+                    "d) SIGKILL"
+                ],
+                correctAnswer: "d) SIGKILL"
+            },
+            {
+                question: "Si se desea que un comando 'sobreviva' a la señal SIGHUP (por ejemplo, al cerrar la sesión de la terminal), ¿cómo se debe ejecutar?",
+                options: [
+                    "a) Usando bg",
+                    "b) Con nohup",
+                    "c) Enviándole la señal SIGCONT",
+                    "d) Ejecutándolo en segundo plano (&) sin nohup"
+                ],
+                correctAnswer: "b) Con nohup"
+            },
+            {
+                question: "¿Qué opción del comando ps permite mostrar todos los procesos en formato largo extendido?",
+                options: [
+                    "a) -aux",
+                    "b) -ef",
+                    "c) -eF",
+                    "d) -A"
+                ],
+                correctAnswer: "c) -eF"
+            },
+            {
+                question: "Para mostrar los procesos en formato de árbol (padres/hijos) con ps, ¿qué opciones se pueden usar?",
+                options: [
+                    "a) -tree o -forest",
+                    "b) -forest o -H",
+                    "c) -children o -P",
+                    "d) -T o -h"
+                ],
+                correctAnswer: "b) -forest o -H"
+            },
+            {
+                question: "En la salida de ps -eF, ¿qué campo representa el consumo de CPU?",
+                options: [
+                    "a) SZ",
+                    "b) RSS",
+                    "c) C",
+                    "d) TIME"
+                ],
+                correctAnswer: "c) C"
+            },
+            {
+                question: "Si el campo S o STAT en la salida de ps muestra R, ¿qué significa?",
+                options: [
+                    "a) El proceso está esperando una entrada/salida.",
+                    "b) El proceso está en ejecución (Running).",
+                    "c) El proceso está en suspensión ininterrumpible.",
+                    "d) El proceso ha sido detenido."
+                ],
+                correctAnswer: "b) El proceso está en ejecución (Running)."
+            },
+            {
+                question: "¿Qué comando se utiliza para monitorizar la salida de un comando en tiempo real, con la posibilidad de resaltar los cambios?",
+                options: [
+                    "a) tail -f",
+                    "b) watch",
+                    "c) monitor",
+                    "d) top"
+                ],
+                correctAnswer: "b) watch"
+            },
+            {
+                question: "Para editar el fichero de planificación de tareas de crontab, ¿qué comando se debe ejecutar?",
+                options: [
+                    "a) crontab -l",
+                    "b) crontab -r",
+                    "c) crontab -e",
+                    "d) cron -edit"
+                ],
+                correctAnswer: "c) crontab -e"
+            },
+            {
+                question: "En el formato de crontab, ¿qué representa el campo dom?",
+                options: [
+                    "a) Día de la semana",
+                    "b) Día del mes",
+                    "c) Mes",
+                    "d) Dominio"
+                ],
+                correctAnswer: "b) Día del mes"
+            },
+            {
+                question: "Si en crontab se especifica 45 10 * * sun root apt-get -y update, ¿cuándo se ejecutará el comando?",
+                options: [
+                    "a) Cada domingo a las 10:45 AM.",
+                    "b) Cada día 45 del mes a las 10 AM.",
+                    "c) Cada domingo de todas las horas.",
+                    "d) Una vez al año el 10 de abril a los 45 minutos."
+                ],
+                correctAnswer: "a) Cada domingo a las 10:45 AM."
+            },
+            {
+                question: "¿Qué cadena especial en crontab permite ejecutar un script una única vez al arranque del sistema?",
+                options: [
+                    "a) @daily",
+                    "b) @reboot",
+                    "c) @startup",
+                    "d) @hourly"
+                ],
+                correctAnswer: "b) @reboot"
+            },
+            {
+                question: "¿Dónde se guardan los crontab de cada usuario?",
+                options: [
+                    "a) /etc/cron.d/",
+                    "b) /var/spool/cron/crontabs/",
+                    "c) /etc/crontab",
+                    "d) /usr/local/cron/"
+                ],
+                correctAnswer: "b) /var/spool/cron/crontabs/"
+            },
+            {
+                question: "Si en crontab tanto el día del mes como el día de la semana tienen valor, ¿cuándo se ejecutará la tarea?",
+                options: [
+                    "a) Cuando ambos se cumplan (AND).",
+                    "b) Cuando se cumpla cualquiera de los dos (OR).",
+                    "c) Solo si el día del mes es mayor que el día de la semana.",
+                    "d) Se produce un error de configuración."
+                ],
+                correctAnswer: "b) Cuando se cumpla cualquiera de los dos (OR)."
+            },
+            {
+                question: "Para detener el sistema y apagar la máquina (con el comando shutdown), ¿qué opción se utiliza?",
+                options: [
+                    "a) shutdown -H now",
+                    "b) shutdown -c",
+                    "c) shutdown now",
+                    "d) shutdown -P now"
+                ],
+                correctAnswer: "d) shutdown -P now"
+            },
+            {
+                question: "¿Qué comando se utiliza para reiniciar la máquina usando systemctl?",
+                options: [
+                    "a) systemctl stop",
+                    "b) systemctl halt",
+                    "c) systemctl poweroff",
+                    "d) systemctl reboot"
+                ],
+                correctAnswer: "d) systemctl reboot"
+            },
+            {
+                question: "En sistemas que usan SystemD, ¿qué comando se utiliza para comprobar el estado de un servicio como firewalld.service?",
+                options: [
+                    "a) service firewalld status",
+                    "b) systemctl status firewalld.service",
+                    "c) status firewalld",
+                    "d) chkconfig firewalld on"
+                ],
+                correctAnswer: "b) systemctl status firewalld.service"
+            },
+            {
+                question: "Para activar un servicio (ej. httpd.service) al arranque del sistema con SystemD, ¿qué comando se utiliza?",
+                options: [
+                    "a) systemctl start httpd.service",
+                    "b) systemctl enable httpd.service",
+                    "c) systemctl reload httpd.service",
+                    "d) systemctl chkconfig httpd.service on"
+                ],
+                correctAnswer: "b) systemctl enable httpd.service"
+            },
+            {
+                question: "En la familia Debian, ¿qué comando se utiliza para actualizar el índice de paquetes usando los repositorios?",
+                options: [
+                    "a) apt-get upgrade",
+                    "b) apt-get install",
+                    "c) apt-get update",
+                    "d) apt-cache search"
+                ],
+                correctAnswer: "c) apt-get update"
+            },
+            {
+                question: "¿Qué comando de apt-get elimina un paquete y sus ficheros de configuración?",
+                options: [
+                    "a) apt-get remove",
+                    "b) apt-get autoremove",
+                    "c) apt-get clean",
+                    "d) apt-get purge"
+                ],
+                correctAnswer: "d) apt-get purge"
+            },
+            {
+                question: "Para instalar un paquete .deb de forma offline, ¿qué comando se utiliza?",
+                options: [
+                    "a) apt-get install paquete.deb",
+                    "b) dpkg -i paquete.deb",
+                    "c) rpm -ivh paquete.deb",
+                    "d) yum install paquete.deb"
+                ],
+                correctAnswer: "b) dpkg -i paquete.deb"
+            },
+            {
+                question: "¿Qué comando dpkg permite listar el contenido de un paquete .deb?",
+                options: [
+                    "a) dpkg -l",
+                    "b) dpkg -s",
+                    "c) dpkg -c",
+                    "d) dpkg -L"
+                ],
+                correctAnswer: "c) dpkg -c"
+            },
+            {
+                question: "En la familia RedHat, ¿qué comando se utiliza para instalar un paquete como firefox?",
+                options: [
+                    "a) rpm install firefox",
+                    "b) dnf install firefox",
+                    "c) yum install firefox",
+                    "d) apt-get install firefox"
+                ],
+                correctAnswer: "c) yum install firefox"
+            },
+            {
+                question: "¿Qué comando yum muestra la lista de repositorios activos?",
+                options: [
+                    "a) yum list",
+                    "b) yum search",
+                    "c) yum info",
+                    "d) yum repolist"
+                ],
+                correctAnswer: "d) yum repolist"
+            },
+            {
+                question: "Para comprobar las dependencias de un paquete .rpm antes de la instalación, ¿qué opción se usa con rpm?",
+                options: [
+                    "a) -qi",
+                    "b) -ql",
+                    "c) -qpR",
+                    "d) -evv"
+                ],
+                correctAnswer: "c) -qpR"
+            },
+            {
+                question: "El comando adduser es un script que llama a useradd y utiliza el fichero de configuración:",
+                options: [
+                    "a) /etc/login.defs",
+                    "b) /etc/adduser.conf",
+                    "c) /etc/default/useradd",
+                    "d) /etc/passwd"
+                ],
+                correctAnswer: "b) /etc/adduser.conf"
+            },
+            {
+                question: "¿Qué comando se utiliza para crear un usuario, especificar su directorio home, su shell y asociarlo a una lista de grupos?",
+                options: [
+                    "a) useradd -h /home/pepe -s /usr/bin/zsh -g devs,admins pepe",
+                    "b) useradd -m -d /home/pepe -s /usr/bin/zsh -G devs,admins pepe",
+                    "c) adduser pepe --home /home/pepe --shell /usr/bin/zsh --groups devs,admins",
+                    "d) mkuser -d /home/pepe -s /usr/bin/zsh -G devs,admins pepe"
+                ],
+                correctAnswer: "b) useradd -m -d /home/pepe -s /usr/bin/zsh -G devs,admins pepe"
+            },
+            {
+                question: "Para bloquear una cuenta de usuario con usermod, ¿qué opción se utiliza?",
+                options: [
+                    "a) -U",
+                    "b) -L",
+                    "c) -d",
+                    "d) -f"
+                ],
+                correctAnswer: "b) -L"
+            },
+            {
+                question: "Si se desea borrar una cuenta de usuario y todos sus ficheros asociados, ¿qué comando se emplea?",
+                options: [
+                    "a) userdel pepe",
+                    "b) userdel -r pepe",
+                    "c) deluser pepe",
+                    "d) rmuser pepe"
+                ],
+                correctAnswer: "b) userdel -r pepe"
+            },
+            {
+                question: "En el fichero /etc/passwd, ¿qué indica la letra x en el campo de la contraseña?",
+                options: [
+                    "a) Que la cuenta está bloqueada.",
+                    "b) Que la contraseña está encriptada directamente en /etc/passwd.",
+                    "c) Que la contraseña está en /etc/shadow.",
+                    "d) Que no se requiere contraseña para esa cuenta."
+                ],
+                correctAnswer: "c) Que la contraseña está en /etc/shadow."
+            },
+            {
+                question: "En el fichero /etc/shadow, ¿qué indica una ! delante de la contraseña?",
+                options: [
+                    "a) Que la cuenta está bloqueada.",
+                    "b) Que la contraseña ha expirado.",
+                    "c) Que el usuario debe cambiar su contraseña al primer login.",
+                    "d) Que la contraseña es débil."
+                ],
+                correctAnswer: "a) Que la cuenta está bloqueada."
+            },
+            {
+                question: "¿Qué comando muestra solo el login de los usuarios conectados?",
+                options: [
+                    "a) who -q",
+                    "b) w",
+                    "c) users",
+                    "d) id"
+                ],
+                correctAnswer: "c) users"
+            },
+            {
+                question: "Para mostrar la fecha y hora del último inicio del sistema, ¿qué opción se usa con who?",
+                options: [
+                    "a) -m",
+                    "b) -r",
+                    "c) -b",
+                    "d) -q"
+                ],
+                correctAnswer: "c) -b"
+            },
+            {
+                question: "El comando dmesg --level=alert,crit,... permite:",
+                options: [
+                    "a) Filtrar los mensajes de diagnóstico por su nivel.",
+                    "b) Mostrar solo los mensajes de error.",
+                    "c) Limpiar el buffer del kernel.",
+                    "d) Guardar los mensajes en un fichero."
+                ],
+                correctAnswer: "a) Filtrar los mensajes de diagnóstico por su nivel."
+            },
+            {
+                question: "¿Qué opción de dmesg se queda esperando a nuevos mensajes del kernel?",
+                options: [
+                    "a) -k",
+                    "b) -T",
+                    "c) -u",
+                    "d) -w"
+                ],
+                correctAnswer: "d) -w"
+            },
+            {
+                question: "¿Qué comando muestra toda la información del sistema, equivalente a cat /proc/version?",
+                options: [
+                    "a) hostnamectl",
+                    "b) uname -s",
+                    "c) uname -a",
+                    "d) lsb_release -a"
+                ],
+                correctAnswer: "c) uname -a"
+            },
+            {
+                question: "Para ver el nombre del kernel, ¿qué opción se utiliza con uname?",
+                options: [
+                    "a) -n",
+                    "b) -r",
+                    "c) -s",
+                    "d) -v"
+                ],
+                correctAnswer: "c) -s"
+            },
+            {
+                question: "¿Qué comando se puede usar para obtener información acerca de la distribución de Linux, similar a lo que se encuentra en /etc/issue?",
+                options: [
+                    "a) uname -a",
+                    "b) hostnamectl",
+                    "c) lsb_release -a",
+                    "d) cat /proc/version"
+                ],
+                correctAnswer: "c) lsb_release -a"
+            },
+            {
+                question: "Para configurar parámetros del kernel en tiempo de ejecución de forma temporal, ¿qué comando se utiliza?",
+                options: [
+                    "a) sysctl -p",
+                    "b) echo > /etc/sysctl.conf",
+                    "c) sysctl -w",
+                    "d) modprobe"
+                ],
+                correctAnswer: "c) sysctl -w"
+            },
+            {
+                question: "Si se desea que un cambio de parámetro del kernel con sysctl sea permanente, ¿qué fichero de configuración debe editarse?",
+                options: [
+                    "a) /etc/modprobe.d/",
+                    "b) /proc/sys/",
+                    "c) /etc/sysctl.conf",
+                    "d) /boot/grub/grub.cfg"
+                ],
+                correctAnswer: "c) /etc/sysctl.conf"
+            },
+            {
+                question: "¿Qué comando muestra información del procesador, como su arquitectura, cores, virtualización, caché L1, L2, etc.?",
+                options: [
+                    "a) cat /proc/cpuinfo",
+                    "b) lscpu",
+                    "c) dmidecode",
+                    "d) top"
+                ],
+                correctAnswer: "b) lscpu"
+            },
+            {
+                question: "Para listar los módulos del kernel cargados actualmente, ¿qué comando se utiliza?",
+                options: [
+                    "a) modprobe -l",
+                    "b) lsmod",
+                    "c) dmesg -k",
+                    "d) insmod"
+                ],
+                correctAnswer: "b) lsmod"
+            },
+            {
+                question: "¿Qué comando se utiliza para añadir un módulo al kernel?",
+                options: [
+                    "a) insmod",
+                    "b) modinfo",
+                    "c) modprobe",
+                    "d) rmmod"
+                ],
+                correctAnswer: "c) modprobe"
+            },
+            {
+                question: "Para ver información de la memoria RAM en formato legible, ¿qué comando se utiliza?",
+                options: [
+                    "a) free",
+                    "b) free -b",
+                    "c) free -h",
+                    "d) cat /proc/meminfo"
+                ],
+                correctAnswer: "c) free -h"
+            },
+            {
+                question: "¿Qué comando permite ver el hard limit de recursos para un usuario concreto?",
+                options: [
+                    "a) ulimit -Sn",
+                    "b) ulimit -Hn",
+                    "c) cat /proc/sys/fs/file-max",
+                    "d) su - usuario && ulimit -a"
+                ],
+                correctAnswer: "b) ulimit -Hn"
+            },
+            {
+                question: "¿En qué fichero de configuración se pueden cambiar los parámetros hard y soft de los límites de recursos para los usuarios?",
+                options: [
+                    "a) /etc/passwd",
+                    "b) /etc/profile",
+                    "c) /etc/security/limits.conf",
+                    "d) /etc/sysctl.conf"
+                ],
+                correctAnswer: "c) /etc/security/limits.conf"
+            },
+            {
+                question: "¿Qué comando permite ejecutar un programa como otro usuario?",
+                options: [
+                    "a) su",
+                    "b) login",
+                    "c) sudo",
+                    "d) runas"
+                ],
+                correctAnswer: "c) sudo"
+            },
+            {
+                question: "En el fichero /etc/sudoers, ¿qué significa la sección QUIEN DONDE=(COMO QUIEN) COMANDOS?",
+                options: [
+                    "a) Define qué usuario puede ejecutar qué comandos como root.",
+                    "b) Define quién puede ejecutar comandos en qué máquina, como qué usuario efectivo y qué comandos específicos.",
+                    "c) Define los alias de comandos para sudo.",
+                    "d) Define las opciones por defecto de sudo."
+                ],
+                correctAnswer: "b) Define quién puede ejecutar comandos en qué máquina, como qué usuario efectivo y qué comandos específicos."
+            },
+            {
+                question: "¿Qué comando de setfacl se usa para eliminar una ACL concreta sobre un fichero?",
+                options: [
+                    "a) setfacl -b fichero",
+                    "b) setfacl -x \"acl\" fichero",
+                    "c) setfacl -r fichero",
+                    "d) setfacl -d fichero"
+                ],
+                correctAnswer: "b) setfacl -x \"acl\" fichero"
+            },
+            {
+                question: "¿Qué opción de chmod activa el bit SetGID?",
+                options: [
+                    "a) chmod 4755 ejecutable",
+                    "b) chmod 2755 ejecutable",
+                    "c) chmod 1755 fichero",
+                    "d) chmod 755 fichero"
+                ],
+                correctAnswer: "b) chmod 2755 ejecutable"
+            },
+            {
+                question: "En la salida de stat, ¿qué indica el campo Birth?",
+                options: [
+                    "a) La última fecha de acceso.",
+                    "b) La fecha de creación del fichero.",
+                    "c) La última fecha de modificación.",
+                    "d) La última fecha de cambio de metadatos."
+                ],
+                correctAnswer: "b) La fecha de creación del fichero."
+            },
+            {
+                question: "Para listar solo los PIDs de los procesos que tienen abierto un fichero específico, ¿qué opción se usa con lsof?",
+                options: [
+                    "a) lsof /path/fichero",
+                    "b) lsof -p /path/fichero",
+                    "c) lsof -t /path/fichero",
+                    "d) lsof -c /path/fichero"
+                ],
+                correctAnswer: "c) lsof -t /path/fichero"
+            },
+            {
+                question: "¿Qué tipo de partición corresponde a Linux swap?",
+                options: [
+                    "a) 83",
+                    "b) 8e",
+                    "c) 82",
+                    "d) fd"
+                ],
+                correctAnswer: "c) 82"
+            },
+            {
+                question: "Para reducir un volumen lógico (LV) en LVM, ¿cuál de las siguientes acciones debe realizarse antes de ejecutar lvreduce si se está reduciendo el filesystem?",
+                options: [
+                    "a) Ampliar el VG.",
+                    "b) Formatear el LV.",
+                    "c) Desmontar el filesystem.",
+                    "d) Ejecutar resize2fs sin desmontar."
+                ],
+                correctAnswer: "c) Desmontar el filesystem."
+            },
+            {
+                question: "Si se quiere limitar el uso del ancho de banda en KB/s durante una transferencia rsync, ¿qué opción se usa?",
+                options: [
+                    "a) --max-size",
+                    "b) --bwlimit",
+                    "c) --limit-rate",
+                    "d) --speed-limit"
+                ],
+                correctAnswer: "b) --bwlimit"
+            },
+            {
+                question: "¿Qué campo en la salida de ps -eLf representa el número de threads del proceso?",
+                options: [
+                    "a) LWP",
+                    "b) PID",
+                    "c) NLWP",
+                    "d) CNLWP"
+                ],
+                correctAnswer: "c) NLWP"
+            },
+            {
+                question: "¿Cuál es el valor por defecto de nice si no se especifica?",
+                options: [
+                    "a) 0",
+                    "b) 10",
+                    "c) -20",
+                    "d) 19"
+                ],
+                correctAnswer: "b) 10"
+            },
+            {
+                question: "En el formato de crontab, si el campo dow tiene un valor de 0 o 7, ¿qué día de la semana representa?",
+                options: [
+                    "a) Lunes",
+                    "b) Miércoles",
+                    "c) Domingo",
+                    "d) Sábado"
+                ],
+                correctAnswer: "c) Domingo"
+            },
+            {
+                question: "¿Qué comando de la familia Debian se utiliza para buscar un paquete en el catálogo local (vsftpd)?",
+                options: [
+                    "a) apt-get search vsftpd",
+                    "b) apt-cache search vsftpd",
+                    "c) dpkg -s vsftpd",
+                    "d) yum search vsftpd"
+                ],
+                correctAnswer: "b) apt-cache search vsftpd"
+            },
+            {
+                question: "En el fichero /etc/group, ¿qué indica la x en el campo de la contraseña del grupo?",
+                options: [
+                    "a) Que el grupo está bloqueado.",
+                    "b) Que no hay contraseña para el grupo.",
+                    "c) Que la contraseña del grupo está almacenada en otro fichero (a menudo /etc/gshadow).",
+                    "d) Que el grupo no tiene miembros."
+                ],
+                correctAnswer: "c) Que la contraseña del grupo está almacenada en otro fichero (a menudo /etc/gshadow)."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let answeredQuestions = new Array(quizData.length).fill(false); // To track if a question has been answered
+        let selectedAnswers = new Array(quizData.length).fill(null); // To store selected answer index
+
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainerElement = document.getElementById('options-container');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const questionIndicator = document.getElementById('question-indicator');
+
+        // Function to load a question
+        function loadQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionTextElement.textContent = currentQuestion.question;
+            optionsContainerElement.innerHTML = ''; // Clear previous options
+            feedbackMessageElement.style.display = 'none'; // Hide feedback message
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option-button');
+                button.textContent = option;
+                button.dataset.index = index; // Store the index of the option
+
+                // If the question has been answered, disable buttons and show feedback
+                if (answeredQuestions[currentQuestionIndex]) {
+                    button.classList.add('disabled');
+                    if (option === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    } else if (selectedAnswers[currentQuestionIndex] === index) {
+                        button.classList.add('incorrect');
+                    }
+                    showFeedback(selectedAnswers[currentQuestionIndex] !== null && currentQuestion.options[selectedAnswers[currentQuestionIndex]] === currentQuestion.correctAnswer);
+                } else {
+                    button.addEventListener('click', () => selectAnswer(button, index));
+                }
+
+                optionsContainerElement.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            updateQuestionIndicator();
+        }
+
+        // Function to handle answer selection
+        function selectAnswer(selectedButton, selectedIndex) {
+            const currentQuestion = quizData[currentQuestionIndex];
+            const isCorrect = selectedButton.textContent === currentQuestion.correctAnswer;
+
+            // Disable all option buttons after selection
+            Array.from(optionsContainerElement.children).forEach(button => {
+                button.classList.add('disabled');
+            });
+
+            // Apply styling based on correctness
+            if (isCorrect) {
+                selectedButton.classList.add('correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+                // Highlight the correct answer if the selected one was incorrect
+                Array.from(optionsContainerElement.children).forEach(button => {
+                    if (button.textContent === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+
+            // Store the answer status
+            answeredQuestions[currentQuestionIndex] = true;
+            selectedAnswers[currentQuestionIndex] = selectedIndex;
+
+            // Show feedback message
+            showFeedback(isCorrect);
+            updateNavigationButtons();
+        }
+
+        // Function to show feedback message
+        function showFeedback(isCorrect) {
+            feedbackMessageElement.style.display = 'block';
+            if (isCorrect) {
+                feedbackMessageElement.classList.remove('incorrect');
+                feedbackMessageElement.classList.add('correct');
+                feedbackMessageElement.textContent = '¡Correcto!';
+            } else {
+                feedbackMessageElement.classList.remove('correct');
+                feedbackMessageElement.classList.add('incorrect');
+                feedbackMessageElement.textContent = 'Incorrecto. La respuesta correcta es: ' + quizData[currentQuestionIndex].correctAnswer;
+            }
+        }
+
+        // Function to update navigation button states
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+        }
+
+        // Function to update question indicator
+        function updateQuestionIndicator() {
+            questionIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        // Event listeners for navigation buttons
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        // Initial load of the first question
+        loadQuestion();
+    </script>
+</body>
+</html>

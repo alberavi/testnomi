@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background-color: #edf2f7;
+            color: #4a5568;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+            transform: translateY(-2px);
+        }
+        .options-container button.correct {
+            background-color: #d4edda; /* Light green */
+            color: #155724; /* Dark green */
+            border-color: #28a745; /* Green */
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #f8d7da; /* Light red */
+            color: #721c24; /* Dark red */
+            border-color: #dc3545; /* Red */
+            font-weight: 600;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navigation-buttons button.prev {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+        }
+        .navigation-buttons button.prev:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+        .navigation-buttons button.next {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .navigation-buttons button.next:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .navigation-buttons button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div id="quiz-content">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="prev">Anterior</button>
+            <button id="next-btn" class="next">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        // Define the quiz data: questions, options, and correct answers
+        const quizData = [
+            {
+                question: '¿Qué tipo de lenguajes son los "scripting languages"?',
+                options: ['a) Compilados', 'b) Interpretados', 'c) Híbridos', 'd) Ensamblados'],
+                correctAnswer: 'b) Interpretados'
+            },
+            {
+                question: '¿Dónde se ejecuta el código "Backend"?',
+                options: ['a) En el cliente', 'b) En el navegador', 'c) En el servidor', 'd) En una máquina virtual local'],
+                correctAnswer: 'c) En el servidor'
+            },
+            {
+                question: '¿Cuál de los siguientes no es un lenguaje de scripting Backend mencionado en los documentos?',
+                options: ['a) PHP', 'b) Ruby', 'c) Java', 'd) Python'],
+                correctAnswer: 'c) Java'
+            },
+            {
+                question: '¿Qué gestor de paquetes se utiliza comúnmente con PHP?',
+                options: ['a) Pip', 'b) Gems', 'c) Composer', 'd) npm'],
+                correctAnswer: 'c) Composer'
+            },
+            {
+                question: 'El fichero composer.json ¿qué tipo de información contiene?',
+                options: ['a) Datos de configuración de la base de datos', 'b) Las dependencias del proyecto', 'c) Código fuente de la aplicación', 'd) Logs del servidor'],
+                correctAnswer: 'b) Las dependencias del proyecto'
+            },
+            {
+                question: '¿Cuál es el gestor de paquetes para Ruby?',
+                options: ['a) Pip', 'b) Gems', 'c) Composer', 'd) npm'],
+                correctAnswer: 'b) Gems'
+            },
+            {
+                question: '¿Qué motor de ejecución utiliza JavaScript?',
+                options: ['a) Zend Engine', 'b) JVM', 'c) V8', 'd) Spidermonkey'],
+                correctAnswer: 'c) V8'
+            },
+            {
+                question: '¿Qué framework web está orientado a crear microservicios?',
+                options: ['a) Django', 'b) Flask', 'c) Laravel', 'd) Ruby on Rails'],
+                correctAnswer: 'b) Flask'
+            },
+            {
+                question: '¿Qué framework web de PHP es mencionado en los documentos?',
+                options: ['a) Express', 'b) Cake PHP', 'c) Pyramid', 'd) Roda'],
+                correctAnswer: 'b) Cake PHP'
+            },
+            {
+                question: '¿Qué producto final desarrollado en PHP se utiliza para cursos online?',
+                options: ['a) phpBB', 'b) Magento', 'c) Moodle', 'd) Alfresco'],
+                correctAnswer: 'c) Moodle'
+            },
+            {
+                question: '¿Cuál de los siguientes es un gestor de contenido (CMS) desarrollado en PHP?',
+                options: ['a) OSCommerce', 'b) WordPress', 'c) Prestashop', 'd) Alfresco'],
+                correctAnswer: 'b) WordPress'
+            },
+            {
+                question: 'Para ejecutar una aplicación PHP con base de datos, ¿qué es una forma sencilla de facilitar la instalación y configuración?',
+                options: ['a) Instalar cada componente por separado', 'b) Usar un compilador PHP', 'c) Utilizar un tipo de contenedor que facilita el proceso', 'd) Configurar manualmente cada módulo'],
+                correctAnswer: 'c) Utilizar un tipo de contenedor que facilita el proceso'
+            },
+            {
+                question: '¿Cuál de los siguientes productos es un software que ya trae lo necesario para ejecutar aplicaciones PHP con base de datos?',
+                options: ['a) MySQL Workbench', 'b) Visual Studio Code', 'c) XAMPP', 'd) Apache Tomcat'],
+                correctAnswer: 'c) XAMPP'
+            },
+            {
+                question: 'En XAMPP, ¿qué representa la \'X\'?',
+                options: ['a) Linux', 'b) Windows', 'c) Mac', 'd) Multiplataforma'],
+                correctAnswer: 'd) Multiplataforma'
+            },
+            {
+                question: 'En LAMP, ¿qué representa la \'A\'?',
+                options: ['a) Angular', 'b) Apache', 'c) Apple', 'd) Amazon'],
+                correctAnswer: 'b) Apache'
+            },
+            {
+                question: 'En WAMP, ¿qué representa la \'W\'?',
+                options: ['a) Web', 'b) Windows', 'c) Workstation', 'd) World'],
+                correctAnswer: 'b) Windows'
+            },
+            {
+                question: 'En LEMP, ¿qué representa la \'E\'?',
+                options: ['a) Express', 'b) Ember', 'c) Nginx', 'd) Eclipse'],
+                correctAnswer: 'c) Nginx'
+            },
+            {
+                question: 'Inicialmente, la \'P\' en XAMPP representaba PHP. ¿Qué otros lenguajes puede representar ahora?',
+                options: ['a) Perl o Python', 'b) Java o C++', 'c) Ruby o Go', 'd) Swift o Kotlin'],
+                correctAnswer: 'a) Perl o Python'
+            },
+            {
+                question: '¿Cuál es una de las "pegas" de las arquitecturas Cliente-Servidor en web que la arquitectura MEAN intenta paliar?',
+                options: ['a) La dificultad de la interfaz de usuario', 'b) La excesiva transformación de información (Objetos a SQL, SQL a Objetos, etc.)', 'c) El alto costo de los servidores', 'd) La baja seguridad en las transacciones'],
+                correctAnswer: 'b) La excesiva transformación de información (Objetos a SQL, SQL a Objetos, etc.)'
+            },
+            {
+                question: 'En la arquitectura MEAN, ¿qué tecnología maneja la información en formato JSON de forma nativa?',
+                options: ['a) Express', 'b) Node', 'c) Angular', 'd) Todas las anteriores'],
+                correctAnswer: 'd) Todas las anteriores'
+            },
+            {
+                question: '¿Qué tipo de base de datos es MongoDB?',
+                options: ['a) Relacional', 'b) Columnares', 'c) NoSQL de tipo documental', 'd) Grafo'],
+                correctAnswer: 'c) NoSQL de tipo documental'
+            },
+            {
+                question: '¿Cómo se maneja la información entre el Servidor y la Base de Datos en la arquitectura MEAN?',
+                options: ['a) Se transforma a SQL', 'b) Se transforma a XML', 'c) En formato JSON, sin transformación', 'd) En formato binario'],
+                correctAnswer: 'c) En formato JSON, sin transformación'
+            },
+            {
+                question: 'Si en la arquitectura MEAN sustituimos Angular por React, ¿qué arquitectura obtenemos?',
+                options: ['a) MEVN', 'b) MERN', 'c) LAMP', 'd) XAMPP'],
+                correctAnswer: 'b) MERN'
+            },
+            {
+                question: '¿Quién desarrolla el framework de Frontend Angular?',
+                options: ['a) Facebook', 'b) Microsoft', 'c) Google', 'd) Amazon'],
+                correctAnswer: 'c) Google'
+            },
+            {
+                question: '¿Qué significa que un desarrollador sea "Fullstack"?',
+                options: ['a) Que domina solo tecnologías de Backend', 'b) Que domina solo tecnologías de Frontend', 'c) Que domina tecnologías tanto de Backend como de Frontend', 'd) Que se especializa en bases de datos'],
+                correctAnswer: 'c) Que domina tecnologías tanto de Backend como de Frontend'
+            },
+            {
+                question: '¿Cuál de las siguientes es una variable superglobal en PHP?',
+                options: ['a) $_LOCAL', 'b) $_FUNCTION', 'c) $_SERVER', 'd) $_GLOBAL'],
+                correctAnswer: 'c) $_SERVER'
+            },
+            {
+                question: '¿Qué operador se utiliza para la concatenación en PHP?',
+                options: ['a) +', 'b) .', 'c) &', 'd) _'],
+                correctAnswer: 'b) .'
+            },
+            {
+                question: '¿Qué operador se utiliza para la igualdad (solo valor) en PHP?',
+                options: ['a) ===', 'b) ==', 'c) !=', 'd) !=='],
+                correctAnswer: 'b) =='
+            },
+            {
+                question: '¿Qué operador en PHP se conoce como "Nave espacial" (<=>)?',
+                options: ['a) Compara dos expresiones y devuelve -1, 0 o 1', 'b) Asigna un valor si el operando es nulo', 'c) Concatena cadenas', 'd) Comprueba el tipo de una variable'],
+                correctAnswer: 'a) Compara dos expresiones y devuelve -1, 0 o 1'
+            },
+            {
+                question: '¿Qué operador en PHP se utiliza para la "Fusión de null" (Null coalescing)?',
+                options: ['a) ??', 'b) ||', 'c) &&', 'd) !'],
+                correctAnswer: 'a) ??'
+            },
+            {
+                question: '¿Qué tipo de comillas resuelven las variables en PHP?',
+                options: ['a) Simples', 'b) Dobles', 'c) Ambas', 'd) Ninguna'],
+                correctAnswer: 'b) Dobles'
+            },
+            {
+                question: '¿Cómo se escribe un comentario de una sola línea en PHP?',
+                options: ['a) /* comentario */', 'b) // comentario', 'c) <-- comentario -->', 'd) -- comentario'],
+                correctAnswer: 'b) // comentario'
+            },
+            {
+                question: '¿Qué motor de persistencia (ORM) utiliza Laravel?',
+                options: ['a) Doctrine', 'b) Eloquent', 'c) Hibernate', 'd) JPA'],
+                correctAnswer: 'b) Eloquent'
+            },
+            {
+                question: '¿Cómo se define un constructor en una clase PHP?',
+                options: ['a) public function construct()', 'b) public function __init()', 'c) public function __construct()', 'd) public function create()'],
+                correctAnswer: 'c) public function __construct()'
+            },
+            {
+                question: '¿Cuál es el operador en PHP para acceder a los miembros de la instancia actual de una clase?',
+                options: ['a) self::', 'b) parent::', 'c) $this->', 'd) this.'],
+                correctAnswer: 'c) $this->'
+            },
+            {
+                question: 'En PHP, ¿qué operador se utiliza para verificar si un objeto es una instancia de una clase?',
+                options: ['a) is_a', 'b) type_of', 'c) instanceof', 'd) is_object'],
+                correctAnswer: 'c) instanceof'
+            },
+            {
+                question: '¿Qué palabra clave en PHP evita sobrescrituras de clases y métodos?',
+                options: ['a) abstract', 'b) static', 'c) final', 'd) protected'],
+                correctAnswer: 'c) final'
+            },
+            {
+                question: '¿Qué función se creó en PHP para evitar muchos require?',
+                options: ['a) include_once()', 'b) spl_autoload_register()', 'c) load_class()', 'd) get_require()'],
+                correctAnswer: 'b) spl_autoload_register()'
+            },
+            {
+                question: '¿Cómo se llaman los métodos especiales en PHP que empiezan por __ (doble guion bajo)?',
+                options: ['a) Métodos estáticos', 'b) Métodos abstractos', 'c) Magic methods', 'd) Métodos de interfaz'],
+                correctAnswer: 'c) Magic methods'
+            },
+            {
+                question: '¿Para qué se utilizan los Traits/Rasgos/Tratos en PHP?',
+                options: ['a) Para implementar herencia múltiple', 'b) Para ofrecer una serie de métodos sin usar herencia (programación por composición)', 'c) Para definir interfaces', 'd) Para crear clases abstractas'],
+                correctAnswer: 'b) Para ofrecer una serie de métodos sin usar herencia (programación por composición)'
+            },
+            {
+                question: 'En PHP, si un método de la clase que usa un trait se llama igual que el del trait, ¿cuál tiene preferencia?',
+                options: ['a) El método del trait', 'b) El método de la clase', 'c) Ambos generan un error', 'd) Depende de la visibilidad'],
+                correctAnswer: 'b) El método de la clase'
+            },
+            {
+                question: 'Si un método del trait se llama igual que un método heredado, ¿cuál tiene preferencia?',
+                options: ['a) El método de la herencia', 'b) El método del trait', 'c) Ambos generan un error', 'd) Depende del orden de declaración'],
+                correctAnswer: 'b) El método del trait'
+            },
+            {
+                question: '¿Qué módulo de Apache hace un fork del propio Apache cada vez que se le pide algo PHP?',
+                options: ['a) mod_proxy_fcgi', 'b) mod_php', 'c) mod_rewrite', 'd) mod_ssl'],
+                correctAnswer: 'b) mod_php'
+            },
+            {
+                question: '¿Qué gestor se utiliza para los forks del intérprete de PHP con FCGI?',
+                options: ['a) Apache', 'b) Nginx', 'c) FPM', 'd) Composer'],
+                correctAnswer: 'c) FPM'
+            },
+            {
+                question: '¿Qué comando se utiliza para crear un nuevo proyecto Laravel?',
+                options: ['a) php artisan new', 'b) laravel new', 'c) composer create-project', 'd) npm install laravel'],
+                correctAnswer: 'b) laravel new'
+            },
+            {
+                question: '¿Qué es artisan en Laravel?',
+                options: ['a) Un ORM', 'b) Una CLI (Command Line Interface)', 'c) Un gestor de paquetes', 'd) Un motor de plantillas'],
+                correctAnswer: 'b) Una CLI (Command Line Interface)'
+            },
+            {
+                question: '¿Qué comando de artisan se utiliza para levantar el proyecto Laravel?',
+                options: ['a) php artisan start', 'b) php artisan run', 'c) php artisan serve', 'd) php artisan up'],
+                correctAnswer: 'c) php artisan serve'
+            },
+            {
+                question: '¿Para qué se utilizan los Seeders en Laravel?',
+                options: ['a) Para generar migraciones', 'b) Para llenar la BD con datos de prueba codificados manualmente', 'c) Para crear controladores', 'd) Para definir modelos'],
+                correctAnswer: 'b) Para llenar la BD con datos de prueba codificados manualmente'
+            },
+            {
+                question: '¿Qué librería utilizan los Factories en Laravel para llenar la BD con datos de prueba de forma masiva?',
+                options: ['a) Guzzle', 'b) Faker', 'c) Carbon', 'd) Eloquent'],
+                correctAnswer: 'b) Faker'
+            },
+            {
+                question: '¿Qué componente de Laravel es el que recibe las peticiones HTTP?',
+                options: ['a) Model', 'b) View', 'c) Controller', 'd) Migration'],
+                correctAnswer: 'c) Controller'
+            },
+            {
+                question: '¿Para qué sirven las Migraciones en Laravel?',
+                options: ['a) Para versionar los scripts de BD', 'b) Para migrar datos entre bases de datos', 'c) Para optimizar consultas SQL', 'd) Para generar informes'],
+                correctAnswer: 'a) Para versionar los scripts de BD'
+            },
+            {
+                question: '¿Qué comando ejecuta las migraciones pendientes en Laravel?',
+                options: ['a) php artisan make:migration', 'b) php artisan rollback', 'c) php artisan migrate', 'd) php artisan status'],
+                correctAnswer: 'c) php artisan migrate'
+            },
+            {
+                question: '¿Cuál es la estandarización de JavaScript mencionada en el documento?',
+                options: ['a) Java Enterprise Edition', 'b) ECMA Script 262 / ES 6 / ES 2015', 'c) World Wide Web Consortium', 'd) CommonJS'],
+                correctAnswer: 'b) ECMA Script 262 / ES 6 / ES 2015'
+            },
+            {
+                question: '¿Qué motor de JavaScript utiliza el navegador Chrome?',
+                options: ['a) SpiderMonkey', 'b) Nitro', 'c) V8', 'd) Gecko'],
+                correctAnswer: 'c) V8'
+            },
+            {
+                question: '¿Qué motor de renderizado utiliza el navegador Firefox?',
+                options: ['a) Blink', 'b) Webkit', 'c) Gecko -> Quantum', 'd) V8'],
+                correctAnswer: 'c) Gecko -> Quantum'
+            },
+            {
+                question: '¿Por qué el código de nuevos lenguajes como TypeScript debe ser transpildado a JavaScript?',
+                options: ['a) Porque JavaScript es más eficiente', 'b) Porque algunos navegadores no entienden el código original', 'c) Para reducir el tamaño del archivo', 'd) Por razones de seguridad'],
+                correctAnswer: 'b) Porque algunos navegadores no entienden el código original'
+            },
+            {
+                question: '¿Qué herramienta se utiliza para la transpilación de código a JavaScript?',
+                options: ['a) Webpack', 'b) Babel', 'c) Gulp', 'd) Bower'],
+                correctAnswer: 'b) Babel'
+            },
+            {
+                question: '¿Cuál de los siguientes es un preprocesador CSS?',
+                options: ['a) Pug', 'b) Less', 'c) Mustache', 'd) Handlebars'],
+                correctAnswer: 'b) Less'
+            },
+            {
+                question: '¿Qué es Node.js?',
+                options: ['a) Un framework de frontend', 'b) Una base de datos NoSQL', 'c) Como la JRE de JavaScript', 'd) Un motor de renderizado'],
+                correctAnswer: 'c) Como la JRE de JavaScript'
+            },
+            {
+                question: '¿Qué norma ECMA define JSON?',
+                options: ['a) ECMA 262', 'b) ECMA 334', 'c) ECMA 335', 'd) ECMA 404'],
+                correctAnswer: 'd) ECMA 404'
+            },
+            {
+                question: '¿Qué herramienta construida sobre NodeJS que servía para gestionar dependencias/versiones de librerías JS está obsoleta?',
+                options: ['a) npm', 'b) Yarn', 'c) Bower', 'd) Webpack'],
+                correctAnswer: 'c) Bower'
+            },
+            {
+                question: '¿Qué herramienta obsoleta sobre NodeJS servía para automatizar tareas de desarrollo (minificar código JS, transpilar Sass/Less a CSS)?',
+                options: ['a) Yeoman', 'b) Gulp/Grup', 'c) ESLint', 'd) Browserify'],
+                correctAnswer: 'b) Gulp/Grup'
+            },
+            {
+                question: '¿Qué herramienta obsoleta sobre NodeJS servía para generar estructuras de directorios/ficheros, similar a los archetypes de Maven?',
+                options: ['a) Gulp', 'b) Bower', 'c) Yeoman', 'd) Webpack'],
+                correctAnswer: 'c) Yeoman'
+            },
+            {
+                question: '¿Cómo se instala el CLI de Angular?',
+                options: ['a) npm install -g @angular\\cli', 'b) ng install angular-cli', 'c) yarn add angular-cli', 'd) composer require angular/cli'],
+                correctAnswer: 'a) npm install -g @angular\\cli'
+            },
+            {
+                question: '¿Qué comando se utiliza para crear un nuevo proyecto Angular?',
+                options: ['a) ng create', 'b) ng init', 'c) ng new', 'd) ng generate'],
+                correctAnswer: 'c) ng new'
+            },
+            {
+                question: '¿Qué herramientas se utilizan actualmente para gestionar dependencias en frontend en lugar de Bower?',
+                options: ['a) Gulp y Grup', 'b) Webpack y Browserify', 'c) Yarn o npm', 'd) ESLint y JSHint'],
+                correctAnswer: 'c) Yarn o npm'
+            },
+            {
+                question: '¿Qué fichero contiene todas las dependencias en proyectos que usan npm o Yarn?',
+                options: ['a) config.json', 'b) yarn.lock', 'c) package.json', 'd) dependencies.xml'],
+                correctAnswer: 'c) package.json'
+            },
+            {
+                question: '¿Cuál de los siguientes no es un "package bundler" o empaquetador?',
+                options: ['a) Webpack', 'b) Browserify', 'c) ESLint', 'd) Rollup'],
+                correctAnswer: 'c) ESLint'
+            },
+            {
+                question: '¿Para qué sirven los Linters como ESLint?',
+                options: ['a) Para empaquetar archivos', 'b) Para gestionar dependencias', 'c) Para mejorar el código mediante análisis e identificar fallos', 'd) Para automatizar tareas'],
+                correctAnswer: 'c) Para mejorar el código mediante análisis e identificar fallos'
+            },
+            {
+                question: 'En HTML5, ¿qué etiqueta se utiliza para llamar al código JavaScript?',
+                options: ['a) <js>', 'b) <script>', 'c) <javascript>', 'd) <codejs>'],
+                correctAnswer: 'b) <script>'
+            },
+            {
+                question: '¿Qué permite la DOM API en JavaScript?',
+                options: ['a) Modificar, crear y eliminar nodos del documento', 'b) Realizar peticiones HTTP asíncronas', 'c) Gestionar dependencias', 'd) Compilar código JavaScript'],
+                correctAnswer: 'a) Modificar, crear y eliminar nodos del documento'
+            },
+            {
+                question: '¿Qué técnica de desarrollo favorece la creación de aplicaciones web RIA (Rich Internet Applications)?',
+                options: ['a) CSS3', 'b) HTML5', 'c) AJAX', 'd) SQL'],
+                correctAnswer: 'c) AJAX'
+            },
+            {
+                question: '¿Qué objeto se utiliza en AJAX para realizar peticiones HTTP asíncronas?',
+                options: ['a) XMLHttpRequest', 'b) HttpRequest', 'c) AsyncRequest', 'd) HTTPClient'],
+                correctAnswer: 'a) XMLHttpRequest'
+            },
+            {
+                question: 'En una petición AJAX, ¿qué valor de readyState indica que la respuesta ha sido completada?',
+                options: ['a) 0', 'b) 1', 'c) 3', 'd) 4'],
+                correctAnswer: 'd) 4'
+            },
+            {
+                question: 'Si una petición AJAX devuelve JSON, ¿en qué atributo se guardará la respuesta?',
+                options: ['a) responseXML', 'b) responseJSON', 'c) responseText', 'd) responseData'],
+                correctAnswer: 'c) responseText'
+            },
+            {
+                question: '¿Qué método de XMLHttpRequest se utiliza para preparar la llamada?',
+                options: ['a) send()', 'b) prepare()', 'c) open()', 'd) init()'],
+                correctAnswer: 'c) open()'
+            },
+            {
+                question: '¿Qué evento se dispara en XMLHttpRequest con cada cambio de estado?',
+                options: ['a) onstatuschange', 'b) onload', 'c) onreadystatechange', 'd) onerror'],
+                correctAnswer: 'c) onreadystatechange'
+            },
+            {
+                question: '¿Qué nueva API ha sustituido a XMLHttpRequest para hacer peticiones asíncronas?',
+                options: ['a) Axios', 'b) jQuery.ajax()', 'c) Fetch', 'd) SuperAgent'],
+                correctAnswer: 'c) Fetch'
+            },
+            {
+                question: '¿Qué librería se menciona para hacer peticiones asíncronas en JavaScript?',
+                options: ['a) Fetch', 'b) Axios', 'c) jQuery', 'd) Prototype'],
+                correctAnswer: 'b) Axios'
+            },
+            {
+                question: '¿En qué estado puede estar una Promesa en JavaScript?',
+                options: ['a) Start, Running, End', 'b) Pending, Fulfilled, Rejected', 'c) Active, Inactive, Completed', 'd) Initial, Processing, Final'],
+                correctAnswer: 'b) Pending, Fulfilled, Rejected'
+            },
+            {
+                question: '¿Qué palabra clave se utiliza en JavaScript para convertir una función en asíncrona?',
+                options: ['a) await', 'b) then', 'c) async', 'd) promise'],
+                correctAnswer: 'c) async'
+            },
+            {
+                question: '¿Qué palabra clave se utiliza en JavaScript para esperar el resultado de una función asíncrona y evitar encadenar muchos .then?',
+                options: ['a) async', 'b) wait', 'c) await', 'd) delay'],
+                correctAnswer: 'c) await'
+            },
+            {
+                question: '¿Cuál de las siguientes afirmaciones sobre JavaScript es correcta?',
+                options: ['a) Es orientado a objetos con clases tradicionales.', 'b) No tiene clases, pero sí trabaja con objetos.', 'c) No es dinámico.', 'd) No es interpretado.'],
+                correctAnswer: 'b) No tiene clases, pero sí trabaja con objetos.'
+            },
+            {
+                question: '¿Qué concepto en JavaScript se refiere a que las funciones se tratan como cualquier otra variable (se pueden asignar, pasar como parámetro, retornar)?',
+                options: ['a) Clausuras', 'b) Promesas', 'c) Funciones de primera clase', 'd) Herencia prototípica'],
+                correctAnswer: 'c) Funciones de primera clase'
+            },
+            {
+                question: '¿Qué método de un array en JavaScript devuelve un nuevo array mapeado/correspondido?',
+                options: ['a) forEach()', 'b) filter()', 'c) map()', 'd) reduce()'],
+                correctAnswer: 'c) map()'
+            },
+            {
+                question: '¿Qué método de un array en JavaScript añade un elemento al final del array?',
+                options: ['a) pop()', 'b) shift()', 'c) unshift()', 'd) push()'],
+                correctAnswer: 'd) push()'
+            },
+            {
+                question: '¿Qué método de un array en JavaScript elimina el último elemento del array?',
+                options: ['a) push()', 'b) pop()', 'c) splice()', 'd) slice()'],
+                correctAnswer: 'b) pop()'
+            },
+            {
+                question: '¿Qué método de un array en JavaScript devuelve un array filtrado según una condición?',
+                options: ['a) map()', 'b) forEach()', 'c) filter()', 'd) reduce()'],
+                correctAnswer: 'c) filter()'
+            },
+            {
+                question: '¿Qué método JSON en JavaScript convierte un objeto JavaScript a cadena?',
+                options: ['a) JSON.parse()', 'b) JSON.toObject()', 'c) JSON.stringify()', 'd) JSON.encode()'],
+                correctAnswer: 'c) JSON.stringify()'
+            },
+            {
+                question: '¿Qué método JSON en JavaScript convierte una cadena a objeto JavaScript?',
+                options: ['a) JSON.stringify()', 'b) JSON.toObject()', 'c) JSON.decode()', 'd) JSON.parse()'],
+                correctAnswer: 'd) JSON.parse()'
+            },
+            {
+                question: '¿Qué evento se dispara en JavaScript cuando se hace click en un elemento?',
+                options: ['a) focus', 'b) change', 'c) click', 'd) input'],
+                correctAnswer: 'c) click'
+            },
+            {
+                question: '¿Qué evento se dispara en JavaScript cuando se introduce texto en una caja de texto?',
+                options: ['a) keypress', 'b) blur', 'c) input', 'd) select'],
+                correctAnswer: 'c) input'
+            },
+            {
+                question: '¿Cuál es la primera fase en el manejo de eventos en el DOM?',
+                options: ['a) Burbujeo', 'b) Target', 'c) Captura', 'd) Propagación'],
+                correctAnswer: 'c) Captura'
+            },
+            {
+                question: 'En el manejo de eventos del DOM, ¿qué fase se encarga de gestionar el evento en el propio objeto que lo ha generado?',
+                options: ['a) Captura', 'b) Target', 'c) Burbujeo', 'd) Propagación'],
+                correctAnswer: 'b) Target'
+            },
+            {
+                question: '¿Qué método en JavaScript detiene el burbujeo de un evento?',
+                options: ['a) preventDefault()', 'b) stopBubbling()', 'c) stopPropagation()', 'd) cancelEvent()'],
+                correctAnswer: 'c) stopPropagation()'
+            },
+            {
+                question: '¿Qué método en JavaScript previene el comportamiento por defecto de un evento?',
+                options: ['a) stopPropagation()', 'b) cancelDefault()', 'c) preventAction()', 'd) preventDefault()'],
+                correctAnswer: 'd) preventDefault()'
+            },
+            {
+                question: '¿Qué propiedad de event devuelve el objeto original que ha provocado el evento?',
+                options: ['a) event.currentTarget', 'b) event.target', 'c) event.srcElement', 'd) event.originalTarget'],
+                correctAnswer: 'b) event.target'
+            },
+            {
+                question: 'En JavaScript, ¿qué operador compara valor y tipo?',
+                options: ['a) ==', 'b) =', 'c) ===', 'd) !='],
+                correctAnswer: 'c) ==='
+            },
+            {
+                question: '¿Cuál es el operador de exponenciación en JavaScript?',
+                options: ['a) ^', 'b) **', 'c) pow()', 'd) exp'],
+                correctAnswer: 'b) **'
+            },
+            {
+                question: '¿Qué operador lógico en JavaScript devuelve true si ambas condiciones son verdaderas y false si alguna es falsa?',
+                options: ['a) ||', 'b) !', 'c) &&', 'd) ??'],
+                correctAnswer: 'c) &&'
+            }
+        ];
+
+        let currentQuestionIndex = 0; // Tracks the current question being displayed
+        const quizContent = document.getElementById('quiz-content'); // Container for quiz questions
+        const prevBtn = document.getElementById('prev-btn'); // Previous button
+        const nextBtn = document.getElementById('next-btn'); // Next button
+
+        // Function to load a question
+        function loadQuestion() {
+            const questionData = quizData[currentQuestionIndex]; // Get current question data
+            quizContent.innerHTML = ''; // Clear previous question
+
+            // Create question card element
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            // Create question text element
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.textContent = `${currentQuestionIndex + 1}. ${questionData.question}`; // Display question number and text
+            questionCard.appendChild(questionText);
+
+            // Create options container
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            // Add options as buttons
+            questionData.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.onclick = () => checkAnswer(button, option, questionData.correctAnswer); // Attach click event
+                optionsContainer.appendChild(button);
+            });
+
+            questionCard.appendChild(optionsContainer);
+            quizContent.appendChild(questionCard);
+
+            updateNavigationButtons(); // Update button states
+        }
+
+        // Function to check the selected answer
+        function checkAnswer(selectedButton, selectedOption, correctAnswer) {
+            const optionsButtons = quizContent.querySelectorAll('.options-container button');
+            optionsButtons.forEach(button => {
+                button.disabled = true; // Disable all buttons after an answer is selected
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('correct'); // Highlight correct answer
+                } else if (button === selectedButton) {
+                    button.classList.add('incorrect'); // Highlight incorrect selected answer
+                }
+            });
+        }
+
+        // Function to update the state of navigation buttons
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0; // Disable 'Previous' if on first question
+            nextBtn.disabled = currentQuestionIndex === quizData.length - 1; // Disable 'Next' if on last question
+        }
+
+        // Event listener for 'Previous' button
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--; // Decrement question index
+                loadQuestion(); // Load previous question
+            }
+        });
+
+        // Event listener for 'Next' button
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++; // Increment question index
+                loadQuestion(); // Load next question
+            }
+        });
+
+        // Initial load of the first question when the page loads
+        document.addEventListener('DOMContentLoaded', loadQuestion);
+    </script>
+</body>
+</html>

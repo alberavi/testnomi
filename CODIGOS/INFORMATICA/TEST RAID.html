@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de RAID para Oposiciones TAI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light gray-blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff; /* White background for the quiz card */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .question-text {
+            font-size: 1.5rem; /* Larger font size for questions */
+            font-weight: 700; /* Bold font weight */
+            color: #334155; /* Darker text color */
+            margin-bottom: 1.5rem;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .option-button {
+            background-color: #e0e7ff; /* Light blue */
+            color: #4338ca; /* Darker blue text */
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem; /* Rounded corners for buttons */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            border: 2px solid transparent; /* Default transparent border */
+        }
+        .option-button:hover:not(.disabled) {
+            background-color: #c7d2fe; /* Lighter blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        .option-button.selected {
+            border-color: #4f46e5; /* Highlight selected option with a border */
+            background-color: #a5b4fc; /* Slightly darker background when selected */
+        }
+        .option-button.correct {
+            background-color: #d1fae5; /* Green for correct answer */
+            color: #065f46; /* Dark green text */
+            border-color: #10b981; /* Green border */
+            animation: pulseCorrect 0.5s ease-in-out;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2; /* Red for incorrect answer */
+            color: #991b1b; /* Dark red text */
+            border-color: #ef4444; /* Red border */
+            animation: shakeIncorrect 0.3s ease-in-out;
+        }
+        .option-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .feedback-container {
+            background-color: #f1f5f9; /* Light gray background for feedback */
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            margin-top: 1rem;
+            text-align: left;
+            border-left: 5px solid #6b7280; /* Gray border on left */
+        }
+        .feedback-container.correct {
+            border-left-color: #10b981; /* Green border for correct feedback */
+        }
+        .feedback-container.incorrect {
+            border-left-color: #ef4444; /* Red border for incorrect feedback */
+        }
+        .feedback-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        .explanation-text {
+            color: #4b5563;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .nav-button {
+            background-color: #4f46e5; /* Primary blue button */
+            color: white;
+            padding: 0.75rem 1.75rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 600;
+            border: none;
+        }
+        .nav-button:hover:not(:disabled) {
+            background-color: #4338ca; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        .nav-button:disabled {
+            background-color: #cbd5e1; /* Gray for disabled button */
+            cursor: not-allowed;
+        }
+
+        /* Animations */
+        @keyframes pulseCorrect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shakeIncorrect {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .quiz-container {
+                padding: 1.5rem;
+                border-radius: 1rem;
+                margin: 0.5rem;
+            }
+            .question-text {
+                font-size: 1.25rem;
+            }
+            .option-button {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            .feedback-container {
+                padding: 0.75rem 1rem;
+            }
+            .explanation-text {
+                font-size: 0.85rem;
+            }
+            .navigation-buttons {
+                flex-direction: column;
+            }
+            .nav-button {
+                width: 100%;
+                padding: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Test de RAID para Oposiciones TAI</h1>
+        <div id="question-area">
+            <!-- Question will be loaded here by JavaScript -->
+            <p class="question-text" id="question-text"></p>
+            <div id="options-container" class="options-container">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+            <div id="feedback-container" class="feedback-container hidden">
+                <p class="feedback-title" id="feedback-title"></p>
+                <p class="explanation-text" id="explanation-text"></p>
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button id="check-answer-btn" class="nav-button">Comprobar Respuesta</button>
+            <button id="next-question-btn" class="nav-button hidden">Siguiente Pregunta</button>
+            <button id="restart-quiz-btn" class="nav-button hidden">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const questions = [
+                {
+                    question: '¿Cuál es el número mínimo de discos necesarios para implementar un RAID 1?',
+                    options: ['A) 1', 'B) 2', 'C) 3', 'D) 4'],
+                    correctAnswer: 'B) 2',
+                    explanation: 'RAID 1 (espejo) necesita mínimo dos discos: uno original y uno de copia. Ofrece tolerancia a fallos de 1 disco.'
+                },
+                {
+                    question: 'Para RAID 5, ¿cuántos discos son necesarios como mínimo y cuál es su tolerancia a fallos?',
+                    options: [
+                        'A) Requiere un mínimo de 2 discos, con tolerancia a fallos de 1 disco.',
+                        'B) Requiere un mínimo de 3 discos, con tolerancia a fallos de 1 disco.',
+                        'C) Requiere un mínimo de 4 discos, con tolerancia a fallos de 2 discos.',
+                        'D) Requiere un mínimo de 5 discos, sin tolerancia a fallos.'
+                    ],
+                    correctAnswer: 'B) Requiere un mínimo de 3 discos, con tolerancia a fallos de 1 disco.',
+                    explanation: 'RAID 5 utiliza paridad distribuida, lo que le permite tolerar la falla de un solo disco, y requiere al menos 3 discos para su implementación.'
+                },
+                {
+                    question: '¿Cuál es la cantidad mínima de discos y el nivel de tolerancia a fallos de RAID 6?',
+                    options: [
+                        'A) Requiere un mínimo de 3 discos, con tolerancia a fallos de 1 disco.',
+                        'B) Requiere un mínimo de 4 discos, con tolerancia a fallos de 2 discos.',
+                        'C) Requiere un mínimo de 5 discos, sin tolerancia a fallos.',
+                        'D) Requiere un mínimo de 6 discos, con tolerancia a fallos de 3 discos.'
+                    ],
+                    correctAnswer: 'B) Requiere un mínimo de 4 discos, con tolerancia a fallos de 2 discos.',
+                    explanation: 'RAID 6 utiliza doble paridad distribuida, lo que le permite soportar la falla de hasta dos discos y requiere un mínimo de 4 discos.'
+                },
+                {
+                    question: 'Para RAID 10 (1+0), ¿cuál es el número mínimo de discos y su característica principal de tolerancia a fallos?',
+                    options: [
+                        'A) Requiere un mínimo de 4 discos, con tolerancia a fallos de la mitad de los discos en cada grupo RAID 1.',
+                        'B) Requiere un mínimo de 2 discos, sin tolerancia a fallos.',
+                        'C) Requiere un mínimo de 3 discos, con tolerancia a fallos de 1 disco.',
+                        'D) Requiere un mínimo de 6 discos, con tolerancia a fallos de 2 discos.'
+                    ],
+                    correctAnswer: 'A) Requiere un mínimo de 4 discos, con tolerancia a fallos de la mitad de los discos en cada grupo RAID 1.',
+                    explanation: 'RAID 10 combina el striping (RAID 0) con el mirroring (RAID 1), requiriendo un mínimo de 4 discos y ofreciendo alta tolerancia a fallos, ya que puede perder un disco de cada par espejado (siempre que no sean los dos del mismo espejo).'
+                },
+                {
+                    question: '¿Cuál es la configuración de discos y la tolerancia a fallos para RAID 01 (0+1)?',
+                    options: [
+                        'A) Requiere un mínimo de 4 discos, con tolerancia a fallos de 1 disco por sub-grupo RAID 1.',
+                        'B) Requiere un mínimo de 2 discos, sin tolerancia a fallos.',
+                        'C) Requiere un mínimo de 3 discos, con tolerancia a fallos de 1 disco.',
+                        'D) Requiere un mínimo de 5 discos, con tolerancia a fallos de 2 discos.'
+                    ],
+                    correctAnswer: 'A) Requiere un mínimo de 4 discos, con tolerancia a fallos de 1 disco por sub-grupo RAID 1.',
+                    explanation: 'RAID 01 (0+1) crea un espejo de arreglos RAID 0, necesitando un mínimo de 4 discos. Ofrece tolerancia a fallos similar a RAID 10, donde se puede perder un disco de cada sub-grupo reflejado. La diferencia con RAID 10 es que en RAID 01, si falla un disco de un sub-grupo RAID 0, todo ese sub-grupo RAID 0 falla, y el sistema solo se mantiene si su espejo (el otro sub-grupo RAID 0) está intacto.'
+                },
+                {
+                    question: '¿Cuál es la configuración típica de discos y la tolerancia a fallos para RAID 0?',
+                    options: [
+                        'A) Requiere un mínimo de 2 discos, sin tolerancia a fallos.',
+                        'B) Requiere un mínimo de 2 discos, con tolerancia a fallos de 1 disco.',
+                        'C) Requiere un mínimo de 3 discos, sin tolerancia a fallos.',
+                        'D) Requiere un mínimo de 4 discos, con tolerancia a fallos de 2 discos.'
+                    ],
+                    correctAnswer: 'A) Requiere un mínimo de 2 discos, sin tolerancia a fallos.',
+                    explanation: 'RAID 0 distribuye los datos en múltiples discos para mejorar el rendimiento, pero la falla de cualquier disco resulta en la pérdida de todos los datos.'
+                },
+                {
+                    question: 'Describe la configuración de discos y la tolerancia a fallos de RAID 2.',
+                    options: [
+                        'A) RAID 2 requiere un mínimo de 3 discos, con capacidad para corregir errores usando código Hamming.',
+                        'B) RAID 2 requiere un mínimo de 2 discos, con mirroring de datos.',
+                        'C) RAID 2 requiere un mínimo de 4 discos, con doble paridad.',
+                        'D) RAID 2 no tiene tolerancia a fallos.'
+                    ],
+                    correctAnswer: 'A) RAID 2 requiere un mínimo de 3 discos, con capacidad para corregir errores usando código Hamming.',
+                    explanation: 'RAID 2 es un nivel obsoleto que utiliza código Hamming para la corrección de errores, requiriendo discos dedicados para la paridad y un mínimo de 3 discos.'
+                },
+                {
+                    question: '¿Cuál es la configuración de discos y la tolerancia a fallos en RAID 3?',
+                    options: [
+                        'A) Requiere un mínimo de 3 discos, con un disco de paridad dedicado.',
+                        'B) Requiere un mínimo de 2 discos, sin disco de paridad.',
+                        'C) Requiere un mínimo de 4 discos, con paridad distribuida.',
+                        'D) Requiere un mínimo de 5 discos, con paridad doble dedicada.'
+                    ],
+                    correctAnswer: 'A) Requiere un mínimo de 3 discos, con un disco de paridad dedicado.',
+                    explanation: 'RAID 3 usa un disco dedicado para almacenar la paridad, permitiendo la recuperación de datos si un disco falla, y requiere un mínimo de 3 discos (2 de datos + 1 de paridad).'
+                },
+                {
+                    question: 'Explica la configuración de discos y la tolerancia a fallos en RAID 4.',
+                    options: [
+                        'A) Requiere un mínimo de 3 discos, con un disco de paridad dedicado y striping a nivel de bloque.',
+                        'B) Requiere un mínimo de 2 discos, con mirroring de datos.',
+                        'C) Requiere un mínimo de 4 discos, con paridad distribuida.',
+                        'D) Requiere un mínimo de 5 discos, con doble paridad.'
+                    ],
+                    correctAnswer: 'A) Requiere un mínimo de 3 discos, con un disco de paridad dedicado y striping a nivel de bloque.',
+                    explanation: 'RAID 4 es muy similar a RAID 3, pero realiza striping a nivel de bloque en lugar de byte, manteniendo un disco de paridad dedicado y un mínimo de 3 discos.'
+                },
+                {
+                    question: '¿Cuál es la diferencia fundamental entre RAID 01 y RAID 10 en términos de configuración y tolerancia a fallos?',
+                    options: [
+                        'A) RAID 01 es striping de espejos (0+1), RAID 10 es espejo de stripings (1+0). Ambos requieren un mínimo de 4 discos y ofrecen alta tolerancia a fallos.',
+                        'B) RAID 01 no tiene tolerancia a fallos, mientras que RAID 10 sí.',
+                        'C) RAID 01 es más rápido que RAID 10.',
+                        'D) RAID 01 requiere un mínimo de 2 discos, mientras que RAID 10 requiere un mínimo de 4.'
+                    ],
+                    correctAnswer: 'A) RAID 01 es striping de espejos (0+1), RAID 10 es espejo de stripings (1+0). Ambos requieren un mínimo de 4 discos y ofrecen alta tolerancia a fallos.',
+                    explanation: 'La diferencia principal radica en el orden de las operaciones. RAID 01 hace un striping de los datos y luego lo espeja, mientras que RAID 10 espeja los datos y luego hace striping. Ambos necesitan al menos 4 discos y son tolerantes a fallos.'
+                }
+            ];
+
+            let currentQuestionIndex = 0;
+            let selectedOption = null;
+
+            const questionTextElement = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const feedbackContainer = document.getElementById('feedback-container');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const explanationText = document.getElementById('explanation-text');
+            const checkAnswerBtn = document.getElementById('check-answer-btn');
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            const restartQuizBtn = document.getElementById('restart-quiz-btn');
+
+            function loadQuestion() {
+                const currentQuestion = questions[currentQuestionIndex];
+                questionTextElement.textContent = currentQuestion.question;
+                optionsContainer.innerHTML = ''; // Clear previous options
+                feedbackContainer.classList.add('hidden'); // Hide feedback
+                feedbackContainer.classList.remove('correct', 'incorrect'); // Clear feedback styling
+                selectedOption = null; // Reset selected option
+
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-button');
+                    button.setAttribute('data-option', option);
+                    button.addEventListener('click', () => selectOption(button));
+                    optionsContainer.appendChild(button);
+                });
+
+                // Show/hide buttons
+                checkAnswerBtn.classList.remove('hidden');
+                nextQuestionBtn.classList.add('hidden');
+                restartQuizBtn.classList.add('hidden');
+                checkAnswerBtn.disabled = true; // Disable check button until an option is selected
+            }
+
+            function selectOption(button) {
+                // Remove 'selected' class from all options
+                document.querySelectorAll('.option-button').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                // Add 'selected' class to the clicked button
+                button.classList.add('selected');
+                selectedOption = button.getAttribute('data-option');
+                checkAnswerBtn.disabled = false; // Enable check button
+            }
+
+            function checkAnswer() {
+                if (!selectedOption) return; // Do nothing if no option is selected
+
+                const currentQuestion = questions[currentQuestionIndex];
+                const isCorrect = (selectedOption === currentQuestion.correctAnswer);
+
+                // Disable all option buttons after checking
+                document.querySelectorAll('.option-button').forEach(btn => {
+                    btn.classList.add('disabled');
+                    btn.removeEventListener('click', selectOption); // Remove listener
+                });
+
+                // Highlight correct/incorrect answer
+                const allOptionButtons = document.querySelectorAll('.option-button');
+                allOptionButtons.forEach(btn => {
+                    if (btn.getAttribute('data-option') === currentQuestion.correctAnswer) {
+                        btn.classList.add('correct');
+                    } else if (btn.getAttribute('data-option') === selectedOption && !isCorrect) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+
+                // Display feedback
+                feedbackContainer.classList.remove('hidden');
+                explanationText.textContent = currentQuestion.explanation;
+
+                if (isCorrect) {
+                    feedbackTitle.textContent = '¡Correcto!';
+                    feedbackContainer.classList.add('correct');
+                } else {
+                    feedbackTitle.textContent = 'Incorrecto. La respuesta correcta es: ' + currentQuestion.correctAnswer;
+                    feedbackContainer.classList.add('incorrect');
+                }
+
+                // Show next question button or restart button
+                checkAnswerBtn.classList.add('hidden');
+                if (currentQuestionIndex < questions.length - 1) {
+                    nextQuestionBtn.classList.remove('hidden');
+                } else {
+                    restartQuizBtn.classList.remove('hidden');
+                }
+            }
+
+            function nextQuestion() {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    // This state should ideally not be reached if restartQuizBtn is shown correctly
+                    alert('¡Has completado el test!');
+                    restartQuizBtn.classList.remove('hidden');
+                    nextQuestionBtn.classList.add('hidden');
+                }
+            }
+
+            function restartQuiz() {
+                currentQuestionIndex = 0;
+                loadQuestion();
+            }
+
+            // Event Listeners for navigation buttons
+            checkAnswerBtn.addEventListener('click', checkAnswer);
+            nextQuestionBtn.addEventListener('click', nextQuestion);
+            restartQuizBtn.addEventListener('click', restartQuiz);
+
+            // Initial load
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>

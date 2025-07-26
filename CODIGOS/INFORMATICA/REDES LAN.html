@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo de Redes LAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .question-container {
+            min-height: 200px; /* Ensure consistent height for questions */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+        .option-button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            border: 2px solid transparent;
+        }
+        .option-button:hover {
+            background-color: #cbd5e0;
+            color: #2d3748;
+        }
+        .option-button.correct {
+            background-color: #d4edda;
+            color: #28a745;
+            border-color: #28a745;
+            animation: pulse-correct 0.5s ease-in-out;
+        }
+        .option-button.incorrect {
+            background-color: #f8d7da;
+            color: #dc3545;
+            border-color: #dc3545;
+            animation: shake-incorrect 0.5s ease-in-out;
+        }
+        .option-button.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .feedback-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .feedback-message.show {
+            opacity: 1;
+        }
+        .feedback-message.correct {
+            color: #28a745;
+        }
+        .feedback-message.incorrect {
+            color: #dc3545;
+        }
+        .navigation-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .nav-button {
+            background-color: #4299e1;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-grow: 1;
+        }
+        .nav-button:hover {
+            background-color: #3182ce;
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            height: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4299e1;
+            border-radius: 5px;
+            transition: width 0.5s ease-in-out;
+        }
+        .score-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        .restart-button {
+            background-color: #f6ad55;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+        .restart-button:hover {
+            background-color: #ed8936;
+        }
+
+        @keyframes pulse-correct {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake-incorrect {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        @media (min-width: 640px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div id="quiz" class="quiz-container">
+            <div class="question-container">
+                <p id="questionText" class="question-text"></p>
+                <div id="options" class="options-grid">
+                    <!-- Options will be loaded here by JavaScript -->
+                </div>
+            </div>
+            <p id="feedbackMessage" class="feedback-message"></p>
+            <div class="navigation-buttons">
+                <button id="prevButton" class="nav-button" disabled>Anterior</button>
+                <button id="nextButton" class="nav-button">Siguiente</button>
+            </div>
+        </div>
+        <div id="result" class="result-container hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-5">Test Completado</h2>
+            <p id="scoreDisplay" class="score-display"></p>
+            <button id="restartButton" class="restart-button">Repetir Test</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "¿Qué tipo de red se caracteriza por tener un canal compartido entre todos los terminales y utilizar dispositivos como un Hub o Concentrador?",
+                options: ["A) Red punto a punto", "B) Red de difusión", "C) Red MAN", "D) Red WAN"],
+                answer: "B) Red de difusión"
+            },
+            {
+                question: "En una red punto a punto, ¿es necesario especificar la dirección de destino?",
+                options: ["A) Sí, siempre.", "B) No, el destino es unívoco.", "C) Solo si se utiliza transmisión Half-Duplex.", "D) Depende de la modalidad de transmisión."],
+                answer: "B) No, el destino es unívoco."
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con las redes LAN?",
+                options: ["A) IEEE 802.15", "B) IEEE 802.3", "C) IEEE 802.11", "D) IEEE 802.16"],
+                answer: "B) IEEE 802.3"
+            },
+            {
+                question: "¿Cuál es el alcance geográfico aproximado de una red LAN?",
+                options: ["A) 10-100 metros", "B) 10-100 kilómetros", "C) 300 metros - 1 kilómetro", "D) Alcance global"],
+                answer: "A) 10-100 metros"
+            },
+            {
+                question: "¿Qué término se utiliza para las reglas que definen cómo un equipo pone/toma datos en la red, también conocidas como MAC (Medium Access Control)?",
+                options: ["A) Topologías de red", "B) Modalidades de transmisión", "C) Técnicas de acceso al medio", "D) Protocolos de enrutamiento"],
+                answer: "C) Técnicas de acceso al medio"
+            },
+            {
+                question: "En las técnicas de acceso controlado, ¿qué método requiere un control centralizado donde una estación central sondea al resto para asignar un tiempo de envío?",
+                options: ["A) Reserva", "B) Polling", "C) Token / Paso de testigo", "D) CSMA/CD"],
+                answer: "B) Polling"
+            },
+            {
+                question: "¿Qué técnica de acceso controlado se describe por pasar un \"token\" entre las estaciones, permitiendo transmitir a la estación que posee el token?",
+                options: ["A) Polling", "B) Reserva", "C) Token / Paso de testigo", "D) Aloha"],
+                answer: "C) Token / Paso de testigo"
+            },
+            {
+                question: "La norma 802.4, conocida como Token-Bus, ¿qué topología física y lógica utiliza?",
+                options: ["A) Física en estrella y lógica en anillo", "B) Física en bus y lógica en anillo", "C) Física en anillo y lógica en bus", "D) Ambas en bus"],
+                answer: "B) Física en bus y lógica en anillo"
+            },
+            {
+                question: "¿Qué norma se asocia con Token-Ring, que tiene una topología física en estrella y lógica en anillo?",
+                options: ["A) 802.3", "B) 802.4", "C) 802.5", "D) 802.11"],
+                answer: "C) 802.5"
+            },
+            {
+                question: "En el acceso aleatorio, ¿qué técnica implica que una estación que desea transmitir lo hace y luego escucha si hay una colisión, esperando un tiempo aleatorio para retransmitir si la detecta?",
+                options: ["A) CSMA", "B) Aloha", "C) CSMA/CD", "D) CSMA/CA"],
+                answer: "C) CSMA/CD"
+            },
+            {
+                question: "¿Qué técnica de acceso aleatorio se utilizó en Ethernet 802.3 cuando era half-duplex, donde se escucha antes de transmitir y se interrumpe la transmisión si se detecta una colisión?",
+                options: ["A) CSMA", "B) Aloha ranurado", "C) CSMA/CD", "D) CSMA/CA"],
+                answer: "C) CSMA/CD"
+            },
+            {
+                question: "¿Qué técnica de canalización permite que cada estación tenga un slot de tiempo para emitir, pudiendo ser la transmisión síncrona o estadística?",
+                options: ["A) FDMA", "B) TDMA", "C) CDMA", "D) CSMA"],
+                answer: "B) TDMA"
+            },
+            {
+                question: "Según la IEEE, ¿cuál es el alcance geográfico máximo de una red LAN?",
+                options: ["A) 100 metros", "B) 1 kilómetro", "C) 10 kilómetros", "D) 100 kilómetros"],
+                answer: "B) 1 kilómetro"
+            },
+            {
+                question: "¿En qué dos subniveles subdivide la IEEE el nivel de Enlace de OSI?",
+                options: ["A) MAC y IP", "B) LLC y MAC", "C) TCP y UDP", "D) Físico y Red"],
+                answer: "B) LLC y MAC"
+            },
+            {
+                question: "¿Cuál es la función principal del subnivel MAC (Medium Access Control)?",
+                options: ["A) Ensamblar y desensamblar tramas.", "B) Controlar el acceso al medio físico para que múltiples estaciones puedan compartirlo.", "C) Comprobar direcciones lógicas.", "D) Gestionar la asignación de direcciones IP."],
+                answer: "B) Controlar el acceso al medio físico para que múltiples estaciones puedan compartirlo."
+            },
+            {
+                question: "¿Qué tipo de trama Ethernet es la más pequeña y tiene un tamaño de 64 bytes?",
+                options: ["A) Jumboframe", "B) Ethernet II", "C) Runt Frame", "D) Ethernet 802.3"],
+                answer: "C) Runt Frame"
+            },
+            {
+                question: "¿Cuál es la codificación utilizada en Ethernet para evitar la pérdida de sincronismo al enviar secuencias de ceros y unos?",
+                options: ["A) NRZ", "B) Manchester", "C) RZ", "D) AMI"],
+                answer: "B) Manchester"
+            },
+            {
+                question: "En una dirección MAC, ¿cuántos octetos identifican al fabricante (OUI)?",
+                options: ["A) 1", "B) 2", "C) 3", "D) 6"],
+                answer: "C) 3"
+            },
+            {
+                question: "Si el último bit del primer octeto de una dirección MAC está a 1, ¿qué tipo de mensaje indica?",
+                options: ["A) Unicast", "B) Broadcast", "C) Multicast", "D) Error de transmisión"],
+                answer: "C) Multicast"
+            },
+            {
+                question: "Una trama multicast en Ethernet, ¿por qué valores suele comenzar?",
+                options: ["A) FF:FF:FF:FF:FF:FF", "B) 01:00:5E", "C) 00:00:00:00:00:01", "D) Cualquier valor aleatorio"],
+                answer: "B) 01:00:5E"
+            },
+            {
+                question: "¿Qué es un dominio de colisión?",
+                options: ["A) Un conjunto de nodos que no comparten el mismo medio de transmisión.", "B) Un conjunto de nodos que comparten el mismo medio de transmisión y compiten por el acceso.", "C) Un área geográfica donde no pueden producirse colisiones.", "D) Una red que utiliza solo switches."],
+                answer: "B) Un conjunto de nodos que comparten el mismo medio de transmisión y compiten por el acceso."
+            },
+            {
+                question: "¿Cómo se mejora el rendimiento de una red cuando el dominio de colisión es muy grande?",
+                options: ["A) Aumentando el número de equipos.", "B) No haciendo nada, el rendimiento no se ve afectado.", "C) Segmentando la red.", "D) Utilizando un Hub."],
+                answer: "C) Segmentando la red."
+            },
+            {
+                question: "¿Qué dispositivo de interconexión trabaja a nivel 1 (físico), regenera y amplifica la señal, y extiende el dominio de colisión?",
+                options: ["A) Hub", "B) Switch", "C) Bridge", "D) Router"],
+                answer: "A) Hub"
+            },
+            {
+                question: "¿Qué dispositivo de interconexión separa dominios de colisión pero no de difusión, y aprende las MAC de los equipos de la red en una tabla?",
+                options: ["A) Router", "B) Hub", "C) Bridge", "D) Repetidor"],
+                answer: "C) Bridge"
+            },
+            {
+                question: "¿Qué dispositivo de interconexión trabaja a nivel 2, es la evolución de los bridges transparentes y separa dominios de colisión pero no de difusión?",
+                options: ["A) Hub", "B) Router", "C) Switch", "D) Gateway"],
+                answer: "C) Switch"
+            },
+            {
+                question: "¿Cómo se denomina la función de los switches que permite aumentar el ancho de banda de los puertos unidos (como ether-channel o port-channel en Cisco)?",
+                options: ["A) Segmentación de red", "B) Spanning Tree", "C) Agregación de enlaces", "D) Encaminamiento"],
+                answer: "C) Agregación de enlaces"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con el soporte para redes virtuales (VLAN)?",
+                options: ["A) 802.1d", "B) 802.1q", "C) 802.1w", "D) 802.3"],
+                answer: "B) 802.1q"
+            },
+            {
+                question: "¿Qué tipo de BPDU (Bridge Protocol Data Units) avisa sobre cambios en la topología de la red?",
+                options: ["A) BPDU de configuración", "B) TCN (Topology Change Notification)", "C) BPDU de autenticación", "D) BPDU de sincronización"],
+                answer: "B) TCN (Topology Change Notification)"
+            },
+            {
+                question: "¿Qué dispositivo de interconexión soporta hasta el nivel 3 de OSI y separa tanto dominios de colisión como de difusión?",
+                options: ["A) Hub", "B) Switch", "C) Router", "D) Bridge"],
+                answer: "C) Router"
+            },
+            {
+                question: "¿Qué dispositivo de interconexión opera en los niveles más altos de OSI (4-7) y se encarga de interconectar redes con protocolos de alto nivel diferentes?",
+                options: ["A) Router", "B) Switch", "C) Gateway", "D) Firewall"],
+                answer: "C) Gateway"
+            },
+            {
+                question: "¿Cuál es una de las desventajas principales de un Gateway?",
+                options: ["A) Separa dominios de colisión.", "B) Son muy económicos.", "C) La conversión de protocolos puede suponer una alta carga y producir cuellos de botella.", "D) No permiten la interconexión de protocolos."],
+                answer: "C) La conversión de protocolos puede suponer una alta carga y producir cuellos de botella."
+            },
+            {
+                question: "¿Qué dispositivo restringe el intercambio de tráfico entre redes y puede usarse para segmentar una red local en subredes?",
+                options: ["A) Router", "B) Switch", "C) Firewall", "D) Proxy"],
+                answer: "C) Firewall"
+            },
+            {
+                question: "¿A qué nivel operan las reglas de un cortafuegos de filtrado de paquetes?",
+                options: ["A) Nivel 2", "B) Nivel 3", "C) Nivel 4", "D) Nivel 7"],
+                answer: "B) Nivel 3"
+            },
+            {
+                question: "¿Qué dispositivo actúa como intermediario para el acceso a servicios y puede incluir funciones como NAT de salida o cacheado de contenidos?",
+                options: ["A) Router", "B) Switch", "C) Firewall", "D) Proxy"],
+                answer: "D) Proxy"
+            },
+            {
+                question: "¿Qué tipo de proxy está situado en la parte de los clientes, permitiéndoles el acceso a servicios o servidores?",
+                options: ["A) Inverso o reverse", "B) Directo o forward", "C) Transparente", "D) Abierto"],
+                answer: "B) Directo o forward"
+            },
+            {
+                question: "¿Qué tipo de proxy es considerado más seguro porque el servidor solo aceptará peticiones del proxy y no directamente de los clientes?",
+                options: ["A) Directo o forward", "B) Inverso o reverse", "C) Transparente", "D) Abierto"],
+                answer: "B) Inverso o reverse"
+            },
+            {
+                question: "¿Qué es una Zona Desmilitarizada (DMZ)?",
+                options: ["A) Una subred que no tiene conexión a Internet.", "B) Una zona donde se ubican los servidores corporativos y repositorios de datos.", "C) Una subred aislada del exterior y de la LAN por los cortafuegos, donde se suelen ubicar servidores accesibles desde el exterior.", "D) Un segmento de red sin ningún dispositivo de seguridad."],
+                answer: "C) Una subred aislada del exterior y de la LAN por los cortafuegos, donde se suelen ubicar servidores accesibles desde el exterior."
+            },
+            {
+                question: "¿Sobre qué protocolo de la capa de transporte opera DHCP?",
+                options: ["A) TCP", "B) UDP", "C) ICMP", "D) HTTP"],
+                answer: "B) UDP"
+            },
+            {
+                question: "¿Qué método de asignación de direcciones IP de DHCP permite la reutilización dinámica de las direcciones IP de un Pool, con un tiempo de \"préstamo\"?",
+                options: ["A) Manual o estática", "B) Automática", "C) Dinámica", "D) Fija"],
+                answer: "C) Dinámica"
+            },
+            {
+                question: "En el proceso DORA de DHCP, ¿cuál es el primer paso donde el cliente pregunta qué servidores DHCP hay?",
+                options: ["A) Oferta (DHCPOFFER)", "B) Solicitud (DHCPREQUEST)", "C) Confirmación (DHCPACK)", "D) Descubrimiento (DHCPDISCOVER)"],
+                answer: "D) Descubrimiento (DHCPDISCOVER)"
+            },
+            {
+                question: "¿Cuál es el puerto de destino UDP que utiliza el cliente DHCP para el mensaje DHCPDISCOVER?",
+                options: ["A) 67", "B) 68", "C) 53", "D) 80"],
+                answer: "B) 68"
+            },
+            {
+                question: "Cuando un cliente DHCP solicita una IP (DHCPREQUEST), ¿por qué tipo de dirección IP de destino se envía el mensaje para avisar al resto de servidores?",
+                options: ["A) La IP propuesta", "B) La MAC del servidor", "C) 255.255.255.255 (broadcast)", "D) La IP de gateway"],
+                answer: "C) 255.255.255.255 (broadcast)"
+            },
+            {
+                question: "¿Cuál es el puerto UDP que utiliza el servidor DHCP para los mensajes?",
+                options: ["A) 68", "B) 67", "C) 53", "D) 21"],
+                answer: "B) 67"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con VLANs?",
+                options: ["A) 802.1d", "B) 802.1q", "C) 802.1w", "D) 802.3"],
+                answer: "B) 802.1q"
+            },
+            {
+                question: "Por defecto, ¿qué VLAN crea un switch con todos los equipos?",
+                options: ["A) VLAN 0", "B) VLAN 1", "C) VLAN 100", "D) No crea ninguna por defecto"],
+                answer: "B) VLAN 1"
+            },
+            {
+                question: "¿Qué protocolo se utiliza para propagar la definición de VLANs al resto de switches en una red?",
+                options: ["A) STP", "B) RSTP", "C) VTP", "D) DHCP"],
+                answer: "C) VTP"
+            },
+            {
+                question: "En la terminología de Cisco, ¿cómo se denominan los puertos de un switch que son \"etiquetados\" y por donde viaja el tráfico etiquetado entre switches?",
+                options: ["A) Access", "B) Trunk", "C) Native", "D) Untagged"],
+                answer: "B) Trunk"
+            },
+            {
+                question: "¿Cuántos bits se utilizan para el ID de la VLAN en la cabecera 802.1q?",
+                options: ["A) 8 bits", "B) 12 bits", "C) 16 bits", "D) 32 bits"],
+                answer: "B) 12 bits"
+            },
+            {
+                question: "¿Quién es el encargado de colocar la etiqueta 802.1q en una trama Ethernet?",
+                options: ["A) El host", "B) El router", "C) El switch", "D) El servidor DHCP"],
+                answer: "C) El switch"
+            },
+            {
+                question: "¿Qué norma IEEE se refiere al control de acceso a redes en base a puertos?",
+                options: ["A) 802.1q", "B) 802.1d", "C) 802.1x", "D) 802.2"],
+                answer: "C) 802.1x"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con Ethernet?",
+                options: ["A) 802.1", "B) 802.2", "C) 802.3", "D) 802.4"],
+                answer: "C) 802.3"
+            },
+            {
+                question: "¿Qué norma IEEE define Fast Ethernet (100 Mbps)?",
+                options: ["A) 802.3", "B) 802.3u", "C) 802.3z", "D) 802.3ae"],
+                answer: "B) 802.3u"
+            },
+            {
+                question: "¿Qué norma IEEE define Giga Ethernet para par trenzado (1 Gbps)?",
+                options: ["A) 802.3u", "B) 82.3z", "C) 802.3ab", "D) 802.3ae"],
+                answer: "C) 802.3ab"
+            },
+            {
+                question: "¿Qué norma IEEE se refiere a Power over Ethernet (PoE) con un máximo de 15.4 W por boca?",
+                options: ["A) 802.3af", "B) 802.3at", "C) 802.3bt", "D) 802.3ae"],
+                answer: "A) 802.3af"
+            },
+            {
+                question: "¿Qué norma IEEE se refiere a Token Bus?",
+                options: ["A) 802.3", "B) 802.4", "C) 802.5", "D) 802.6"],
+                answer: "B) 802.4"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con redes inalámbricas (Wi-Fi)?",
+                options: ["A) 802.15", "B) 802.16", "C) 802.11", "D) 802.8"],
+                answer: "C) 802.11"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con Bluetooth?",
+                options: ["A) 802.15", "B) 802.15.1", "C) 802.15.4", "D) 802.16"],
+                answer: "B) 802.15.1"
+            },
+            {
+                question: "¿Qué norma IEEE se refiere a ZigBee (Low Rate WPAN)?",
+                options: ["A) 802.15.1", "B) 802.15.4", "C) 802.11", "D) 802.16"],
+                answer: "B) 802.15.4"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con WiMAX, una tecnología inalámbrica en entorno MAN?",
+                options: ["A) 802.11", "B) 802.15", "C) 802.16", "D) 802.2"],
+                answer: "C) 802.16"
+            },
+            {
+                question: "¿Qué comando se utiliza en Cisco para verificar las VLAN existentes en un switch?",
+                options: ["A) show vtp status", "B) show vlan brief", "C) show interface trunk", "D) show mac address-table"],
+                answer: "B) show vlan brief"
+            },
+            {
+                question: "Para configurar un switch como servidor VTP, ¿qué comando se debe usar?",
+                options: ["A) vtp mode client", "B) vtp domain", "C) vtp mode server", "D) vtp password"],
+                answer: "C) vtp mode server"
+            },
+            {
+                question: "¿Qué comando se utiliza para establecer el nombre del dominio VTP?",
+                options: ["A) vtp password", "B) vtp domain", "C) show vtp status", "D) vtp mode server"],
+                answer: "B) vtp domain"
+            },
+            {
+                question: "Para que los clientes VTP puedan recibir la definición de VLANs, ¿qué condición deben cumplir con respecto al dominio VTP?",
+                options: ["A) Deben tener un dominio diferente.", "B) Deben pertenecer al mismo dominio.", "C) El dominio no es relevante para los clientes.", "D) Solo el servidor necesita un dominio."],
+                answer: "B) Deben pertenecer al mismo dominio."
+            },
+            {
+                question: "¿Qué comando se utiliza para establecer el modo troncal en un enlace entre switches?",
+                options: ["A) switchport mode access", "B) switchport access vlan", "C) switchport mode trunk", "D) show interface switchport"],
+                answer: "C) switchport mode trunk"
+            },
+            {
+                question: "¿Qué comando se utiliza para asignar una VLAN a un puerto de acceso?",
+                options: ["A) switchport mode trunk", "B) switchport mode access", "C) switchport access vlan XX", "D) switchport trunk native vlan XX"],
+                answer: "C) switchport access vlan XX"
+            },
+            {
+                question: "En el contexto de Ethernet, ¿qué significa el campo \"BASE\" en una especificación como 10BASE-T?",
+                options: ["A) Banda ancha", "B) Banda base", "C) Velocidad de transmisión", "D) Tipo de cable"],
+                answer: "B) Banda base"
+            },
+            {
+                question: "¿Qué significa la \"T\" en una especificación Ethernet como 10BASE-T?",
+                options: ["A) Fibra óptica", "B) Cable coaxial", "C) Par de cobre", "D) Inalámbrico"],
+                answer: "C) Par de cobre"
+            },
+            {
+                question: "¿Cuál es el tamaño de una dirección MAC?",
+                options: ["A) 32 bits", "B) 48 bits", "C) 64 bits", "D) 128 bits"],
+                answer: "B) 48 bits"
+            },
+            {
+                question: "¿Cuántos octetos de una dirección MAC identifican al interfaz específico (NIC Specific)?",
+                options: ["A) 1", "B) 2", "C) 3", "D) 6"],
+                answer: "C) 3"
+            },
+            {
+                question: "Si el penúltimo bit del primer octeto de una dirección MAC está a 0, ¿qué indica?",
+                options: ["A) Interfaz virtual", "B) Interfaz física (dirección única asignada por el fabricante)", "C) Dirección multicast", "D) Dirección de broadcast"],
+                answer: "B) Interfaz física (dirección única asignada por el fabricante)"
+            },
+            {
+                question: "En un dominio de difusión, ¿qué tipo de direcciones se utilizan para los mensajes de broadcast?",
+                options: ["A) 01:00:5E", "B) La MAC del cliente", "C) FF:FF:FF:FF:FF:FF", "D) 255.255.255.255"],
+                answer: "C) FF:FF:FF:FF:FF:FF"
+            },
+            {
+                question: "¿Qué fenómeno se produce en redes mal diseñadas o con caminos redundantes no previstos, donde un mensaje broadcast puede quedarse en la red indefinidamente?",
+                options: ["A) Microsegmentación", "B) Tormentas de broadcast", "C) Fragmentación", "D) Latencia"],
+                answer: "B) Tormentas de broadcast"
+            },
+            {
+                question: "¿Qué ocurre con la velocidad en un Hub/Concentrador al conectar equipos, si la señal se reparte a todos los puertos?",
+                options: ["A) Se duplica.", "B) Se mantiene igual.", "C) Se divide entre todos los puertos.", "D) Se negocia automáticamente."],
+                answer: "C) Se divide entre todos los puertos."
+            },
+            {
+                question: "¿Qué ventaja principal tienen los Bridges/Puentes con respecto a los Hubs en relación con los dominios de colisión?",
+                options: ["A) Extienden el dominio de colisión.", "B) Comparten el dominio de colisión.", "C) Separan dominios de colisión.", "D) No afectan a los dominios de colisión."],
+                answer: "C) Separan dominios de colisión."
+            },
+            {
+                question: "¿Cuál es la principal mejora de los Switches sobre los Hubs en términos de ancho de banda?",
+                options: ["A) El ancho de banda se reparte entre los puertos.", "B) El ancho de banda no se reparte entre los puertos.", "C) Los switches no tienen impacto en el ancho de banda.", "D) Los hubs ofrecen mayor ancho de banda."],
+                answer: "B) El ancho de banda no se reparte entre los puertos."
+            },
+            {
+                question: "¿Qué algoritmo utilizan los switches para evitar bucles en la red?",
+                options: ["A) DHCP", "B) STP (Spanning Tree Protocol)", "C) ARP", "D) ICMP"],
+                answer: "B) STP (Spanning Tree Protocol)"
+            },
+            {
+                question: "Para encaminar información entre equipos de diferentes VLANs, ¿qué se necesita?",
+                options: ["A) Un Hub", "B) Un Switch de nivel 2 sin configuración adicional", "C) Un dispositivo de nivel 3 (router) que haga routing", "D) Solo el protocolo VTP"],
+                answer: "C) Un dispositivo de nivel 3 (router) que haga routing"
+            },
+            {
+                question: "¿Qué tipo de BPDU se utiliza para proveer información a todos los switches?",
+                options: ["A) TCN", "B) BPDU de configuración", "C) BPDU de autenticación", "D) BPDU de solicitud"],
+                answer: "B) BPDU de configuración"
+            },
+            {
+                question: "¿Qué ventaja ofrecen los Routers con respecto a los Switches en relación con los dominios de difusión?",
+                options: ["A) Comparten los dominios de difusión.", "B) Extienden los dominios de difusión.", "C) Separan los dominios de difusión.", "D) No tienen efecto en los dominios de difusión."],
+                answer: "C) Separan los dominios de difusión."
+            },
+            {
+                question: "¿A qué nivel de OSI operan los firewalls de filtrado de paquetes?",
+                options: ["A) Nivel 1", "B) Nivel 2", "C) Nivel 3", "D) Nivel 4"],
+                answer: "C) Nivel 3"
+            },
+            {
+                question: "¿Qué tipo de firewall opera a nivel de circuito, conteniendo una lista de conexiones válidas?",
+                options: ["A) Filtrado de paquetes", "B) Nivel de aplicación", "C) Nivel de circuito", "D) Stateful inspection"],
+                answer: "C) Nivel de circuito"
+            },
+            {
+                question: "¿Qué función de un proxy permite agilizar el acceso a páginas a las que se ha accedido recientemente?",
+                options: ["A) NAT de salida", "B) Centralización y control de tráfico", "C) Cacheado de contenidos", "D) Enrutamiento"],
+                answer: "C) Cacheado de contenidos"
+            },
+            {
+                question: "En el proceso DORA de DHCP, ¿qué mensaje envía el servidor DHCP al cliente, indicando el tiempo de lease (arrendamiento)?",
+                options: ["A) DHCPDISCOVER", "B) DHCPREQUEST", "C) DHCPOFFER", "D) DHCPACK"],
+                answer: "C) DHCPOFFER"
+            },
+            {
+                question: "¿Cuál es el puerto de origen UDP que utiliza el servidor DHCP para el mensaje DHCPOFFER?",
+                options: ["A) 67", "B) 68", "C) 53", "D) 80"],
+                answer: "A) 67"
+            },
+            {
+                question: "¿Cuántas redes VLAN diferentes se pueden crear con un ID de VLAN de 12 bits en la cabecera 802.1q?",
+                options: ["A) 256", "B) 1024", "C) 4096", "D) 65536"],
+                answer: "C) 4096"
+            },
+            {
+                question: "¿Qué tipo de puertos en un switch se utilizan para que los hosts se conecten a una VLAN específica y el tráfico no lleva etiqueta 802.1q?",
+                options: ["A) Trunk", "B) Etiquetados", "C) Access", "D) Troncales"],
+                answer: "C) Access"
+            },
+            {
+                question: "¿Qué norma IEEE define el Control del Enlace Lógico (LLC)?",
+                options: ["A) 802.1", "B) 802.2", "C) 802.3", "D) 802.11"],
+                answer: "B) 802.2"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con Giga Ethernet (1 Gbps) para fibra óptica?",
+                options: ["A) 802.3ab", "B) 802.3z", "C) 802.3u", "D) 802.3ae"],
+                answer: "B) 802.3z"
+            },
+            {
+                question: "¿Qué norma IEEE define PoE+ (Power over Ethernet) con un máximo de 30W por boca?",
+                options: ["A) 802.3af", "B) 802.3at", "C) 802.3bt", "D) 802.3ae"],
+                answer: "B) 802.3at"
+            },
+            {
+                question: "¿Qué norma IEEE define redes MAN DQDB (Distributed Queue Dual Bus)?",
+                options: ["A) 802.4", "B) 802.5", "C) 802.6", "D) 802.8"],
+                answer: "C) 802.6"
+            },
+            {
+                question: "¿Qué norma IEEE se asocia con FDDI (Fiber Distributed Data Interface) que utiliza Token Passing?",
+                options: ["A) 802.6", "B) 802.8", "C) 802.11", "D) 802.15"],
+                answer: "B) 802.8"
+            },
+            {
+                question: "¿Qué comando muestra la configuración del dominio VTP?",
+                options: ["A) show vlan brief", "B) show vtp password", "C) show vtp status", "D) vtp mode server"],
+                answer: "C) show vtp status"
+            },
+            {
+                question: "¿Qué comando se utiliza para configurar un switch como cliente VTP?",
+                options: ["A) vtp mode server", "B) vtp mode client", "C) vtp domain", "D) vtp password"],
+                answer: "B) vtp mode client"
+            },
+            {
+                question: "¿Qué comando se utiliza para verificar las nuevas VLAN y sus nombres en el switch servidor VTP?",
+                options: ["A) show vtp status", "B) show vlan brief", "C) show interface trunk", "D) show interface access"],
+                answer: "B) show vlan brief"
+            },
+            {
+                question: "¿Qué comando se utiliza para establecer la VLAN de administración (sin etiquetar) en un enlace troncal?",
+                options: ["A) switchport mode trunk", "B) switchport access vlan XX", "C) switchport trunk native vlan XX", "D) show interface fa0/1 switchport"],
+                answer: "C) switchport trunk native vlan XX"
+            },
+            {
+                question: "¿Qué comando se utiliza para mostrar el estado del enlace de un puerto específico en un switch?",
+                options: ["A) show vtp status", "B) show vlan brief", "C) show interface fa0/1 switchport", "D) show mac address-table"],
+                answer: "C) show interface fa0/1 switchport"
+            },
+            {
+                question: "Una característica de las Redes LAN es que tienen velocidades de transmisión elevadas. ¿Cuál es el rango de estas velocidades según el documento?",
+                options: ["A) 10-100 Mbps", "B) 1-10 Mbps", "C) 1 Mbps - 10 Gbps", "D) 100 Gbps - 400 Gbps"],
+                answer: "C) 1 Mbps - 10 Gbps"
+            },
+            {
+                question: "¿Cuál es una de las principales ventajas de los Routers en comparación con otros dispositivos de interconexión de capa inferior?",
+                options: ["A) Reducen la latencia en la red local.", "B) Separan dominios de colisión y de difusión.", "C) Permiten la microsegmentación de la red.", "D) Son más económicos que los Hubs."],
+                answer: "B) Separan dominios de colisión y de difusión."
+            },
+            {
+                question: "¿Qué tipo de red se asocia con tecnologías como Frame Relay, ATM, PPP y MPLS?",
+                options: ["A) PAN", "B) LAN", "C) MAN", "D) WAN"],
+                answer: "D) WAN"
+            },
+            {
+                question: "En el proceso de descubrimiento de DHCP (DHCPDISCOVER), ¿cuál es la dirección MAC de destino?",
+                options: ["A) La MAC del servidor DHCP.", "B) La MAC del cliente.", "C) FF:FF:FF:FF:FF:FF (broadcast).", "D) La MAC del gateway."],
+                answer: "C) FF:FF:FF:FF:FF:FF (broadcast)."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null); // To store user's selected option index
+        let answeredQuestions = new Array(questions.length).fill(false); // To track if a question has been answered
+
+        const questionText = document.getElementById('questionText');
+        const optionsDiv = document.getElementById('options');
+        const feedbackMessage = document.getElementById('feedbackMessage');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressBar = document.getElementById('progressBar');
+        const quizContainer = document.getElementById('quiz');
+        const resultContainer = document.getElementById('result');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const restartButton = document.getElementById('restartButton');
+
+        function loadQuestion() {
+            const question = questions[currentQuestionIndex];
+            questionText.textContent = question.question;
+            optionsDiv.innerHTML = '';
+            feedbackMessage.classList.remove('show', 'correct', 'incorrect');
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.index = index;
+                button.addEventListener('click', () => selectOption(index));
+                optionsDiv.appendChild(button);
+
+                // If user has already answered this question, show the result
+                if (answeredQuestions[currentQuestionIndex]) {
+                    disableOptions();
+                    const correctOptionIndex = question.options.indexOf(question.answer);
+                    const selectedOptionIndex = userAnswers[currentQuestionIndex];
+
+                    if (selectedOptionIndex !== null) {
+                        optionsDiv.children[correctOptionIndex].classList.add('correct');
+                        if (selectedOptionIndex !== correctOptionIndex) {
+                            optionsDiv.children[selectedOptionIndex].classList.add('incorrect');
+                        }
+                    } else {
+                        // This case should ideally not happen if answeredQuestions is true
+                        optionsDiv.children[correctOptionIndex].classList.add('correct');
+                    }
+                    showFeedback(selectedOptionIndex === correctOptionIndex);
+                } else if (userAnswers[currentQuestionIndex] !== null) {
+                    // Highlight previously selected answer if navigating back
+                    button.classList.add('disabled'); // Disable all options first
+                    if (parseInt(button.dataset.index) === userAnswers[currentQuestionIndex]) {
+                        button.classList.remove('disabled'); // Re-enable the selected one for visual feedback
+                        button.classList.add('selected'); // Add a class for selected
+                    }
+                }
+            });
+            updateNavigationButtons();
+            updateProgressBar();
+        }
+
+        function selectOption(selectedIndex) {
+            if (answeredQuestions[currentQuestionIndex]) return; // Prevent re-answering
+
+            const question = questions[currentQuestionIndex];
+            const correctOptionIndex = question.options.indexOf(question.answer);
+            const selectedButton = optionsDiv.children[selectedIndex];
+
+            userAnswers[currentQuestionIndex] = selectedIndex; // Store the selected index
+            answeredQuestions[currentQuestionIndex] = true; // Mark as answered
+
+            disableOptions(); // Disable all options after selection
+
+            if (selectedIndex === correctOptionIndex) {
+                selectedButton.classList.add('correct');
+                score++;
+                showFeedback(true);
+            } else {
+                selectedButton.classList.add('incorrect');
+                optionsDiv.children[correctOptionIndex].classList.add('correct'); // Show correct answer
+                showFeedback(false);
+            }
+        }
+
+        function disableOptions() {
+            Array.from(optionsDiv.children).forEach(button => {
+                button.classList.add('disabled');
+            });
+        }
+
+        function showFeedback(isCorrect) {
+            feedbackMessage.classList.add('show');
+            if (isCorrect) {
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.add('correct');
+            } else {
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es: ' + questions[currentQuestionIndex].answer;
+                feedbackMessage.classList.add('incorrect');
+            }
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex] === false; // Disable next if last question and not answered
+            if (currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                nextButton.textContent = 'Ver Resultados';
+            } else {
+                nextButton.textContent = 'Siguiente';
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+            scoreDisplay.textContent = `Has respondido correctamente ${score} de ${questions.length} preguntas.`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                showResults();
+            }
+        });
+
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            answeredQuestions.fill(false);
+            quizContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            loadQuestion();
+        });
+
+        // Initial load
+        loadQuestion();
+    </script>
+</body>
+</html>

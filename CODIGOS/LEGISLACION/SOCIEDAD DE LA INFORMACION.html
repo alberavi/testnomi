@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de la Sociedad de la Información</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        .question-container {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background-color: #f8fafc;
+            text-align: left;
+            font-size: 1rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #e0f2fe;
+            border-color: #90cdf4;
+            color: #2b6cb0;
+        }
+        .options-container button.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: 600;
+        }
+        .options-container button:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .prev-button {
+            background-color: #a0aec0;
+            color: #ffffff;
+        }
+        .prev-button:hover:not(:disabled) {
+            background-color: #718096;
+        }
+        .next-button {
+            background-color: #4299e1;
+            color: #ffffff;
+        }
+        .next-button:hover:not(:disabled) {
+            background-color: #3182ce;
+        }
+        .progress-text {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        .reset-button {
+            background-color: #ef4444;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .reset-button:hover {
+            background-color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="question-container">
+            <p id="question-text" class="question-text"></p>
+            <div id="options-container" class="options-container">
+                <!-- Opciones se cargarán aquí -->
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="nav-button prev-button">Anterior</button>
+            <button id="next-btn" class="nav-button next-button">Siguiente</button>
+        </div>
+        <p id="progress-text" class="progress-text"></p>
+        <button id="reset-btn" class="reset-button">Reiniciar Test</button>
+    </div>
+
+    <script>
+        // Datos del test
+        const testData = [
+            {
+                question: "¿Qué Ley española deroga la Ley 59/2003, de 19 de diciembre, de firma electrónica?",
+                options: [
+                    "a) Ley 39/2015 del Procedimiento Administrativo Común de las Administraciones Públicas.",
+                    "b) Ley 40/2015 del Régimen Jurídico del Sector Público.",
+                    "c) Ley 6/2020, Reguladora de Determinados Aspectos de los Servicios Electrónicos de Confianza.",
+                    "d) Ley 11/2007 de acceso electrónico de los ciudadanos a los Servicios Públicos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El Reglamento (UE) 910/2014, conocido como eIDAS, persigue:",
+                options: [
+                    "a) Regular la identificación y los servicios de confianza electrónicos.",
+                    "b) Armonizar y facilitar el uso transfronterizo de los servicios en línea.",
+                    "c) Contribuir al desarrollo del mercado digital.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un nuevo servicio electrónico cualificado de confianza introducido por la Ley 6/2020?",
+                options: [
+                    "a) Sello electrónico de persona jurídica.",
+                    "b) Servicio de validación de firmas y sellos cualificados.",
+                    "c) Certificado de firma manuscrita.",
+                    "d) Servicio de entrega electrónica certificada."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Los servicios electrónicos de confianza cualificados poseen:",
+                options: [
+                    "a) Menor relevancia probatoria que los servicios no cualificados.",
+                    "b) Igual relevancia probatoria que los servicios no cualificados.",
+                    "c) Mayor relevancia probatoria respecto de los servicios no cualificados.",
+                    "d) No poseen relevancia probatoria alguna."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La Ley 6/2020 establece una garantía económica mínima para la prestación de servicios cualificados de confianza de:",
+                options: [
+                    "a) 500.000 €.",
+                    "b) 1.000.000 €.",
+                    "c) 1.500.000 €.",
+                    "d) 2.000.000 €."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿En cuánto se incrementa la garantía económica mínima por cada tipo de servicio adicional que se preste?",
+                options: [
+                    "a) 100.000 €.",
+                    "b) 250.000 €.",
+                    "c) 500.000 €.",
+                    "d) 750.000 €."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El Reglamento (UE) 910/2014 garantiza la equivalencia jurídica entre:",
+                options: [
+                    "a) La firma electrónica simple y la firma manuscrita.",
+                    "b) La firma electrónica avanzada y la firma manuscrita.",
+                    "c) La firma electrónica cualificada y la firma manuscrita.",
+                    "d) Todas las firmas electrónicas y la firma manuscrita."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El tiempo máximo de vigencia de los certificados cualificados se mantiene en:",
+                options: [
+                    "a) 1 año.",
+                    "b) 2 años.",
+                    "c) 3 años.",
+                    "d) 5 años."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Qué identificadores nacionales deben incluir los certificados cualificados expedidos a personas físicas, salvo excepciones?",
+                options: [
+                    "a) Número de DNI.",
+                    "b) Número de identidad de extranjero.",
+                    "c) Número de identificación fiscal.",
+                    "d) Todos los anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Quiénes están capacitados para firmar electrónicamente según la Ley 6/2020?",
+                options: [
+                    "a) Solo las personas jurídicas.",
+                    "b) Solo las entidades sin personalidad jurídica.",
+                    "c) Solo las personas físicas.",
+                    "d) Tanto personas físicas como jurídicas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Para qué se utilizan los sellos electrónicos?",
+                options: [
+                    "a) Para firmar electrónicamente por personas físicas.",
+                    "b) Para garantizar la autenticidad e integridad de documentos.",
+                    "c) Para la identificación personal.",
+                    "d) Para la creación de pseudónimos unívocos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿En qué plazo deben comunicar los prestadores de servicios electrónicos de confianza (PSC) al órgano supervisor el inicio de su actividad?",
+                options: [
+                    "a) Un mes.",
+                    "b) Dos meses.",
+                    "c) Tres meses.",
+                    "d) Seis meses."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Para la identificación de la persona física en la expedición de certificados cualificados, se exigirá su personación y se acreditará mediante:",
+                options: [
+                    "a) DNI.",
+                    "b) Pasaporte.",
+                    "c) Otros medios admitidos en Derecho.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Qué información deben publicar los prestadores de servicios electrónicos de confianza (PSC)?",
+                options: [
+                    "a) Solo información de contacto.",
+                    "b) Información veraz y acorde con la Ley 6/2020 y el Reglamento (UE) 910/2014.",
+                    "c) Información comercial y publicitaria.",
+                    "d) Solo información sobre sus tarifas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Durante cuánto tiempo deben conservar los PSC la información relativa a los servicios prestados desde la extinción del certificado o la finalización del servicio?",
+                options: [
+                    "a) 5 años.",
+                    "b) 10 años.",
+                    "c) 15 años.",
+                    "d) 20 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Con qué antelación mínima debe comunicar el prestador cualificado que vaya a cesar en su actividad a los clientes y al órgano de supervisión?",
+                options: [
+                    "a) Un mes.",
+                    "b) Dos meses.",
+                    "c) Tres meses.",
+                    "d) Seis meses."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Quién asume toda la responsabilidad frente a terceros por la actuación de las personas u otros prestadores en los que se delegue la ejecución de funciones para la prestación de servicios electrónicos de confianza?",
+                options: [
+                    "a) El titular del certificado.",
+                    "b) El PSC.",
+                    "c) El órgano de supervisión.",
+                    "d) El destinatario de los servicios."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿En qué caso el PSC NO será responsable de los daños y perjuicios ocasionados si el usuario no ha proporcionado información veraz, completa y exacta para la prestación del servicio?",
+                options: [
+                    "a) El PSC siempre es responsable.",
+                    "b) El PSC es responsable, pero con atenuantes.",
+                    "c) El PSC no será responsable.",
+                    "d) La responsabilidad recae en el órgano de supervisión."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un supuesto en el que el PSC no será responsable de los daños y perjuicios ocasionados a la persona que ha prestado sus servicios?",
+                options: [
+                    "a) No haber proporcionado al PSC información veraz, completa y exacta.",
+                    "b) La falta de comunicación sin demora indebida al PSC de cualquier cambio que incida en la prestación del servicio.",
+                    "c) Haber solicitado la suspensión o revocación del certificado en caso de duda en cuanto al mantenimiento de la confidencialidad de sus datos.",
+                    "d) Negligencia en la conservación de sus datos de creación, en el aseguramiento de su confidencialidad y en la protección de acceso de estos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué órgano controla el cumplimiento por los PSC de las obligaciones establecidas en la Ley 6/2020?",
+                options: [
+                    "a) El Ministerio del Interior.",
+                    "b) El Ministerio de Justicia.",
+                    "c) El Ministerio de Asuntos Económicos y Transformación Digital.",
+                    "d) La Agencia Española de Protección de Datos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué debe mantener y publicar el órgano de supervisión?",
+                options: [
+                    "a) Un listado de prestadores no cualificados.",
+                    "b) La lista de confianza con información relativa a los PSC sujetos a esta Ley.",
+                    "c) Un registro de infracciones leves.",
+                    "d) Un informe anual de actividad."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el tiempo máximo que tiene el órgano de supervisión para dictar y notificar la resolución de verificación previa de cumplimiento de los requisitos?",
+                options: [
+                    "a) 3 meses.",
+                    "b) 6 meses.",
+                    "c) 9 meses.",
+                    "d) 12 meses."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Se considera una infracción MUY GRAVE:",
+                options: [
+                    "a) No comunicar el inicio de actividad por los prestadores no cualificados.",
+                    "b) La resistencia a la actuación inspectora.",
+                    "c) Cometer una infracción grave en el plazo de 2 años desde que hubiese sido sancionado por una infracción grave de la misma naturaleza.",
+                    "d) Publicar información no veraz."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuándo la expedición de certificados cualificados sin realizar todas las comprobaciones previas de identidad se considera una infracción MUY GRAVE?",
+                options: [
+                    "a) Siempre que se produzca una única vez.",
+                    "b) Si afecta a la mayoría de los certificados cualificados expedidos en el año anterior al inicio del procedimiento sancionador.",
+                    "c) Si afecta a menos del 10% de los certificados expedidos.",
+                    "d) Si la cuantía de la sanción es inferior a 50.000 €."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Se considera una infracción GRAVE:",
+                options: [
+                    "a) No registrar o conservar la información relativa a los servicios prestados durante 1 año.",
+                    "b) Actuar como prestador cualificado sin haber obtenido la cualificación.",
+                    "c) No comunicar el cese de actividad.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Almacenar o copiar, por sí o a través de un tercero, los datos de creación de firma, sello o autenticación de sitio web de la persona física o jurídica, salvo en caso de su gestión en nombre del titular, es una infracción:",
+                options: [
+                    "a) Leve.",
+                    "b) Grave.",
+                    "c) Muy grave.",
+                    "d) No es una infracción."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La ausencia de adopción de medidas, o la adopción de medidas insuficientes, para la resolución de los incidentes de seguridad en los productos, redes y sistemas de información, en el plazo de diez días desde que aquellos se hubieren producido, es una infracción:",
+                options: [
+                    "a) Leve.",
+                    "b) Grave.",
+                    "c) Muy grave.",
+                    "d) No es una infracción si el incidente no causa perjuicio."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la sanción máxima para infracciones leves?",
+                options: [
+                    "a) 50.000 €.",
+                    "b) 150.000 €.",
+                    "c) 300.000 €.",
+                    "d) 500.000 €."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Cuál es la sanción máxima para infracciones graves?",
+                options: [
+                    "a) 50.000 €.",
+                    "b) 150.000 €.",
+                    "c) 300.000 €.",
+                    "d) 500.000 €."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la sanción máxima para infracciones muy graves?",
+                options: [
+                    "a) 50.000 €.",
+                    "b) 150.000 €.",
+                    "c) 300.000 €.",
+                    "d) 500.000 €."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué documento acredita electrónicamente la identidad personal de su titular y permite la firma electrónica de documentos?",
+                options: [
+                    "a) El pasaporte.",
+                    "b) El carné de conducir.",
+                    "c) El DNIe.",
+                    "d) La tarjeta de residencia."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué Ministerio es el competente para la expedición del DNIe?",
+                options: [
+                    "a) Ministerio de Hacienda y Función Pública.",
+                    "b) Ministerio del Interior.",
+                    "c) Ministerio de Asuntos Económicos y Transformación Digital.",
+                    "d) Ministerio de Justicia."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el único documento con suficiente valor por sí solo para la acreditación de la identidad y los datos personales de su titular?",
+                options: [
+                    "a) Pasaporte.",
+                    "b) Carné de conducir.",
+                    "c) DNI.",
+                    "d) Certificado de nacimiento."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Para quién es obligatorio el DNI?",
+                options: [
+                    "a) Mayores de 18 años residentes en España.",
+                    "b) Mayores de 14 años residentes en España.",
+                    "c) Mayores de 14 años que residan en el extranjero y se trasladen a España por tiempo no inferior a seis meses.",
+                    "d) b y c son correctas."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Cuál es el tamaño de la fotografía requerida para la solicitud del DNIe?",
+                options: [
+                    "a) 26×32 mm.",
+                    "b) 32×26 mm.",
+                    "c) 40×30 mm.",
+                    "d) 30×40 mm."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Con qué validez debe presentarse el certificado literal de nacimiento para la solicitud del DNIe?",
+                options: [
+                    "a) 3 meses desde su expedición.",
+                    "b) 6 meses desde su expedición y para ese cometido.",
+                    "c) 1 año desde su expedición.",
+                    "d) Sin caducidad."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la duración prevista de un DNIe construido en policarbonato?",
+                options: [
+                    "a) 5 años.",
+                    "b) 7 años.",
+                    "c) 10 años.",
+                    "d) 15 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál es la validez del soporte físico del DNIe para solicitantes que no hayan cumplido los 5 años de edad?",
+                options: [
+                    "a) 2 años.",
+                    "b) 5 años.",
+                    "c) 10 años.",
+                    "d) Permanente."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Cuál es la validez del soporte físico del DNIe para titulares con una edad comprendida entre 5 y 29 años?",
+                options: [
+                    "a) 2 años.",
+                    "b) 5 años.",
+                    "c) 10 años.",
+                    "d) Permanente."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la validez del soporte físico del DNIe para titulares con una edad comprendida entre 30 y 69 años?",
+                options: [
+                    "a) 2 años.",
+                    "b) 5 años.",
+                    "c) 10 años.",
+                    "d) Permanente."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál es la validez del soporte físico del DNIe para titulares que hayan cumplido los 70 años?",
+                options: [
+                    "a) 5 años.",
+                    "b) 10 años.",
+                    "c) Permanente.",
+                    "d) Indefinida pero revisable cada 5 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La validez de los certificados electrónicos contenidos en el chip de la tarjeta del DNIe tienen un período de vigencia máxima de:",
+                options: [
+                    "a) 2 años.",
+                    "b) 3 años.",
+                    "c) 5 años.",
+                    "d) 10 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Actualmente, la validez de los certificados electrónicos del DNIe es de:",
+                options: [
+                    "a) 12 meses.",
+                    "b) 24 meses.",
+                    "c) 36 meses.",
+                    "d) 60 meses."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué información no se encuentra en el anverso de la tarjeta del DNIe?",
+                options: [
+                    "a) Primer apellido.",
+                    "b) Domicilio.",
+                    "c) Fecha de nacimiento.",
+                    "d) Número de DNI."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué información se encuentra en el chip criptográfico del DNIe?",
+                options: [
+                    "a) Certificado electrónico para autenticar.",
+                    "b) Certificado electrónico para firmar electrónicamente.",
+                    "c) Claves para su utilización.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Qué elementos de seguridad del documento impiden su falsificación?",
+                options: [
+                    "a) La plantilla biométrica de la impresión dactilar.",
+                    "b) La fotografía digitalizada del ciudadano.",
+                    "c) La imagen digitalizada de la firma manuscrita.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Quién es la Autoridad de Certificación del DNIe?",
+                options: [
+                    "a) La Fábrica Nacional de Moneda y Timbre.",
+                    "b) El Ministerio del Interior.",
+                    "c) La Dirección General de la Policía.",
+                    "d) El Ministerio de Asuntos Económicos y Transformación Digital."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué información NO se encuentra en el reverso de la tarjeta del DNIe?",
+                options: [
+                    "a) Domicilio.",
+                    "b) Fecha de expedición.",
+                    "c) Lugar de nacimiento.",
+                    "d) Información impresa OCR-B."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "Los elementos de seguridad de PRIMER NIVEL del DNIe son perceptibles:",
+                options: [
+                    "a) Solo en laboratorio.",
+                    "b) Mediante equipos mecánicos y electrónicos.",
+                    "c) A simple vista.",
+                    "d) Solo por el titular."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Un ejemplo de elemento de seguridad de SEGUNDO NIVEL del DNIe es:",
+                options: [
+                    "a) Hologramas.",
+                    "b) Tintas reactivas UV.",
+                    "c) Medidas criptográficas.",
+                    "d) Patrón de impresión dactilar."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Dónde se encuentran almacenadas las claves privadas del ciudadano en el DNIe?",
+                options: [
+                    "a) En un servidor centralizado.",
+                    "b) En el ordenador del usuario.",
+                    "c) En el procesador de la tarjeta criptográfica del DNIe.",
+                    "d) En una base de datos de la Autoridad de Certificación."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué se utiliza para acceder a las claves y al certificado de firma del DNIe?",
+                options: [
+                    "a) Una contraseña preestablecida.",
+                    "b) Una clave (PIN) generada por el ciudadano.",
+                    "c) La huella dactilar únicamente.",
+                    "d) Un código QR."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Si la clave (PIN) del DNIe está bloqueada tras 3 intentos, ¿cómo puede cambiarse?",
+                options: [
+                    "a) Únicamente solicitando un nuevo DNIe.",
+                    "b) Mediante comprobación de la biometría de impresión dactilar.",
+                    "c) Acudiendo a un notario.",
+                    "d) Enviando un correo electrónico al Ministerio del Interior."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El olvido de la clave personal de acceso del DNIe:",
+                options: [
+                    "a) Supondrá la revocación de los Certificados de Identidad Pública.",
+                    "b) No supondrá la revocación de los Certificados de Identidad Pública.",
+                    "c) Requerirá la expedición de nuevos certificados.",
+                    "d) Bloqueará permanentemente el DNIe."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué certificado del DNIe garantiza la identidad del ciudadano en una transacción telemática?",
+                options: [
+                    "a) Certificado de Componente.",
+                    "b) Certificado de Autenticación (Digital Signature).",
+                    "c) Certificado de Firma.",
+                    "d) Certificado de la Autoridad de Certificación emisora."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El certificado de firma del DNIe garantiza:",
+                options: [
+                    "a) Solo la identidad del firmante.",
+                    "b) La integridad del documento y el no repudio de origen.",
+                    "c) Solo la integridad del documento.",
+                    "d) La confidencialidad de la información."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué significa 'no repudio en origen'?",
+                options: [
+                    "a) El emisor puede negar que envió el mensaje.",
+                    "b) El emisor no puede negar que envió porque el destinatario tiene pruebas del envío.",
+                    "c) El receptor no puede negar que recibió el mensaje.",
+                    "d) No existe la prueba de envío."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "En la Infraestructura de Clave Pública adoptada para el DNIe, ¿quiénes realizan las funciones de Autoridad de Validación?",
+                options: [
+                    "a) La misma Autoridad de Certificación.",
+                    "b) Entidades diferentes de la Autoridad de Certificación.",
+                    "c) Solo la Fábrica Nacional de Moneda y Timbre.",
+                    "d) Solo el Ministerio de Hacienda y Función Pública."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Quiénes son las Autoridades de Certificación que componen la PKI del DNIe?",
+                options: [
+                    "a) AC Raíz y AC Intermedias.",
+                    "b) AC Raíz y AC Subordinadas.",
+                    "c) Solo AC Raíz.",
+                    "d) Solo AC Subordinadas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál de los siguientes es un prestador de Servicios de Validación para el DNIe con carácter universal?",
+                options: [
+                    "a) Dirección General de la Policía.",
+                    "b) Ministerio de Hacienda y Función Pública.",
+                    "c) Fábrica Nacional de Moneda y Timbre - Real Casa de la Moneda.",
+                    "d) Ministerio del Interior."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La prestación de los servicios de validación para el DNIe se realiza en base a:",
+                options: [
+                    "a) CRL (Listas de Revocación de Certificados).",
+                    "b) OCSP (Protocolo de comprobación del Estado de un certificado en línea).",
+                    "c) Ambos protocolos indistintamente.",
+                    "d) No se basa en ningún protocolo estándar."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué algoritmo de hash soporta la tarjeta DNIe en la validación de certificados y en los comandos de autenticación?",
+                options: [
+                    "a) MD5.",
+                    "b) SHA-1.",
+                    "c) SHA-256.",
+                    "d) SHA-512."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El DNIe es un dispositivo con 'Dual Interface', lo que significa que posee:",
+                options: [
+                    "a) Interfaz con contactos y sin contactos (contactless).",
+                    "b) Dos chips criptográficos.",
+                    "c) Dos ranuras para tarjetas.",
+                    "d) Conexión USB y Bluetooth."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué tecnología incorpora el DNI 3.0 que permite que cualquier dispositivo móvil con NFC actúe como lector de tarjetas?",
+                options: [
+                    "a) Bluetooth.",
+                    "b) Wi-Fi.",
+                    "c) NFC (Near Field Communication).",
+                    "d) RFID."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué es el DNIeDroid?",
+                options: [
+                    "a) Una aplicación móvil para renovar el DNIe.",
+                    "b) Un middleware diseñado para la comunicación con el DNIe en dispositivos Android.",
+                    "c) Un lector de tarjetas NFC.",
+                    "d) Un servicio de validación de certificados."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál de las siguientes es una zona de acceso a la información en el chip del DNIe?",
+                options: [
+                    "a) Zona Pública.",
+                    "b) Zona Privada.",
+                    "c) Zona de Seguridad.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Qué tipo de información es accesible en lectura sin restricciones en la Zona Pública del DNIe?",
+                options: [
+                    "a) Certificado de Firma.",
+                    "b) Claves Diffie-Hellman.",
+                    "c) Datos de filiación del ciudadano.",
+                    "d) Patrón de impresión dactilar."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué tipo de información es accesible en lectura por el ciudadano, mediante la utilización de la Clave Personal de Acceso o PIN, en la Zona Privada del DNIe?",
+                options: [
+                    "a) Certificado de Componente.",
+                    "b) Certificado de Autenticación (Digital Signature).",
+                    "c) Clave RSA privada de autenticación.",
+                    "d) Imagen de la fotografía."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Dónde es accesible en lectura la información de la Zona de Seguridad del DNIe?",
+                options: [
+                    "a) Solo en casa del ciudadano.",
+                    "b) En los Puntos de Actualización del DNIe.",
+                    "c) En cualquier lector de tarjetas.",
+                    "d) En línea a través de la web del Ministerio del Interior."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué se requiere instalar en un equipo para interaccionar adecuadamente con las tarjetas criptográficas y con el DNIe?",
+                options: [
+                    "a) Un navegador web específico.",
+                    "b) Un antivirus.",
+                    "c) Módulos criptográficos.",
+                    "d) Un sistema operativo especial."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué Ley se dividió en la Ley 39/2015 y la Ley 40/2015?",
+                options: [
+                    "a) Ley 11/2007.",
+                    "b) Ley 30/1992.",
+                    "c) Ley 34/2002.",
+                    "d) Ley 59/2003."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué norma deroga el Real Decreto 3/2010?",
+                options: [
+                    "a) Real Decreto 1671/2009.",
+                    "b) Real Decreto 4/2010 (ENI).",
+                    "c) Real Decreto 311/2022 (ENS).",
+                    "d) Real Decreto 203/2021."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué Ley deroga la Ley 11/2007?",
+                options: [
+                    "a) Ley 39/2015 del Procedimiento Administrativo Común de las Administraciones Públicas.",
+                    "b) Ley 40/2015 del Régimen Jurídico del Sector Público.",
+                    "c) Ley 6/2020 de Servicios Electrónicos de Confianza.",
+                    "d) Ley 34/2002 de Servicios de la Sociedad de la Información."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "El Reglamento (UE) 910/2014 (eIDAS) define niveles de seguridad de los sistemas de identificación electrónica. ¿Cuáles son?",
+                options: [
+                    "a) Básico, Medio y Avanzado.",
+                    "b) Bajo, Sustancial y Alto.",
+                    "c) Primario, Secundario y Terciario.",
+                    "d) Simple, Cualificado y Reconocido."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué sistema de identificación electrónica se corresponde con el Nivel de seguridad 'Alto' (LoA 4) según eIDAS?",
+                options: [
+                    "a) Cl@ve Pin.",
+                    "b) Cl@ve Permanente con SMS.",
+                    "c) DNIe.",
+                    "d) Cl@ve Permanente sin SMS."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué tipo de acceso se ejemplifica para el Nivel de seguridad 'Alto' (LoA 4)?",
+                options: [
+                    "a) Acceso a expedientes con información personal con nivel de protección bajo.",
+                    "b) Acceso a expedientes con información personal con nivel de protección medio.",
+                    "c) Acceso a datos de salud.",
+                    "d) Acceso a servicios públicos básicos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué sistema de identificación electrónica se corresponde con el Nivel de seguridad 'Sustancial' (LoA 3)?",
+                options: [
+                    "a) Registro presencial.",
+                    "b) Cl@ve Pin (registro presencial o telemático).",
+                    "c) DNIe.",
+                    "d) Cl@ve Permanente sin SMS."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de acceso se ejemplifica para el Nivel de seguridad 'Sustancial' (LoA 3)?",
+                options: [
+                    "a) Acceso a datos de salud.",
+                    "b) Acceso a expedientes con información personal con nivel de protección medio.",
+                    "c) Acceso a expedientes con información personal con nivel de protección bajo.",
+                    "d) Acceso a documentos públicos no sensibles."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué sistema de identificación electrónica se corresponde con el Nivel de seguridad 'Bajo' (LoA 2)?",
+                options: [
+                    "a) DNIe.",
+                    "b) Cl@ve Pin (registro telemático).",
+                    "c) Certificado electrónico reconocido.",
+                    "d) Cl@ve Permanente con SMS."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál de los siguientes es un tipo de certificado eIDAS?",
+                options: [
+                    "a) Certificado de Residencia.",
+                    "b) Certificado de Autenticación Web.",
+                    "c) Certificado de Matrimonio.",
+                    "d) Certificado de Antecedentes Penales."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es el Nodo eIDAS?",
+                options: [
+                    "a) Un sistema de almacenamiento de certificados.",
+                    "b) Un servicio para la revocación de certificados.",
+                    "c) Un sistema que integra a los países de la UE para la identificación electrónica transfronteriza.",
+                    "d) Una base de datos de firmas electrónicas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué tipo de firma electrónica, según eIDAS, se asocia con un 'dispositivo cualificado' como el DNIe?",
+                options: [
+                    "a) Firma electrónica.",
+                    "b) Firma electrónica avanzada.",
+                    "c) Firma electrónica cualificada.",
+                    "d) Firma electrónica simple."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué recoge el Reglamento 203/2021?",
+                options: [
+                    "a) La parte física de la Ley 39/2015 y 40/2015.",
+                    "b) La parte digital de la Ley 39/2015 y 40/2015.",
+                    "c) Exclusivamente la Ley 39/2015.",
+                    "d) Exclusivamente la Ley 40/2015."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Para qué trámites las Administraciones Públicas solo requerirán a los interesados el uso obligatorio de firma?",
+                options: [
+                    "a) Para consultar información.",
+                    "b) Para formular solicitudes.",
+                    "c) Para enviar correos electrónicos.",
+                    "d) Para solicitar citas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué sistemas de identificación de los interesados son admitidos por la Administración?",
+                options: [
+                    "a) Solo DNIe.",
+                    "b) Solo certificados electrónicos cualificados de firma.",
+                    "c) Con su DNIe, con certificados electrónicos cualificados de firma, con certificados de sello y cualquier sistema admitido por la Administración siempre que cuenten con registro previo.",
+                    "d) Solo sistemas con registro previo."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué sistemas de firmas son admitidos por la Administración?",
+                options: [
+                    "a) Solo firma electrónica cualificada.",
+                    "b) Solo sello electrónico cualificado.",
+                    "c) Firma electrónica cualificada o avanzada, sello electrónico cualificado o avanzado o cualquier otro sistema admitido por la Administración siempre que cuenten con registro previo.",
+                    "d) Solo la firma manuscrita digitalizada."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Quiénes están obligados a relacionarse electrónicamente con la Administración?",
+                options: [
+                    "a) Personas físicas.",
+                    "b) Personas jurídicas.",
+                    "c) Entidades sin personalidad jurídica.",
+                    "d) b y c son correctas."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "¿Cuál de los siguientes es un sistema de firma de la Administración?",
+                options: [
+                    "a) PIN.",
+                    "b) Cl@ve Permanente.",
+                    "c) Sello electrónico.",
+                    "d) Firma manuscrita."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué significa TSA en el contexto de los servicios electrónicos de confianza?",
+                options: [
+                    "a) Trusted Service Agent.",
+                    "b) Time Stamp Authority (Autoridad de Tiempo).",
+                    "c) Technical Security Audit.",
+                    "d) Transaction Security Architecture."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué servicio web de la Red SARA de la Administración se conecta a todos los prestadores para conocer la validez de un certificado?",
+                options: [
+                    "a) Cl@ve.",
+                    "b) AutoFirma.",
+                    "c) @Firma.",
+                    "d) FIRe."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué es la Plataforma Cl@ve?",
+                options: [
+                    "a) Una aplicación para firmar documentos.",
+                    "b) Un sistema de federación de identidades electrónicas.",
+                    "c) Un servicio de notificaciones electrónicas.",
+                    "d) Un registro electrónico de apoderamientos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué aplicación local puede acceder a tus certificados para firmar documentos?",
+                options: [
+                    "a) Cl@ve Firma.",
+                    "b) AutoFirma.",
+                    "c) FIRe.",
+                    "d) @Firma."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es FIRe?",
+                options: [
+                    "a) Un sistema de identificación de bajo nivel.",
+                    "b) La combinación de Cl@ve Firma y AutoFirma.",
+                    "c) Un certificado cualificado.",
+                    "d) Un servicio de entrega electrónica certificada."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Para qué sirve Apodera / REA (Registro Electrónico de Apoderamientos)?",
+                options: [
+                    "a) Para registrar funcionarios habilitados.",
+                    "b) Para establecer poderes de representación para todas o ciertas Administraciones y trámites.",
+                    "c) Para gestionar notificaciones electrónicas.",
+                    "d) Para la validación de certificados."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el poder máximo de duración de un apoderamiento en el REA?",
+                options: [
+                    "a) 1 año.",
+                    "b) 3 años.",
+                    "c) 5 años.",
+                    "d) 10 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué recoge el SIA (Sistema de Información Administrativa)?",
+                options: [
+                    "a) Los datos de los funcionarios públicos.",
+                    "b) Todos los procedimientos administrativos que lleva cada uno de los organismos.",
+                    "c) Las leyes y reglamentos de la Administración.",
+                    "d) Las sentencias judiciales."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es Habilita / RFH (Registro de Funcionarios Habilitados)?",
+                options: [
+                    "a) Un registro de empleados públicos.",
+                    "b) Una representación interna para que un funcionario haga el trámite por el interesado.",
+                    "c) Un servicio para la obtención de certificados.",
+                    "d) Una base de datos de usuarios de Cl@ve."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La AC Raíz en la arquitectura de la Infraestructura de Certificación del DNIe emite certificados para:",
+                options: [
+                    "a) Los titulares del DNIe.",
+                    "b) Solo para sí misma y sus subordinadas.",
+                    "c) La Fábrica Nacional de Moneda y Timbre.",
+                    "d) El Ministerio de Hacienda y Función Pública."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué protocolo criptográfico permite el establecimiento de claves entre partes que no han tenido contacto previo, utilizando un canal inseguro y de manera anónima?",
+                options: [
+                    "a) RSA.",
+                    "b) SHA-256.",
+                    "c) Diffie-Hellman.",
+                    "d) AES."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál de los siguientes algoritmos de cifrado simétrico soporta la tarjeta DNI?",
+                options: [
+                    "a) RSA.",
+                    "b) Triple DES.",
+                    "c) SHA-256.",
+                    "d) MD5."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué Ley se modificó con la introducción del Reglamento (UE) 910/2014 para ajustarse a las novedades en identificación y servicios de confianza electrónicos?",
+                options: [
+                    "a) Ley 39/2015.",
+                    "b) Ley 40/2015.",
+                    "c) Ley 34/2002.",
+                    "d) Ley 59/2003."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La Ley 6/2020 tiene como objetivo principal:",
+                options: [
+                    "a) La regulación de la protección de datos personales.",
+                    "b) Complementar el Reglamento (UE) 910/2014 en el ámbito nacional.",
+                    "c) Establecer el marco legal para el comercio electrónico.",
+                    "d) Regular los servicios postales en España."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué servicio cualificado de confianza garantiza la fecha y hora de un documento electrónico?",
+                options: [
+                    "a) Sello electrónico de persona jurídica.",
+                    "b) Servicio de validación de firmas.",
+                    "c) Servicio de sellado electrónico de tiempo.",
+                    "d) Servicio de conservación de firmas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Quién es el responsable de la emisión de certificados de autenticación web cualificados?",
+                options: [
+                    "a) Cualquier entidad privada.",
+                    "b) Solo las Administraciones Públicas.",
+                    "c) Prestadores de servicios electrónicos de confianza cualificados.",
+                    "d) Empresas de alojamiento web."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué característica principal diferencia un servicio de confianza cualificado de uno no cualificado?",
+                options: [
+                    "a) El precio.",
+                    "b) El nivel de fiabilidad y los requisitos técnicos y legales.",
+                    "c) La velocidad de procesamiento.",
+                    "d) El tipo de datos que maneja."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Si un prestador de servicios electrónicos de confianza (PSC) no cualificado desea convertirse en cualificado, ¿qué debe hacer?",
+                options: [
+                    "a) Comunicarlo al órgano supervisor y esperar aprobación automática.",
+                    "b) Cumplir con los requisitos del Reglamento (UE) 910/2014 y la Ley 6/2020 y solicitar una verificación.",
+                    "c) Simplemente empezar a ofrecer servicios cualificados.",
+                    "d) Pagar una tasa adicional."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es el 'no repudio' en el contexto de la firma electrónica?",
+                options: [
+                    "a) La capacidad de negar haber firmado un documento.",
+                    "b) La garantía de que una de las partes no puede negar la autenticidad de una acción o comunicación.",
+                    "c) La posibilidad de modificar un documento después de haberlo firmado.",
+                    "d) La revocación de un certificado."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de certificado se emite para personas jurídicas y entidades sin personalidad jurídica?",
+                options: [
+                    "a) Certificado de firma electrónica cualificada.",
+                    "b) Certificado de autenticación de sitio web.",
+                    "c) Certificado de sello electrónico cualificado.",
+                    "d) Certificado de representante."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Quién es el órgano de supervisión competente en España para los servicios electrónicos de confianza?",
+                options: [
+                    "a) El Ministerio del Interior.",
+                    "b) El Ministerio de Justicia.",
+                    "c) El Ministerio de Asuntos Económicos y Transformación Digital.",
+                    "d) La Agencia Española de Protección de Datos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La lista de confianza que debe publicar el órgano de supervisión contiene información sobre:",
+                options: [
+                    "a) Todos los prestadores de servicios electrónicos de confianza en la UE.",
+                    "b) Los prestadores de servicios electrónicos de confianza cualificados y no cualificados sujetos a la Ley 6/2020.",
+                    "c) Solo los prestadores no cualificados.",
+                    "d) Solo los prestadores que han sido sancionados."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Si un prestador cualificado cesa su actividad, ¿qué debe asegurar respecto a la información conservada de los servicios prestados?",
+                options: [
+                    "a) Que la información sea destruida inmediatamente.",
+                    "b) Que la información sea transferida a un tercero o al órgano de supervisión, garantizando su conservación.",
+                    "c) Que la información se ponga a disposición del público.",
+                    "d) Que se notifique a los clientes de forma oral."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de infracción se considera si un prestador cualificado expide certificados sin realizar las comprobaciones previas de identidad exigidas?",
+                options: [
+                    "a) Leve.",
+                    "b) Grave.",
+                    "c) Muy grave.",
+                    "d) Depende del número de certificados."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La resistencia, la obstrucción o la falta de colaboración con la actuación inspectora del órgano de supervisión es una infracción:",
+                options: [
+                    "a) Leve.",
+                    "b) Grave.",
+                    "c) Muy grave.",
+                    "d) No es una infracción."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el importe de la sanción para una infracción muy grave si se supera el porcentaje establecido de expedición de certificados sin las comprobaciones de identidad?",
+                options: [
+                    "a) Hasta 150.000 €.",
+                    "b) Hasta 300.000 €.",
+                    "c) Hasta 500.000 €.",
+                    "d) Hasta 1.000.000 €."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué documento puede ser utilizado por ciudadanos extranjeros residentes en España para la acreditación de su identidad a efectos de la Ley 6/2020?",
+                options: [
+                    "a) Pasaporte de su país de origen.",
+                    "b) Tarjeta de residencia.",
+                    "c) Número de Identidad de Extranjero (NIE).",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswerIndex: 3
+            },
+            {
+                question: "El DNIe es un documento electrónico que permite la autenticación y la firma electrónica, basándose en la tecnología de:",
+                options: [
+                    "a) Código de barras.",
+                    "b) Chip criptográfico.",
+                    "c) Banda magnética.",
+                    "d) Hologramas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de fotografía se requiere para el DNIe?",
+                options: [
+                    "a) De perfil, en blanco y negro.",
+                    "b) De frente, con gafas de sol.",
+                    "c) De frente, con la cabeza descubierta y sin gafas de cristales oscuros o cualquier otra prenda que impida la identificación de la persona.",
+                    "d) Con sonrisa amplia."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué ocurre si la fotografía presentada para el DNIe no cumple con los requisitos establecidos?",
+                options: [
+                    "a) Se acepta de igual forma.",
+                    "b) Se solicita una nueva fotografía.",
+                    "c) Se deniega la expedición del DNIe.",
+                    "d) Se cobra un recargo."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuándo se considera que un DNIe es de validez permanente?",
+                options: [
+                    "a) Cuando el titular ha cumplido los 60 años.",
+                    "b) Cuando el titular ha cumplido los 70 años.",
+                    "c) Cuando el titular lo solicita expresamente.",
+                    "d) Cuando el DNIe ha sido renovado más de 3 veces."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué ventaja ofrece la tecnología 'Dual Interface' del DNIe?",
+                options: [
+                    "a) Permite usarlo como tarjeta de crédito.",
+                    "b) Facilita la interacción tanto con lectores de contacto como con dispositivos sin contacto.",
+                    "c) Aumenta el almacenamiento interno del chip.",
+                    "d) Permite la conexión a redes Wi-Fi."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La Autoridad de Certificación del DNIe (AC DNIe) es un componente clave de su infraestructura de seguridad. ¿Qué función principal tiene?",
+                options: [
+                    "a) La fabricación física de las tarjetas DNIe.",
+                    "b) La emisión y gestión de los certificados electrónicos del DNIe.",
+                    "c) El control de la Policía Nacional.",
+                    "d) La recaudación de las tasas de expedición."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el propósito principal del certificado de Autenticación (Digital Signature) en el DNIe?",
+                options: [
+                    "a) Permitir el acceso físico a edificios.",
+                    "b) Demostrar la identidad del titular en entornos electrónicos.",
+                    "c) Realizar transacciones bancarias.",
+                    "d) Cifrar correos electrónicos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué garantía proporciona el certificado de Firma del DNIe?",
+                options: [
+                    "a) La confidencialidad de los datos.",
+                    "b) El anonimato en las transacciones.",
+                    "c) La integridad de los datos y la autoría de la firma.",
+                    "d) La velocidad de la comunicación."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué es una CRL (Certificate Revocation List)?",
+                options: [
+                    "a) Una lista de certificados válidos.",
+                    "b) Una lista de certificados que han sido revocados o suspendidos.",
+                    "c) Un protocolo de autenticación.",
+                    "d) Una base de datos de usuarios."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la ventaja de utilizar OCSP (Online Certificate Status Protocol) frente a CRL para la validación de certificados?",
+                options: [
+                    "a) OCSP es más lento.",
+                    "b) OCSP requiere más recursos del sistema.",
+                    "c) OCSP proporciona información de estado del certificado en tiempo real, lo que lo hace más eficiente.",
+                    "d) OCSP no requiere conexión a internet."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El DNI 3.0 incorporó la tecnología NFC. ¿Qué significa NFC?",
+                options: [
+                    "a) New Fast Connection.",
+                    "b) Near Field Communication.",
+                    "c) Network File Control.",
+                    "d) Next Generation Features."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué función principal tiene DNIeDroid?",
+                options: [
+                    "a) Actuar como un navegador web seguro.",
+                    "b) Facilitar la interacción del DNIe con dispositivos móviles Android compatibles con NFC.",
+                    "c) Gestionar las contraseñas del DNIe.",
+                    "d) Almacenar copias de seguridad de los certificados."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué zona del chip del DNIe contiene información que requiere la Clave Personal de Acceso (PIN) para su lectura?",
+                options: [
+                    "a) Zona Pública.",
+                    "b) Zona Privada.",
+                    "c) Zona de Seguridad.",
+                    "d) Zona de Acceso Libre."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué información puede ser consultada en la Zona de Seguridad del DNIe?",
+                options: [
+                    "a) La imagen digitalizada de la firma manuscrita.",
+                    "b) La plantilla biométrica de la impresión dactilar.",
+                    "c) El número de DNI.",
+                    "d) Solo información de tipo técnico para las fuerzas de seguridad."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es un middleware criptográfico en el contexto del DNIe?",
+                options: [
+                    "a) Un tipo de malware.",
+                    "b) Un software que facilita la comunicación entre la aplicación del usuario y el chip del DNIe.",
+                    "c) Un servicio de almacenamiento en la nube.",
+                    "d) Un componente de hardware."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La Ley 39/2015 del Procedimiento Administrativo Común de las Administraciones Públicas se centra en:",
+                options: [
+                    "a) Las relaciones inter-administrativas.",
+                    "b) La regulación de los servicios de la sociedad de la información.",
+                    "c) Las relaciones ad extra entre las Administraciones y los ciudadanos.",
+                    "d) La protección de datos."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "La Ley 40/2015 del Régimen Jurídico del Sector Público se centra en:",
+                options: [
+                    "a) Las relaciones ad extra entre las Administraciones y los ciudadanos.",
+                    "b) La regulación de los servicios de la sociedad de la información.",
+                    "c) Las relaciones ad intra (organización y funcionamiento interno) de las Administraciones.",
+                    "d) La seguridad de la información."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué Real Decreto estableció el Esquema Nacional de Seguridad (ENS)?",
+                options: [
+                    "a) Real Decreto 3/2010.",
+                    "b) Real Decreto 4/2010.",
+                    "c) Real Decreto 311/2022.",
+                    "d) Real Decreto 203/2021."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué Real Decreto estableció el Esquema Nacional de Interoperabilidad (ENI)?",
+                options: [
+                    "a) Real Decreto 3/2010.",
+                    "b) Real Decreto 4/2010.",
+                    "c) Real Decreto 311/2022.",
+                    "d) Real Decreto 203/2021."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "El Nivel de Seguridad 'Bajo' (LoA 2) en eIDAS se caracteriza por:",
+                options: [
+                    "a) Ser para información muy sensible.",
+                    "b) Permitir el acceso con credenciales de usuario y contraseña simple.",
+                    "c) Requerir un dispositivo cualificado.",
+                    "d) Ser exclusivo para transacciones financieras."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué identifica un certificado de autenticación web cualificado según eIDAS?",
+                options: [
+                    "a) La identidad del usuario que visita una página web.",
+                    "b) La identidad de una persona jurídica.",
+                    "c) La identidad del sitio web y su vínculo con la entidad jurídica que lo gestiona.",
+                    "d) La identidad de un dispositivo móvil."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué función principal tiene la Plataforma Cl@ve?",
+                options: [
+                    "a) Emitir certificados electrónicos.",
+                    "b) Proporcionar un sistema unificado de identificación y autenticación electrónica para las Administraciones Públicas.",
+                    "c) Almacenar documentos electrónicos.",
+                    "d) Gestionar la Red SARA."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué diferencia principal existe entre Cl@ve Pin y Cl@ve Permanente?",
+                options: [
+                    "a) Cl@ve Pin es de un solo uso y limitado en el tiempo, Cl@ve Permanente tiene una validez más prolongada y se basa en un usuario y contraseña.",
+                    "b) Cl@ve Pin es solo para personas jurídicas, Cl@ve Permanente para personas físicas.",
+                    "c) Cl@ve Pin no requiere registro, Cl@ve Permanente sí.",
+                    "d) Cl@ve Pin es para trámites con nivel de seguridad alto, Cl@ve Permanente para nivel bajo."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué sistema de identificación de Cl@ve ofrece el Nivel de seguridad 'Sustancial'?",
+                options: [
+                    "a) Cl@ve Pin (registro telemático).",
+                    "b) Cl@ve Pin (registro presencial).",
+                    "c) Cl@ve Permanente con SMS.",
+                    "d) Cl@ve Permanente sin SMS."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál es el propósito del registro previo para los sistemas de identificación admitidos por la Administración?",
+                options: [
+                    "a) Asegurar que el usuario tiene un dispositivo compatible.",
+                    "b) Verificar la identidad del interesado antes de permitir el acceso a los servicios electrónicos.",
+                    "c) Controlar el número de accesos.",
+                    "d) Generar estadísticas de uso."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de sello electrónico se asocia con el concepto de 'dispositivo cualificado de creación de sello electrónico'?",
+                options: [
+                    "a) Sello electrónico simple.",
+                    "b) Sello electrónico avanzado.",
+                    "c) Sello electrónico cualificado.",
+                    "d) Sello electrónico no cualificado."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué es la 'Firma No Criptográfica' (FNC) mencionada en el documento?",
+                options: [
+                    "a) Una firma que no utiliza ningún tipo de cifrado.",
+                    "b) Un método de firma que no requiere la intervención directa de un certificado, sino que reúne evidencias para cumplir eIDAS después de la identificación.",
+                    "c) Una firma manuscrita escaneada.",
+                    "d) Una firma electrónica sin validez legal."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Para qué se utiliza el Registro Electrónico de Apoderamientos (REA)?",
+                options: [
+                    "a) Para registrar los documentos físicos.",
+                    "b) Para permitir que una persona actúe en nombre de otra ante las Administraciones Públicas de forma electrónica.",
+                    "c) Para gestionar las citas previas.",
+                    "d) Para la inscripción de empresas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la duración máxima de un apoderamiento inscrito en el REA si no se especifica un plazo menor?",
+                options: [
+                    "a) 1 año.",
+                    "b) 3 años.",
+                    "c) 5 años.",
+                    "d) 10 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "El Sistema de Información Administrativa (SIA) es una herramienta que:",
+                options: [
+                    "a) Centraliza la información sobre los empleados públicos.",
+                    "b) Proporciona un catálogo de todos los procedimientos y servicios administrativos.",
+                    "c) Gestiona la contabilidad de la Administración.",
+                    "d) Almacena expedientes judiciales."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué permite el Registro de Funcionarios Habilitados (RFH)?",
+                options: [
+                    "a) Que los ciudadanos puedan habilitar a cualquier persona para que realice trámites en su nombre.",
+                    "b) Que un funcionario público actúe como representante de un ciudadano para realizar trámites electrónicos.",
+                    "c) La emisión de certificados electrónicos para funcionarios.",
+                    "d) La asignación de roles a los empleados públicos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el propósito de la Red SARA?",
+                options: [
+                    "a) Una red social para funcionarios.",
+                    "b) Una red de comunicaciones para interconectar las Administraciones Públicas.",
+                    "c) Un sistema de archivo documental.",
+                    "d) Un portal de empleo público."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es la 'firma en la nube' (Cloud Signature) en el contexto de Cl@ve Firma?",
+                options: [
+                    "a) Una firma que se realiza en un servidor remoto y no requiere un certificado en el dispositivo del usuario.",
+                    "b) Una firma que se almacena en la nube para su posterior uso.",
+                    "c) Una firma que se hace con un dispositivo móvil.",
+                    "d) Una firma que no tiene validez legal."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué ventaja ofrece AutoFirma al usuario?",
+                options: [
+                    "a) No requiere instalación.",
+                    "b) Permite firmar documentos localmente utilizando certificados almacenados en el ordenador o DNIe.",
+                    "c) Es un servicio de identificación en línea.",
+                    "d) Permite enviar documentos directamente a la Administración sin necesidad de navegadores."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué se entiende por 'interoperabilidad' en el ámbito de la administración electrónica?",
+                options: [
+                    "a) La capacidad de diferentes sistemas y organizaciones para trabajar juntos de forma eficiente.",
+                    "b) La capacidad de una única aplicación para realizar todas las funciones.",
+                    "c) La restricción del acceso a los sistemas informáticos.",
+                    "d) La dependencia de una única tecnología."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La Ley 6/2020, además de derogar la Ley 59/2003, ¿qué otro objetivo tiene en relación con el Reglamento (UE) 910/2014?",
+                options: [
+                    "a) Contradecir algunos puntos del Reglamento.",
+                    "b) Suplir las lagunas y desarrollar aspectos no cubiertos por el Reglamento.",
+                    "c) Restringir el ámbito de aplicación del Reglamento.",
+                    "d) Modificar el texto del Reglamento."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Un certificado cualificado de firma electrónica debe ser expedido por un prestador de servicios de confianza:",
+                options: [
+                    "a) No cualificado.",
+                    "b) Cualificado.",
+                    "c) Reconocido por un Estado miembro.",
+                    "d) Cualquiera que ofrezca servicios de confianza."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué implica que un servicio de confianza sea 'cualificado' según eIDAS?",
+                options: [
+                    "a) Que es más barato.",
+                    "b) Que cumple con requisitos estrictos de seguridad y fiabilidad, y está sujeto a supervisión.",
+                    "c) Que solo puede ser usado por empresas.",
+                    "d) Que no tiene validez jurídica."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es un 'dispositivo cualificado de creación de firma electrónica'?",
+                options: [
+                    "a) Cualquier ordenador personal.",
+                    "b) Un dispositivo de hardware y software específicamente diseñado para crear firmas electrónicas cualificadas de forma segura.",
+                    "c) Un smartphone con cualquier aplicación de firma.",
+                    "d) Un escáner de firmas manuscritas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿En qué año se publicó el Reglamento (UE) 910/2014, conocido como eIDAS?",
+                options: [
+                    "a) 2012.",
+                    "b) 2014.",
+                    "c) 2016.",
+                    "d) 2018."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué documento legal español regula la identificación electrónica y los servicios de confianza a nivel nacional, complementando eIDAS?",
+                options: [
+                    "a) Ley 34/2002.",
+                    "b) Ley 59/2003.",
+                    "c) Ley 6/2020.",
+                    "d) Ley 39/2015."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál es el principal beneficio del uso transfronterizo de los sistemas de identificación electrónica según eIDAS?",
+                options: [
+                    "a) Aumentar la burocracia.",
+                    "b) Facilitar el acceso seguro a servicios públicos en línea de otros Estados miembros.",
+                    "c) Restringir el comercio electrónico internacional.",
+                    "d) Reducir la seguridad de las transacciones."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de entidad puede ser titular de un sello electrónico cualificado?",
+                options: [
+                    "a) Solo personas físicas.",
+                    "b) Solo administraciones públicas.",
+                    "c) Personas jurídicas y entidades sin personalidad jurídica.",
+                    "d) Cualquier individuo."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Quién debe garantizar la indemnidad frente a terceros por los daños y perjuicios ocasionados por la falta de diligencia o negligencia de las personas que participen en la prestación de un servicio electrónico de confianza?",
+                options: [
+                    "a) El titular del certificado.",
+                    "b) El prestador del servicio de confianza.",
+                    "c) El usuario final.",
+                    "d) El órgano de supervisión."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué se entiende por 'servicio de conservación de firmas y sellos cualificados'?",
+                options: [
+                    "a) Un servicio que almacena copias de firmas en papel.",
+                    "b) Un servicio que garantiza la validez jurídica y la integridad de firmas y sellos electrónicos a lo largo del tiempo.",
+                    "c) Un servicio para crear nuevas firmas electrónicas.",
+                    "d) Un servicio para revocar firmas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La garantía económica establecida en la Ley 6/2020 para los PSC cualificados tiene como fin:",
+                options: [
+                    "a) Financiar la operación del órgano supervisor.",
+                    "b) Cubrir posibles responsabilidades derivadas de la prestación de sus servicios.",
+                    "c) Promocionar los servicios de confianza.",
+                    "d) Cubrir el coste de los certificados."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "Si un PSC cualificado deja de cumplir los requisitos para la cualificación, ¿qué acción debe tomar el órgano de supervisión?",
+                options: [
+                    "a) Otorgar una prórroga ilimitada para su cumplimiento.",
+                    "b) Revocar la cualificación y retirarlo de la lista de confianza.",
+                    "c) Ignorar la situación si el impacto es bajo.",
+                    "d) Recomendar la continuidad del servicio."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de información se considera relevante para la identificación de la persona física en la expedición de certificados cualificados?",
+                options: [
+                    "a) Solo el nombre completo.",
+                    "b) Domicilio y teléfono.",
+                    "c) Información que permita verificar de manera inequívoca su identidad.",
+                    "d) Preferencias de usuario."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál de los siguientes no es un requisito de seguridad que debe cumplir un PSC cualificado?",
+                options: [
+                    "a) Mantener sistemas y productos fiables.",
+                    "b) Adoptar medidas para garantizar la confidencialidad de la información.",
+                    "c) Utilizar exclusivamente software de código abierto.",
+                    "d) Disponer de personal cualificado."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué plazo tiene el PSC para notificar al órgano de supervisión cualquier cambio que afecte a la prestación de sus servicios cualificados?",
+                options: [
+                    "a) Sin demora indebida.",
+                    "b) En el plazo de un mes.",
+                    "c) Una vez al año.",
+                    "d) Cuando se solicite."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "La verificación previa de cumplimiento de requisitos por parte del órgano de supervisión es un paso obligatorio para que un PSC obtenga la:",
+                options: [
+                    "a) Autorización para operar.",
+                    "b) Cualificación.",
+                    "c) Certificación ISO.",
+                    "d) Licencia de software."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué sanción puede imponerse, además de la multa, por una infracción muy grave?",
+                options: [
+                    "a) Advertencia.",
+                    "b) Suspensión de la actividad por un año.",
+                    "c) Revocación de la cualificación y prohibición de operar como PSC cualificado.",
+                    "d) Trabajos en beneficio de la comunidad."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué aspecto del DNIe permite su uso para la identificación a distancia de forma segura?",
+                options: [
+                    "a) Su tamaño.",
+                    "b) Su diseño.",
+                    "c) Sus certificados electrónicos.",
+                    "d) Su color."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "En el contexto del DNIe, ¿qué es un PIN?",
+                options: [
+                    "a) Un número de identificación personal para acceder al chip.",
+                    "b) Un código de barras.",
+                    "c) Una fecha de caducidad.",
+                    "d) Un número de serie del documento."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué se necesita para leer la información del chip del DNIe en un ordenador?",
+                options: [
+                    "a) Solo un navegador web.",
+                    "b) Un lector de DNIe y el software adecuado (módulos criptográficos).",
+                    "c) Solo un puerto USB.",
+                    "d) Conexión a internet de alta velocidad."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "El certificado de autenticación del DNIe, ¿se utiliza para la firma de documentos?",
+                options: [
+                    "a) Sí, es su función principal.",
+                    "b) No, para la firma se utiliza el certificado de firma.",
+                    "c) Depende del tipo de documento.",
+                    "d) Solo para documentos no oficiales."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué significa que los datos de creación de firma de un certificado cualificado deben estar bajo el control exclusivo del firmante?",
+                options: [
+                    "a) Que solo el firmante puede generar nuevas claves.",
+                    "b) Que nadie más, ni siquiera el prestador, debe tener acceso a las claves privadas de firma.",
+                    "c) Que la firma no puede ser verificada por terceros.",
+                    "d) Que el firmante debe compartir su PIN con el prestador."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la finalidad del Servicio de Entrega Electrónica Certificada?",
+                options: [
+                    "a) Enviar correos electrónicos ordinarios.",
+                    "b) Proporcionar evidencia de la entrega y el contenido de datos electrónicos, garantizando su integridad y el momento de envío/recepción.",
+                    "c) Almacenar documentos en la nube.",
+                    "d) Realizar videollamadas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué papel juega la Fábrica Nacional de Moneda y Timbre (FNMT) en el ecosistema del DNIe?",
+                options: [
+                    "a) Es el fabricante físico del DNIe y prestador de servicios de certificación.",
+                    "b) Es el órgano de supervisión.",
+                    "c) Es el encargado de la renovación de los certificados.",
+                    "d) Es la entidad que proporciona los lectores de DNIe."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué nivel de seguridad del sistema de identificación electrónica (LoA) se considera el más alto según el Reglamento eIDAS?",
+                options: [
+                    "a) Bajo (LoA 2).",
+                    "b) Sustancial (LoA 3).",
+                    "c) Alto (LoA 4).",
+                    "d) Medio (LoA 3.5)."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué impacto tiene la Ley 39/2015 en el uso de medios electrónicos en el procedimiento administrativo?",
+                options: [
+                    "a) Lo prohíbe para la mayoría de los trámites.",
+                    "b) Lo fomenta y lo hace obligatorio para ciertos sujetos y trámites.",
+                    "c) Lo limita solo a la consulta de información.",
+                    "d) Deja a discreción del ciudadano el uso de medios electrónicos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el objetivo principal del Esquema Nacional de Seguridad (ENS)?",
+                options: [
+                    "a) Garantizar la seguridad de los edificios públicos.",
+                    "b) Establecer las medidas de seguridad para proteger la información tratada por las Administraciones Públicas.",
+                    "c) Regular el acceso a Internet en las oficinas públicas.",
+                    "d) Controlar la calidad del software."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el objetivo principal del Esquema Nacional de Interoperabilidad (ENI)?",
+                options: [
+                    "a) Asegurar que los sistemas informáticos de las Administraciones Públicas puedan intercambiar información y servicios.",
+                    "b) Regular el uso de redes sociales por parte de los funcionarios.",
+                    "c) Establecer los formatos de documentos físicos.",
+                    "d) Controlar el presupuesto de TI."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué sistema de identificación de Cl@ve no requiere registro presencial para alcanzar el nivel de seguridad 'Sustancial'?",
+                options: [
+                    "a) Cl@ve PIN.",
+                    "b) Cl@ve Permanente (registro presencial).",
+                    "c) Cl@ve PIN (registro telemático).",
+                    "d) Certificado electrónico."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué ventaja ofrece Cl@ve Permanente con respecto a Cl@ve PIN para usuarios recurrentes?",
+                options: [
+                    "a) Mayor rapidez en cada operación.",
+                    "b) No caduca.",
+                    "c) Permite una identificación de mayor duración sin necesidad de un nuevo PIN cada vez.",
+                    "d) Solo para trámites de bajo nivel de seguridad."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Quién puede habilitar a un funcionario para que realice trámites en nombre de un interesado a través del Registro de Funcionarios Habilitados (RFH)?",
+                options: [
+                    "a) Cualquier ciudadano directamente al funcionario.",
+                    "b) El propio funcionario.",
+                    "c) El interesado, quien debe autorizar expresamente la habilitación al funcionario en el registro.",
+                    "d) El jefe de sección del funcionario."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué ventaja principal ofrece la existencia del SIA para los ciudadanos?",
+                options: [
+                    "a) Acceso a información sobre la normativa interna de cada organismo.",
+                    "b) Facilita la búsqueda y conocimiento de los procedimientos y servicios ofrecidos por las Administraciones Públicas.",
+                    "c) Permite la participación en concursos públicos.",
+                    "d) Ofrece un canal de denuncias anónimas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de información sobre los procedimientos administrativos incluye el SIA?",
+                options: [
+                    "a) Solo la denominación.",
+                    "b) La descripción, los requisitos, la documentación necesaria y los plazos.",
+                    "c) Únicamente el nombre del responsable.",
+                    "d) El historial de todos los trámites realizados."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es el 'Nodo eIDAS' en el contexto de la Plataforma Cl@ve?",
+                options: [
+                    "a) Una base de datos de usuarios de Cl@ve.",
+                    "b) Un punto de interconexión para el reconocimiento mutuo de las identidades electrónicas de los Estados miembros de la UE.",
+                    "c) Un servidor de correo electrónico.",
+                    "d) Un servicio de atención al cliente."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la diferencia entre @Firma y AutoFirma?",
+                options: [
+                    "a) @Firma es una plataforma web para la validación de certificados y AutoFirma es una aplicación local para firmar documentos.",
+                    "b) @Firma es una aplicación local y AutoFirma es una plataforma web.",
+                    "c) Ambas son lo mismo.",
+                    "d) @Firma es solo para el sector privado y AutoFirma para el público."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué garantiza un servicio de sellado electrónico de tiempo cualificado?",
+                options: [
+                    "a) La confidencialidad del documento.",
+                    "b) La fecha y hora exactas de la firma de un documento, evitando modificaciones posteriores de la marca de tiempo.",
+                    "c) La identidad del firmante.",
+                    "d) La velocidad de transmisión de datos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué se entiende por 'servicio de validación de firmas y sellos cualificados'?",
+                options: [
+                    "a) Un servicio que crea nuevas firmas.",
+                    "b) Un servicio que verifica si una firma o sello electrónico cualificado es válido en el momento de la validación.",
+                    "c) Un servicio que anula firmas.",
+                    "d) Un servicio que almacena firmas antiguas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es la duración máxima de la vigencia de los certificados cualificados expedidos a personas físicas o jurídicas, según la Ley 6/2020?",
+                options: [
+                    "a) 1 año.",
+                    "b) 2 años.",
+                    "c) 3 años.",
+                    "d) 5 años."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué se entiende por 'datos de creación de firma electrónica'?",
+                options: [
+                    "a) El documento firmado.",
+                    "b) Los datos únicos, como las claves privadas, que el firmante utiliza para crear la firma electrónica.",
+                    "c) La huella dactilar.",
+                    "d) El nombre del firmante."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué medidas de seguridad se exigen a los PSC cualificados para la conservación de la información?",
+                options: [
+                    "a) Simplemente almacenarla en un disco duro.",
+                    "b) Medidas que garanticen la integridad, confidencialidad, autenticidad, disponibilidad y no alteración de la información.",
+                    "c) Publicarla en un sitio web público.",
+                    "d) Borrarla después de un mes."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es un 'pseudónimo' en el contexto de los servicios de confianza electrónicos?",
+                options: [
+                    "a) Un nombre falso sin vinculación con la identidad real.",
+                    "b) Un identificador unívoco de una persona física que no revela su identidad.",
+                    "c) Un alias de correo electrónico.",
+                    "d) Un nombre de usuario genérico."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué tipo de información se incluye en la 'lista de confianza' que publica el órgano de supervisión?",
+                options: [
+                    "a) Solo los nombres de los PSC cualificados.",
+                    "b) Información sobre el estado de cualificación de cada PSC y los servicios que prestan.",
+                    "c) Datos de contacto de los clientes de los PSC.",
+                    "d) Precios de los servicios."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Cuál es el propósito de las 'auditorías' a las que se someten los PSC cualificados?",
+                options: [
+                    "a) Verificar la rentabilidad de la empresa.",
+                    "b) Comprobar el cumplimiento de la normativa vigente en materia de seguridad y fiabilidad.",
+                    "c) Evaluar el servicio al cliente.",
+                    "d) Analizar la estrategia de marketing."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Quién es el responsable de garantizar la seguridad de los datos de creación de firma una vez que el certificado es expedido y entregado al firmante?",
+                options: [
+                    "a) El PSC.",
+                    "b) El órgano de supervisión.",
+                    "c) El propio firmante.",
+                    "d) Un tercero."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué significa 'no repudio en recepción'?",
+                options: [
+                    "a) El receptor puede negar que recibió el mensaje.",
+                    "b) El receptor no puede negar que recibió el mensaje porque el emisor tiene pruebas de la recepción.",
+                    "c) El emisor no puede negar que envió el mensaje.",
+                    "d) No hay pruebas de recepción."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué componente del DNIe permite la autenticación mediante la huella dactilar en los Puntos de Actualización del DNIe?",
+                options: [
+                    "a) El chip criptográfico.",
+                    "b) El lector de huellas dactilares integrado en el dispositivo.",
+                    "c) La función biométrica del DNIe.",
+                    "d) El certificado de autenticación."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál de los siguientes es un ejemplo de 'elemento de seguridad de tercer nivel' del DNIe?",
+                options: [
+                    "a) La fotografía visible.",
+                    "b) El holograma.",
+                    "c) Las medidas criptográficas avanzadas implementadas en el chip.",
+                    "d) El color de la tarjeta."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué ventaja ofrece la integración de los sistemas de identificación electrónica nacionales en el Nodo eIDAS?",
+                options: [
+                    "a) Solo permite a los ciudadanos españoles acceder a servicios en España.",
+                    "b) Facilita a los ciudadanos de un país miembro de la UE el acceso a servicios públicos en línea de otros países miembros.",
+                    "c) Bloquea el acceso a servicios externos a la UE.",
+                    "d) Limita el número de transacciones transfronterizas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué es un 'sello electrónico de persona jurídica'?",
+                options: [
+                    "a) Una firma manuscrita de un representante legal.",
+                    "b) Un tipo de firma electrónica que vincula datos en formato electrónico con una persona jurídica para garantizar la autenticidad e integridad.",
+                    "c) Un sello de caucho digitalizado.",
+                    "d) Un identificador de un empleado."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué se entiende por 'gestión en nombre del titular' de los datos de creación de firma, sello o autenticación de sitio web?",
+                options: [
+                    "a) Que el prestador puede utilizar esos datos libremente.",
+                    "b) Que el prestador puede almacenar y gestionar las claves privadas del titular, pero bajo su estricto control y autorización expresa.",
+                    "c) Que el titular no tiene control sobre sus claves.",
+                    "d) Que un tercero no autorizado puede acceder a las claves."
+                ],
+                correctAnswerIndex: 1
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainerElement = document.getElementById('options-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressTextElement = document.getElementById('progress-text');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Cargar el estado del test desde localStorage
+        function loadProgress() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            // Asegurarse de que el índice no exceda el número de preguntas
+            if (currentQuestionIndex >= testData.length) {
+                currentQuestionIndex = 0; // O la última pregunta, dependiendo de la preferencia
+            }
+            displayQuestion();
+        }
+
+        // Guardar el estado del test en localStorage
+        function saveProgress() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+        }
+
+        // Mostrar la pregunta actual
+        function displayQuestion() {
+            const questionData = testData[currentQuestionIndex];
+            questionTextElement.textContent = questionData.question;
+            optionsContainerElement.innerHTML = ''; // Limpiar opciones anteriores
+
+            questionData.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.addEventListener('click', () => checkAnswer(index));
+                optionsContainerElement.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            updateProgressText();
+        }
+
+        // Comprobar la respuesta seleccionada
+        function checkAnswer(selectedIndex) {
+            const questionData = testData[currentQuestionIndex];
+            const buttons = optionsContainerElement.querySelectorAll('button');
+
+            buttons.forEach((button, index) => {
+                button.disabled = true; // Deshabilitar todos los botones después de una selección
+                if (index === questionData.correctAnswerIndex) {
+                    button.classList.add('correct'); // Marcar la respuesta correcta
+                } else if (index === selectedIndex) {
+                    button.classList.add('incorrect'); // Marcar la respuesta incorrecta seleccionada
+                }
+            });
+        }
+
+        // Actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === testData.length - 1;
+        }
+
+        // Actualizar el texto de progreso
+        function updateProgressText() {
+            progressTextElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${testData.length}`;
+        }
+
+        // Navegar a la pregunta anterior
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveProgress();
+                displayQuestion();
+            }
+        });
+
+        // Navegar a la siguiente pregunta
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < testData.length - 1) {
+                currentQuestionIndex++;
+                saveProgress();
+                displayQuestion();
+            }
+        });
+
+        // Reiniciar el test
+        resetBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentQuestionIndex'); // Borrar el progreso guardado
+            currentQuestionIndex = 0; // Volver a la primera pregunta
+            displayQuestion();
+        });
+
+        // Cargar el progreso al iniciar la página
+        window.onload = loadProgress;
+    </script>
+</body>
+</html>

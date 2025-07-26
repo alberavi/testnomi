@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test interactivo: Agenda 2030</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .question-card.correct {
+            border-color: #10B981; /* Green */
+            background-color: #ECFDF5; /* Light green */
+        }
+        .question-card.incorrect {
+            border-color: #EF4444; /* Red */
+            background-color: #FEF2F2; /* Light red */
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .option-button {
+            width: 100%;
+            padding: 12px 18px;
+            background-color: #e0e7ff; /* Light blue */
+            color: #4338CA; /* Darker blue */
+            border: 2px solid #C7D2FE; /* Even darker blue border */
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover:not(.selected) {
+            background-color: #C7D2FE; /* Hover effect */
+            border-color: #A5B4FC;
+        }
+        .option-button.selected {
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .option-button.correct-answer {
+            background-color: #10B981; /* Green */
+            color: #ffffff;
+            border-color: #059669;
+        }
+        .option-button.incorrect-answer {
+            background-color: #EF4444; /* Red */
+            color: #ffffff;
+            border-color: #DC2626;
+        }
+        .feedback-message {
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+        .feedback-message.correct {
+            color: #059669; /* Dark green */
+            background-color: #D1FAE5; /* Lighter green */
+        }
+        .feedback-message.incorrect {
+            color: #DC2626; /* Dark red */
+            background-color: #FEE2E2; /* Lighter red */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            background-color: #4F46E5; /* Indigo */
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:hover {
+            background-color: #4338CA; /* Darker indigo */
+        }
+        .nav-button:disabled {
+            background-color: #9CA3AF; /* Gray */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .progress-indicator {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #6B7280;
+        }
+        .score-card {
+            background-color: #ECFDF5;
+            border: 2px solid #10B981;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .score-card h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 15px;
+        }
+        .score-card p {
+            font-size: 1.2rem;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+        .restart-button {
+            background-color: #4F46E5;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .restart-button:hover {
+            background-color: #4338CA;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test sobre la Agenda 2030</h1>
+        <div id="quiz-container">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+        <div id="progress-indicator" class="progress-indicator"></div>
+        <div id="score-card" class="score-card hidden">
+            <h2>¡Test Completado!</h2>
+            <p>Tu puntuación final es: <span id="final-score" class="font-bold"></span></p>
+            <button id="restart-button" class="restart-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Quién tiene la responsabilidad primordial del seguimiento y examen a nivel nacional, regional y mundial de los progresos en el cumplimiento de los ODS?",
+                options: ["a) Las Naciones Unidas.", "b) Los países.", "c) El Consejo Económico y Social.", "d) La Comisión de Estadística."],
+                correctAnswer: "b) Los países."
+            },
+            {
+                question: "¿Qué documento previó políticas y medidas concretas para apoyar la aplicación de la nueva agenda en 2015?",
+                options: ["a) El Acuerdo de París.", "b) La Agenda 2030.", "c) La Agenda de Acción de Addis Abeba.", "d) Los Objetivos de Desarrollo del Milenio."],
+                correctAnswer: "c) La Agenda de Acción de Addis Abeba."
+            },
+            {
+                question: "¿Qué se necesita para apoyar las iniciativas nacionales según la Agenda 2030?",
+                options: ["a) Un mayor presupuesto nacional.", "b) Una alianza mundial revitalizada.", "c) Mayor control por parte de la ONU.", "d) Menos dependencia de la financiación externa."],
+                correctAnswer: "b) Una alianza mundial revitalizada."
+            },
+            {
+                question: "¿Cuántos Objetivos de Desarrollo Sostenible (ODS) existen?",
+                options: ["a) 15.", "b) 16.", "c) 17.", "d) 18."],
+                correctAnswer: "c) 17."
+            },
+            {
+                question: "¿Cuántas metas acompañan a los ODS?",
+                options: ["a) 150.", "b) 169.", "c) 170.", "d) 300."],
+                correctAnswer: "b) 169."
+            },
+            {
+                question: "¿Quién elabora el marco de indicadores mundiales para el seguimiento de los ODS?",
+                options: ["a) La Asamblea General.", "b) El Consejo Económico y Social.", "c) El Grupo Interinstitucional y de Expertos sobre los Indicadores de los Objetivos de Desarrollo Sostenible.", "d) Los jefes de estadística de los Estados Miembros."],
+                correctAnswer: "c) El Grupo Interinstitucional y de Expertos sobre los Indicadores de los Objetivos de Desarrollo Sostenible."
+            },
+            {
+                question: "¿Cuándo se llegó a un acuerdo sobre el marco de indicadores mundiales por la Comisión de Estadística de las Naciones Unidas?",
+                options: ["a) Marzo de 2015.", "b) Septiembre de 2015.", "c) Marzo de 2016.", "d) Septiembre de 2016."],
+                correctAnswer: "c) Marzo de 2016."
+            },
+            {
+                question: "Además de los indicadores mundiales, ¿quién elaborará sus propios indicadores para el seguimiento de los ODS?",
+                options: ["a) Solo los países desarrollados.", "b) Los gobiernos nacionales.", "c) Las organizaciones no gubernamentales.", "d) Las instituciones financieras internacionales."],
+                correctAnswer: "b) Los gobiernos nacionales."
+            },
+            {
+                question: "¿Cuántos indicadores se prevé que haya aproximadamente para todas las metas de los ODS?",
+                options: ["a) 169.", "b) 170.", "c) 300.", "d) 345."],
+                correctAnswer: "c) 300."
+            },
+            {
+                question: "¿Cuál es una diferencia clave entre los ODS y los Objetivos de Desarrollo del Milenio (ODM) en cuanto a su alcance?",
+                options: ["a) Los ODS solo se dirigen a los países en desarrollo.", "b) Los ODM abordaban las causas fundamentales de la pobreza.", "c) Los ODS tienen un alcance más amplio y van más allá que los ODM.", "d) Los ODS no abordan el cambio climático."],
+                correctAnswer: "c) Su alcance más amplio."
+            },
+            {
+                question: "¿Qué abarcaban principalmente los ODM en cuanto a su aplicación?",
+                options: ["a) Eran de aplicación universal para todos los países.", "b) Estaban dirigidos solo a los países en desarrollo.", "c) Incluían el crecimiento económico y la industrialización.", "d) Se centraban en la protección del medio ambiente."],
+                correctAnswer: "b) Estaban dirigidos solo a los países en desarrollo."
+            },
+            {
+                question: "¿Cuáles son las tres dimensiones del desarrollo sostenible que abarcan los ODS?",
+                options: ["a) Pobreza, hambre y educación.", "b) Planeta, personas y prosperidad.", "c) Crecimiento económico, inclusión social y protección del medio ambiente.", "d) Salud, paz y alianzas."],
+                correctAnswer: "c) Crecimiento económico, inclusión social y protección del medio ambiente."
+            },
+            {
+                question: "¿Cuáles son los cinco ejes centrales en torno a los cuales gira la Agenda 2030?",
+                options: ["a) Pobreza, hambre, salud, educación y género.", "b) Planeta, personas, prosperidad, paz y alianzas.", "c) Financiación, tecnología, datos, instituciones y capacidad.", "d) Crecimiento, inclusión, protección, justicia y cooperación."],
+                correctAnswer: "b) Planeta, personas, prosperidad, paz y alianzas."
+            },
+            {
+                question: "¿Qué elemento fundamental de los ODS destaca la atención prestada a los medios de aplicación?",
+                options: ["a) La erradicación de la pobreza extrema.", "b) La movilización de recursos financieros, el desarrollo de la capacidad y la tecnología, los datos y las instituciones.", "c) La reducción de las desigualdades entre países.", "d) El fomento de la agricultura sostenible."],
+                correctAnswer: "b) La movilización de recursos financieros, el desarrollo de la capacidad y la tecnología, los datos y las instituciones."
+            },
+            {
+                question: "¿Qué Acuerdo entró en vigor en 2016 y responde a la necesidad de limitar el aumento de las temperaturas globales?",
+                options: ["a) El Protocolo de Kioto.", "b) La Convención Marco de las Naciones Unidas sobre el Cambio Climático.", "c) El Acuerdo de París.", "d) La Agenda de Acción de Addis Abeba."],
+                correctAnswer: "c) El Acuerdo de París."
+            },
+            {
+                question: "¿Cuál es el Objetivo de Desarrollo Sostenible número 1?",
+                options: ["a) Hambre cero.", "b) Fin de la pobreza.", "c) Salud y bienestar.", "d) Educación de calidad."],
+                correctAnswer: "b) Fin de la pobreza."
+            },
+            {
+                question: "¿Cuál es el ODS que busca poner fin al hambre, conseguir la seguridad alimentaria y una mejor nutrición, y promover la agricultura sostenible?",
+                options: ["a) ODS 1.", "b) ODS 2.", "c) ODS 3.", "d) ODS 4."],
+                correctAnswer: "b) ODS 2."
+            },
+            {
+                question: "El ODS 3 se centra en:",
+                options: ["a) Agua limpia y saneamiento.", "b) Energía asequible y no contaminante.", "c) Salud y bienestar.", "d) Trabajo decente y crecimiento económico."],
+                correctAnswer: "c) Salud y bienestar."
+            },
+            {
+                question: "¿Qué ODS busca garantizar una educación de calidad inclusiva y equitativa, y promover las oportunidades de aprendizaje permanente para todos?",
+                options: ["a) ODS 3.", "b) ODS 4.", "c) ODS 5.", "d) ODS 6."],
+                correctAnswer: "b) ODS 4."
+            },
+            {
+                question: "La igualdad de género y el empoderamiento de todas las mujeres y niñas corresponden al ODS:",
+                options: ["a) 4.", "b) 5.", "c) 6.", "d) 7."],
+                correctAnswer: "b) 5."
+            },
+            {
+                question: "¿Qué ODS se relaciona con garantizar la disponibilidad y la gestión sostenible del agua y el saneamiento para todos?",
+                options: ["a) ODS 5.", "b) ODS 6.", "c) ODS 7.", "d) ODS 8."],
+                correctAnswer: "b) ODS 6."
+            },
+            {
+                question: "El ODS 7 se refiere a:",
+                options: ["a) Ciudades y comunidades sostenibles.", "b) Producción y consumo responsables.", "c) Energía asequible y no contaminante.", "d) Acción por el clima."],
+                correctAnswer: "c) Energía asequible y no contaminante."
+            },
+            {
+                question: "¿Cuál es el ODS que fomenta el crecimiento económico sostenido, inclusivo y sostenible, el empleo pleno y productivo, y el trabajo decente para todos?",
+                options: ["a) ODS 7.", "b) ODS 8.", "c) ODS 9.", "d) ODS 10."],
+                correctAnswer: "b) ODS 8."
+            },
+            {
+                question: "El ODS 9 trata sobre:",
+                options: ["a) Reducción de las desigualdades.", "b) Ciudades y comunidades sostenibles.", "c) Industria, innovación e infraestructura.", "d) Vida submarina."],
+                correctAnswer: "c) Industria, innovación e infraestructura."
+            },
+            {
+                question: "¿Qué ODS busca reducir las desigualdades entre países y dentro de ellos?",
+                options: ["a) ODS 9.", "b) ODS 10.", "c) ODS 11.", "d) ODS 12."],
+                correctAnswer: "b) ODS 10."
+            },
+            {
+                question: "El ODS 11 se centra en:",
+                options: ["a) Vida de ecosistemas terrestres.", "b) Paz, justicia e instituciones sólidas.", "c) Ciudades y comunidades sostenibles.", "d) Alianzas para lograr los objetivos."],
+                correctAnswer: "c) Ciudades y comunidades sostenibles."
+            },
+            {
+                question: "¿Qué ODS tiene como objetivo garantizar las pautas de consumo y de producción sostenibles?",
+                options: ["a) ODS 10.", "b) ODS 11.", "c) ODS 12.", "d) ODS 13."],
+                correctAnswer: "c) ODS 12."
+            },
+            {
+                question: "La Acción por el Clima, tomando medidas urgentes para combatir el cambio climático y sus efectos, es el ODS:",
+                options: ["a) 12.", "b) 13.", "c) 14.", "d) 15."],
+                correctAnswer: "b) 13."
+            },
+            {
+                question: "¿Qué ODS se dedica a conservar y utilizar de forma sostenible los océanos, mares y recursos marinos?",
+                options: ["a) ODS 13.", "b) ODS 14.", "c) ODS 15.", "d) ODS 16."],
+                correctAnswer: "b) ODS 14."
+            },
+            {
+                question: "El ODS 15 se relaciona con:",
+                options: ["a) La conservación de zonas costeras y marinas.", "b) Proteger y restaurar los ecosistemas terrestres.", "c) Reducir todas las formas de violencia.", "d) La movilización de recursos domésticos."],
+                correctAnswer: "b) Proteger y restaurar los ecosistemas terrestres."
+            },
+            {
+                question: "¿Qué ODS promueve sociedades pacíficas e inclusivas para el desarrollo sostenible, facilita acceso a la justicia para todos y crea instituciones eficaces, responsables e inclusivas?",
+                options: ["a) ODS 14.", "b) ODS 15.", "c) ODS 16.", "d) ODS 17."],
+                correctAnswer: "c) ODS 16."
+            },
+            {
+                question: "El ODS 17 se centra en:",
+                options: ["a) La reducción de la pobreza extrema.", "b) La erradicación del hambre.", "c) Las alianzas para lograr los objetivos.", "d) La igualdad de género."],
+                correctAnswer: "c) Las alianzas para lograr los objetivos."
+            },
+            {
+                question: "¿Cuál de las siguientes es una de las metas del ODS 1 (Fin de la pobreza)?",
+                options: ["a) Malnutrición.", "b) Pobreza extrema.", "c) Mortalidad materna.", "d) Calidad de la educación primaria."],
+                correctAnswer: "b) Pobreza extrema."
+            },
+            {
+                question: "Dentro del ODS 2 (Hambre Cero), ¿cuál de las siguientes es una de sus metas?",
+                options: ["a) Reducir la violencia de género.", "b) Poner fin al hambre.", "c) Acceso al agua potable.", "d) Eficiencia energética."],
+                correctAnswer: "b) Poner fin al hambre."
+            },
+            {
+                question: "¿Qué meta pertenece al ODS 3 (Salud y bienestar)?",
+                options: ["a) Producción agrícola a pequeña escala.", "b) Acceso igualitario a la formación superior.", "c) Enfermedades transmisibles.", "d) Fomento de pequeña y mediana empresa."],
+                correctAnswer: "c) Enfermedades transmisibles."
+            },
+            {
+                question: "Una meta del ODS 4 (Educación de calidad) es:",
+                options: ["a) Matrimonio infantil.", "b) Acceso universal a la energía.", "c) Cualificación de docentes.", "d) Turismo sostenible."],
+                correctAnswer: "c) Cualificación de docentes."
+            },
+            {
+                question: "¿Cuál de las siguientes es una meta del ODS 5 (Igualdad de género)?",
+                options: ["a) Contaminación y aguas residuales.", "b) Violencia de género.", "c) Crecimiento económico sostenido.", "d) Infraestructura sostenible."],
+                correctAnswer: "b) Violencia de género."
+            },
+            {
+                question: "En el ODS 6 (Agua limpia y saneamiento), una de sus metas es:",
+                options: ["a) Reducir las desigualdades de ingresos.", "b) Acceso al agua potable.", "c) Desperdicios de alimentos.", "d) Lucha contra la desertificación."],
+                correctAnswer: "b) Acceso al agua potable."
+            },
+            {
+                question: "¿Qué meta se encuentra dentro del ODS 7 (Energía asequible y no contaminante)?",
+                options: ["a) Acceso a la vivienda.", "b) Energía renovable.", "c) Contaminación marina.", "d) Traspaso de tecnologías."],
+                correctAnswer: "b) Energía renovable."
+            },
+            {
+                question: "Una de las metas del ODS 8 (Trabajo decente y crecimiento económico) es:",
+                options: ["a) Esclavitud, trata y trabajo infantil.", "b) Urbanización inclusiva y sostenible.", "c) Acido de océanos.", "d) Coherencia de políticas."],
+                correctAnswer: "a) Esclavitud, trata y trabajo infantil."
+            },
+            {
+                question: "¿Cuál de las siguientes es una meta del ODS 9 (Industria, innovación e infraestructura)?",
+                options: ["a) Acceso a PYMES a servicios financieros.", "b) Ingresos 40% población pobre.", "c) Desastres y reducción de vulnerabilidad.", "d) Regulación de subsidios a combustibles fósiles."],
+                correctAnswer: "a) Acceso a PYMES a servicios financieros."
+            },
+            {
+                question: "Dentro del ODS 10 (Reducción de las desigualdades), ¿cuál es una de sus metas?",
+                options: ["a) Participación de países en desarrollo en IFIS y OOII.", "b) Contaminación y aguas residuales.", "c) Desperdicios de alimentos.", "d) Pesca a pequeña escala y artesanal."],
+                correctAnswer: "a) Participación de países en desarrollo en IFIS y OOII."
+            },
+            {
+                question: "Una meta del ODS 11 (Ciudades y comunidades sostenibles) es:",
+                options: ["a) Desechos y contaminación en ciudades.", "b) Investigación e inversión en energías limpias.", "c) Prevención, reducción, reciclado y reutilización de desechos.", "d) Reducir todas las formas de violencia."],
+                correctAnswer: "a) Desechos y contaminación en ciudades."
+            },
+            {
+                question: "¿Qué meta pertenece al ODS 12 (Producción y consumo responsables)?",
+                options: ["a) Movilización de recursos domésticos.", "b) Resiliencia y adaptación al cambio climático.", "c) Desperdicios de alimentos.", "d) Combate a la pesca ilegal y excesiva."],
+                correctAnswer: "c) Desperdicios de alimentos."
+            },
+            {
+                question: "Una meta del ODS 13 (Acción por el clima) es:",
+                options: ["a) Contaminación marina.", "b) Resiliencia y adaptación.", "c) Degradación y pérdida de biodiversidad.", "d) Corrientes financieras y de armas ilícitas."],
+                correctAnswer: "b) Resiliencia y adaptación."
+            },
+            {
+                question: "¿Cuál de las siguientes es una meta del ODS 14 (Vida submarina)?",
+                options: ["a) Mortalidad infantil.", "b) Acidificación de océanos.", "c) Acceso al agua potable.", "d) Patrocinio cultural y natural."],
+                correctAnswer: "b) Acidificación de océanos."
+            },
+            {
+                question: "En el ODS 15 (Vida de ecosistemas terrestres), una de sus metas es:",
+                options: ["a) Reducir todas las formas de violencia.", "b) Lucha contra la desertificación.", "c) Regulación de los mercados financieros mundiales.", "d) Acceso a la vivienda."],
+                correctAnswer: "b) Lucha contra la desertificación."
+            },
+            {
+                question: "¿Qué meta se encuentra dentro del ODS 16 (Paz, justicia e instituciones sólidas)?",
+                options: ["a) Maltrato, trata y explotación infantil.", "b) Uso eficiente de recursos hídricos.", "c) Uso de tecnología y acceso a tecnologías de la información y la comunicación.", "d) Exportaciones en países en desarrollo."],
+                correctAnswer: "a) Maltrato, trata y explotación infantil."
+            },
+            {
+                question: "Una de las metas del ODS 17 (Alianzas para lograr los objetivos) es:",
+                options: ["a) Reducir la pobreza relativa en todas sus dimensiones.", "b) Coherencia de políticas.", "c) Mortalidad materna.", "d) Malnutrición."],
+                correctAnswer: "b) Coherencia de políticas."
+            },
+            {
+                question: "¿Qué año fue el resultado de la Tercera Conferencia Internacional sobre la Financiación para el Desarrollo, que produjo la Agenda de Acción de Addis Abeba?",
+                options: ["a) 2010.", "b) 2015.", "c) 2016.", "d) 2020."],
+                correctAnswer: "b) 2015."
+            },
+            {
+                question: "La Agenda 2030 reconoce la necesidad de:",
+                options: ["a) Una mayor autonomía de los países sin intervención externa.", "b) Una alianza mundial revitalizada para apoyar las iniciativas nacionales.", "c) Reducir el número de indicadores globales.", "d) Centrarse exclusivamente en el crecimiento económico."],
+                correctAnswer: "b) Una alianza mundial revitalizada para apoyar las iniciativas nacionales."
+            },
+            {
+                question: "Los 17 Objetivos de Desarrollo Sostenible y las 169 metas son una iniciativa de:",
+                options: ["a) La Unión Europea.", "b) Las Naciones Unidas.", "c) El Fondo Monetario Internacional.", "d) El Banco Mundial."],
+                correctAnswer: "b) Las Naciones Unidas."
+            },
+            {
+                question: "Los ODS se supervisarán y examinarán a nivel mundial mediante:",
+                options: ["a) Informes anuales de cada país.", "b) Un conjunto de indicadores mundiales.", "c) Encuestas de opinión pública.", "d) Evaluaciones de impacto ambiental."],
+                correctAnswer: "b) Un conjunto de indicadores mundiales."
+            },
+            {
+                question: "El acuerdo sobre el marco de indicadores mundiales fue alcanzado por:",
+                options: ["a) El Consejo de Seguridad de la ONU.", "b) La Asamblea General de la ONU.", "c) La Comisión de Estadística de las Naciones Unidas.", "d) El Programa de las Naciones Unidas para el Desarrollo (PNUD)."],
+                correctAnswer: "c) La Comisión de Estadística de las Naciones Unidas."
+            },
+            {
+                question: "La aprobación de los indicadores mundiales para los ODS fue realizada por:",
+                options: ["a) El Consejo Económico y Social y la Asamblea General.", "b) Solo la Asamblea General.", "c) Solo el Consejo Económico y Social.", "d) El Grupo Interinstitucional y de Expertos."],
+                correctAnswer: "a) El Consejo Económico y Social y la Asamblea General."
+            },
+            {
+                question: "¿Qué aspecto de los ODS va más allá de los ODM al abordar las causas fundamentales de la pobreza y la necesidad universal de un desarrollo a favor de todas las personas?",
+                options: ["a) Su menor número de objetivos.", "b) Su enfoque exclusivo en el medio ambiente.", "c) Su alcance más amplio.", "d) Su limitación a los países en desarrollo."],
+                correctAnswer: "c) Su alcance más amplio."
+            },
+            {
+                question: "A diferencia de los ODM, los nuevos objetivos de desarrollo sostenible son de aplicación:",
+                options: ["a) Regional.", "b) Universal para todos los países.", "c) Limitada a los países menos adelantados.", "d) Solo para países con altos ingresos."],
+                correctAnswer: "b) Universal para todos los países."
+            },
+            {
+                question: "La Agenda 2030 no incluye entre sus ejes centrales:",
+                options: ["a) Planeta.", "b) Personas.", "c) Pobreza.", "d) Paz."],
+                correctAnswer: "c) Pobreza."
+            },
+            {
+                question: "Un elemento fundamental de los ODS es la gran atención que prestan a:",
+                options: ["a) La reducción de la ayuda oficial al desarrollo.", "b) Los medios de aplicación, la movilización de recursos financieros y la tecnología.", "c) La limitación del acceso a datos.", "d) El fomento de conflictos para la paz."],
+                correctAnswer: "b) Los medios de aplicación, la movilización de recursos financieros y la tecnología."
+            },
+            {
+                question: "La lucha contra el cambio climático es esencial para el desarrollo sostenible y la erradicación de la pobreza, según:",
+                options: ["a) Solo el Acuerdo de París.", "b) Los nuevos objetivos de desarrollo sostenible.", "c) Los Objetivos de Desarrollo del Milenio.", "d) Únicamente los países insulares."],
+                correctAnswer: "b) Los nuevos objetivos de desarrollo sostenible."
+            },
+            {
+                question: "¿Cuál es el objetivo principal del ODS 1: Fin de la pobreza?",
+                options: ["a) Reducir la pobreza extrema en países en desarrollo.", "b) Erradicar la pobreza en todas sus formas en todo el mundo.", "c) Combatir la pobreza solo en zonas rurales.", "d) Proporcionar asistencia financiera a los países más pobres."],
+                correctAnswer: "b) Erradicar la pobreza en todas sus formas en todo el mundo."
+            },
+            {
+                question: "El ODS 2: Hambre Cero, busca:",
+                options: ["a) Eliminar el hambre en la infancia.", "b) Poner fin al hambre y promover la agricultura sostenible.", "c) Garantizar la nutrición de los niños en edad escolar.", "d) Fomentar solo la producción de alimentos orgánicos."],
+                correctAnswer: "b) Poner fin al hambre y promover la agricultura sostenible."
+            },
+            {
+                question: "El ODS 3: Salud y bienestar, persigue:",
+                options: ["a) Reducir la mortalidad materna e infantil.", "b) Garantizar una vida saludable y promover el bienestar para todos en todas las edades.", "c) Acceso universal a vacunas.", "d) Combatir exclusivamente enfermedades transmisibles."],
+                correctAnswer: "b) Garantizar una vida saludable y promover el bienestar para todos en todas las edades."
+            },
+            {
+                question: "El ODS 4: Educación de calidad, se enfoca en:",
+                options: ["a) Mejorar la calidad de la educación universitaria.", "b) Garantizar una educación de calidad inclusiva y equitativa y promover el aprendizaje permanente.", "c) Proporcionar becas a estudiantes talentosos.", "d) Reducir la brecha digital en la educación."],
+                correctAnswer: "b) Garantizar una educación de calidad inclusiva y equitativa y promover el aprendizaje permanente."
+            },
+            {
+                question: "El ODS 5: Igualdad de género, tiene como fin:",
+                options: ["a) Promover la participación de las mujeres en política.", "b) Alcanzar la igualdad entre los géneros y empoderar a todas las mujeres y niñas.", "c) Proteger a las mujeres de la violencia doméstica.", "d) Fomentar la paridad salarial."],
+                correctAnswer: "b) Alcanzar la igualdad entre los géneros y empoderar a todas las mujeres y niñas."
+            },
+            {
+                question: "El ODS 6: Agua limpia y saneamiento, busca:",
+                options: ["a) Reducir la contaminación del agua.", "b) Garantizar la disponibilidad y gestión sostenible del agua y el saneamiento para todos.", "c) Mejorar la infraestructura de tratamiento de aguas residuales.", "d) Fomentar el uso eficiente de los recursos hídricos."],
+                correctAnswer: "b) Garantizar la disponibilidad y gestión sostenible del agua y el saneamiento para todos."
+            },
+            {
+                question: "El ODS 7: Energía asequible y no contaminante, aspira a:",
+                options: ["a) Aumentar la producción de energía renovable.", "b) Asegurar el acceso a energías asequibles, fiables, sostenibles y modernas para todos.", "c) Reducir el consumo de combustibles fósiles.", "d) Promover la eficiencia energética en la industria."],
+                correctAnswer: "b) Asegurar el acceso a energías asequibles, fiables, sostenibles y modernas para todos."
+            },
+            {
+                question: "El ODS 8: Trabajo decente y crecimiento económico, tiene como propósito:",
+                options: ["a) Crear más puestos de trabajo en países en desarrollo.", "b) Fomentar el crecimiento económico sostenido, inclusivo y sostenible, y el trabajo decente.", "c) Reducir el desempleo juvenil.", "d) Combatir el trabajo infantil y la esclavitud."],
+                correctAnswer: "b) Fomentar el crecimiento económico sostenido, inclusivo y sostenible, y el trabajo decente."
+            },
+            {
+                question: "El ODS 9: Industria, innovación e infraestructura, busca:",
+                options: ["a) Modernizar las industrias existentes.", "b) Desarrollar infraestructuras resilientes, promover la industrialización inclusiva y fomentar la innovación.", "c) Aumentar la inversión en investigación científica.", "d) Facilitar el acceso a las tecnologías de la información y la comunicación."],
+                correctAnswer: "b) Desarrollar infraestructuras resilientes, promover la industrialización inclusiva y fomentar la innovación."
+            },
+            {
+                question: "El ODS 10: Reducción de las desigualdades, persigue:",
+                options: ["a) Reducir la brecha entre ricos y pobres dentro de los países.", "b) Reducir las desigualdades entre países y dentro de ellos.", "c) Promover la inclusión social de grupos marginados.", "d) Fomentar políticas fiscales más equitativas."],
+                correctAnswer: "b) Reducir las desigualdades entre países y dentro de ellos."
+            },
+            {
+                question: "El ODS 11: Ciudades y comunidades sostenibles, busca:",
+                options: ["a) Mejorar la calidad de vida en las ciudades.", "b) Conseguir que las ciudades y los asentamientos humanos sean inclusivos, seguros, resilientes y sostenibles.", "c) Proteger el patrimonio cultural en las ciudades.", "d) Reducir la contaminación urbana."],
+                correctAnswer: "b) Conseguir que las ciudades y los asentamientos humanos sean inclusivos, seguros, resilientes y sostenibles."
+            },
+            {
+                question: "El ODS 12: Producción y consumo responsables, se orienta a:",
+                options: ["a) Promover el reciclaje y la reutilización.", "b) Garantizar las pautas de consumo y de producción sostenibles.", "c) Reducir el desperdicio de alimentos.", "d) Fomentar la sostenibilidad en las empresas."],
+                correctAnswer: "b) Garantizar las pautas de consumo y de producción sostenibles."
+            },
+            {
+                question: "El ODS 13: Acción por el clima, tiene como meta:",
+                options: ["a) Reducir las emisiones de gases de efecto invernadero.", "b) Tomar medidas urgentes para combatir el cambio climático y sus efectos.", "c) Desarrollar tecnologías de adaptación al cambio climático.", "d) Educar a la población sobre el cambio climático."],
+                correctAnswer: "b) Tomar medidas urgentes para combatir el cambio climático y sus efectos."
+            },
+            {
+                question: "El ODS 14: Vida submarina, busca:",
+                options: ["a) Reducir la contaminación de los océanos.", "b) Conservar y utilizar de forma sostenible los océanos, mares y recursos marinos.", "c) Combatir la pesca ilegal.", "d) Proteger los ecosistemas marinos y costeros."],
+                correctAnswer: "b) Conservar y utilizar de forma sostenible los océanos, mares y recursos marinos."
+            },
+            {
+                question: "El ODS 15: Vida de ecosistemas terrestres, aspira a:",
+                options: ["a) Combatir la deforestación.", "b) Proteger, restaurar y promover la utilización sostenible de los ecosistemas terrestres.", "c) Detener la pérdida de biodiversidad.", "d) Luchar contra la desertificación."],
+                correctAnswer: "b) Proteger, restaurar y promover la utilización sostenible de los ecosistemas terrestres."
+            },
+            {
+                question: "El ODS 16: Paz, justicia e instituciones sólidas, tiene como objetivo:",
+                options: ["a) Reducir la violencia y el maltrato infantil.", "b) Promover sociedades pacíficas e inclusivas para el desarrollo sostenible y crear instituciones sólidas.", "c) Combatir la corrupción y el soborno.", "d) Garantizar el acceso a la información pública."],
+                correctAnswer: "b) Promover sociedades pacíficas e inclusivas para el desarrollo sostenible y crear instituciones sólidas."
+            },
+            {
+                question: "El ODS 17: Alianzas para lograr los objetivos, se centra en:",
+                options: ["a) Aumentar la ayuda oficial para el desarrollo.", "b) Fortalecer los medios de ejecución y reavivar la alianza mundial para el desarrollo sostenible.", "c) Promover el comercio multilateral.", "d) Facilitar el traspaso de tecnologías a países en desarrollo."],
+                correctAnswer: "b) Fortalecer los medios de ejecución y reavivar la alianza mundial para el desarrollo sostenible."
+            },
+            {
+                question: "¿Qué meta del ODS 1 se refiere a la protección social?",
+                options: ["a) 1.1 Pobreza extrema.", "b) 1.2 Pobreza relativa en todas sus dimensiones.", "c) 1.3 Sistemas de protección social.", "d) 1.4 Acceso a servicios básicos y recursos financieros."],
+                correctAnswer: "c) 1.3 Sistemas de protección social."
+            },
+            {
+                question: "Dentro del ODS 2, ¿qué meta aborda la malnutrición?",
+                options: ["a) 2.1 Poner fin al hambre.", "b) 2.2 Malnutrición.", "c) 2.3 Producción agrícola a pequeña escala.", "d) 2.4 Prácticas agrícolas sostenibles y resilientes."],
+                correctAnswer: "b) 2.2 Malnutrición."
+            },
+            {
+                question: "¿Qué meta del ODS 3 se relaciona con la salud mental?",
+                options: ["a) 3.1 Mortalidad materna.", "b) 3.2 Mortalidad infantil.", "c) 3.3 Enfermedades transmisibles.", "d) 3.4 Enfermedades no transmisibles y salud mental."],
+                correctAnswer: "d) 3.4 Enfermedades no transmisibles y salud mental."
+            },
+            {
+                question: "En el ODS 4, ¿qué meta se enfoca en las competencias para acceder al empleo?",
+                options: ["a) 4.1 Calidad de la educación primaria y secundaria.", "b) 4.2 Calidad de la educación pre-escolar.", "c) 4.3 Acceso igualitario a la formación superior.", "d) 4.4 Competencias para acceder al empleo."],
+                correctAnswer: "d) 4.4 Competencias para acceder al empleo."
+            },
+            {
+                question: "¿Qué meta del ODS 5 aborda la participación plena de la mujer y la igualdad de oportunidades?",
+                options: ["a) 5.2 Violencia de género.", "b) 5.3 Matrimonio infantil y mutilación genital femenina.", "c) 5.4 Trabajo de cuidados domésticos.", "d) 5.5 Participación plena de la mujer e igualdad de oportunidades."],
+                correctAnswer: "d) 5.5 Participación plena de la mujer e igualdad de oportunidades."
+            },
+            {
+                question: "Dentro del ODS 6, ¿qué meta se relaciona con la calidad del agua y la contaminación?",
+                options: ["a) 6.1 Acceso al agua potable.", "b) 6.2 Accesos a servicios de saneamiento e higiene.", "c) 6.3 Calidad de agua. Contaminación y aguas residuales.", "d) 6.4 Uso eficiente de recursos hídricos."],
+                correctAnswer: "c) 6.3 Calidad de agua. Contaminación y aguas residuales."
+            },
+            {
+                question: "¿Qué meta del ODS 7 se refiere a la investigación e inversión en energías limpias?",
+                options: ["a) 7.1 Acceso universal a la energía.", "b) 7.2 Energías renovables.", "c) 7.3 Eficiencia energética.", "d) 7.A Investigación e inversión en energías limpias."],
+                correctAnswer: "d) 7.A Investigación e inversión en energías limpias."
+            },
+            {
+                question: "En el ODS 8, ¿qué meta se enfoca en el turismo sostenible?",
+                options: ["a) 8.8 Derechos laborales y trabajo seguro.", "b) 8.9 Turismo sostenible.", "c) 8.10 Servicios bancarios.", "d) 8.A Ayuda para el comercio en países en desarrollo."],
+                correctAnswer: "b) 8.9 Turismo sostenible."
+            },
+            {
+                question: "¿Qué meta del ODS 9 aborda el acceso de las PYMES a servicios financieros y cadenas de valor?",
+                options: ["a) 9.1 Infraestructura sostenible.", "b) 9.2 Industria inclusiva y sostenible.", "c) 9.3 Acceso a PYMES a servicios financieros y cadenas de valor.", "d) 9.4 Modernizar infraestructura, tecnología limpia."],
+                correctAnswer: "c) 9.3 Acceso a PYMES a servicios financieros y cadenas de valor."
+            },
+            {
+                question: "Dentro del ODS 10, ¿qué meta se refiere a la inclusión social, económica y política?",
+                options: ["a) 10.1 Ingresos 40% población pobre.", "b) 10.2 Inclusión social, económica y política.", "c) 10.3 Igualdad de oportunidades.", "d) 10.4 Políticas fiscales, salariales y de protección social."],
+                correctAnswer: "b) 10.2 Inclusión social, económica y política."
+            },
+            {
+                question: "¿Qué meta del ODS 11 se relaciona con el acceso a zonas verdes y espacios públicos seguros?",
+                options: ["a) 11.4 Patrimonio cultural y natural.", "b) 11.5 Desastres y reducción de vulnerabilidad.", "c) 11.6 Desechos y contaminación en ciudades.", "d) 11.7 Acceso a zonas verdes y espacios públicos seguros."],
+                correctAnswer: "d) 11.7 Acceso a zonas verdes y espacios públicos seguros."
+            },
+            {
+                question: "En el ODS 12, ¿qué meta se enfoca en la prevención, reducción, reciclado y reutilización de desechos?",
+                options: ["a) 12.3 Desperdicios de alimentos.", "b) 12.4 Gestión de desechos y productos químicos.", "c) 12.5 Prevención, reducción, reciclado y reutilización de desechos.", "d) 12.6 Empresas e informes sobre sostenibilidad."],
+                correctAnswer: "c) 12.5 Prevención, reducción, reciclado y reutilización de desechos."
+            },
+            {
+                question: "¿Qué meta del ODS 13 se refiere a la educación y sensibilización sobre el cambio climático?",
+                options: ["a) 13.1 Resiliencia y adaptación.", "b) 13.2 Políticas, estrategias y planes nacionales.", "c) 13.3 Educación y sensibilización.", "d) 13.A Movilización de recursos económicos."],
+                correctAnswer: "c) 13.3 Educación y sensibilización."
+            },
+            {
+                question: "Dentro del ODS 14, ¿qué meta aborda el combate a la pesca ilegal y excesiva?",
+                options: ["a) 14.3 Acidificación de océanos.", "b) 14.4 Regular una explotación pesquera sostenible.", "c) 14.5 Conservación de zonas costeras y marinas.", "d) 14.6 Combatir la pesca ilegal y excesiva."],
+                correctAnswer: "d) 14.6 Combatir la pesca ilegal y excesiva."
+            },
+            {
+                question: "¿Qué meta del ODS 15 se relaciona con la lucha contra la desertificación?",
+                options: ["a) 15.1 Conservar y usar de manera sostenible los ecosistemas.", "b) 15.2 Gestión sostenible de bosques.", "c) 15.3 Lucha contra la desertificación.", "d) 15.4 Conservación y ecosistemas montañosos."],
+                correctAnswer: "c) 15.3 Lucha contra la desertificación."
+            },
+            {
+                question: "En el ODS 16, ¿qué meta se enfoca en la corrupción y los sobornos?",
+                options: ["a) 16.3 Estado de derecho y acceso a la justicia.", "b) 16.4 Corrientes financieras y de armas ilícitas.", "c) 16.5 Corrupción y sobornos.", "d) 16.6 Instituciones eficaces y transparentes."],
+                correctAnswer: "c) 16.5 Corrupción y sobornos."
+            },
+            {
+                question: "¿Qué meta del ODS 17 se refiere a la asistencia oficial para el desarrollo?",
+                options: ["a) 17.1 Movilización de recursos domésticos.", "b) 17.2 0,7 Asistencia oficial para el desarrollo.", "c) 17.3 Recursos financieros adicionales.", "d) 17.4 Deuda."],
+                correctAnswer: "b) 17.2 0,7 Asistencia oficial para el desarrollo."
+            },
+            {
+                question: "¿Qué organismo internacional aprobó los indicadores mundiales para los ODS?",
+                options: ["a) La Comisión de Estadística de las Naciones Unidas.", "b) El Consejo Económico y Social.", "c) La Asamblea General.", "d) El Grupo Interinstitucional y de Expertos."],
+                correctAnswer: "a) La Comisión de Estadística de las Naciones Unidas."
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones es correcta sobre la Agenda 2030?",
+                options: ["a) Se centra únicamente en los países en desarrollo.", "b) Aborda solo el crecimiento económico.", "c) Gira en torno a cinco ejes centrales: planeta, personas, prosperidad, paz y alianzas.", "d) Excluye la protección del medio ambiente."],
+                correctAnswer: "c) Gira en torno a cinco ejes centrales: planeta, personas, prosperidad, paz y alianzas."
+            },
+            {
+                question: "¿Cuál es el propósito del Acuerdo de París?",
+                options: ["a) Reducir la pobreza extrema.", "b) Limitar el aumento de las temperaturas globales.", "c) Promover el comercio internacional.", "d) Fortalecer las instituciones de gobernanza."],
+                correctAnswer: "b) Limitar el aumento de las temperaturas globales."
+            },
+            {
+                question: "El ODS 16 incluye metas relacionadas con:",
+                options: ["a) La energía asequible y no contaminante.", "b) La reducción de todas las formas de violencia y la creación de instituciones sólidas.", "c) La vida submarina.", "d) La producción agrícola sostenible."],
+                correctAnswer: "b) La reducción de todas las formas de violencia y la creación de instituciones sólidas."
+            },
+            {
+                question: "La \"coherencia de políticas\" es una meta que se encuentra en el ODS:",
+                options: ["a) 15.", "b) 16.", "c) 17.", "d) 14."],
+                correctAnswer: "c) 17."
+            },
+            {
+                question: "Los Objetivos de Desarrollo Sostenible buscan erradicar la pobreza y lograr un desarrollo a favor de:",
+                options: ["a) Solo los países en desarrollo.", "b) Las grandes empresas multinacionales.", "c) Todas las personas.", "d) Las regiones económicamente más avanzadas."],
+                correctAnswer: "c) Todas las personas."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userAnswers = new Array(quizData.length).fill(null); // To store user's selected option index for each question
+
+        const quizContainer = document.getElementById('quiz-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const progressIndicator = document.getElementById('progress-indicator');
+        const scoreCard = document.getElementById('score-card');
+        const finalScore = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        // Function to load a question
+        function loadQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card" id="question-${currentQuestionIndex}">
+                    <p class="question-text">${currentQuestionIndex + 1}. ${currentQuestion.question}</p>
+                    <div class="options-grid">
+                        ${currentQuestion.options.map((option, index) => `
+                            <button class="option-button" data-option="${option}" data-index="${index}">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-message" id="feedback-${currentQuestionIndex}"></div>
+                </div>
+            `;
+
+            const optionsButtons = document.querySelectorAll(`#question-${currentQuestionIndex} .option-button`);
+            optionsButtons.forEach(button => {
+                button.addEventListener('click', handleOptionClick);
+                // If user has already answered this question, show their selection and feedback
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    const selectedOptionIndex = userAnswers[currentQuestionIndex];
+                    const selectedButton = optionsButtons[selectedOptionIndex];
+                    selectedButton.classList.add('selected');
+                    showFeedback(selectedButton, currentQuestion.correctAnswer);
+                }
+            });
+
+            updateNavigationButtons();
+            updateProgressIndicator();
+        }
+
+        // Function to handle option click
+        function handleOptionClick(event) {
+            const selectedButton = event.target;
+            const selectedOption = selectedButton.dataset.option;
+            const selectedOptionIndex = parseInt(selectedButton.dataset.index);
+            const currentQuestion = quizData[currentQuestionIndex];
+            const optionsButtons = document.querySelectorAll(`#question-${currentQuestionIndex} .option-button`);
+
+            // Disable all options for the current question after selection
+            optionsButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.remove('selected'); // Remove selected class from previous selection if any
+            });
+
+            // Mark the selected option
+            selectedButton.classList.add('selected');
+
+            // Store the user's answer
+            userAnswers[currentQuestionIndex] = selectedOptionIndex;
+
+            // Show feedback
+            showFeedback(selectedButton, currentQuestion.correctAnswer);
+        }
+
+        // Function to show feedback (correct/incorrect)
+        function showFeedback(selectedButton, correctAnswer) {
+            const feedbackMessage = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const currentQuestion = quizData[currentQuestionIndex];
+            const optionsButtons = document.querySelectorAll(`#question-${currentQuestionIndex} .option-button`);
+
+            // Reset classes for all options
+            optionsButtons.forEach(button => {
+                button.classList.remove('correct-answer', 'incorrect-answer');
+            });
+
+            if (selectedButton.dataset.option === correctAnswer) {
+                selectedButton.classList.add('correct-answer');
+                feedbackMessage.textContent = "¡Correcto!";
+                feedbackMessage.classList.remove('incorrect');
+                feedbackMessage.classList.add('correct');
+                // Only increment score if this is the first time answering correctly
+                if (userAnswers[currentQuestionIndex] !== 'correctly_answered') {
+                     // Check if this question was previously answered incorrectly
+                    const prevAnswer = userAnswers[currentQuestionIndex];
+                    if (prevAnswer !== null && quizData[currentQuestionIndex].options[prevAnswer] !== correctAnswer) {
+                        // If previously answered incorrectly, don't increment score again
+                    } else if (prevAnswer === null) { // Only increment if it's the first time answering
+                        score++;
+                    }
+                    userAnswers[currentQuestionIndex] = 'correctly_answered'; // Mark as correctly answered
+                }
+
+            } else {
+                selectedButton.classList.add('incorrect-answer');
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta era: ${correctAnswer}`;
+                feedbackMessage.classList.remove('correct');
+                feedbackMessage.classList.add('incorrect');
+                // Highlight the correct answer
+                optionsButtons.forEach(button => {
+                    if (button.dataset.option === correctAnswer) {
+                        button.classList.add('correct-answer');
+                    }
+                });
+                userAnswers[currentQuestionIndex] = selectedButton.dataset.index; // Store the incorrect attempt
+            }
+            feedbackMessage.style.display = 'block'; // Make feedback visible
+        }
+
+
+        // Function to update navigation buttons state
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextButton.textContent = "Finalizar Test";
+            } else {
+                nextButton.textContent = "Siguiente";
+            }
+        }
+
+        // Function to update progress indicator
+        function updateProgressIndicator() {
+            progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        // Event listener for Next button
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                // End of quiz
+                showFinalScore();
+            }
+        });
+
+        // Event listener for Previous button
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Function to show final score
+        function showFinalScore() {
+            quizContainer.classList.add('hidden');
+            document.querySelector('.navigation-buttons').classList.add('hidden');
+            progressIndicator.classList.add('hidden');
+            scoreCard.classList.remove('hidden');
+            finalScore.textContent = `${score} de ${quizData.length}`;
+        }
+
+        // Event listener for Restart button
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null); // Reset user answers
+            quizContainer.classList.remove('hidden');
+            document.querySelector('.navigation-buttons').classList.remove('hidden');
+            progressIndicator.classList.remove('hidden');
+            scoreCard.classList.add('hidden');
+            loadQuestion();
+        });
+
+        // Initial load
+        loadQuestion();
+    </script>
+</body>
+</html>

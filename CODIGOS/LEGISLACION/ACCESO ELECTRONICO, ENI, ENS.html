@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test ENS y ENI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .question-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: #e2e8f0;
+            border-radius: 8px;
+        }
+        .question-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c5282;
+            margin-bottom: 15px;
+        }
+        .options-list {
+            list-style: none;
+            padding: 0;
+        }
+        .option-item {
+            margin-bottom: 10px;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: 8px;
+            background-color: #cbd5e0;
+            color: #2d3748;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #a0aec0;
+            transform: translateY(-2px);
+        }
+        .option-button.correct {
+            background-color: #48bb78;
+            color: white;
+            box-shadow: 0 4px 10px rgba(72, 187, 120, 0.4);
+        }
+        .option-button.incorrect {
+            background-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button.prev {
+            background-color: #607d8b;
+            color: white;
+        }
+        .nav-button.prev:hover {
+            background-color: #455a64;
+            transform: translateY(-2px);
+        }
+        .nav-button.next {
+            background-color: #4299e1;
+            color: white;
+        }
+        .nav-button.next:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .result-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .result-message.correct-answer {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect-answer {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4299e1;
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-text {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c5282;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress-text" id="progressText"></div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div id="quizContainer"></div>
+        <div class="navigation-buttons">
+            <button id="prevBtn" class="nav-button prev">Anterior</button>
+            <button id="nextBtn" class="nav-button next">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "¿Qué documento oficial establece la política de seguridad a aplicar en la utilización de los medios electrónicos por las Administraciones Públicas?",
+                options: [
+                    "a) La Ley de Procedimiento Administrativo Común.",
+                    "b) El Esquema Nacional de Interoperabilidad (ENI).",
+                    "c) El Esquema Nacional de Seguridad (ENS).",
+                    "d) El Reglamento General de Protección de Datos (RGPD)."
+                ],
+                correctAnswer: "c) El Esquema Nacional de Seguridad (ENS)."
+            },
+            {
+                question: "¿Quiénes están obligados a aplicar el Esquema Nacional de Seguridad (ENS)?",
+                options: [
+                    "a) Únicamente la Administración General del Estado.",
+                    "b) Las Administraciones Públicas y las entidades privadas que presten servicios a entidades públicas.",
+                    "c) Solo las empresas de seguridad informática.",
+                    "d) Exclusivamente los organismos autónomos."
+                ],
+                correctAnswer: "b) Las Administraciones Públicas y las entidades privadas que presten servicios a entidades públicas."
+            },
+            {
+                question: "¿Cuál es el propósito principal de la aplicación del ENS?",
+                options: [
+                    "a) Reducir los costes de los servicios públicos.",
+                    "b) Proteger la información y los servicios ofrecidos por medios electrónicos.",
+                    "c) Fomentar la burocracia.",
+                    "d) Centralizar todos los datos en una única base de datos."
+                ],
+                correctAnswer: "b) Proteger la información y los servicios ofrecidos por medios electrónicos."
+            },
+            {
+                question: "¿Qué dimensiones de la seguridad pretende asegurar el ENS para la información y los servicios?",
+                options: [
+                    "a) Velocidad y eficiencia.",
+                    "b) Confidencialidad, integridad y disponibilidad.",
+                    "c) Acceso, confidencialidad, integridad, trazabilidad, autenticidad, disponibilidad y conservación.",
+                    "d) Flexibilidad y escalabilidad."
+                ],
+                correctAnswer: "c) Acceso, confidencialidad, integridad, trazabilidad, autenticidad, disponibilidad y conservación."
+            },
+            {
+                question: "Según el Real Decreto 311/2022 del ENS, ¿a quiénes se aplica también la normativa además de a las Administraciones Públicas?",
+                options: [
+                    "a) A cualquier empresa que use Internet.",
+                    "b) A sistemas de información de entidades privadas cuando presten servicios a entidades públicas.",
+                    "c) Solo a las empresas públicas.",
+                    "d) A ninguna otra entidad privada."
+                ],
+                correctAnswer: "b) A sistemas de información de entidades privadas cuando presten servicios a entidades públicas."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un principio básico del Esquema Nacional de Seguridad?",
+                options: [
+                    "a) Seguridad como proceso integral.",
+                    "b) Gestión de la seguridad basada en los riesgos.",
+                    "c) Externalización de todas las funciones de seguridad.",
+                    "d) Vigilancia continua."
+                ],
+                correctAnswer: "c) Externalización de todas las funciones de seguridad."
+            },
+            {
+                question: "El principio de 'Seguridad como proceso integral' hace hincapié en:",
+                options: [
+                    "a) Delegar toda la responsabilidad en un tercero.",
+                    "b) La concienciación de las personas y la de los responsables jerárquicos.",
+                    "c) La implementación de medidas de seguridad de forma aislada.",
+                    "d) La ausencia de coordinación entre departamentos."
+                ],
+                correctAnswer: "b) La concienciación de las personas y la de los responsables jerárquicos."
+            },
+            {
+                question: "La 'Gestión de la seguridad basada en los riesgos' implica:",
+                options: [
+                    "a) Eliminar por completo todos los riesgos.",
+                    "b) Realizar un análisis y gestión adecuados de los riesgos.",
+                    "c) Ignorar los riesgos de bajo impacto.",
+                    "d) Evitar cualquier tipo de evaluación de riesgos."
+                ],
+                correctAnswer: "b) Realizar un análisis y gestión adecuados de los riesgos."
+            },
+            {
+                question: "Los principios de 'Prevención, detección, respuesta y conservación' buscan:",
+                options: [
+                    "a) Únicamente evitar que se produzcan incidentes.",
+                    "b) Asegurar que las amenazas no se materialicen o que no afecten gravemente a datos o servicios.",
+                    "c) Ignorar las amenazas si no son críticas.",
+                    "d) Concentrarse solo en la recuperación tras un desastre."
+                ],
+                correctAnswer: "b) Asegurar que las amenazas no se materialicen o que no afecten gravemente a datos o servicios."
+            },
+            {
+                question: "El principio de 'Vigilancia continua' permite:",
+                options: [
+                    "a) Solo la prevención de accesos no autorizados.",
+                    "b) La detección de actividades o comportamientos anómalos y su oportuna respuesta.",
+                    "c) Reducir la inversión en medidas de seguridad.",
+                    "d) Asumir que los sistemas son intrínsecamente seguros."
+                ],
+                correctAnswer: "b) La detección de actividades o comportamientos anómalos y su oportuna respuesta."
+            },
+            {
+                question: "¿Cuál es el propósito de la 'Reevaluación periódica' en el contexto del ENS?",
+                options: [
+                    "a) Auditar la seguridad una única vez.",
+                    "b) Medir la evolución de la seguridad, detectando vulnerabilidades e identificando deficiencias.",
+                    "c) Realizar cambios en la política de seguridad sin previo aviso.",
+                    "d) Excluir la posibilidad de nuevas amenazas."
+                ],
+                correctAnswer: "b) Medir la evolución de la seguridad, detectando vulnerabilidades e identificando deficiencias."
+            },
+            {
+                question: "¿A qué se refiere el principio de 'Existencia de líneas de defensa'?",
+                options: [
+                    "a) A la delegación de la seguridad en un único departamento.",
+                    "b) A la implementación de múltiples capas de seguridad.",
+                    "c) A la falta de un plan de contingencia.",
+                    "d) A la responsabilidad exclusiva de los usuarios en la seguridad."
+                ],
+                correctAnswer: "b) A la implementación de múltiples capas de seguridad."
+            },
+            {
+                question: "¿Qué roles de responsabilidad son diferenciados en el ENS?",
+                options: [
+                    "a) Gerente y empleado.",
+                    "b) Responsable de la información, responsable del servicio, responsable de la seguridad y responsable del sistema.",
+                    "c) Auditor y consultor.",
+                    "d) Únicamente el Director de Tecnologías de la Información."
+                ],
+                correctAnswer: "b) Responsable de la información, responsable del servicio, responsable de la seguridad y responsable del sistema."
+            },
+            {
+                question: "La responsabilidad de la seguridad de los sistemas debe estar diferenciada de:",
+                options: [
+                    "a) La responsabilidad del responsable de los usuarios.",
+                    "b) La responsabilidad sobre la explotación de los sistemas.",
+                    "c) La responsabilidad de los proveedores de servicios.",
+                    "d) La responsabilidad de los administradores de red."
+                ],
+                correctAnswer: "b) La responsabilidad sobre la explotación de los sistemas."
+            },
+            {
+                question: "¿Qué se entiende por 'Política de seguridad' según el ENS?",
+                options: [
+                    "a) Un manual técnico sobre la configuración de redes.",
+                    "b) El conjunto de directrices que rigen la forma en que una organización gestiona y protege la información y los servicios.",
+                    "c) Una lista de incidentes de seguridad ocurridos.",
+                    "d) Un documento que define el hardware a utilizar."
+                ],
+                correctAnswer: "b) El conjunto de directrices que rigen la forma en que una organización gestiona y protege la información y los servicios."
+            },
+            {
+                question: "¿Qué debe incluir, como mínimo, la Política de seguridad de una organización?",
+                options: [
+                    "a) Solo los nombres de los empleados.",
+                    "b) Los objetivos, el marco regulatorio, los roles de seguridad y las directrices para la documentación.",
+                    "c) Únicamente los procedimientos de control de acceso físico.",
+                    "d) Solo un listado de las amenazas conocidas."
+                ],
+                correctAnswer: "b) Los objetivos, el marco regulatorio, los roles de seguridad y las directrices para la documentación."
+            },
+            {
+                question: "En los nuevos cambios del ENS, ¿qué requisito mínimo para la política de seguridad se ha ampliado para incluir?",
+                options: [
+                    "a) La descripción de los edificios de la organización.",
+                    "b) Los riesgos que se derivan del tratamiento de los datos personales.",
+                    "c) El plan de marketing digital.",
+                    "d) El número de servidores."
+                ],
+                correctAnswer: "b) Los riesgos que se derivan del tratamiento de los datos personales."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un requisito mínimo para el desarrollo de la política de seguridad según el ENS?",
+                options: [
+                    "a) Organización e implantación del proceso de seguridad.",
+                    "b) Análisis y gestión de los riesgos.",
+                    "c) La eliminación total de todos los riesgos posibles.",
+                    "d) Gestión de personal y formación."
+                ],
+                correctAnswer: "c) La eliminación total de todos los riesgos posibles."
+            },
+            {
+                question: "¿Cuál es la función del Responsable de la información?",
+                options: [
+                    "a) Implementar físicamente las medidas de seguridad.",
+                    "b) Determinar los requisitos de la información tratada.",
+                    "c) Realizar el mantenimiento de los equipos informáticos.",
+                    "d) Gestionar las copias de seguridad."
+                ],
+                correctAnswer: "b) Determinar los requisitos de la información tratada."
+            },
+            {
+                question: "En el caso de servicios externalizados, ¿qué debe designar el prestatario según el ENS?",
+                options: [
+                    "a) Un nuevo responsable de la información para cada cliente.",
+                    "b) Un Punto o Persona de Contacto (POC), Responsable de Seguridad de la organización.",
+                    "c) Al responsable del sistema del contratante.",
+                    "d) Un gestor de proyectos general."
+                ],
+                correctAnswer: "b) Un Punto o Persona de Contacto (POC), Responsable de Seguridad de la organización."
+            },
+            {
+                question: "¿Con qué frecuencia mínima debe realizarse la auditoría de la seguridad de los sistemas de información según el ENS?",
+                options: [
+                    "a) Anualmente.",
+                    "b) Cada dos años.",
+                    "c) Cada seis meses.",
+                    "d) Cada cinco años."
+                ],
+                correctAnswer: "b) Cada dos años."
+            },
+            {
+                question: "¿Cuándo se podrá extender la auditoría de seguridad de forma extraordinaria?",
+                options: [
+                    "a) Cuando el responsable de seguridad así lo desee sin justificación.",
+                    "b) Cuando no se hayan producido incidentes en el último año.",
+                    "c) Cuando haya cambios sustanciales en los sistemas de información que afecten a las medidas de seguridad.",
+                    "d) Nunca, la auditoría tiene una periodicidad fija e inamovible."
+                ],
+                correctAnswer: "c) Cuando haya cambios sustanciales en los sistemas de información que afecten a las medidas de seguridad."
+            },
+            {
+                question: "¿A quiénes se presenta el resultado de la auditoría de seguridad?",
+                options: [
+                    "a) Solo al responsable de la información.",
+                    "b) Al responsable del sistema y al de seguridad.",
+                    "c) A todos los empleados de la organización.",
+                    "d) A los usuarios finales del servicio."
+                ],
+                correctAnswer: "b) Al responsable del sistema y al de seguridad."
+            },
+            {
+                question: "En el caso de sistemas de categoría ALTA con deficiencias graves, ¿qué acción podrá tomar el responsable del sistema?",
+                options: [
+                    "a) Continuar operando sin cambios.",
+                    "b) Suspender temporalmente el tratamiento de informaciones o la prestación de servicios.",
+                    "c) Reducir la categoría del sistema para evitar problemas.",
+                    "d) Simplemente notificar las deficiencias y esperar."
+                ],
+                correctAnswer: "b) Suspender temporalmente el tratamiento de informaciones o la prestación de servicios."
+            },
+            {
+                question: "¿Qué organismo articula la respuesta a los incidentes de seguridad en el ámbito del Sector Público español?",
+                options: [
+                    "a) El Ministerio del Interior.",
+                    "b) La Agencia Española de Protección de Datos.",
+                    "c) El Centro Criptológico Nacional (CCN) a través de su estructura CCN-CERT.",
+                    "d) La Policía Nacional."
+                ],
+                correctAnswer: "c) El Centro Criptológico Nacional (CCN) a través de su estructura CCN-CERT."
+            },
+            {
+                question: "¿Con quiénes se coordinan los CSIRT (Computer Security Incident Response Team) del Sector Público?",
+                options: [
+                    "a) Con la Agencia Europea de Seguridad Aérea.",
+                    "b) Con el Ministerio del Interior, a través de su Oficina de Coordinación de Ciberseguridad.",
+                    "c) Con organizaciones internacionales exclusivamente.",
+                    "d) Únicamente con empresas de antivirus."
+                ],
+                correctAnswer: "b) Con el Ministerio del Interior, a través de su Oficina de Coordinación de Ciberseguridad."
+            },
+            {
+                question: "¿Qué órgano es competente para garantizar la interoperabilidad en ciberseguridad y criptografía en el ámbito del Sector Público?",
+                options: [
+                    "a) El Instituto Nacional de Estadística.",
+                    "b) El Centro Criptológico Nacional (CCN).",
+                    "c) La Secretaría General de Administración Digital.",
+                    "d) El Ministerio de Defensa."
+                ],
+                correctAnswer: "b) El Centro Criptológico Nacional (CCN)."
+            },
+            {
+                question: "¿Con qué frecuencia deben ser actualizadas y mejoradas las medidas de seguridad del ENS?",
+                options: [
+                    "a) Cada diez años.",
+                    "b) De forma anual.",
+                    "c) De forma continua.",
+                    "d) Únicamente cuando se produzca un ataque."
+                ],
+                correctAnswer: "c) De forma continua."
+            },
+            {
+                question: "¿Qué se obtiene para los sistemas que se adecúen al ENS?",
+                options: [
+                    "a) Una carta de felicitación.",
+                    "b) El Distintivo de Conformidad.",
+                    "c) Una acreditación provisional que caduca en seis meses.",
+                    "d) Un informe de recomendaciones no vinculante."
+                ],
+                correctAnswer: "b) El Distintivo de Conformidad."
+            },
+            {
+                question: "¿Qué se valora para determinar la categoría de seguridad de un sistema de información?",
+                options: [
+                    "a) Solo el número de usuarios que acceden al sistema.",
+                    "b) El impacto que tendría sobre la organización un incidente que afectase a la seguridad de la información tratada o de los servicios prestados.",
+                    "c) El presupuesto asignado a seguridad.",
+                    "d) La antigüedad de la infraestructura tecnológica."
+                ],
+                correctAnswer: "b) El impacto que tendría sobre la organización un incidente que afectase a la seguridad de la información tratada o de los servicios prestados."
+            },
+            {
+                question: "¿Con qué frecuencia debe reevaluarse la categoría de seguridad de los sistemas de información?",
+                options: [
+                    "a) Cada 5 años, sin excepciones.",
+                    "b) Cuando el responsable del sistema lo estime oportuno.",
+                    "c) Anualmente, o si se producen modificaciones significativas en el sistema o en los riesgos.",
+                    "d) Solo cuando se cambie de software."
+                ],
+                correctAnswer: "c) Anualmente, o si se producen modificaciones significativas en el sistema o en los riesgos."
+            },
+            {
+                question: "¿Cuáles son las dimensiones de la seguridad consideradas para determinar la categoría de un sistema según el ENS?",
+                options: [
+                    "a) Coste, tiempo y facilidad de uso.",
+                    "b) Confidencialidad, Integridad, Trazabilidad, Autenticidad y Disponibilidad (CITAD).",
+                    "c) Rapidez, escalabilidad y flexibilidad.",
+                    "d) Diseño, desarrollo y despliegue."
+                ],
+                correctAnswer: "b) Confidencialidad, Integridad, Trazabilidad, Autenticidad y Disponibilidad (CITAD)."
+            },
+            {
+                question: "¿Qué nivel de seguridad se asigna a una dimensión cuando las consecuencias de un incidente supongan un perjuicio limitado?",
+                options: [
+                    "a) Nivel ALTO.",
+                    "b) Nivel MEDIO.",
+                    "c) Nivel BAJO.",
+                    "d) Nivel CRÍTICO."
+                ],
+                correctAnswer: "c) Nivel BAJO."
+            },
+            {
+                question: "Si un sistema de información tiene alguna de sus dimensiones de seguridad en nivel MEDIO, y ninguna de las demás dimensiones alcanza un nivel superior, ¿qué categoría de seguridad tendrá el sistema?",
+                options: [
+                    "a) BÁSICA.",
+                    "b) MEDIA.",
+                    "c) ALTA.",
+                    "d) CRÍTICA."
+                ],
+                correctAnswer: "b) MEDIA."
+            },
+            {
+                question: "¿En cuántos grupos se dividen las Medidas de Seguridad del ENS?",
+                options: [
+                    "a) Uno: Medidas Técnicas.",
+                    "b) Dos: Medidas Organizativas y Medidas Técnicas.",
+                    "c) Tres: Marco Organizativo, Marco Operacional y Medidas de Protección.",
+                    "d) Cuatro: Prevención, Detección, Respuesta y Recuperación."
+                ],
+                correctAnswer: "c) Tres: Marco Organizativo, Marco Operacional y Medidas de Protección."
+            },
+            {
+                question: "¿A qué se refieren las medidas del 'Marco organizativo [org]' en el ENS?",
+                options: [
+                    "a) A las medidas centradas en la protección de activos concretos.",
+                    "b) Al conjunto de medidas relacionadas con la organización global de la seguridad.",
+                    "c) A las medidas a tomar para proteger la operación diaria del sistema.",
+                    "d) Al control de acceso a las bases de datos."
+                ],
+                correctAnswer: "b) Al conjunto de medidas relacionadas con la organización global de la seguridad."
+            },
+            {
+                question: "¿A qué se refieren las medidas del 'Marco operacional [op]' en el ENS?",
+                options: [
+                    "a) A la organización global de la seguridad.",
+                    "b) A las medidas a tomar para proteger la operación del sistema.",
+                    "c) A la implementación de cortafuegos.",
+                    "d) Al diseño de la arquitectura de la red."
+                ],
+                correctAnswer: "b) A las medidas a tomar para proteger la operación del sistema."
+            },
+            {
+                question: "¿A qué se refieren las 'Medidas de protección [mp]' en el ENS?",
+                options: [
+                    "a) Al establecimiento de roles y responsabilidades.",
+                    "b) A la gestión de personal y la formación.",
+                    "c) A las medidas que se centran en proteger activos concretos.",
+                    "d) A la auditoría y mejora continua."
+                ],
+                correctAnswer: "c) A las medidas que se centran en proteger activos concretos."
+            },
+            {
+                question: "¿Qué categoría de seguridad requiere únicamente una autoevaluación para su declaración de conformidad con el ENS?",
+                options: [
+                    "a) ALTA.",
+                    "b) MEDIA.",
+                    "c) BÁSICA.",
+                    "d) Todas las categorías, sin excepción."
+                ],
+                correctAnswer: "c) BÁSICA."
+            },
+            {
+                question: "¿Qué capítulo fue eliminado en los nuevos cambios recogidos por el Esquema Nacional de Seguridad en 2022?",
+                options: [
+                    "a) El Capítulo I, de disposiciones generales.",
+                    "b) El Capítulo IV, relativo a comunicaciones electrónicas.",
+                    "c) El Capítulo V, de gestión de la seguridad.",
+                    "d) Ningún capítulo fue eliminado."
+                ],
+                correctAnswer: "b) El Capítulo IV, relativo a comunicaciones electrónicas."
+            },
+            {
+                question: "¿Cuál es el objetivo principal del Esquema Nacional de Interoperabilidad (ENI)?",
+                options: [
+                    "a) Limitar la comunicación entre Administraciones Públicas.",
+                    "b) Garantizar la capacidad de los sistemas de información de compartir información y conocimiento.",
+                    "c) Establecer la política de seguridad interna de cada organismo.",
+                    "d) Crear un sistema único de gestión documental."
+                ],
+                correctAnswer: "b) Garantizar la capacidad de los sistemas de información de compartir información y conocimiento."
+            },
+            {
+                question: "¿Cuáles son las tres dimensiones de la interoperabilidad reconocidas en el ENI?",
+                options: [
+                    "a) Interoperabilidad horizontal, vertical y diagonal.",
+                    "b) Interoperabilidad organizativa, semántica y técnica.",
+                    "c) Interoperabilidad de hardware, software y red.",
+                    "d) Interoperabilidad de datos, aplicaciones y servicios."
+                ],
+                correctAnswer: "b) Interoperabilidad organizativa, semántica y técnica."
+            },
+            {
+                question: "¿Quién define los modelos de datos y los vocabularios controlados en la dimensión semántica del ENI?",
+                options: [
+                    "a) El Centro Criptológico Nacional (CCN).",
+                    "b) La Agencia Española de Protección de Datos.",
+                    "c) La Secretaría de Estado de Digitalización e Inteligencia Artificial, a través del Centro de Interoperabilidad Semántica (CISE).",
+                    "d) El Ministerio de Justicia."
+                ],
+                correctAnswer: "c) La Secretaría de Estado de Digitalización e Inteligencia Artificial, a través del Centro de Interoperabilidad Semántica (CISE)."
+            },
+            {
+                question: "¿Qué característica fundamental deben cumplir los estándares incluidos en el Catálogo de Estándares del ENI?",
+                options: [
+                    "a) Ser propietarios y de pago.",
+                    "b) Ser cerrados y específicos para cada Administración.",
+                    "c) Ser abiertos y de uso generalizado.",
+                    "d) Ser definidos por una única empresa privada."
+                ],
+                correctAnswer: "c) Ser abiertos y de uso generalizado."
+            },
+            {
+                question: "¿Con qué frecuencia mínima debe revisarse el Catálogo de Estándares del ENI?",
+                options: [
+                    "a) Cada 5 años.",
+                    "b) Cada 2 años.",
+                    "c) Al menos 1 vez al año.",
+                    "d) Solo cuando se publica una nueva ley."
+                ],
+                correctAnswer: "c) Al menos 1 vez al año."
+            },
+            {
+                question: "¿Qué es INSIDE en el contexto del ENI?",
+                options: [
+                    "a) Una herramienta de análisis de seguridad de red.",
+                    "b) Un gestor de documentos y expedientes electrónicos que cumple con el ENI.",
+                    "c) Una plataforma para la firma electrónica avanzada.",
+                    "d) Un sistema de gestión de identidades."
+                ],
+                correctAnswer: "b) Un gestor de documentos y expedientes electrónicos que cumple con el ENI."
+            },
+            {
+                question: "¿Qué tipo de firma electrónica es usable solo por la Administración y su algoritmo de generación debe ser publicado por cada organismo?",
+                options: [
+                    "a) XADES.",
+                    "b) PADES.",
+                    "c) CADES.",
+                    "d) Código Seguro de Verificación (CSV)."
+                ],
+                correctAnswer: "d) Código Seguro de Verificación (CSV)."
+            },
+            {
+                question: "¿Cuál es la principal diferencia conceptual entre un documento electrónico y un expediente electrónico en el ENI?",
+                options: [
+                    "a) Son sinónimos, no hay diferencia.",
+                    "b) Un documento electrónico es una agrupación lógica, y un expediente electrónico es un conjunto ordenado de documentos electrónicos.",
+                    "c) Un expediente electrónico es un documento individual, y un documento electrónico es un conjunto de expedientes.",
+                    "d) El documento electrónico solo puede contener texto, el expediente electrónico puede contener multimedia."
+                ],
+                correctAnswer: "b) Un documento electrónico es una agrupación lógica, y un expediente electrónico es un conjunto ordenado de documentos electrónicos."
+            },
+            {
+                question: "¿Qué parte de un expediente electrónico se firma en el contexto del ENI para garantizar su integridad?",
+                options: [
+                    "a) Cada uno de los documentos individualmente.",
+                    "b) Únicamente los metadatos descriptivos.",
+                    "c) Su índice electrónico.",
+                    "d) La fecha de creación del expediente."
+                ],
+                correctAnswer: "c) Su índice electrónico."
+            },
+            {
+                question: "¿Cuál es la vigencia máxima de un apoderamiento registrado en el REA (Registro Electrónico de Apoderamientos)?",
+                options: [
+                    "a) 1 año.",
+                    "b) 3 años.",
+                    "c) 5 años.",
+                    "d) Indefinida, a menos que se revoque."
+                ],
+                correctAnswer: "c) 5 años."
+            },
+            {
+                question: "¿Qué es el PAG (Punto de Acceso General) de la Administración General del Estado?",
+                options: [
+                    "a) Un registro exclusivo para la AGE.",
+                    "b) Un portal web de la AGE que actúa como punto único de acceso a la información y servicios de todas las AAPP.",
+                    "c) Una plataforma para el intercambio de documentos físicos.",
+                    "d) Un sistema interno de gestión de expedientes."
+                ],
+                correctAnswer: "b) Un portal web de la AGE que actúa como punto único de acceso a la información y servicios de todas las AAPP."
+            },
+            {
+                question: "¿Qué significa la sigla 'SCSP' en el contexto de los Protocolos de Intermediación de datos del ENI?",
+                options: [
+                    "a) Sistema de Contratación del Sector Público.",
+                    "b) Sustitución de Certificados en Soporte Papel.",
+                    "c) Servicio Centralizado de Suministros.",
+                    "d) Sistema de Consulta de Servicios Públicos."
+                ],
+                correctAnswer: "b) Sustitución de Certificados en Soporte Papel."
+            },
+            {
+                question: "¿Qué normativa regula el Esquema Nacional de Interoperabilidad (ENI)?",
+                options: [
+                    "a) Real Decreto 3/2010 y Real Decreto 311/2022.",
+                    "b) Real Decreto 4/2010 y Ley 40/2015.",
+                    "c) Ley 39/2015 y Ley 40/2015.",
+                    "d) Reglamento (UE) nº 910/2014 (eIDAS)."
+                ],
+                correctAnswer: "b) Real Decreto 4/2010 y Ley 40/2015."
+            },
+            {
+                question: "En el ENS, ¿qué se utiliza para valorar los activos y aplicar medidas de seguridad?",
+                options: [
+                    "a) El número de empleados de la organización.",
+                    "b) Metodologías de análisis y gestión de riesgos (Probabilidad x Impacto).",
+                    "c) El presupuesto anual de la organización.",
+                    "d) La antigüedad de la infraestructura tecnológica."
+                ],
+                correctAnswer: "b) Metodologías de análisis y gestión de riesgos (Probabilidad x Impacto)."
+            },
+            {
+                question: "Si el ENI se desarrolla con Normas Técnicas de Interoperabilidad (NTI), ¿con qué se desarrolla el ENS para su implementación?",
+                options: [
+                    "a) Con Guías de Buenas Prácticas internacionales.",
+                    "b) Con Instrucciones Técnicas de Seguridad (ITS).",
+                    "c) Con Estándares ISO específicos.",
+                    "d) Con Recomendaciones de la Unión Europea."
+                ],
+                correctAnswer: "b) Con Instrucciones Técnicas de Seguridad (ITS)."
+            },
+            {
+                question: "¿Cuál de los siguientes fue introducido como un nuevo principio básico en el ENS 2022 en comparación con el ENS 2010?",
+                options: [
+                    "a) Prevención.",
+                    "b) Detección.",
+                    "c) Seguridad por diseño.",
+                    "d) Vigilancia continua."
+                ],
+                correctAnswer: "d) Vigilancia continua."
+            },
+            {
+                question: "¿Cuántas medidas de seguridad se incluyen en el Marco Organizativo [org] en el ENS 2022?",
+                options: [
+                    "a) 1 medida.",
+                    "b) 4 medidas.",
+                    "c) 33 medidas.",
+                    "d) 36 medidas."
+                ],
+                correctAnswer: "b) 4 medidas."
+            },
+            {
+                question: "¿Qué organismo es el encargado de autorizar a las entidades certificadoras para certificar la conformidad con el ENS?",
+                options: [
+                    "a) El Ministerio de Hacienda.",
+                    "b) La Entidad Nacional de Acreditación (ENAC).",
+                    "c) El Centro Criptológico Nacional (CCN).",
+                    "d) La Secretaría de Estado de Digitalización e Inteligencia Artificial."
+                ],
+                correctAnswer: "b) La Entidad Nacional de Acreditación (ENAC)."
+            },
+            {
+                question: "¿Qué herramientas se mencionan como guías y apoyo para la implementación y auditoría del ENS?",
+                options: [
+                    "a) Microsoft Word y Excel.",
+                    "b) INES (estado de cumplimiento del ENS) y CLARA (auditoría).",
+                    "c) Photoshop y GIMP.",
+                    "d) Software propietario de seguridad."
+                ],
+                correctAnswer: "b) INES (estado de cumplimiento del ENS) y CLARA (auditoría)."
+            },
+            {
+                question: "¿Qué se establece en la Serie CCN-STIC-800?",
+                options: [
+                    "a) La normativa sobre protección de datos personales.",
+                    "b) Las políticas y procedimientos adecuados para implementar las medidas contempladas en el ENS (RD 311/2022).",
+                    "c) Los requisitos para la publicación de datos abiertos.",
+                    "d) Las especificaciones para el diseño de bases de datos."
+                ],
+                correctAnswer: "b) Las políticas y procedimientos adecuados para implementar las medidas contempladas en el ENS (RD 311/2022)."
+            },
+            {
+                question: "Según la metodología del ENS, ¿qué paso se realiza inmediatamente después de 'Definir roles y asignar personas'?",
+                options: [
+                    "a) Auditar el sistema.",
+                    "b) Mejorar la seguridad.",
+                    "c) Valorar/Categorizar el sistema: Información/servicios.",
+                    "d) Preparar y aprobar la política de seguridad."
+                ],
+                correctAnswer: "c) Valorar/Categorizar el sistema: Información/servicios."
+            },
+            {
+                question: "¿Qué se pide valorar en CCN-STIC-803 para cada activo?",
+                options: [
+                    "a) Su coste de mantenimiento.",
+                    "b) Su nivel (bajo, medio o alto) en cada dimensión de seguridad (CITAD).",
+                    "c) Su tamaño en megabytes.",
+                    "d) Su vida útil."
+                ],
+                correctAnswer: "b) Su nivel (bajo, medio o alto) en cada dimensión de seguridad (CITAD)."
+            },
+            {
+                question: "¿Qué perfil de cumplimiento específico del ENS se menciona para Ayuntamientos de menos de 20.000 habitantes?",
+                options: [
+                    "a) CCN-STIC-801.",
+                    "b) CCN-STIC-808.",
+                    "c) CCN-STIC-883B.",
+                    "d) CCN-STIC-805."
+                ],
+                correctAnswer: "c) CCN-STIC-883B."
+            },
+            {
+                question: "En el contexto de las medidas de seguridad del ENS, ¿qué significa '[R1 o R2]' en la columna de Nivel de las dimensiones de seguridad en las tablas?",
+                options: [
+                    "a) Que solo se aplica el requisito 1.",
+                    "b) Que solo se aplica el requisito 2.",
+                    "c) Que se aplica el requisito 1 o el requisito 2, dependiendo del caso.",
+                    "d) Que se aplican ambos requisitos."
+                ],
+                correctAnswer: "c) Que se aplica el requisito 1 o el requisito 2, dependiendo del caso."
+            },
+            {
+                question: "En las tablas de medidas de seguridad del ENS, ¿a qué se refiere la columna 'Categoría'?",
+                options: [
+                    "a) A la categoría de la organización que implementa el ENS.",
+                    "b) A la categoría de seguridad del sistema (BÁSICA, MEDIA, ALTA).",
+                    "c) A la categoría del tipo de información (sensible, pública, etc.).",
+                    "d) A la categoría del personal responsable."
+                ],
+                correctAnswer: "b) A la categoría de seguridad del sistema (BÁSICA, MEDIA, ALTA)."
+            },
+            {
+                question: "¿Cuál de las siguientes es una de las 'Nuevas medidas' incluidas en el ENS 2022 en comparación con el ENS 2010?",
+                options: [
+                    "a) Control de acceso físico.",
+                    "b) Gestión de la configuración.",
+                    "c) Servicios en la nube.",
+                    "d) Protección de las telecomunicaciones."
+                ],
+                correctAnswer: "c) Servicios en la nube."
+            },
+            {
+                question: "¿Qué formato de firma electrónica es el más adecuado cuando el documento original es un PDF y se desea que la firma forme parte del documento?",
+                options: [
+                    "a) CADES.",
+                    "b) XADES.",
+                    "c) PADES.",
+                    "d) OOXML."
+                ],
+                correctAnswer: "c) PADES."
+            },
+            {
+                question: "¿Cuál es el perfil mínimo de firma electrónica admitido por la Administración en el contexto de AdES (Advanced electronic Signature)?",
+                options: [
+                    "a) AdES - BES.",
+                    "b) AdES - EPES.",
+                    "c) AdES - T.",
+                    "d) AdES - A."
+                ],
+                correctAnswer: "b) AdES - EPES."
+            },
+            {
+                question: "¿Qué información adicional añade el perfil de firma AdES - T a una firma básica?",
+                options: [
+                    "a) Referencias a los certificados utilizados.",
+                    "b) Sellado de tiempo.",
+                    "c) Información de revocación de certificados.",
+                    "d) La política de firma utilizada."
+                ],
+                correctAnswer: "b) Sellado de tiempo."
+            },
+            {
+                question: "¿Qué información añade el perfil de firma AdES - XL (eXtended Long term) a una firma?",
+                options: [
+                    "a) Solo el sellado de tiempo.",
+                    "b) Referencias a los certificados.",
+                    "c) Los certificados y la información de revocación de los mismos.",
+                    "d) Sellos de tiempo periódicos adicionales."
+                ],
+                correctAnswer: "c) Los certificados y la información de revocación de los mismos."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un formato de firma electrónica estandarizado?",
+                options: [
+                    "a) XADES.",
+                    "b) PADES.",
+                    "c) JPG.",
+                    "d) CADES."
+                ],
+                correctAnswer: "c) JPG."
+            },
+            {
+                question: "¿Qué formato de firma se considera más apropiado para firmar ficheros grandes, optimizando el espacio al guardar la información de forma binaria?",
+                options: [
+                    "a) XADES.",
+                    "b) PADES.",
+                    "c) CADES.",
+                    "d) XMLDSIG."
+                ],
+                correctAnswer: "c) CADES."
+            },
+            {
+                question: "¿Cuál es el formato de resultado de una firma XADES?",
+                options: [
+                    "a) Un fichero binario.",
+                    "b) Un fichero de texto XML.",
+                    "c) Un documento PDF firmado.",
+                    "d) Una imagen firmada."
+                ],
+                correctAnswer: "b) Un fichero de texto XML."
+            },
+            {
+                question: "¿Qué tipo de certificados son los utilizados en la plataforma Cl@ve y están reconocidos por el Reglamento eIDAS?",
+                options: [
+                    "a) Certificados de servidor web.",
+                    "b) Certificados reconocidos (de firma y de sello).",
+                    "c) Certificados de prueba.",
+                    "d) Certificados auto-firmados."
+                ],
+                correctAnswer: "b) Certificados reconocidos (de firma y de sello)."
+            },
+            {
+                question: "¿Qué define el e-EMGDE (Esquema de Metadatos para la Gestión de Documentos Electrónicos)?",
+                options: [
+                    "a) Solo el contenido del documento.",
+                    "b) Agentes (Quién), Actividades (Cómo), Documentos (Qué) y Regulaciones (Por qué).",
+                    "c) Los lenguajes de programación a utilizar en el desarrollo.",
+                    "d) La estructura de la red informática."
+                ],
+                correctAnswer: "b) Agentes (Quién), Actividades (Cómo), Documentos (Qué) y Regulaciones (Por qué)."
+            },
+            {
+                question: "¿Cuál es el formato de intercambio de asientos registrales en el ámbito del ENI?",
+                options: [
+                    "a) PDF/A.",
+                    "b) SICRES v4.0 (XML).",
+                    "c) HTML5.",
+                    "d) TXT plano."
+                ],
+                correctAnswer: "b) SICRES v4.0 (XML)."
+            },
+            {
+                question: "¿Qué es datos.gob.es en el contexto de la reutilización de recursos de información?",
+                options: [
+                    "a) Un foro de discusión para programadores.",
+                    "b) Un portal que facilita la reutilización de la información del sector público.",
+                    "c) Una base de datos interna de la Administración.",
+                    "d) Una plataforma para el comercio electrónico."
+                ],
+                correctAnswer: "b) Un portal que facilita la reutilización de la información del sector público."
+            },
+            {
+                question: "¿Cuál es el propósito principal del Reglamento (UE) 2019/881?",
+                options: [
+                    "a) La regulación del comercio electrónico transfronterizo.",
+                    "b) La protección de los derechos de autor en el entorno digital.",
+                    "c) Relativo a ENISA (Agencia de la Unión Europea para la Ciberseguridad) y a la certificación de la ciberseguridad.",
+                    "d) El establecimiento de normas para las telecomunicaciones."
+                ],
+                correctAnswer: "c) Relativo a ENISA (Agencia de la Unión Europea para la Ciberseguridad) y a la certificación de la ciberseguridad."
+            },
+            {
+                question: "¿Qué es el Registro Electrónico Común (REC)?",
+                options: [
+                    "a) Un registro exclusivo para las empresas privadas.",
+                    "b) Un registro genérico para presentar solicitudes, escritos y comunicaciones dirigidas a la AGE y Organismos Públicos.",
+                    "c) Un sistema para la gestión de las nóminas de los empleados públicos.",
+                    "d) Una plataforma de contratación pública."
+                ],
+                correctAnswer: "b) Un registro genérico para presentar solicitudes, escritos y comunicaciones dirigidas a la AGE y Organismos Públicos."
+            },
+            {
+                question: "¿Qué se entiende por 'Reutilización de la información del sector público (RISP)'?",
+                options: [
+                    "a) El uso exclusivo por las Administraciones Públicas de sus propios datos.",
+                    "b) El uso por personas físicas o jurídicas, de datos generados y custodiados por organismos del sector público, con fines comerciales o no.",
+                    "c) La eliminación sistemática de los datos una vez finalizada su función inicial.",
+                    "d) La restricción del acceso a la información pública por motivos de seguridad."
+                ],
+                correctAnswer: "b) El uso por personas físicas o jurídicas, de datos generados y custodiados por organismos del sector público, con fines comerciales o no."
+            },
+            {
+                question: "¿Qué se requiere para que una notificación electrónica en la Dirección Electrónica Habilitada única (DEHú) se considere 'rechazada' por el interesado?",
+                options: [
+                    "a) Que el interesado envíe un documento explícito de rechazo.",
+                    "b) Que pasen 10 días naturales desde la puesta a disposición sin que se acceda a su contenido.",
+                    "c) Que el sistema falle al intentar entregar la notificación.",
+                    "d) Que la notificación sea enviada a una dirección de correo electrónico incorrecta."
+                ],
+                correctAnswer: "b) Que pasen 10 días naturales desde la puesta a disposición sin que se acceda a su contenido."
+            },
+            {
+                question: "¿Qué mecanismo criptográfico se utiliza para generar un hash o resumen de un documento?",
+                options: [
+                    "a) RSA.",
+                    "b) SHA-256/384/512.",
+                    "c) El-Gammal.",
+                    "d) DSA."
+                ],
+                correctAnswer: "b) SHA-256/384/512."
+            },
+            {
+                question: "En el proceso de firma electrónica, ¿qué se genera a partir del Message Digest (hash) utilizando una clave privada de un certificado?",
+                options: [
+                    "a) Un nuevo certificado digital.",
+                    "b) La firma 'básica' (AdES-BES).",
+                    "c) Un sello de tiempo.",
+                    "d) Un algoritmo de cifrado."
+                ],
+                correctAnswer: "b) La firma 'básica' (AdES-BES)."
+            },
+            {
+                question: "¿Qué significa 'ENVELOPING' en el contexto de los tipos de firma XMLDSIG?",
+                options: [
+                    "a) La firma se encuentra en un archivo separado del documento firmado.",
+                    "b) La firma envuelve el contenido firmado dentro del mismo elemento Signature.",
+                    "c) El contenido firmado envuelve la firma.",
+                    "d) La firma está encriptada."
+                ],
+                correctAnswer: "b) La firma envuelve el contenido firmado dentro del mismo elemento Signature."
+            },
+            {
+                question: "¿Qué información se añade en el perfil AdES-C (Cadena)?",
+                options: [
+                    "a) Un sellado de tiempo.",
+                    "b) Referencias a los certificados de la cadena de certificación y su estado de revocación.",
+                    "c) Los datos biométricos del firmante.",
+                    "d) El lugar geográfico de la firma."
+                ],
+                correctAnswer: "b) Referencias a los certificados de la cadena de certificación y su estado de revocación."
+            },
+            {
+                question: "¿Qué función tiene un 'sello' en el contexto de la firma electrónica, según la descripción del documento?",
+                options: [
+                    "a) Es una firma con marca de tiempos generada por una TSA (Autoridad de Sellado de Tiempo).",
+                    "b) Es un tipo de certificado para personas físicas.",
+                    "c) Es un dispositivo físico de seguridad.",
+                    "d) Es un algoritmo de cifrado simétrico."
+                ],
+                correctAnswer: "a) Es una firma con marca de tiempos generada por una TSA (Autoridad de Sellado de Tiempo)."
+            },
+            {
+                question: "¿Qué significa 'AdES-EPES' en el contexto de la firma electrónica?",
+                options: [
+                    "a) Firma básica sin política de firma.",
+                    "b) Firma básica BES con política de firma explícita.",
+                    "c) Firma con sellado de tiempo y conservación.",
+                    "d) Firma con información de revocación completa."
+                ],
+                correctAnswer: "b) Firma básica BES con política de firma explícita."
+            },
+            {
+                question: "¿Cuál de los siguientes NO es un requisito de la imagen para la digitalización de documentos según el ENI?",
+                options: [
+                    "a) En blanco y negro, color o grises.",
+                    "b) Con una resolución mínima de 200 ppp.",
+                    "c) Utilizar un formato propietario y no estándar.",
+                    "d) Los formatos admitidos deben estar según el Catálogo de Estándares."
+                ],
+                correctAnswer: "c) Utilizar un formato propietario y no estándar."
+            },
+            {
+                question: "¿Qué se utiliza para la identificación en una Política de firma, incluyendo el nombre del documento, versión, identificador, URI y fecha de expedición?",
+                options: [
+                    "a) Un archivo de audio.",
+                    "b) Un documento XML.",
+                    "c) Una base de datos relacional.",
+                    "d) Una imagen PNG."
+                ],
+                correctAnswer: "b) Un documento XML."
+            },
+            {
+                question: "¿Qué se recomienda para los sistemas que ya tuvieran el Distintivo de Conformidad del ENS?",
+                options: [
+                    "a) Ignorar el distintivo anterior y comenzar de nuevo el proceso.",
+                    "b) Mantener su vigencia y proceder a su renovación de conformidad.",
+                    "c) Realizar una autoevaluación mensual obligatoria.",
+                    "d) Eliminar el distintivo y obtener uno de menor nivel."
+                ],
+                correctAnswer: "b) Mantener su vigencia y proceder a su renovación de conformidad."
+            },
+            {
+                question: "¿Qué significa 'B1-T8' en el contexto de los epígrafes del documento de origen?",
+                options: [
+                    "a) Bloque 1 - Tema 8.",
+                    "b) Base de Datos 1 - Tipo 8.",
+                    "c) Banco de Preguntas 1 - Test 8.",
+                    "d) Boletín Oficial del Estado 1 - Tomo 8."
+                ],
+                correctAnswer: "a) Bloque 1 - Tema 8."
+            },
+            {
+                question: "¿Qué tipo de información suelen incluir las guías de la serie CCN-STIC 800?",
+                options: [
+                    "a) Grandes documentos legales y normativos.",
+                    "b) Guías de bajo nivel, concretas, sobre políticas y procedimientos para la implementación del ENS.",
+                    "c) Informes económicos y financieros.",
+                    "d) Catálogos de productos de software."
+                ],
+                correctAnswer: "b) Guías de bajo nivel, concretas, sobre políticas y procedimientos para la implementación del ENS."
+            },
+            {
+                question: "¿Quién es el Responsable de seguridad según el ENS?",
+                options: [
+                    "a) El que implementa y configura el hardware y software de seguridad.",
+                    "b) El que determina los requisitos de la información tratada.",
+                    "c) El que determina las decisiones para satisfacer requisitos de seguridad de información y servicios y las supervisa.",
+                    "d) El que se encarga del soporte técnico a los usuarios."
+                ],
+                correctAnswer: "c) El que determina las decisiones para satisfacer requisitos de seguridad de información y servicios y las supervisa."
+            },
+            {
+                question: "¿Qué principio básico del ENS se refiere a evitar que la ignorancia, falta de organización y de coordinación o de instrucciones adecuadas, constituyan fuentes de riesgo?",
+                options: [
+                    "a) Gestión de la seguridad basada en los riesgos.",
+                    "b) Vigilancia continua.",
+                    "c) Seguridad como proceso integral.",
+                    "d) Reevaluación periódica."
+                ],
+                correctAnswer: "c) Seguridad como proceso integral."
+            },
+            {
+                question: "¿Cuál es el significado de la sigla 'DIR3' en el contexto del ENI?",
+                options: [
+                    "a) Dirección de Infraestructuras y Redes 3.",
+                    "b) Digitalización de Recursos Informáticos 3.",
+                    "c) Directorio Común de Unidades Orgánicas y Oficinas.",
+                    "d) Documento de Intercambio de Registros 3."
+                ],
+                correctAnswer: "c) Directorio Común de Unidades Orgánicas y Oficinas."
+            },
+            {
+                question: "¿Cuál es el propósito del 'cierre lógico, no real, no administrativo' en el ciclo de vida de un expediente electrónico?",
+                options: [
+                    "a) Indicar que el expediente ha sido eliminado del sistema.",
+                    "b) Marcar que la tramitación ha terminado, pero el expediente puede ser reactivado en el futuro si es necesario.",
+                    "c) Proceder al archivo físico del expediente en papel.",
+                    "d) Restringir el acceso al expediente de forma permanente."
+                ],
+                correctAnswer: "b) Marcar que la tramitación ha terminado, pero el expediente puede ser reactivado en el futuro si es necesario."
+            },
+            {
+                question: "¿Qué es un 'Distintivo de Conformidad' en el contexto del ENS?",
+                options: [
+                    "a) Una sanción por incumplimiento del ENS.",
+                    "b) Una certificación de que un sistema de información cumple con los requisitos del ENS.",
+                    "c) Una herramienta de software para detectar vulnerabilidades.",
+                    "d) Un informe de incidentes de seguridad."
+                ],
+                correctAnswer: "b) Una certificación de que un sistema de información cumple con los requisitos del ENS."
+            },
+            {
+                question: "¿Qué se recomienda para la formación del personal en materia de seguridad según el ENS?",
+                options: [
+                    "a) Formar únicamente al personal de seguridad informática.",
+                    "b) Formar e informar al personal propio o ajeno de sus deberes, obligaciones y responsabilidades en materia de seguridad.",
+                    "c) Asumir que el personal ya tiene los conocimientos necesarios.",
+                    "d) Realizar la formación solo en caso de un incidente grave."
+                ],
+                correctAnswer: "b) Formar e informar al personal propio o ajeno de sus deberes, obligaciones y responsabilidades en materia de seguridad."
+            },
+            {
+                question: "¿Qué se entiende por 'Mínimo privilegio' en el ENS?",
+                options: [
+                    "a) Otorgar los máximos permisos a los usuarios para facilitar su trabajo.",
+                    "b) Diseñar y configurar los sistemas de información otorgando a usuarios y procesos los mínimos privilegios necesarios para realizar su tarea.",
+                    "c) Restringir el acceso a todos los datos sin distinción.",
+                    "d) Eliminar la necesidad de autenticación."
+                ],
+                correctAnswer: "b) Diseñar y configurar los sistemas de información otorgando a usuarios y procesos los mínimos privilegios necesarios para realizar su tarea."
+            },
+            {
+                question: "¿Cuál es el propósito de la clasificación de la información en el ENS?",
+                options: [
+                    "a) Determinar el formato de almacenamiento de los datos.",
+                    "b) Identificar las necesidades de protección de la información y los servicios.",
+                    "c) Establecer la propiedad de la información.",
+                    "d) Definir la forma de acceder a la información."
+                ],
+                correctAnswer: "b) Identificar las necesidades de protección de la información y los servicios."
+            },
+            {
+                question: "¿Qué se busca al aplicar la política de seguridad establecida por el ENS?",
+                options: [
+                    "a) Aumentar la velocidad de procesamiento de datos.",
+                    "b) Proteger la información y los servicios de las Administraciones Públicas.",
+                    "c) Reducir la cantidad de información almacenada.",
+                    "d) Facilitar la colaboración sin control."
+                ],
+                correctAnswer: "b) Proteger la información y los servicios de las Administraciones Públicas."
+            },
+            {
+                question: "¿Qué se exige a los pliegos de prescripciones administrativas o técnicas de los contratos que celebren las entidades del Sector Público en relación con el ENS?",
+                options: [
+                    "a) Que incluyan requisitos para asegurar la conformidad con el ENS.",
+                    "b) Que ignoren las cuestiones de seguridad para no encarecer el contrato.",
+                    "c) Que solo consideren el precio más bajo.",
+                    "d) Que se centren únicamente en la interoperabilidad."
+                ],
+                correctAnswer: "a) Que incluyan requisitos para asegurar la conformidad con el ENS."
+            },
+            {
+                question: "¿Qué principio básico del ENS enfatiza la importancia de la prevención para evitar que las amenazas se materialicen?",
+                options: [
+                    "a) Gestión de la seguridad basada en los riesgos.",
+                    "b) Prevención, detección, respuesta y conservación.",
+                    "c) Reevaluación periódica.",
+                    "d) Vigilancia continua."
+                ],
+                correctAnswer: "b) Prevención, detección, respuesta y conservación."
+            },
+            {
+                question: "¿Cómo se define el proceso de 'Gestión de la seguridad basada en los riesgos' en el ENS?",
+                options: [
+                    "a) Un proceso que permite eliminar todos los riesgos de seguridad.",
+                    "b) Un proceso para conocer los riesgos, decidir sobre su tratamiento y reducir su impacto.",
+                    "c) Un proceso que solo se activa después de un incidente de seguridad.",
+                    "d) Un proceso que delega la responsabilidad de los riesgos a terceros."
+                ],
+                correctAnswer: "b) Un proceso para conocer los riesgos, decidir sobre su tratamiento y reducir su impacto."
+            },
+            {
+                question: "¿Qué implica el principio de 'Diferenciación de responsabilidades' en el ENS?",
+                options: [
+                    "a) Que una única persona es responsable de toda la seguridad.",
+                    "b) Que las responsabilidades sobre la seguridad de los sistemas deben estar separadas de las responsabilidades sobre la explotación de los sistemas.",
+                    "c) Que todos los empleados tienen la misma responsabilidad en seguridad.",
+                    "d) Que las responsabilidades de seguridad son opcionales."
+                ],
+                correctAnswer: "b) Que las responsabilidades sobre la seguridad de los sistemas deben estar separadas de las responsabilidades sobre la explotación de los sistemas."
+            },
+            {
+                question: "¿Qué se considera el punto de partida y el elemento central de un sistema de gestión de la seguridad de la información?",
+                options: [
+                    "a) El software antivirus.",
+                    "b) La Política de seguridad.",
+                    "c) El plan de copias de seguridad.",
+                    "d) El inventario de hardware."
+                ],
+                correctAnswer: "b) La Política de seguridad."
+            },
+            {
+                question: "¿Quién es el responsable de definir los requisitos de los servicios prestados en el ENS?",
+                options: [
+                    "a) El responsable del sistema.",
+                    "b) El responsable de la seguridad.",
+                    "c) El responsable del servicio.",
+                    "d) El responsable de la información."
+                ],
+                correctAnswer: "c) El responsable del servicio."
+            },
+            {
+                question: "¿Qué documento debe preparar el responsable del sistema para la auditoría de seguridad?",
+                options: [
+                    "a) Un informe de gastos.",
+                    "b) Un informe de cumplimiento con el ENS.",
+                    "c) Un informe con las evidencias objetivas y los procedimientos de operación.",
+                    "d) Una lista de los usuarios del sistema."
+                ],
+                correctAnswer: "c) Un informe con las evidencias objetivas y los procedimientos de operación."
+            },
+            {
+                question: "¿Quién debe aprobar el informe de auditoría de seguridad?",
+                options: [
+                    "a) El personal técnico.",
+                    "b) El responsable del sistema y el responsable de seguridad.",
+                    "c) La empresa auditora externa.",
+                    "d) El Centro Criptológico Nacional."
+                ],
+                correctAnswer: "b) El responsable del sistema y el responsable de seguridad."
+            },
+            {
+                question: "¿Cuál es el propósito del informe de auditoría de seguridad?",
+                options: [
+                    "a) Determinar el presupuesto anual.",
+                    "b) Determinar la adecuación del sistema al ENS.",
+                    "c) Evaluar el rendimiento del personal.",
+                    "d) Listar los equipos obsoletos."
+                ],
+                correctAnswer: "b) Determinar la adecuación del sistema al ENS."
+            },
+            {
+                question: "¿Qué se hace en el caso de las deficiencias del sistema de seguridad detectadas en sistemas de categoría ALTA?",
+                options: [
+                    "a) Se ignoran si no son críticas.",
+                    "b) Se realiza un plan de adecuación para su resolución y se comunica a la Secretaría de Estado de Digitalización e IA.",
+                    "c) Se posponen hasta la siguiente auditoría.",
+                    "d) Se resuelven de forma opcional."
+                ],
+                correctAnswer: "b) Se realiza un plan de adecuación para su resolución y se comunica a la Secretaría de Estado de Digitalización e IA."
+            },
+            {
+                question: "¿Qué tipo de información se valora para determinar la categoría de seguridad de un sistema de información según el ENS?",
+                options: [
+                    "a) Datos personales, datos sensibles, etc.",
+                    "b) El tipo de hardware utilizado.",
+                    "c) El tamaño físico del centro de datos.",
+                    "d) La velocidad de la conexión a Internet."
+                ],
+                correctAnswer: "a) Datos personales, datos sensibles, etc."
+            },
+            {
+                question: "¿Qué categoría de seguridad se aplica cuando se evalúan las dimensiones de seguridad y al menos una de ellas tiene un nivel ALTO?",
+                options: [
+                    "a) BÁSICA.",
+                    "b) MEDIA.",
+                    "c) ALTA.",
+                    "d) CRÍTICA."
+                ],
+                correctAnswer: "c) ALTA."
+            },
+            {
+                question: "¿Qué tipo de sistemas requieren una certificación externa de conformidad con el ENS?",
+                options: [
+                    "a) Sistemas de categoría BÁSICA.",
+                    "b) Sistemas de categoría MEDIA.",
+                    "c) Sistemas de categoría ALTA.",
+                    "d) Ninguno, todos son por autoevaluación."
+                ],
+                correctAnswer: "c) Sistemas de categoría ALTA."
+            },
+            {
+                question: "¿Cuál es la finalidad de la serie CCN-STIC-800?",
+                options: [
+                    "a) Regular la contratación pública.",
+                    "b) Ser guías de apoyo para la aplicación del ENS.",
+                    "c) Definir los estándares de interoperabilidad.",
+                    "d) Establecer los requisitos para la accesibilidad web."
+                ],
+                correctAnswer: "b) Ser guías de apoyo para la aplicación del ENS."
+            },
+            {
+                question: "¿Qué se incluye en las 'Medidas de protección [mp]' en el ENS?",
+                options: [
+                    "a) La organización de la seguridad.",
+                    "b) La gestión de la operación.",
+                    "c) Medidas de protección para activos, como acceso, cifrado, etc.",
+                    "d) La auditoría del sistema."
+                ],
+                correctAnswer: "c) Medidas de protección para activos, como acceso, cifrado, etc."
+            },
+            {
+                question: "¿Qué se incluye en las 'Medidas del Marco Operacional [op]' en el ENS?",
+                options: [
+                    "a) Gestión de la configuración y de los cambios.",
+                    "b) Política de seguridad.",
+                    "c) Análisis y gestión de riesgos.",
+                    "d) Adquisición de productos de seguridad."
+                ],
+                correctAnswer: "a) Gestión de la configuración y de los cambios."
+            },
+            {
+                question: "¿Qué se incluye en las 'Medidas del Marco Organizativo [org]' en el ENS?",
+                options: [
+                    "a) Control de acceso a los sistemas.",
+                    "b) Gestión de personal y formación.",
+                    "c) Protección de la información.",
+                    "d) Seguridad de las comunicaciones."
+                ],
+                correctAnswer: "b) Gestión de personal y formación."
+            },
+            {
+                question: "¿Cuál de los siguientes no es un requisito mínimo de la política de seguridad?",
+                options: [
+                    "a) Roles o funciones de seguridad.",
+                    "b) Estructura del comité de seguridad.",
+                    "c) Diseño de interfaces gráficas de usuario.",
+                    "d) Directrices para la documentación."
+                ],
+                correctAnswer: "c) Diseño de interfaces gráficas de usuario."
+            },
+            {
+                question: "¿Qué se define en el e-EMGDE para los 'Documentos'?",
+                options: [
+                    "a) La extensión del archivo.",
+                    "b) Los metadatos mínimos para describir los documentos electrónicos.",
+                    "c) La tipología de letra.",
+                    "d) El idioma del documento."
+                ],
+                correctAnswer: "b) Los metadatos mínimos para describir los documentos electrónicos."
+            },
+            {
+                question: "¿Qué es el Catálogo de Estándares del ENI?",
+                options: [
+                    "a) Una lista de software propietario.",
+                    "b) Un inventario de hardware recomendado.",
+                    "c) Un conjunto de estándares tecnológicos abiertos y de uso generalizado para la interoperabilidad.",
+                    "d) Un listado de empresas proveedoras de servicios tecnológicos."
+                ],
+                correctAnswer: "c) Un conjunto de estándares tecnológicos abiertos y de uso generalizado para la interoperabilidad."
+            },
+            {
+                question: "¿Qué tipo de firma electrónica es adecuada para firmar documentos XML?",
+                options: [
+                    "a) PADES.",
+                    "b) CADES.",
+                    "c) XADES.",
+                    "d) Todas las anteriores."
+                ],
+                correctAnswer: "c) XADES."
+            },
+            {
+                question: "¿Qué tipo de firma electrónica se describe como 'firma básica' en la sección de AdES?",
+                options: [
+                    "a) AdES - XL.",
+                    "b) AdES - BES.",
+                    "c) AdES - A.",
+                    "d) AdES - C."
+                ],
+                correctAnswer: "b) AdES - BES."
+            },
+            {
+                question: "¿Qué significa 'DETACHED' en el contexto de los tipos de firma XMLDSIG?",
+                options: [
+                    "a) La firma envuelve el contenido firmado.",
+                    "b) La firma está contenida dentro del elemento Signature.",
+                    "c) La firma está separada del documento que se firma.",
+                    "d) La firma está oculta."
+                ],
+                correctAnswer: "c) La firma está separada del documento que se firma."
+            },
+            {
+                question: "¿Qué es el punto 'L' en los perfiles de firma AdES?",
+                options: [
+                    "a) Longevidad, incluyendo la información de revocación.",
+                    "b) Localización geográfica.",
+                    "c) Idioma.",
+                    "d) Longitud de la clave."
+                ],
+                correctAnswer: "a) Longevidad, incluyendo la información de revocación."
+            },
+            {
+                question: "¿Qué tipo de sellos de tiempo se añaden en el perfil AdES-A (Archival)?",
+                options: [
+                    "a) Un único sello de tiempo al inicio.",
+                    "b) Sellos de tiempo periódicos.",
+                    "c) No se añaden sellos de tiempo.",
+                    "d) Sellos de tiempo solo en la clave privada."
+                ],
+                correctAnswer: "b) Sellos de tiempo periódicos."
+            },
+            {
+                question: "¿Qué es la TSA (Time Stamping Authority)?",
+                options: [
+                    "a) Una autoridad de sellado de tiempo.",
+                    "b) Un tipo de firma electrónica.",
+                    "c) Un formato de documento.",
+                    "d) Un organismo de estandarización."
+                ],
+                correctAnswer: "a) Una autoridad de sellado de tiempo."
+            },
+            {
+                question: "¿Qué papel juega el hash (Message Digest) en el proceso de firma electrónica?",
+                options: [
+                    "a) Es el documento original.",
+                    "b) Es el resultado de la aplicación de un algoritmo criptográfico al documento, garantizando la integridad.",
+                    "c) Es la clave privada del firmante.",
+                    "d) Es el certificado digital."
+                ],
+                correctAnswer: "b) Es el resultado de la aplicación de un algoritmo criptográfico al documento, garantizando la integridad."
+            },
+            {
+                question: "¿Qué se almacena en el REA (Registro Electrónico de Apoderamientos)?",
+                options: [
+                    "a) Documentos escaneados.",
+                    "b) Apoderamientos otorgados por los ciudadanos para actuar en su nombre.",
+                    "c) Registros de entrada y salida de documentos.",
+                    "d) Certificados digitales."
+                ],
+                correctAnswer: "b) Apoderamientos otorgados por los ciudadanos para actuar en su nombre."
+            },
+            {
+                question: "¿Qué significa 'PAG' en el contexto del acceso electrónico?",
+                options: [
+                    "a) Punto de Acceso General.",
+                    "b) Plataforma de Administración Gubernamental.",
+                    "c) Portal de Ayuda al Ciudadano.",
+                    "d) Proceso de Acceso Global."
+                ],
+                correctAnswer: "a) Punto de Acceso General."
+            },
+            {
+                question: "¿Qué tipo de documento es el resultado de la digitalización, que debe ser una imagen fiel y auténtica?",
+                options: [
+                    "a) Documento de audio.",
+                    "b) Documento electrónico.",
+                    "c) Documento en papel.",
+                    "d) Documento de texto plano."
+                ],
+                correctAnswer: "b) Documento electrónico."
+            },
+            {
+                question: "¿Qué finalidad tiene el Código Seguro de Verificación (CSV)?",
+                options: [
+                    "a) Identificar al usuario que accede a un servicio.",
+                    "b) Permitir la verificación de la integridad y autenticidad de un documento electrónico.",
+                    "c) Cifrar la información confidencial.",
+                    "d) Generar firmas electrónicas avanzadas."
+                ],
+                correctAnswer: "b) Permitir la verificación de la integridad y autenticidad de un documento electrónico."
+            },
+            {
+                question: "¿Qué garantiza la 'trazabilidad' en el ENS?",
+                options: [
+                    "a) Que la información solo pueda ser accedida por su propietario.",
+                    "b) Que se pueda reconstruir la secuencia de acciones que han afectado a la información o a los servicios.",
+                    "c) Que la información esté disponible en todo momento.",
+                    "d) Que la información sea veraz y completa."
+                ],
+                correctAnswer: "b) Que se pueda reconstruir la secuencia de acciones que han afectado a la información o a los servicios."
+            },
+            {
+                question: "¿Qué establece el Real Decreto 311/2022 del ENS en cuanto a los pliegos de contratación?",
+                options: [
+                    "a) Que no deben contemplar requisitos de seguridad.",
+                    "b) Que deben contemplar requisitos para asegurar la conformidad con el ENS.",
+                    "c) Que solo consideren el coste económico.",
+                    "d) Que se limiten a aspectos técnicos no relacionados con la seguridad."
+                ],
+                correctAnswer: "b) Que deben contemplar requisitos para asegurar la conformidad con el ENS."
+            },
+            {
+                question: "¿Qué nivel de seguridad asignaría a un sistema si un incidente pudiera causar un perjuicio 'grave'?",
+                options: [
+                    "a) BAJO.",
+                    "b) MEDIO.",
+                    "c) ALTO.",
+                    "d) CRÍTICO."
+                ],
+                correctAnswer: "c) ALTO."
+            },
+            {
+                question: "¿Qué debe incluir el informe de auditoría de seguridad?",
+                options: [
+                    "a) Solo las deficiencias detectadas.",
+                    "b) Las deficiencias detectadas, las recomendaciones para su corrección y el plazo estimado para ello.",
+                    "c) Únicamente el listado de usuarios del sistema.",
+                    "d) Un resumen de los ingresos y gastos del sistema."
+                ],
+                correctAnswer: "b) Las deficiencias detectadas, las recomendaciones para su corrección y el plazo estimado para ello."
+            },
+            {
+                question: "¿A quién se le comunica la necesidad de realizar un plan de adecuación cuando se detectan deficiencias graves en un sistema de categoría ALTA?",
+                options: [
+                    "a) Al Ayuntamiento local.",
+                    "b) A la Secretaría de Estado de Digitalización e Inteligencia Artificial (SEADIA).",
+                    "c) A la Agencia Tributaria.",
+                    "d) Al Ministerio de Cultura."
+                ],
+                correctAnswer: "b) A la Secretaría de Estado de Digitalización e Inteligencia Artificial (SEADIA)."
+            },
+            {
+                question: "¿Qué se entiende por 'disponibilidad' en el ENS?",
+                options: [
+                    "a) La información solo es accesible por el propietario.",
+                    "b) La información puede ser accedida por cualquier persona.",
+                    "c) La capacidad de acceso y utilización de la información y los servicios por los usuarios autorizados cuando así lo requieran.",
+                    "d) La información está encriptada."
+                ],
+                correctAnswer: "c) La capacidad de acceso y utilización de la información y los servicios por los usuarios autorizados cuando así lo requieran."
+            },
+            {
+                question: "¿Qué tipo de datos se priorizan en la protección según el ENS?",
+                options: [
+                    "a) Datos públicos y de libre acceso.",
+                    "b) Datos personales y datos sensibles.",
+                    "c) Datos históricos no utilizados.",
+                    "d) Datos de marketing."
+                ],
+                correctAnswer: "b) Datos personales y datos sensibles."
+            },
+            {
+                question: "¿Cuál es el rol del CCN-CERT en el ENS?",
+                options: [
+                    "a) Realizar auditorías externas a todas las Administraciones.",
+                    "b) Articular la respuesta a los incidentes de seguridad del Sector Público.",
+                    "c) Desarrollar software de gestión de expedientes.",
+                    "d) Proporcionar servicios de alojamiento web."
+                ],
+                correctAnswer: "b) Articular la respuesta a los incidentes de seguridad del Sector Público."
+            },
+            {
+                question: "¿Cuál es uno de los objetivos de la 'reevaluación periódica' en el ENS?",
+                options: [
+                    "a) Aumentar el coste de la seguridad.",
+                    "b) Medir la evolución de la seguridad y detectar vulnerabilidades.",
+                    "c) Reducir el número de empleados en el equipo de seguridad.",
+                    "d) Eliminar la necesidad de auditorías."
+                ],
+                correctAnswer: "b) Medir la evolución de la seguridad y detectar vulnerabilidades."
+            },
+            {
+                question: "¿Qué herramienta se utiliza para la autoevaluación del ENS y para auditar la conformidad?",
+                options: [
+                    "a) Un procesador de texto.",
+                    "b) CLARA y otras herramientas del CCN.",
+                    "c) Un sistema de gestión de proyectos.",
+                    "d) Una hoja de cálculo simple."
+                ],
+                correctAnswer: "b) CLARA y otras herramientas del CCN."
+            },
+            {
+                question: "¿Qué incluye el concepto de 'seguridad como proceso integral'?",
+                options: [
+                    "a) Únicamente la tecnología.",
+                    "b) Personas, procesos, tecnología y organización.",
+                    "c) Solo los aspectos económicos.",
+                    "d) Exclusivamente la gestión de riesgos."
+                ],
+                correctAnswer: "b) Personas, procesos, tecnología y organización."
+            },
+            {
+                question: "¿Qué es un 'Activo' en el contexto de la gestión de la seguridad según el ENS?",
+                options: [
+                    "a) Un empleado de la organización.",
+                    "b) Cualquier componente del sistema de información o parte de la información tratada, que tiene valor para la organización.",
+                    "c) Un documento en papel.",
+                    "d) Un incidente de seguridad."
+                ],
+                correctAnswer: "b) Cualquier componente del sistema de información o parte de la información tratada, que tiene valor para la organización."
+            },
+            {
+                question: "¿Qué aspecto de la seguridad se considera al valorar el impacto de un incidente según el ENS?",
+                options: [
+                    "a) El color del hardware.",
+                    "b) El número de visitas a la página web.",
+                    "c) La probabilidad de que ocurra el incidente.",
+                    "d) Las consecuencias sobre la organización."
+                ],
+                correctAnswer: "d) Las consecuencias sobre la organización."
+            },
+            {
+                question: "¿Qué se entiende por 'gestión del riesgo' en el ENS?",
+                options: [
+                    "a) La eliminación total de las amenazas.",
+                    "b) El proceso para identificar, analizar, evaluar, tratar y monitorizar los riesgos.",
+                    "c) La transferencia de todos los riesgos a terceros.",
+                    "d) La ignorancia de los riesgos de bajo impacto."
+                ],
+                correctAnswer: "b) El proceso para identificar, analizar, evaluar, tratar y monitorizar los riesgos."
+            },
+            {
+                question: "¿Qué es una ITS (Instrucción Técnica de Seguridad)?",
+                options: [
+                    "a) Un documento legal vinculante.",
+                    "b) Una guía de buenas prácticas publicada por el CCN para el desarrollo del ENS.",
+                    "c) Un estándar internacional.",
+                    "d) Una normativa europea."
+                ],
+                correctAnswer: "b) Una guía de buenas prácticas publicada por el CCN para el desarrollo del ENS."
+            },
+            {
+                question: "¿Qué tipo de información se considera 'no pública' en el contexto de la información tratada por las AAPP?",
+                options: [
+                    "a) Información disponible en el BOE.",
+                    "b) Información sensible o que afecte a la privacidad de las personas.",
+                    "c) Información de contacto de organismos públicos.",
+                    "d) Información estadística agregada."
+                ],
+                correctAnswer: "b) Información sensible o que afecte a la privacidad de las personas."
+            },
+            {
+                question: "¿Qué nivel de seguridad de la información implica el perjuicio más alto?",
+                options: [
+                    "a) BAJO.",
+                    "b) MEDIO.",
+                    "c) ALTO.",
+                    "d) CRÍTICO."
+                ],
+                correctAnswer: "c) ALTO."
+            },
+            {
+                question: "¿Qué se incluye en la 'Gestión de la continuidad' dentro de las medidas del Marco Operacional [op] del ENS?",
+                options: [
+                    "a) La gestión de las copias de seguridad.",
+                    "b) El control de acceso físico.",
+                    "c) La concienciación del personal.",
+                    "d) El desarrollo de software seguro."
+                ],
+                correctAnswer: "a) La gestión de las copias de seguridad."
+            },
+            {
+                question: "¿Qué se busca con la 'conservación' de la información y los servicios en el ENS?",
+                options: [
+                    "a) Que la información sea accesible temporalmente.",
+                    "b) Asegurar que la información se guarda de forma que se pueda recuperar y mantener a largo plazo.",
+                    "c) Que la información se elimine automáticamente después de un tiempo.",
+                    "d) Que la información solo esté en formato físico."
+                ],
+                correctAnswer: "b) Asegurar que la información se guarda de forma que se pueda recuperar y mantener a largo plazo."
+            },
+            {
+                question: "¿Qué tipo de información puede ser 'reutilizada' por terceros según la normativa RISP?",
+                options: [
+                    "a) Solo la información personal privada.",
+                    "b) Datos generados y custodiados por organismos del sector público con fines comerciales o no.",
+                    "c) Información clasificada como secreto de Estado.",
+                    "d) Datos internos de recursos humanos."
+                ],
+                correctAnswer: "b) Datos generados y custodiados por organismos del sector público con fines comerciales o no."
+            },
+            {
+                question: "¿Qué plataforma se encarga de la gestión de la Dirección Electrónica Habilitada única (DEHú)?",
+                options: [
+                    "a) La plataforma Cl@ve.",
+                    "b) La Agencia Estatal Boletín Oficial del Estado (AEBOE).",
+                    "c) El Punto de Acceso General (PAG).",
+                    "d) El Registro Electrónico de Apoderamientos (REA)."
+                ],
+                correctAnswer: "b) La Agencia Estatal Boletín Oficial del Estado (AEBOE)."
+            },
+            {
+                question: "¿Qué es un certificado de 'sello electrónico' según el Reglamento eIDAS?",
+                options: [
+                    "a) Un certificado para personas físicas.",
+                    "b) Un certificado para personas jurídicas que garantiza la autenticidad e integridad de documentos electrónicos.",
+                    "c) Un certificado para cifrado de datos.",
+                    "d) Un certificado para servidores web."
+                ],
+                correctAnswer: "b) Un certificado para personas jurídicas que garantiza la autenticidad e integridad de documentos electrónicos."
+            },
+            {
+                question: "¿Qué entidad es responsable del mantenimiento del Catálogo de Estándares del ENI?",
+                options: [
+                    "a) El Ministerio de Defensa.",
+                    "b) La Secretaría General de Administración Digital (SGAD).",
+                    "c) La Agencia Española de Protección de Datos.",
+                    "d) El Instituto Nacional de Estadística."
+                ],
+                correctAnswer: "b) La Secretaría General de Administración Digital (SGAD)."
+            },
+            {
+                question: "¿Qué se entiende por 'autenticidad' en el ENS?",
+                options: [
+                    "a) Que la información no ha sido modificada.",
+                    "b) Que la información es original y no falsa.",
+                    "c) Que la información es accesible en todo momento.",
+                    "d) Que se puede verificar la identidad del origen de la información o servicio."
+                ],
+                correctAnswer: "d) Que se puede verificar la identidad del origen de la información o servicio."
+            },
+            {
+                question: "¿Qué se entiende por 'confidencialidad' en el ENS?",
+                options: [
+                    "a) Que la información está disponible para todos.",
+                    "b) Que la información solo es accesible por personas o entidades autorizadas.",
+                    "c) Que la información no puede ser modificada.",
+                    "d) Que la información es legible por máquinas."
+                ],
+                correctAnswer: "b) Que la información solo es accesible por personas o entidades autorizadas."
+            },
+            {
+                question: "¿Qué se entiende por 'integridad' en el ENS?",
+                options: [
+                    "a) Que la información es accesible.",
+                    "b) Que la información no ha sido alterada o destruida de manera no autorizada.",
+                    "c) Que la información es confidencial.",
+                    "d) Que la información se puede firmar electrónicamente."
+                ],
+                correctAnswer: "b) Que la información no ha sido alterada o destruida de manera no autorizada."
+            },
+            {
+                question: "¿Cuál es el objetivo de los 'Servicios en la nube' como nueva medida en el ENS 2022?",
+                options: [
+                    "a) Fomentar el uso de hardware propio.",
+                    "b) Asegurar la protección de la información y servicios cuando se utilizan servicios en la nube.",
+                    "c) Reducir la interoperabilidad.",
+                    "d) Limitar el acceso a los datos."
+                ],
+                correctAnswer: "b) Asegurar la protección de la información y servicios cuando se utilizan servicios en la nube."
+            },
+            {
+                question: "¿Qué tipo de firmas electrónicas son las 'firmas cualificadas' según el Reglamento eIDAS?",
+                options: [
+                    "a) Firmas básicas sin certificado.",
+                    "b) Firmas que cumplen con requisitos específicos y se basan en un certificado cualificado de firma electrónica.",
+                    "c) Firmas manuscritas digitalizadas.",
+                    "d) Firmas generadas con CSV."
+                ],
+                correctAnswer: "b) Firmas que cumplen con requisitos específicos y se basan en un certificado cualificado de firma electrónica."
+            },
+            {
+                question: "¿Qué función tiene un Prestador de Servicios de Confianza Cualificado (PSCC) según eIDAS?",
+                options: [
+                    "a) Ofrecer servicios de hardware.",
+                    "b) Ofrecer servicios de confianza como la emisión de certificados cualificados.",
+                    "c) Gestionar redes de comunicación.",
+                    "d) Desarrollar software de oficina."
+                ],
+                correctAnswer: "b) Ofrecer servicios de confianza como la emisión de certificados cualificados."
+            },
+            {
+                question: "¿Qué se recomienda para la gestión de las identidades en el ENS?",
+                options: [
+                    "a) Que cada sistema tenga su propio sistema de identidad.",
+                    "b) El uso de un sistema de gestión de identidades centralizado y federado.",
+                    "c) Eliminar la necesidad de identidades.",
+                    "d) Utilizar contraseñas muy sencillas."
+                ],
+                correctAnswer: "b) El uso de un sistema de gestión de identidades centralizado y federado."
+            },
+            {
+                question: "¿Cuál es el propósito del control de acceso en el ENS?",
+                options: [
+                    "a) Permitir el acceso ilimitado a todos los usuarios.",
+                    "b) Restringir el acceso a la información y los servicios solo a usuarios y procesos autorizados.",
+                    "c) No aplicar ningún tipo de control de acceso.",
+                    "d) Solo controlar el acceso físico a los edificios."
+                ],
+                correctAnswer: "b) Restringir el acceso a la información y los servicios solo a usuarios y procesos autorizados."
+            },
+            {
+                question: "¿Qué es una 'vulnerabilidad' en el contexto del ENS?",
+                options: [
+                    "a) Una característica de seguridad avanzada.",
+                    "b) Una debilidad en un sistema, procedimiento o control que puede ser explotada.",
+                    "c) Una medida de seguridad adicional.",
+                    "d) Un tipo de ataque informático."
+                ],
+                correctAnswer: "b) Una debilidad en un sistema, procedimiento o control que puede ser explotada."
+            },
+            {
+                question: "¿Qué es una 'amenaza' en el contexto del ENS?",
+                options: [
+                    "a) Una medida de protección.",
+                    "b) La causa potencial de un incidente no deseado que puede provocar daños al sistema.",
+                    "c) Una debilidad de seguridad.",
+                    "d) Un software antivirus."
+                ],
+                correctAnswer: "b) La causa potencial de un incidente no deseado que puede provocar daños al sistema."
+            },
+            {
+                question: "¿Cuál es el propósito del informe de auditoría de seguridad para el ENS?",
+                options: [
+                    "a) Emitir una multa a la entidad auditada.",
+                    "b) Verificar si el sistema de información cumple con las medidas del ENS aplicables a su categoría.",
+                    "c) Determinar el número de personal necesario para el mantenimiento.",
+                    "d) Recomendar la compra de nuevo hardware."
+                ],
+                correctAnswer: "b) Verificar si el sistema de información cumple con las medidas del ENS aplicables a su categoría."
+            },
+            {
+                question: "¿Qué se considera un 'incidente de seguridad'?",
+                options: [
+                    "a) Cualquier evento planificado y aprobado.",
+                    "b) Un suceso no deseado que puede comprometer la seguridad de la información o los servicios.",
+                    "c) Una actualización de software.",
+                    "d) Una auditoría de seguridad."
+                ],
+                correctAnswer: "b) Un suceso no deseado que puede comprometer la seguridad de la información o los servicios."
+            },
+            {
+                question: "¿Qué se entiende por 'copia de seguridad' en el ENS?",
+                options: [
+                    "a) Una copia de un documento para su distribución masiva.",
+                    "b) Una copia de datos y configuraciones para su recuperación en caso de pérdida o corrupción.",
+                    "c) Un archivo temporal.",
+                    "d) Una copia impresa de la información."
+                ],
+                correctAnswer: "b) Una copia de datos y configuraciones para su recuperación en caso de pérdida o corrupción."
+            },
+            {
+                question: "¿Qué se busca con la 'gestión de la continuidad' en el ENS?",
+                options: [
+                    "a) Asegurar que el sistema está siempre disponible al 100%.",
+                    "b) Mantener la disponibilidad de los servicios y la información ante incidentes graves.",
+                    "c) Detener la operación del sistema ante cualquier falla.",
+                    "d) Ignorar los incidentes de baja prioridad."
+                ],
+                correctAnswer: "b) Mantener la disponibilidad de los servicios y la información ante incidentes graves."
+            },
+            {
+                question: "¿Qué es un 'Plan de Contingencia' en el ENS?",
+                options: [
+                    "a) Un plan para desarrollar nuevas aplicaciones.",
+                    "b) Un conjunto de procedimientos para responder a un incidente grave y recuperar la operatividad.",
+                    "c) Un documento de marketing.",
+                    "d) Un listado de contactos telefónicos."
+                ],
+                correctAnswer: "b) Un conjunto de procedimientos para responder a un incidente grave y recuperar la operatividad."
+            },
+            {
+                question: "¿Qué aspecto se considera en la 'Protección del personal' en el ENS?",
+                options: [
+                    "a) Solo la seguridad física del personal.",
+                    "b) La formación y concienciación del personal en materia de seguridad.",
+                    "c) El salario del personal.",
+                    "d) La vestimenta del personal."
+                ],
+                correctAnswer: "b) La formación y concienciación del personal en materia de seguridad."
+            },
+            {
+                question: "¿Qué se entiende por 'gestión de la configuración' en el ENS?",
+                options: [
+                    "a) La gestión de los permisos de los usuarios.",
+                    "b) El control y seguimiento de los cambios en la configuración del hardware y software de los sistemas.",
+                    "c) La gestión de las copias de seguridad.",
+                    "d) La gestión de los documentos en papel."
+                ],
+                correctAnswer: "b) El control y seguimiento de los cambios en la configuración del hardware y software de los sistemas."
+            },
+            {
+                question: "¿Qué garantiza la 'auditoría' en el ENS?",
+                options: [
+                    "a) La corrección de todos los errores de software.",
+                    "b) La verificación de la adecuación del sistema al ENS.",
+                    "c) La velocidad de la red.",
+                    "d) La usabilidad de la interfaz de usuario."
+                ],
+                correctAnswer: "b) La verificación de la adecuación del sistema al ENS."
+            },
+            {
+                question: "¿Qué se entiende por 'actualización y mejora continua' en el ENS?",
+                options: [
+                    "a) Realizar cambios solo cuando se produce un fallo.",
+                    "b) El proceso de revisión y adaptación de las medidas de seguridad para responder a nuevas amenazas y tecnologías.",
+                    "c) La compra constante de nuevo hardware.",
+                    "d) La eliminación de los sistemas antiguos."
+                ],
+                correctAnswer: "b) El proceso de revisión y adaptación de las medidas de seguridad para responder a nuevas amenazas y tecnologías."
+            },
+            {
+                question: "¿Qué es el 'Punto de Interconexión' en el contexto del ENI?",
+                options: [
+                    "a) Un centro de datos.",
+                    "b) Un punto lógico donde se establecen conexiones entre sistemas de información.",
+                    "c) Una base de datos.",
+                    "d) Un dispositivo de red."
+                ],
+                correctAnswer: "b) Un punto lógico donde se establecen conexiones entre sistemas de información."
+            },
+            {
+                question: "¿Qué finalidad tiene el 'Directorio Común de Unidades Orgánicas y Oficinas' (DIR3)?",
+                options: [
+                    "a) Gestionar los certificados digitales.",
+                    "b) Unificar la identificación de las unidades administrativas para facilitar la interoperabilidad.",
+                    "c) Almacenar documentos electrónicos.",
+                    "d) Proporcionar servicios de firma electrónica."
+                ],
+                correctAnswer: "b) Unificar la identificación de las unidades administrativas para facilitar la interoperabilidad."
+            },
+            {
+                question: "¿Qué se entiende por 'metadatos' en el contexto de los documentos electrónicos según el ENI?",
+                options: [
+                    "a) Datos sobre el contenido del documento.",
+                    "b) Datos que describen las características de un documento electrónico, como su autor, fecha, tipo, etc.",
+                    "c) Datos cifrados.",
+                    "d) Datos temporales."
+                ],
+                correctAnswer: "b) Datos que describen las características de un documento electrónico, como su autor, fecha, tipo, etc."
+            },
+            {
+                question: "¿Qué se considera un 'Expediente Electrónico' en el ENI?",
+                options: [
+                    "a) Un documento individual en formato digital.",
+                    "b) El conjunto organizado de documentos electrónicos que corresponden a un procedimiento administrativo.",
+                    "c) Una base de datos de documentos.",
+                    "d) Un sistema de mensajería interna."
+                ],
+                correctAnswer: "b) El conjunto organizado de documentos electrónicos que corresponden a un procedimiento administrativo."
+            },
+            {
+                question: "¿Qué se utiliza para verificar la autenticidad e integridad de los documentos generados por la Administración, como justificantes de registro o copias auténticas?",
+                options: [
+                    "a) Un código de barras.",
+                    "b) Un Código Seguro de Verificación (CSV).",
+                    "c) Una marca de agua.",
+                    "d) Un número de serie."
+                ],
+                correctAnswer: "b) Un Código Seguro de Verificación (CSV)."
+            },
+            {
+                question: "¿Qué establece el Reglamento (UE) nº 910/2014, conocido como eIDAS?",
+                options: [
+                    "a) Normas para el comercio electrónico entre estados miembros.",
+                    "b) La identificación electrónica y los servicios de confianza para las transacciones electrónicas en el mercado interior.",
+                    "c) Las reglas para la protección de datos personales.",
+                    "d) Las normas para el copyright digital."
+                ],
+                correctAnswer: "b) La identificación electrónica y los servicios de confianza para las transacciones electrónicas en el mercado interior."
+            },
+            {
+                question: "¿Cuál es el propósito del 'sellado de tiempo' en la firma electrónica?",
+                options: [
+                    "a) Indicar la hora actual en el reloj del firmante.",
+                    "b) Probar la existencia de los datos en un instante de tiempo determinado y que no se han alterado desde entonces.",
+                    "c) Cifrar el contenido del documento.",
+                    "d) Eliminar la necesidad de un certificado."
+                ],
+                correctAnswer: "b) Probar la existencia de los datos en un instante de tiempo determinado y que no se han alterado desde entonces."
+            },
+            {
+                question: "¿Qué significa 'X.509' en el contexto de los certificados digitales?",
+                options: [
+                    "a) Un formato de documento de texto.",
+                    "b) Un estándar internacional para la infraestructura de clave pública (PKI) y los certificados digitales.",
+                    "c) Un tipo de algoritmo de cifrado.",
+                    "d) Un protocolo de red."
+                ],
+                correctAnswer: "b) Un estándar internacional para la infraestructura de clave pública (PKI) y los certificados digitales."
+            },
+            {
+                question: "¿Qué es una 'PKI' (Public Key Infrastructure)?",
+                options: [
+                    "a) Un sistema de gestión de archivos.",
+                    "b) Un marco que soporta el uso de la criptografía de clave pública y certificados digitales.",
+                    "c) Un tipo de base de datos.",
+                    "d) Un lenguaje de programación."
+                ],
+                correctAnswer: "b) Un marco que soporta el uso de la criptografía de clave pública y certificados digitales."
+            },
+            {
+                question: "¿Qué es el 'proceso de digitalización' de documentos según el ENI?",
+                options: [
+                    "a) La conversión de documentos físicos a formato electrónico.",
+                    "b) El almacenamiento de documentos en la nube.",
+                    "c) La impresión de documentos electrónicos.",
+                    "d) El envío de documentos por correo electrónico."
+                ],
+                correctAnswer: "a) La conversión de documentos físicos a formato electrónico."
+            },
+            {
+                question: "¿Qué se entiende por 'copia auténtica electrónica' según el ENI?",
+                options: [
+                    "a) Una copia de un documento electrónico que no garantiza la integridad.",
+                    "b) Una copia electrónica de un documento original, con la misma validez y eficacia que el original.",
+                    "c) Una copia manuscrita de un documento.",
+                    "d) Una fotografía de un documento."
+                ],
+                correctAnswer: "b) Una copia electrónica de un documento original, con la misma validez y eficacia que el original."
+            },
+            {
+                question: "¿Qué organismo es el responsable de mantener actualizado el ENI?",
+                options: [
+                    "a) El Ministerio del Interior.",
+                    "b) La Secretaría de Estado de Digitalización e Inteligencia Artificial.",
+                    "c) El Centro Criptológico Nacional (CCN).",
+                    "d) La Agencia Española de Protección de Datos."
+                ],
+                correctAnswer: "b) La Secretaría de Estado de Digitalización e Inteligencia Artificial."
+            },
+            {
+                question: "¿Qué se busca con la 'gestión de incidentes de seguridad' en el ENS?",
+                options: [
+                    "a) Evitar que los incidentes ocurran.",
+                    "b) Detectar, analizar, contener, erradicar y recuperar los incidentes de seguridad.",
+                    "c) Ignorar los incidentes menores.",
+                    "d) Delegar la responsabilidad de los incidentes en los usuarios."
+                ],
+                correctAnswer: "b) Detectar, analizar, contener, erradicar y recuperar los incidentes de seguridad."
+            },
+            {
+                question: "¿Qué se entiende por 'evidencia electrónica' en el ENS?",
+                options: [
+                    "a) Cualquier documento en papel que pruebe un hecho.",
+                    "b) Datos almacenados electrónicamente que pueden ser utilizados para probar un hecho.",
+                    "c) Información oral.",
+                    "d) Una opinión personal."
+                ],
+                correctAnswer: "b) Datos almacenados electrónicamente que pueden ser utilizados para probar un hecho."
+            },
+            {
+                question: "¿Qué establece el principio de 'Seguridad por defecto' en el ENS 2022?",
+                options: [
+                    "a) Que los sistemas deben ser inseguros por defecto.",
+                    "b) Que los sistemas deben diseñarse y configurarse de forma segura, con las funciones y servicios esenciales activados por defecto.",
+                    "c) Que la seguridad es responsabilidad del usuario final.",
+                    "d) Que la seguridad es un coste innecesario."
+                ],
+                correctAnswer: "b) Que los sistemas deben diseñarse y configurarse de forma segura, con las funciones y servicios esenciales activados por defecto."
+            },
+            {
+                question: "¿Qué se recomienda para el 'control de acceso' en el ENS?",
+                options: [
+                    "a) Permitir el acceso anónimo a todos los recursos.",
+                    "b) Utilizar contraseñas débiles y genéricas.",
+                    "c) Implementar mecanismos que aseguren que solo los usuarios y procesos autorizados acceden a los recursos.",
+                    "d) Deshabilitar la autenticación para facilitar el acceso."
+                ],
+                correctAnswer: "c) Implementar mecanismos que aseguren que solo los usuarios y procesos autorizados acceden a los recursos."
+            },
+            {
+                question: "¿Qué papel juega la 'documentación de seguridad' en el ENS?",
+                options: [
+                    "a) Es opcional y no necesaria.",
+                    "b) Es fundamental para la implementación, operación, supervisión y auditoría del sistema de gestión de la seguridad.",
+                    "c) Se limita a los manuales de usuario.",
+                    "d) Solo se utiliza en caso de un incidente grave."
+                ],
+                correctAnswer: "b) Es fundamental para la implementación, operación, supervisión y auditoría del sistema de gestión de la seguridad."
+            },
+            {
+                question: "¿Qué se entiende por 'auditoría de seguridad' en el ENS?",
+                options: [
+                    "a) Una revisión anual de los contratos.",
+                    "b) Un proceso para verificar la conformidad de un sistema con los requisitos del ENS.",
+                    "c) Un análisis financiero de la organización.",
+                    "d) Una encuesta de satisfacción del usuario."
+                ],
+                correctAnswer: "b) Un proceso para verificar la conformidad de un sistema con los requisitos del ENS."
+            },
+            {
+                question: "¿Cuál es la finalidad de la 'formación y concienciación' en el ENS?",
+                options: [
+                    "a) Entregar diplomas a los empleados.",
+                    "b) Asegurar que el personal es consciente de sus responsabilidades en seguridad y tiene los conocimientos necesarios.",
+                    "c) Reducir el tiempo de trabajo.",
+                    "d) Aumentar la burocracia interna."
+                ],
+                correctAnswer: "b) Asegurar que el personal es consciente de sus responsabilidades en seguridad y tiene los conocimientos necesarios."
+            },
+            {
+                question: "¿Qué se entiende por 'plan de mejora continua' en el ENS?",
+                options: [
+                    "a) Un plan para cambiar el software cada año.",
+                    "b) Un proceso para identificar oportunidades de mejora en la seguridad y llevarlas a cabo.",
+                    "c) Un plan para reducir el presupuesto de seguridad.",
+                    "d) Un plan para externalizar todas las funciones."
+                ],
+                correctAnswer: "b) Un proceso para identificar oportunidades de mejora en la seguridad y llevarlas a cabo."
+            },
+            {
+                question: "¿Qué requisito de la política de seguridad se refiere a la organización y los recursos dedicados a la gestión de la seguridad?",
+                options: [
+                    "a) Marco regulatorio.",
+                    "b) Roles o funciones de seguridad.",
+                    "c) Organización e implantación del proceso de seguridad.",
+                    "d) Directrices para la documentación."
+                ],
+                correctAnswer: "c) Organización e implantación del proceso de seguridad."
+            },
+            {
+                question: "¿Cuál es el propósito del Registro Electrónico de Apoderamientos (REA)?",
+                options: [
+                    "a) Gestionar las quejas de los ciudadanos.",
+                    "b) Centralizar y gestionar los apoderamientos que los ciudadanos y empresas otorgan a terceros para actuar en su nombre ante las Administraciones.",
+                    "c) Almacenar documentos personales.",
+                    "d) Emitir certificados digitales."
+                ],
+                correctAnswer: "b) Centralizar y gestionar los apoderamientos que los ciudadanos y empresas otorgan a terceros para actuar en su nombre ante las Administraciones."
+            },
+            {
+                question: "¿Qué norma técnica del ENI regula la política de firma electrónica y de certificados?",
+                options: [
+                    "a) NTI de Expediente Electrónico.",
+                    "b) NTI de Política de Firma Electrónica y de Certificados.",
+                    "c) NTI de Intercambio de Datos.",
+                    "d) NTI de Digitalización de Documentos."
+                ],
+                correctAnswer: "b) NTI de Política de Firma Electrónica y de Certificados."
+            },
+            {
+                question: "¿Qué se recomienda para la gestión de las contraseñas en el ENS?",
+                options: [
+                    "a) Utilizar contraseñas sencillas y reutilizables.",
+                    "b) Establecer políticas de contraseñas robustas (complejidad, caducidad, etc.).",
+                    "c) Almacenar las contraseñas en texto plano.",
+                    "d) Compartir contraseñas entre compañeros."
+                ],
+                correctAnswer: "b) Establecer políticas de contraseñas robustas (complejidad, caducidad, etc.)."
+            },
+            {
+                question: "¿Qué se entiende por 'seguridad en la adquisición de productos y servicios' en el ENS?",
+                options: [
+                    "a) Solo comprar los productos más caros.",
+                    "b) Integrar la seguridad desde el inicio del proceso de adquisición y desarrollo de sistemas.",
+                    "c) Adquirir productos sin considerar la seguridad.",
+                    "d) No documentar los procesos de adquisición."
+                ],
+                correctAnswer: "b) Integrar la seguridad desde el inicio del proceso de adquisición y desarrollo de sistemas."
+            },
+            {
+                question: "¿Cuál es el objetivo de los perfiles de firma AdES?",
+                options: [
+                    "a) Reducir el tamaño de los documentos firmados.",
+                    "b) Asegurar la validez a largo plazo de las firmas electrónicas, añadiendo la información necesaria para su verificación futura.",
+                    "c) Acelerar el proceso de firma.",
+                    "d) Hacer que las firmas sean ilegibles."
+                ],
+                correctAnswer: "b) Asegurar la validez a largo plazo de las firmas electrónicas, añadiendo la información necesaria para su verificación futura."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // To store selected answers and whether they were correct
+        const quizContainer = document.getElementById('quizContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+
+        // Load progress from Local Storage
+        function loadProgress() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Initialize userAnswers array if nothing is saved
+                userAnswers = new Array(quizData.length).fill(null);
+            }
+        }
+
+        // Save progress to Local Storage
+        function saveProgress() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        function renderQuestion() {
+            updateProgressBar();
+            const q = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-section">
+                    <h2>${q.question}</h2>
+                    <ul class="options-list">
+                        ${q.options.map((option, index) => `
+                            <li class="option-item">
+                                <button class="option-button" data-index="${index}">${option}</button>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div id="resultMessage" class="result-message" style="display: none;"></div>
+                </div>
+            `;
+
+            const optionButtons = quizContainer.querySelectorAll('.option-button');
+            const resultMessageDiv = document.getElementById('resultMessage');
+
+            // Restore previous answer state if available
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                optionButtons.forEach(button => {
+                    if (button.textContent === savedAnswer.selectedOption) {
+                        if (savedAnswer.isCorrect) {
+                            button.classList.add('correct');
+                            resultMessageDiv.textContent = '¡Correcto!';
+                            resultMessageDiv.classList.add('correct-answer');
+                        } else {
+                            button.classList.add('incorrect');
+                            resultMessageDiv.textContent = `Incorrecto. La respuesta correcta es: ${q.correctAnswer}`;
+                            resultMessageDiv.classList.add('incorrect-answer');
+                            // Highlight the correct answer if the user was incorrect
+                            optionButtons.forEach(btn => {
+                                if (btn.textContent === q.correctAnswer) {
+                                    btn.classList.add('correct');
+                                }
+                            });
+                        }
+                        resultMessageDiv.style.display = 'block';
+                    }
+                    button.disabled = true; // Disable buttons after an answer is shown
+                });
+            }
+
+            optionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (userAnswers[currentQuestionIndex] !== null) {
+                        // If already answered, do nothing
+                        return;
+                    }
+
+                    const selectedOption = this.textContent;
+                    const isCorrect = selectedOption === q.correctAnswer;
+
+                    // Save the answer
+                    userAnswers[currentQuestionIndex] = {
+                        selectedOption: selectedOption,
+                        isCorrect: isCorrect
+                    };
+                    saveProgress();
+
+                    // Update UI based on correctness
+                    if (isCorrect) {
+                        this.classList.add('correct');
+                        resultMessageDiv.textContent = '¡Correcto!';
+                        resultMessageDiv.classList.add('correct-answer');
+                    } else {
+                        this.classList.add('incorrect');
+                        resultMessageDiv.textContent = `Incorrecto. La respuesta correcta es: ${q.correctAnswer}`;
+                        resultMessageDiv.classList.add('incorrect-answer');
+                        // Highlight the correct answer
+                        optionButtons.forEach(btn => {
+                            if (btn.textContent === q.correctAnswer) {
+                                btn.classList.add('correct');
+                            }
+                        });
+                    }
+                    resultMessageDiv.style.display = 'block';
+
+                    // Disable all buttons after an answer is selected
+                    optionButtons.forEach(btn => btn.disabled = true);
+                });
+            });
+
+            updateNavigationButtons();
+        }
+
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === quizData.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+                saveProgress();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+                saveProgress();
+            }
+        });
+
+        // Initialize quiz
+        loadProgress();
+        renderQuestion();
+    </script>
+</body>
+</html>

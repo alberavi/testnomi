@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Bases de Datos</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-container {
+            margin-bottom: 20px;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .option-button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            background-color: #cbd5e0;
+            border-color: #a0aec0;
+        }
+        .option-button.selected {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        .option-button.correct {
+            background-color: #d1fae5; /* Green-100 */
+            color: #065f46; /* Green-800 */
+            border-color: #34d399; /* Green-400 */
+            font-weight: 500;
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2; /* Red-100 */
+            color: #991b1b; /* Red-800 */
+            border-color: #ef4444; /* Red-400 */
+            font-weight: 500;
+        }
+        .feedback-message {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+        }
+        .next-button, .restart-button {
+            background-color: #4299e1;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            border: none;
+            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+        }
+        .next-button:hover, .restart-button:hover {
+            background-color: #3182ce;
+        }
+        .score-container {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c5282;
+            margin-top: 30px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4299e1;
+            border-radius: 10px;
+            transition: width 0.3s ease-in-out;
+        }
+        .option-label {
+            min-width: 25px; /* Ensures consistent alignment for option letters */
+            text-align: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="quiz-container">
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="question-container" id="questionContainer">
+            <div class="question-text" id="questionText"></div>
+            <div class="options-container" id="optionsContainer">
+                <!-- Options will be dynamically loaded here -->
+            </div>
+        </div>
+        <div class="feedback-message" id="feedbackMessage"></div>
+        <button class="next-button hidden" id="nextButton">Siguiente Pregunta</button>
+        <div class="score-container hidden" id="scoreContainer"></div>
+        <button class="restart-button hidden" id="restartButton">Reiniciar Test</button>
+    </div>
+
+    <script>
+        // Define the questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Cuál de los siguientes modelos lógicos de base de datos fue propuesto por Codd?",
+                options: ["a) Jerárquico", "b) De red", "c) Relacional", "d) De objetos"],
+                correctAnswer: "c) Relacional"
+            },
+            {
+                question: "En el proceso de modelado de bases de datos, ¿cuál es el modelo que es independiente de todo?",
+                options: ["a) Modelo Lógico", "b) Modelo Físico", "c) Modelo Conceptual", "d) Modelo Relacional"],
+                correctAnswer: "c) Modelo Conceptual"
+            },
+            {
+                question: "¿Qué nivel de la arquitectura ANSI/SPARC de un DBMS contiene las vistas?",
+                options: ["a) Nivel Interno", "b) Nivel Conceptual", "c) Nivel Externo", "d) Nivel de Almacenamiento"],
+                correctAnswer: "c) Nivel Externo"
+            },
+            {
+                question: "¿Dónde se aplican las reglas de normalización en el proceso de diseño de bases de datos?",
+                options: ["a) En el modelo conceptual", "b) En el modelo físico", "c) En el modelo lógico", "d) En el nivel externo"],
+                correctAnswer: "c) En el modelo lógico"
+            },
+            {
+                question: "Según el modelo relacional, ¿cuál es el objeto a partir del cual gira todo lo demás?",
+                options: ["a) El atributo", "b) La tupla", "c) La relación", "d) El dominio"],
+                correctAnswer: "c) La relación"
+            },
+            {
+                question: "¿Qué término se utiliza para referirse al número de atributos de una relación?",
+                options: ["a) Cardinalidad", "b) Extensión", "c) Grado", "d) Atomicidad"],
+                correctAnswer: "c) Grado"
+            },
+            {
+                question: "En la terminología de bases de datos, ¿a qué equivale una \"tupla\" en una tabla?",
+                options: ["a) Columna", "b) Fila", "c) Campo", "d) Registro"],
+                correctAnswer: "b) Fila"
+            },
+            {
+                question: "¿Qué regla se aplica para transformar una relación 1 a N del Modelo E/R al Modelo Relacional?",
+                options: ["a) Se crea una nueva relación con clave compuesta.", "b) Se propaga la clave del lado N hacia el lado 1.", "c) Se propaga la clave del lado 1 hacia el lado N.", "d) Se mantiene como una entidad separada."],
+                correctAnswer: "c) Se propaga la clave del lado 1 hacia el lado N."
+            },
+            {
+                question: "Cuando se transforma una relación M a N del Modelo E/R al Modelo Relacional, ¿qué es necesario hacer?",
+                options: ["a) Propagar una clave.", "b) Crear una relación nueva con una clave simple.", "c) Crear una relación nueva con una clave compuesta.", "d) No es necesaria ninguna transformación."],
+                correctAnswer: "c) Crear una relación nueva con una clave compuesta."
+            },
+            {
+                question: "Si tenemos una relación de generalización/especialización y se opta por una sola relación, ¿qué se utiliza para distinguir los subtipos?",
+                options: ["a) Una clave ajena.", "b) Un atributo discriminador.", "c) Una clave primaria compuesta.", "d) Múltiples relaciones."],
+                correctAnswer: "b) Un atributo discriminador."
+            },
+            {
+                question: "¿Qué restricción de integridad establece que ningún atributo de la clave primaria puede ser nulo?",
+                options: ["a) Integridad referencial", "b) Atomicidad de los valores", "c) Integridad de entidad", "d) Integridad de dominio"],
+                correctAnswer: "c) Integridad de entidad"
+            },
+            {
+                question: "¿Puede una clave ajena ser nula?",
+                options: ["a) No, nunca.", "b) Sí, siempre.", "c) Sí, si sus valores no coinciden con la clave primaria referenciada.", "d) Sí, si sus valores deben coincidir con la clave primaria referenciada o ser nulos."],
+                correctAnswer: "d) Sí, si sus valores deben coincidir con la clave primaria referenciada o ser nulos."
+            },
+            {
+                question: "¿Qué tipo de clave es un atributo o conjunto de atributos mínimo que identifica unívocamente a cada tupla?",
+                options: ["a) Superclave", "b) Clave primaria", "c) Clave candidata", "d) Clave alternativa"],
+                correctAnswer: "c) Clave candidata"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre una superclave y una clave candidata?",
+                options: ["a) La superclave es un conjunto mínimo de atributos, la candidata no.", "b) La clave candidata es reducible, la superclave no.", "c) La superclave no es necesariamente un conjunto mínimo, la clave candidata sí.", "d) Son términos sinónimos."],
+                correctAnswer: "c) La superclave no es necesariamente un conjunto mínimo, la clave candidata sí."
+            },
+            {
+                question: "¿Cuántas reglas componen las reglas de Codd que definen los requisitos de un SGBBDD relacional?",
+                options: ["a) 10", "b) 12", "c) 13 (del 0 al 12)", "d) 15"],
+                correctAnswer: "c) 13 (del 0 al 12)"
+            },
+            {
+                question: "¿Qué establece la Regla 1 de Codd, conocida como la Regla de la información?",
+                options: ["a) Toda la información debe estar en el diccionario de datos.", "b) Toda la información debe ser accesible sin ambigüedad.", "c) Toda la información en una base de datos relacional debe estar en las tablas, en el esquema lógico.", "d) Los valores nulos deben ser tratados sistemáticamente."],
+                correctAnswer: "c) Toda la información en una base de datos relacional debe estar en las tablas, en el esquema lógico."
+            },
+            {
+                question: "¿A qué regla de Codd se refiere el catálogo dinámico en línea basado en el modelo relacional?",
+                options: ["a) Regla 2", "b) Regla 3", "c) Regla 4", "d) Regla 5"],
+                correctAnswer: "c) Regla 4"
+            },
+            {
+                question: "La independencia física de los datos implica que si cambia el nombre de un fichero de la BD, no es necesario cambiar:",
+                options: ["a) Solo los programas de usuario.", "b) Solo las tablas.", "c) Ni programas de usuario ni tablas.", "d) La arquitectura del SGBBDD."],
+                correctAnswer: "c) Ni programas de usuario ni tablas."
+            },
+            {
+                question: "¿Dónde se guardan las reglas de integridad para garantizar que siempre se apliquen?",
+                options: ["a) En las aplicaciones", "b) En los programas de usuario", "c) En el diccionario de datos", "d) En el nivel externo"],
+                correctAnswer: "c) En el diccionario de datos"
+            },
+            {
+                question: "¿Cuál es el objetivo principal de la normalización?",
+                options: ["a) Mejorar el rendimiento de las consultas.", "b) Eliminar la redundancia y evitar inconsistencias por actualizaciones.", "c) Aumentar el número de relaciones.", "d) Simplificar la estructura de la base de datos."],
+                correctAnswer: "b) Eliminar la redundancia y evitar inconsistencias por actualizaciones."
+            },
+            {
+                question: "Si a todo valor de X le corresponde un único valor de Y, ¿qué tipo de dependencia existe entre X e Y?",
+                options: ["a) Dependencia multivaluada", "b) Dependencia transitiva", "c) Dependencia funcional", "d) Dependencia parcial"],
+                correctAnswer: "c) Dependencia funcional"
+            },
+            {
+                question: "¿Es siempre deseable una dependencia funcional?",
+                options: ["a) Sí, siempre son buenas para la base de datos.", "b) No, solo es inevitable si la clave es la determinante.", "c) Sí, si no es una clave.", "d) Solo si provoca redundancia."],
+                correctAnswer: "b) No, solo es inevitable si la clave es la determinante."
+            },
+            {
+                question: "¿Qué caracteriza a la Primera Forma Normal (1FN)?",
+                options: ["a) No hay dependencias transitivas.", "b) Todos los atributos no principales dependen completamente de la clave principal.", "c) Cada atributo de una tupla tiene a lo sumo un valor (valores atómicos).", "d) No hay dependencias multivaluadas."],
+                correctAnswer: "c) Cada atributo de una tupla tiene a lo sumo un valor (valores atómicos)."
+            },
+            {
+                question: "Una relación está en Segunda Forma Normal (2FN) si está en 1FN y:",
+                options: ["a) No contiene grupos repetitivos.", "b) Todos los atributos no principales tienen dependencia funcional completa de la clave principal.", "c) No hay dependencias transitivas.", "d) No hay dependencias multivaluadas no triviales."],
+                correctAnswer: "b) Todos los atributos no principales tienen dependencia funcional completa de la clave principal."
+            },
+            {
+                question: "Si una clave es simple (no compuesta), ¿en qué forma normal se encuentra automáticamente la relación, asumiendo que ya está en 1FN?",
+                options: ["a) 1FN", "b) 2FN", "c) 3FN", "d) FNBC"],
+                correctAnswer: "b) 2FN"
+            },
+            {
+                question: "¿Qué tipo de dependencia se elimina al aplicar la Tercera Forma Normal (3FN)?",
+                options: ["a) Dependencia parcial", "b) Dependencia funcional completa", "c) Dependencia transitiva", "d) Dependencia multivaluada"],
+                correctAnswer: "c) Dependencia transitiva"
+            },
+            {
+                question: "La Forma Normal de Boyce-Codd (FNBC) es un afinamiento de la 3FN y se cumple si y solo si:",
+                options: ["a) Los únicos determinantes son atributos no clave.", "b) Los únicos determinantes son claves candidatas.", "c) Hay dependencias multivaluadas.", "d) No hay redundancia."],
+                correctAnswer: "b) Los únicos determinantes son claves candidatas."
+            },
+            {
+                question: "Si tenemos una dependencia multivaluada no trivial que no está implicada por una clave candidata, ¿qué forma normal se debe aplicar?",
+                options: ["a) 1FN", "b) 2FN", "c) 3FN", "d) 4FN"],
+                correctAnswer: "d) 4FN"
+            },
+            {
+                question: "¿Qué se hace en el ejemplo de normalización a 4FN con la relación Impartición (Asignatura, Profesor, Curso) que tiene dependencias multivaluadas (Asignatura →→ Profesor, Asignatura →→ Curso)?",
+                options: ["a) Se añade una clave compuesta.", "b) Se rompe en dos relaciones: R1 (Asignatura, Profesor) y R2 (Asignatura, Curso).", "c) Se elimina el atributo Profesor.", "d) Se añade un atributo discriminador."],
+                correctAnswer: "b) Se rompe en dos relaciones: R1 (Asignatura, Profesor) y R2 (Asignatura, Curso)."
+            },
+            {
+                question: "¿Qué forma normal es conocida como forma normal de proyección-unión y se da en situaciones muy raras?",
+                options: ["a) 3FN", "b) FNBC", "c) 4FN", "d) 5FN"],
+                correctAnswer: "d) 5FN"
+            },
+            {
+                question: "¿Qué es el Álgebra Relacional?",
+                options: ["a) Un lenguaje declarativo.", "b) Un lenguaje procedimental/imperativo.", "c) Un método para definir consultas SQL.", "d) Un tipo de dependencia funcional."],
+                correctAnswer: "b) Un lenguaje procedimental/imperativo."
+            },
+            {
+                question: "¿Qué operación del Álgebra Relacional se utiliza para filtrar tuplas y da como resultado una nueva relación?",
+                options: ["a) Proyección", "b) Producto Cartesiano", "c) Selección", "d) Unión"],
+                correctAnswer: "c) Selección"
+            },
+            {
+                question: "¿Cuál es el operador del Álgebra Relacional que extrae los atributos indicados?",
+                options: ["a) Selección (σ)", "b) Proyección (Π)", "c) Unión ( ∪ )", "d) Diferencia (−)"],
+                correctAnswer: "b) Proyección (Π)"
+            },
+            {
+                question: "La operación de Unión Natural en Álgebra Relacional (R ⋈ S) es equivalente a:",
+                options: ["a) Diferencia.", "b) Intersección.", "c) Inner Join.", "d) Outer Join."],
+                correctAnswer: "c) Inner Join."
+            },
+            {
+                question: "¿Cómo se conoce la operación del Álgebra Relacional que devuelve tuplas de R que no estén en S?",
+                options: ["a) Intersección", "b) Unión", "c) Diferencia", "d) Producto cartesiano"],
+                correctAnswer: "c) Diferencia"
+            },
+            {
+                question: "En el Cálculo Relacional basado en tuplas, ¿qué representa 't' en la expresión {t/Θ(t)}?",
+                options: ["a) Una variable tipo atributo.", "b) Una variable tipo dominio.", "c) Una variable tipo tupla.", "d) Una función."],
+                correctAnswer: "c) Una variable tipo tupla."
+            },
+            {
+                question: "¿Qué tipo de lenguaje es el Cálculo Relacional?",
+                options: ["a) Imperativo", "b) Procedimental", "c) Declarativo", "d) Orientado a objetos"],
+                correctAnswer: "c) Declarativo"
+            },
+            {
+                question: "¿Qué se entiende por \"extensión o cardinalidad\" de una relación?",
+                options: ["a) El número de atributos.", "b) El conjunto de tuplas de la relación (número de tuplas).", "c) El grupo válido de valores permitidos para un atributo.", "d) El esquema o intensión de la relación."],
+                correctAnswer: "b) El conjunto de tuplas de la relación (número de tuplas)."
+            },
+            {
+                question: "¿Qué significa que los valores de los atributos sean atómicos?",
+                options: ["a) Que pueden ser multivalor.", "b) Que no pueden ser multivalor.", "c) Que pueden ser nulos.", "d) Que son siempre únicos."],
+                correctAnswer: "b) Que no pueden ser multivalor."
+            },
+            {
+                question: "¿Existe un orden establecido en los atributos de una relación relacional?",
+                options: ["a) Sí, siempre se ordenan alfabéticamente.", "b) Sí, siempre se ordenan por tipo de dato.", "c) No, no hay orden establecido.", "d) Depende del SGBBDD."],
+                correctAnswer: "c) No, no hay orden establecido."
+            },
+            {
+                question: "¿Qué tipo de relación es una relación de herencia en el Modelo E/R?",
+                options: ["a) Unaria.", "b) De Generalización/Especialización.", "c) M a N.", "d) Binaria."],
+                correctAnswer: "b) De Generalización/Especialización."
+            },
+            {
+                question: "Si se elige la opción de \"una relación por cada subtipo\" en una relación de Generalización/Especialización, ¿qué campos tendría la tabla \"Astronauta\"?",
+                options: ["a) Solo ID_Emp y Nombre.", "b) ID_Emp, Nombre y sus atributos específicos.", "c) Solo sus atributos específicos.", "d) ID_Emp, Nombre, ColorTraje, NivelTecnico, Articulos Escritos."],
+                correctAnswer: "b) ID_Emp, Nombre y sus atributos específicos."
+            },
+            {
+                question: "En una entidad débil, ¿qué forma parte de la clave primaria de la entidad débil?",
+                options: ["a) Un atributo cualquiera.", "b) La clave ajena de la relación identificadora.", "c) Un valor nulo.", "d) Solo un atributo discriminador."],
+                correctAnswer: "b) La clave ajena de la relación identificadora."
+            },
+            {
+                question: "¿Qué representan los valores nulos en una base de datos relacional?",
+                options: ["a) Un valor de cero.", "b) Una cadena vacía.", "c) Ausencia de valor o información desconocida.", "d) Un error en los datos."],
+                correctAnswer: "c) Ausencia de valor o información desconocida."
+            },
+            {
+                question: "¿Cuál de las siguientes es una clave alternativa?",
+                options: ["a) La clave primaria elegida.", "b) Una clave candidata que no fue elegida como primaria.", "c) Una superclave reducible.", "d) Una clave ajena."],
+                correctAnswer: "b) Una clave candidata que no fue elegida como primaria."
+            },
+            {
+                question: "La Regla 0 de Codd establece que todo SGBBDD debe ser:",
+                options: ["a) Distribuido.", "b) Autosuficiente para poder gestionar las bases de datos.", "c) Abierto a la subversión.", "d) Capaz de actualizar vistas."],
+                correctAnswer: "b) Autosuficiente para poder gestionar las bases de datos."
+            },
+            {
+                question: "¿Qué garantiza la Regla 2 de Codd, la Regla del acceso garantizado?",
+                options: ["a) Que todos los datos son accesibles sin ambigüedad (tabla, columna que lo contiene y la clave primaria).", "b) Que solo el administrador puede acceder a los datos.", "c) Que los datos se actualizan automáticamente.", "d) Que no hay valores nulos."],
+                correctAnswer: "a) Que todos los datos son accesibles sin ambigüedad (tabla, columna que lo contiene y la clave primaria)."
+            },
+            {
+                question: "¿Qué implica la Regla del tratamiento sistemático de valores nulos (Regla 3 de Codd)?",
+                options: ["a) Que no se permiten valores nulos.", "b) Que los valores nulos deben ser ignorados.", "c) Que los valores nulos se utilizan para representar información desconocida.", "d) Que los valores nulos siempre son cero."],
+                correctAnswer: "c) Que los valores nulos se utilizan para representar información desconocida."
+            },
+            {
+                question: "¿Qué establece la Regla 5 de Codd sobre el sublenguaje de datos completo?",
+                options: ["a) Que solo se puede usar SQL.", "b) Que debe existir al menos un lenguaje que permita el manejo completo de la base de datos.", "c) Que el lenguaje debe ser de bajo nivel.", "d) Que el lenguaje debe ser imperativo."],
+                correctAnswer: "b) Que debe existir al menos un lenguaje que permita el manejo completo de la base de datos."
+            },
+            {
+                question: "Si las vistas no muestran información actualizada, ¿qué regla de Codd se está incumpliendo?",
+                options: ["a) Regla 6: Regla de actualización de vistas.", "b) Regla 7: Inserción, actualización y borrado de alto nivel.", "c) Regla 8: Independencia física de los datos.", "d) Regla 9: Independencia lógica de los datos."],
+                correctAnswer: "a) Regla 6: Regla de actualización de vistas."
+            },
+            {
+                question: "La capacidad de operar sobre conjuntos de datos, no solo registro a registro, se refiere a qué regla de Codd:",
+                options: ["a) Regla 5.", "b) Regla 6.", "c) Regla 7.", "d) Regla 8."],
+                correctAnswer: "c) Regla 7."
+            },
+            {
+                question: "¿Qué regla de Codd establece que las aplicaciones son independientes de la propia lógica de la base de datos?",
+                options: ["a) Regla 8: Independencia física de los datos.", "b) Regla 9: Independencia lógica de los datos.", "c) Regla 10: Independencia de la integridad.", "d) Regla 11: Independencia de la distribución."],
+                correctAnswer: "b) Regla 9: Independencia lógica de los datos."
+            },
+            {
+                question: "Las bases de datos distribuidas que permiten trabajar en ellas como si fueran una base de datos normal y local cumplen con la Regla 11 de Codd, conocida como:",
+                options: ["a) Independencia de la integridad.", "b) Independencia lógica de los datos.", "c) Independencia de la distribución.", "d) La regla de la no subversión."],
+                correctAnswer: "c) Independencia de la distribución."
+            },
+            {
+                question: "¿Qué establece la Regla 12 de Codd, la regla de la no subversión?",
+                options: ["a) Que el SGBD no puede tener un lenguaje de bajo nivel.", "b) Que el SGBD no puede saltarse las reglas anteriores si tiene un lenguaje de bajo nivel.", "c) Que solo se puede acceder a la base de datos a través de lenguajes de alto nivel.", "d) Que los usuarios no pueden subvertir la seguridad."],
+                correctAnswer: "b) Que el SGBD no puede saltarse las reglas anteriores si tiene un lenguaje de bajo nivel."
+            },
+            {
+                question: "La normalización busca eliminar la redundancia de datos. ¿Qué implica la redundancia, además del gasto de almacenamiento?",
+                options: ["a) Mejor rendimiento en consultas.", "b) Más joins.", "c) Inconsistencias por actualizaciones.", "d) Datos más repartidos."],
+                correctAnswer: "c) Inconsistencias por actualizaciones."
+            },
+            {
+                question: "¿Qué ocurre con el rendimiento en consultas al aumentar el número de relaciones debido a la normalización?",
+                options: ["a) Mejora el rendimiento.", "b) El rendimiento no se ve afectado.", "c) Empeora el rendimiento debido a más joins.", "d) Depende del tipo de consulta."],
+                correctAnswer: "c) Empeora el rendimiento debido a más joins."
+            },
+            {
+                question: "Si X determina funcionalmente a Y, ¿cuál es el determinante?",
+                options: ["a) Y", "b) X", "c) Ambos", "d) Ninguno"],
+                correctAnswer: "b) X"
+            },
+            {
+                question: "Si una columna es una clave, ¿determina funcionalmente al resto de atributos?",
+                options: ["a) No, solo si es una clave compuesta.", "b) Sí, porque la clave solo aparece una vez.", "c) Solo si los atributos son principales.", "d) Depende de la atomicidad."],
+                correctAnswer: "b) Sí, porque la clave solo aparece una vez."
+            },
+            {
+                question: "En el ejemplo R (a, b, c, d) con tuplas (1, xx, 3, 4), (1, yy, 3, a), (1, xx, 3, b), ¿la dependencia funcional a→b es válida?",
+                options: ["a) Sí, porque 'a' siempre determina 'b'.", "b) No, porque a un mismo valor de 'a' (1) le corresponden varios valores de 'b' (\"xx\", \"yy\").", "c) Sí, porque 'xx' se repite.", "d) No se puede determinar con la información dada."],
+                correctAnswer: "b) No, porque a un mismo valor de 'a' (1) le corresponden varios valores de 'b' (\"xx\", \"yy\")."
+            },
+            {
+                question: "En el mismo ejemplo R (a, b, c, d) con tuplas (1, xx, 3, 4), (1, yy, 3, a), (1, xx, 3, b), ¿la dependencia funcional a→c es válida?",
+                options: ["a) No, porque hay varios valores.", "b) Sí, porque siempre el valor de 'c' es \"3\" para 'a'=1.", "c) Sí, porque 'a' determina 'd'.", "d) Solo si 'c' es clave."],
+                correctAnswer: "b) Sí, porque siempre el valor de 'c' es \"3\" para 'a'=1."
+            },
+            {
+                question: "Una dependencia funcional completa se da cuando un atributo G depende totalmente de un grupo de atributos Z y:",
+                options: ["a) Depende de cualquier subconjunto de Z.", "b) No depende de ningún subconjunto de Z.", "c) Depende solo de un atributo de Z.", "d) Se da entre dos atributos solamente."],
+                correctAnswer: "b) No depende de ningún subconjunto de Z."
+            },
+            {
+                question: "¿En qué forma normal se utiliza el concepto de dependencia multivaluada?",
+                options: ["a) 1FN", "b) 2FN", "c) 3FN", "d) 4FN"],
+                correctAnswer: "d) 4FN"
+            },
+            {
+                question: "Si una relación está en 1FN y tiene dependencias funcionales parciales, ¿en qué forma normal no está y qué se debe hacer?",
+                options: ["a) No está en 1FN, debe eliminar grupos repetitivos.", "b) No está en 2FN, debe eliminar las dependencias parciales.", "c) No está en 3FN, debe eliminar las dependencias transitivas.", "d) No está en FNBC, debe asegurar que los determinantes sean claves candidatas."],
+                correctAnswer: "b) No está en 2FN, debe eliminar las dependencias parciales."
+            },
+            {
+                question: "En una relación R (A, B, C, D, E) donde A+B definen C (correcto) y A define D (incorrecto), para normalizar a 2FN se debe:",
+                options: ["a) Eliminar D y crear (C, D).", "b) Eliminar D y crear (A, D).", "c) Eliminar C y crear (A, C).", "d) No se hace nada, ya está en 2FN."],
+                correctAnswer: "b) Eliminar D y crear (A, D)."
+            },
+            {
+                question: "En una relación R (A, B, C, D, E) donde A+B definen C (correcto) y C define D (incorrecto), para normalizar a 3FN se debe:",
+                options: ["a) Eliminar D y crear la relación R (C, D).", "b) Eliminar C y crear la relación R (A, C).", "c) Eliminar B y crear la relación R (B, D).", "d) Añadir una clave primaria."],
+                correctAnswer: "a) Eliminar D y crear la relación R (C, D)."
+            },
+            {
+                question: "¿Qué anomalía de la 3FN trata la FNBC?",
+                options: ["a) Que los atributos no principales no dependen completamente de la clave.", "b) Que haya dependencias transitivas.", "c) Que haya determinantes que no son claves candidatas.", "d) Que haya dependencias multivaluadas."],
+                correctAnswer: "c) Que haya determinantes que no son claves candidatas."
+            },
+            {
+                question: "Si en una relación R (A, B, C), C determina A (C → A) y C no es clave candidata, ¿qué se debe hacer para alcanzar la FNBC?",
+                options: ["a) Eliminar B y crear R (B, C).", "b) Eliminar C y crear R (C, A).", "c) Eliminar A y crear R (A, B).", "d) No es necesario hacer nada."],
+                correctAnswer: "b) Eliminar C y crear R (C, A)."
+            },
+            {
+                question: "¿Qué significa \"no trivial\" en el contexto de una dependencia multivaluada para la 4FN?",
+                options: ["a) Que no está implicada por una clave candidata.", "b) Que está implicada por una clave candidata.", "c) Que siempre es verdadera.", "d) Que no tiene importancia."],
+                correctAnswer: "a) Que no está implicada por una clave candidata."
+            },
+            {
+                question: "¿Qué relación se rompe en el ejemplo de la 4FN para Impartición (Asignatura, Profesor, Curso) debido a las dependencias multivaluadas?",
+                options: ["a) Solo Impartición (Asignatura, Profesor).", "b) Solo Impartición (Asignatura, Curso).", "c) En Impartición (Asignatura, Profesor) y Impartición (Asignatura, Curso).", "d) En tres relaciones."],
+                correctAnswer: "c) En Impartición (Asignatura, Profesor) y Impartición (Asignatura, Curso)."
+            },
+            {
+                question: "¿De qué depende la Quinta Forma Normal (5FN)?",
+                options: ["a) Solo de la estructura de la relación.", "b) De la estructura y de los datos (semántica de los datos).", "c) Solo de las claves candidatas.", "d) Únicamente de la existencia de una clave primaria."],
+                correctAnswer: "b) De la estructura y de los datos (semántica de los datos)."
+            },
+            {
+                question: "¿Cuál es el objetivo del Cálculo Relacional en comparación con el Álgebra Relacional?",
+                options: ["a) Definir lo mismo de manera imperativa.", "b) Definir lo mismo de manera procedimental.", "c) Definir lo mismo de manera declarativa.", "d) Realizar operaciones más complejas."],
+                correctAnswer: "c) Definir lo mismo de manera declarativa."
+            },
+            {
+                question: "La operación de \"Selección\" en el Álgebra Relacional se denota con el símbolo:",
+                options: ["a) Π", "b) σ", "c) ∪", "d) ×"],
+                correctAnswer: "b) σ"
+            },
+            {
+                question: "La operación de \"Proyección\" en el Álgebra Relacional se denota con el símbolo:",
+                options: ["a) Π", "b) σ", "c) ∪", "d) ×"],
+                correctAnswer: "a) Π"
+            },
+            {
+                question: "¿Qué operación del Álgebra Relacional combina todas las tuplas de una relación con todas las tuplas de otra?",
+                options: ["a) Unión", "b) Intersección", "c) Producto cartesiano", "d) Diferencia"],
+                correctAnswer: "c) Producto cartesiano"
+            },
+            {
+                question: "La \"Unión Natural\" (R ⋈ S) es una operación derivada que se puede construir a base de operadores básicos. ¿Qué condición de igualdad utiliza para la selección previa del producto cartesiano?",
+                options: ["a) Diferencia", "b) EquiJoin", "c) Proyección", "d) Selección"],
+                correctAnswer: "b) EquiJoin"
+            },
+            {
+                question: "¿Qué operación devuelve todos los valores de 'x' tales que para todo valor 'y' en B existe una tupla (x, y) en A, teniendo A(x,y) y B(y)?",
+                options: ["a) Unión", "b) Intersección", "c) División", "d) Producto cartesiano"],
+                correctAnswer: "c) División"
+            },
+            {
+                question: "¿Qué tipo de modelo de base de datos se basa en el concepto matemático de relación R(A1 ,A2 ,...,AN )?",
+                options: ["a) Jerárquico.", "b) De red.", "c) Relacional.", "d) De objetos."],
+                correctAnswer: "c) Relacional."
+            },
+            {
+                question: "¿Qué es R() en el contexto del modelo relacional?",
+                options: ["a) Una tupla.", "b) Un atributo.", "c) Un esquema o intensión (conjunto de la relación y sus atributos).", "d) Un dominio."],
+                correctAnswer: "c) Un esquema o intensión (conjunto de la relación y sus atributos)."
+            },
+            {
+                question: "¿Qué establece la \"no repetición de tuplas\" en el modelo relacional?",
+                options: ["a) Que todas las tuplas son iguales.", "b) Que cada tupla debe ser única (valor clave).", "c) Que las tuplas pueden tener valores duplicados.", "d) Que el orden de las tuplas es importante."],
+                correctAnswer: "b) Que cada tupla debe ser única (valor clave)."
+            },
+            {
+                question: "¿Cómo se conoce en la terminología relacional al \"número de filas\" de una tabla?",
+                options: ["a) Grado.", "b) Cardinalidad.", "c) Columna.", "d) Campo."],
+                correctAnswer: "b) Cardinalidad."
+            },
+            {
+                question: "¿Cómo se conoce en la terminología relacional al \"número de columnas\" de una tabla?",
+                options: ["a) Cardinalidad.", "b) Tupla.", "c) Grado.", "d) Extensión."],
+                correctAnswer: "c) Grado."
+            },
+            {
+                question: "Para las relaciones N-arias, ¿cómo se forma la clave compuesta para la nueva relación en el modelo relacional?",
+                options: ["a) Se coge la clave de una sola entidad.", "b) Se coge la clave de cada entidad de la relación.", "c) Se usa un atributo discriminador.", "d) No se forma clave compuesta."],
+                correctAnswer: "b) Se coge la clave de cada entidad de la relación."
+            },
+            {
+                question: "En el ejemplo Empleado (ID_Emp, Nombre); Departamento (ID_Dep, Descripcion); Relación N, M Trabajo (ID_Emp, ID_Dep), ¿qué tipo de relación es Trabajo?",
+                options: ["a) 1 a N.", "b) N a N.", "c) Unaria.", "d) Ternaria."],
+                correctAnswer: "b) N a N."
+            },
+            {
+                question: "Si se opta por \"una relación por cada subtipo y otra para el supertipo (usamos PKs y FKs)\" en una Generalización/Especialización, ¿qué tipo de claves se utilizan para enlazar?",
+                options: ["a) Claves alternativas y superclaves.", "b) Claves primarias y foráneas (PKs y FKs).", "c) Solo claves primarias.", "d) Solo claves foráneas."],
+                correctAnswer: "b) Claves primarias y foráneas (PKs y FKs)."
+            },
+            {
+                question: "Si la clave primaria es compuesta, ¿pueden ser nulos algunos de sus atributos?",
+                options: ["a) Sí, si se permite la integridad referencial.", "b) Sí, pero solo si es un único atributo.", "c) No, ninguno de los atributos puede ser nulo.", "d) Solo si son valores desconocidos."],
+                correctAnswer: "c) No, ninguno de los atributos puede ser nulo."
+            },
+            {
+                question: "Si en una relación existe una clave ajena, sus valores deben coincidir con los valores de la clave primaria referenciada o ser nulos. Esto se refiere a:",
+                options: ["a) Integridad de entidad.", "b) Integridad de dominio.", "c) Integridad referencial.", "d) Atomicidad."],
+                correctAnswer: "c) Integridad referencial."
+            },
+            {
+                question: "¿Cuál es el propósito de un \"dominio\" para un atributo?",
+                options: ["a) Definir su tamaño.", "b) Un grupo válido de valores permitidos.", "c) Indicar si es una clave.", "d) Establecer su orden."],
+                correctAnswer: "b) Un grupo válido de valores permitidos."
+            },
+            {
+                question: "¿Qué se entiende por \"independencia entre nivel físico y lógico\" en la arquitectura ANSI/SPARC?",
+                options: ["a) Que los usuarios no ven los detalles de almacenamiento.", "b) Que las aplicaciones no se ven afectadas por cambios en la infraestructura física y viceversa.", "c) Que el SGBBDD no necesita índices.", "d) Que el nivel conceptual es independiente del nivel externo."],
+                correctAnswer: "b) Que las aplicaciones no se ven afectadas por cambios en la infraestructura física y viceversa."
+            },
+            {
+                question: "¿Qué se describe como \"dependiente del TIPO de BBDD\" en el proceso de modelado?",
+                options: ["a) Modelo Conceptual.", "b) Modelo Lógico.", "c) Modelo Físico.", "d) Arquitectura ANSI/SPARC."],
+                correctAnswer: "b) Modelo Lógico."
+            },
+            {
+                question: "¿Qué se describe como \"dependiente del SGBBDD concreto\" en el proceso de modelado?",
+                options: ["a) Modelo Conceptual.", "b) Modelo Lógico.", "c) Modelo Físico.", "d) Modelo Relacional."],
+                correctAnswer: "c) Modelo Físico."
+            },
+            {
+                question: "¿Qué característica tienen las bases de datos relacionales en cuanto a las reglas de transformación?",
+                options: ["a) No tienen reglas de transformación definidas.", "b) Tienen pocas reglas de transformación definidas.", "c) Tienen muchas reglas de transformación ya definidas.", "d) Sus reglas de transformación son muy complejas."],
+                correctAnswer: "c) Tienen muchas reglas de transformación ya definidas."
+            },
+            {
+                question: "¿Qué ventaja ofrece el concepto de \"independencia entre nivel físico y lógico\" según el documento?",
+                options: ["a) Mejora la seguridad.", "b) Soporta mejor los cambios.", "c) Reduce el número de tuplas.", "d) Facilita la creación de índices."],
+                correctAnswer: "b) Soporta mejor los cambios."
+            },
+            {
+                question: "¿Qué representa el \"nivel interno\" en la arquitectura ANSI/SPARC?",
+                options: ["a) Vistas de usuario.", "b) Tablas/relaciones.", "c) Detalles de almacenamiento, infraestructura e índices.", "d) El diccionario de datos."],
+                correctAnswer: "c) Detalles de almacenamiento, infraestructura e índices."
+            },
+            {
+                question: "¿Cuál de las siguientes comparaciones de terminología es correcta según el documento?",
+                options: ["a) Tupla = Columna.", "b) Atributo = Fila.", "c) Cardinalidad = Nº Columnas.", "d) Grado = Nº Campos."],
+                correctAnswer: "d) Grado = Nº Campos."
+            },
+            {
+                question: "¿Qué se utiliza para representar la información desconocida según la Regla 3 de Codd?",
+                options: ["a) Ceros.", "b) Cadena vacía.", "c) Blancos.", "d) Todas las anteriores."],
+                correctAnswer: "d) Todas las anteriores."
+            },
+            {
+                question: "¿Cómo se accede a los metadatos (diccionario de datos) según la Regla 4 de Codd?",
+                options: ["a) A través de un lenguaje especial.", "b) Igual que a los datos.", "c) Solo por el administrador.", "d) De forma estática."],
+                correctAnswer: "b) Igual que a los datos."
+            },
+            {
+                question: "¿Es más difícil la independencia lógica o la física de los datos según el documento?",
+                options: ["a) La física es más difícil.", "b) La lógica es más difícil.", "c) Ambas son igualmente difíciles.", "d) La dificultad depende del SGBBDD."],
+                correctAnswer: "b) La lógica es más difícil."
+            },
+            {
+                question: "¿Qué es una \"clave\" o \"clave candidata\"?",
+                options: ["a) Un conjunto de atributos que siempre es reducible.", "b) Un atributo o conjunto de atributos mínimo que identifican unívocamente a cada tupla.", "c) La clave primaria elegida.", "d) Un atributo que puede ser nulo."],
+                correctAnswer: "b) Un atributo o conjunto de atributos mínimo que identifican unívocamente a cada tupla."
+            },
+            {
+                question: "Si se tienen las superclaves {DNI, ColorOjos}, {DNI, FecNac}, {DNI}, {NumSS}, {ColorOjos, FecNac}, ¿cuáles serían las claves candidatas si el DNI y el NumSS identifican unívocamente una tupla?",
+                options: ["a) {DNI, ColorOjos}, {NumSS}.", "b) {DNI}, {NumSS}.", "c) {DNI}, {NumSS}, {ColorOjos, FecNac}.", "d) Todas las anteriores."],
+                correctAnswer: "b) {DNI}, {NumSS}."
+            },
+            {
+                question: "¿Qué significa \"desnormalizar\" en el diseño de bases de datos?",
+                options: ["a) Eliminar la redundancia.", "b) Aplicar todas las formas normales.", "c) Volver a un estado menos normalizado para mejorar el rendimiento.", "d) Aumentar el número de joins."],
+                correctAnswer: "c) Volver a un estado menos normalizado para mejorar el rendimiento."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false;
+
+        const questionTextElement = document.getElementById('questionText');
+        const optionsContainerElement = document.getElementById('optionsContainer');
+        const feedbackMessageElement = document.getElementById('feedbackMessage');
+        const nextButton = document.getElementById('nextButton');
+        const scoreContainerElement = document.getElementById('scoreContainer');
+        const restartButton = document.getElementById('restartButton');
+        const progressBar = document.getElementById('progressBar');
+
+        // Function to load a question
+        function loadQuestion() {
+            answered = false;
+            feedbackMessageElement.textContent = '';
+            nextButton.classList.add('hidden');
+            optionsContainerElement.innerHTML = ''; // Clear previous options
+
+            if (currentQuestionIndex < quizData.length) {
+                const currentQuestion = quizData[currentQuestionIndex];
+                questionTextElement.textContent = currentQuestion.question;
+
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.classList.add('option-button');
+                    button.textContent = option;
+                    button.addEventListener('click', () => selectOption(button, option, currentQuestion.correctAnswer));
+                    optionsContainerElement.appendChild(button);
+                });
+                updateProgressBar();
+            } else {
+                showResults();
+            }
+        }
+
+        // Function to handle option selection
+        function selectOption(selectedButton, selectedAnswer, correctAnswer) {
+            if (answered) return; // Prevent multiple clicks
+
+            answered = true;
+
+            // Remove previous feedback classes from all options
+            Array.from(optionsContainerElement.children).forEach(button => {
+                button.classList.remove('correct', 'incorrect', 'selected');
+            });
+
+            selectedButton.classList.add('selected'); // Mark the selected button
+
+            if (selectedAnswer === correctAnswer) {
+                selectedButton.classList.add('correct');
+                feedbackMessageElement.textContent = '¡Correcto!';
+                feedbackMessageElement.style.color = '#065f46'; // Dark green
+                score++;
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
+                feedbackMessageElement.style.color = '#991b1b'; // Dark red
+                // Highlight the correct answer
+                Array.from(optionsContainerElement.children).forEach(button => {
+                    if (button.textContent === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            nextButton.classList.remove('hidden');
+        }
+
+        // Function to show results at the end of the quiz
+        function showResults() {
+            questionTextElement.textContent = '¡Test Completado!';
+            optionsContainerElement.innerHTML = '';
+            feedbackMessageElement.textContent = '';
+            nextButton.classList.add('hidden');
+            scoreContainerElement.classList.remove('hidden');
+            scoreContainerElement.textContent = `Tu puntuación final es: ${score} de ${quizData.length}`;
+            restartButton.classList.remove('hidden');
+            progressBar.style.width = '100%'; // Fill progress bar at the end
+        }
+
+        // Event listener for the "Next Question" button
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            loadQuestion();
+        });
+
+        // Event listener for the "Restart Test" button
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreContainerElement.classList.add('hidden');
+            restartButton.classList.add('hidden');
+            loadQuestion();
+        });
+
+        // Function to update the progress bar
+        function updateProgressBar() {
+            const progress = (currentQuestionIndex / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Initial load of the first question
+        loadQuestion();
+    </script>
+</body>
+</html>

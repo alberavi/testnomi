@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+        .options-container button {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: #e0e7ff;
+            color: #4338ca;
+            font-weight: 500;
+            text-align: left;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            border: 1px solid #c7d2fe;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #c7d2fe;
+            transform: translateY(-2px);
+        }
+        .options-container button.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+            font-weight: 700;
+        }
+        .options-container button.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #fecaca;
+            font-weight: 700;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .feedback.correct-feedback {
+            color: #065f46;
+        }
+        .feedback.incorrect-feedback {
+            color: #991b1b;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .navigation-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .navigation-buttons button:hover {
+            background-color: #4338ca;
+        }
+        .navigation-buttons button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div id="question-display" class="question-card">
+            <!-- Question and options will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" disabled>Anterior</button>
+            <button id="next-btn">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of quiz questions and their correct answers
+        const questions = [
+            {
+                question: '¿Qué tipo de redes son consideradas el "Backbone de Internet" y tienen un alcance internacional?',
+                options: ['a) TIER-3', 'b) TIER-2', 'c) TIER-1', 'd) IXP'],
+                correctAnswer: 'c) TIER-1'
+            },
+            {
+                question: 'Entre dos Sistemas Autónomos (AS), ¿qué protocolo se utiliza para el intercambio de tráfico?',
+                options: ['a) IGP', 'b) BGP', 'c) HTTP', 'd) DNS'],
+                correctAnswer: 'b) BGP'
+            },
+            {
+                question: '¿Quién asigna el Número de Sistema Autónomo (ASN) a cada AS?',
+                options: ['a) ISP', 'b) IANA-RIR', 'c) IXP', 'd) CDN'],
+                correctAnswer: 'b) IANA-RIR'
+            },
+            {
+                question: 'Las redes TIER-2 tienen una cobertura:',
+                options: ['a) Internacional', 'b) Local', 'c) Nacional', 'd) Regional'],
+                correctAnswer: 'c) Nacional'
+            },
+            {
+                question: 'Para que dos redes TIER-2 puedan intercambiar tráfico, ¿qué requisito es necesario?',
+                options: ['a) Un acuerdo de tránsito con otra TIER-2', 'b) Un contrato/acuerdo de tránsito con una TIER-1', 'c) Estar conectadas directamente', 'd) No se requiere ningún acuerdo'],
+                correctAnswer: 'b) Un contrato/acuerdo de tránsito con una TIER-1'
+            },
+            {
+                question: '¿Qué es un IXP?',
+                options: ['a) Un proveedor de internet local', 'b) Un punto de acceso neutro', 'c) Una red de entrega de contenido', 'd) Un tipo de red TIER-1'],
+                correctAnswer: 'b) Un punto de acceso neutro'
+            },
+            {
+                question: '¿Qué ventajas ofrecen los IXP en términos de tráfico?',
+                options: ['a) Aumentan la latencia', 'b) Evitan tráfico de tránsito y saltan peajes', 'c) Disminuyen el ancho de banda', 'd) Incrementan los costes'],
+                correctAnswer: 'b) Evitan tráfico de tránsito y saltan peajes'
+            },
+            {
+                question: 'Los IXP operan en qué nivel de switching:',
+                options: ['a) Nivel 1', 'b) Nivel 2', 'c) Nivel 3', 'd) Nivel 4'],
+                correctAnswer: 'b) Nivel 2'
+            },
+            {
+                question: '¿Qué tipo de redes pueden recibir servicio de los IXP?',
+                options: ['a) Solo TIER-1', 'b) Solo TIER-2', 'c) TIER-2 y TIER-3', 'd) Solo TIER-3'],
+                correctAnswer: 'c) TIER-2 y TIER-3'
+            },
+            {
+                question: '¿Qué significa CDN?',
+                options: ['a) Content Distribution Network', 'b) Certified Data Network', 'c) Content Delivery Network', 'd) Centralized Data Node'],
+                correctAnswer: 'c) Content Delivery Network'
+            },
+            {
+                question: '¿Cuál es el propósito principal de una CDN?',
+                options: ['a) Centralizar toda la información en un solo servidor', 'b) Desplegar copias de información en servidores cercanos al cliente', 'c) Reducir la disponibilidad de la información', 'd) Disminuir el rendimiento de las aplicaciones web'],
+                correctAnswer: 'b) Desplegar copias de información en servidores cercanos al cliente'
+            },
+            {
+                question: '¿Qué característica ofrecen las CDN en relación a la disponibilidad y el rendimiento?',
+                options: ['a) Baja disponibilidad y rendimiento', 'b) Alta disponibilidad y rendimiento', 'c) Solo alta disponibilidad', 'd) Solo alto rendimiento'],
+                correctAnswer: 'b) Alta disponibilidad y rendimiento'
+            },
+            {
+                question: '¿A qué están "enganchadas" las CDN?',
+                options: ['a) A las redes TIER-1', 'b) A los IXP', 'c) A las redes TIER-3', 'd) Directamente a los usuarios'],
+                correctAnswer: 'b) A los IXP'
+            },
+            {
+                question: 'Las redes TIER-3 son conocidas como:',
+                options: ['a) Carriers de internet', 'b) Puntos de acceso neutro', 'c) Proveedores de internet (ISP)', 'd) Redes de intercambio de tráfico'],
+                correctAnswer: 'c) Proveedores de internet (ISP)'
+            },
+            {
+                question: 'Inicialmente, ¿para qué se diseñó HTTP?',
+                options: ['a) Para hacer aplicaciones web', 'b) Para navegar', 'c) Para transferir archivos grandes', 'd) Para gestionar bases de datos'],
+                correctAnswer: 'b) Para navegar'
+            },
+            {
+                question: '¿Qué característica principal tiene HTTP en cuanto a su estado?',
+                options: ['a) Es con estado', 'b) No tiene estado', 'c) Mantiene la memoria de sesiones anteriores', 'd) Guarda el estado del cliente automáticamente'],
+                correctAnswer: 'b) No tiene estado'
+            },
+            {
+                question: '¿Por qué HTTP necesita cookies?',
+                options: ['a) Para mejorar la seguridad', 'b) Para optimizar el ancho de banda', 'c) Para mantener el estado debido a que no lo tiene', 'd) Para cifrar la comunicación'],
+                correctAnswer: 'c) Para mantener el estado debido a que no lo tiene'
+            },
+            {
+                question: 'HTTP está orientado a:',
+                options: ['a) Binario', 'b) Carácter', 'c) Streaming', 'd) Paquetes'],
+                correctAnswer: 'b) Carácter'
+            },
+            {
+                question: '¿Cuál es la diferencia principal entre una URL y una URN?',
+                options: ['a) URL identifica y URN localiza', 'b) URL localiza y URN identifica', 'c) Ambos localizan', 'd) Ambos identifican'],
+                correctAnswer: 'b) URL localiza y URN identifica'
+            },
+            {
+                question: 'Un ejemplo de URN es:',
+                options: ['a) http://www.example.com', 'b) urn:isbn:444-abc-123', 'c) ftp://https://www.google.com/search?q=files.example.com', 'd) mailto:user@example.com'],
+                correctAnswer: 'b) urn:isbn:444-abc-123'
+            },
+            {
+                question: '¿Qué es un método HTTP "seguro"?',
+                options: ['a) Un método que modifica el recurso', 'b) Un método que solo realiza lectura', 'c) Un método que no es idempotente', 'd) Un método que crea un recurso nuevo'],
+                correctAnswer: 'b) Un método que solo realiza lectura'
+            },
+            {
+                question: '¿Qué significa que un método HTTP sea "idempotente"?',
+                options: ['a) Que produce un resultado diferente cada vez que se ejecuta', 'b) Que da el mismo resultado aunque se ejecute muchas veces', 'c) Que solo se puede ejecutar una vez', 'd) Que no garantiza estabilidad'],
+                correctAnswer: 'b) Que da el mismo resultado aunque se ejecute muchas veces'
+            },
+            {
+                question: '¿Qué método HTTP obtiene el recurso y es seguro e idempotente?',
+                options: ['a) POST', 'b) PUT', 'c) GET', 'd) DELETE'],
+                correctAnswer: 'c) GET'
+            },
+            {
+                question: '¿Qué método HTTP obtiene solo los headers y no el recurso?',
+                options: ['a) GET', 'b) HEAD', 'c) OPTIONS', 'd) TRACE'],
+                correctAnswer: 'b) HEAD'
+            },
+            {
+                question: '¿Qué método HTTP crea o reemplaza un recurso en la URL y es idempotente?',
+                options: ['a) POST', 'b) PATCH', 'c) PUT', 'd) DELETE'],
+                correctAnswer: 'c) PUT'
+            },
+            {
+                question: '¿Por qué el método POST no es idempotente?',
+                options: ['a) Porque siempre crea un recurso nuevo', 'b) Porque puede crear un recurso nuevo en lugar de reemplazarlo', 'c) Porque modifica el recurso existente', 'd) Porque no envía datos a la URL'],
+                correctAnswer: 'b) Porque puede crear un recurso nuevo en lugar de reemplazarlo'
+            },
+            {
+                question: '¿Qué método HTTP se utiliza para realizar modificaciones parciales, similar a un PUT parcial?',
+                options: ['a) PUT', 'b) POST', 'c) PATCH', 'd) CONNECT'],
+                correctAnswer: 'c) PATCH'
+            },
+            {
+                question: '¿Qué cabecera HTTP se utiliza para la validación de caché y contiene un código hash?',
+                options: ['a) Cache-control', 'b) ETag', 'c) If-none-match', 'd) Last-Modified'],
+                correctAnswer: 'b) ETag'
+            },
+            {
+                question: 'Si el servidor devuelve el código 304 en respuesta a un If-none-match, ¿qué indica?',
+                options: ['a) Que el recurso ha sido modificado', 'b) Que el cliente no tiene la última versión', 'c) Que el cliente tiene la última versión y no necesita descargarla', 'd) Que el recurso no existe'],
+                correctAnswer: 'c) Que el cliente tiene la última versión y no necesita descargarla'
+            },
+            {
+                question: '¿Qué método HTTP es similar a un "echo" y es usado para depuración?',
+                options: ['a) OPTIONS', 'b) TRACE', 'c) CONNECT', 'd) DELETE'],
+                correctAnswer: 'b) TRACE'
+            },
+            {
+                question: '¿Qué método HTTP permite conocer qué acciones se pueden realizar con un recurso y qué métodos soporta una URL?',
+                options: ['a) GET', 'b) HEAD', 'c) OPTIONS', 'd) TRACE'],
+                correctAnswer: 'c) OPTIONS'
+            },
+            {
+                question: '¿Qué extensión de verbos HTTP permite tratar el espacio de URL como un sistema de ficheros remoto?',
+                options: ['a) HTTP/2', 'b) WebDAV', 'c) HTTPS', 'd) FTP'],
+                correctAnswer: 'b) WebDAV'
+            },
+            {
+                question: '¿Qué cabecera de petición identifica al navegador?',
+                options: ['a) Host', 'b) User-Agent', 'c) Accept-Language', 'd) Connection'],
+                correctAnswer: 'b) User-Agent'
+            },
+            {
+                question: '¿Qué cabecera de respuesta indica la URL a la que el navegador debe redirigirse?',
+                options: ['a) Server', 'b) Content-Length', 'c) Location', 'd) Cache-control'],
+                correctAnswer: 'c) Location'
+            },
+            {
+                question: '¿La autenticación BASIC en HTTP está cifrada?',
+                options: ['a) Sí, completamente', 'b) No, solo codificada', 'c) Depende de la implementación', 'd) Solo la contraseña está cifrada'],
+                correctAnswer: 'b) No, solo codificada'
+            },
+            {
+                question: 'Si el navegador detecta una redirección y pregunta al destino si puede acceder a ese recurso desde el origen, ¿a qué política de seguridad se refiere?',
+                options: ['a) HSTS', 'b) CSP', 'c) CORS', 'd) TLS'],
+                correctAnswer: 'c) CORS'
+            },
+            {
+                question: '¿Cómo se llama la acción de preguntar al destino en la política CORS?',
+                options: ['a) Redirección', 'b) Preflight', 'c) Handshake', 'd) Autenticación'],
+                correctAnswer: 'b) Preflight'
+            },
+            {
+                question: 'Si una petición CORS recibe un error 405, ¿qué indica?',
+                options: ['a) Recurso no encontrado', 'b) Método no permitido', 'c) Acceso no autorizado', 'd) Petición incorrecta'],
+                correctAnswer: 'b) Método no permitido'
+            },
+            {
+                question: '¿Qué técnica de seguridad fuerza al navegador a usar HTTPS?',
+                options: ['a) CSP', 'b) CORS', 'c) HSTS', 'd) Basic Authentication'],
+                correctAnswer: 'c) HSTS'
+            },
+            {
+                question: '¿Qué cabecera HTTP se utiliza para implementar HSTS?',
+                options: ['a) Content-Security-Policy', 'b) Strict-Transport-Security', 'c) Access-Control-Allow-Origin', 'd) WWW-Authenticate'],
+                correctAnswer: 'b) Strict-Transport-Security'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP se utiliza para mover de HTTP a HTTPS mediante HSTS?',
+                options: ['a) 200', 'b) 301', 'c) 401', 'd) 500'],
+                correctAnswer: 'b) 301'
+            },
+            {
+                question: '¿Qué técnica de seguridad es más avanzada y restrictiva que CORS y protege frente a Cross-Site Scripting (XSS)?',
+                options: ['a) HSTS', 'b) Basic Authentication', 'c) CSP', 'd) TLS'],
+                correctAnswer: 'c) CSP'
+            },
+            {
+                question: '¿Qué cabecera HTTP se utiliza para implementar CSP?',
+                options: ['a) Strict-Transport-Security', 'b) Access-Control-Allow-Origin', 'c) Content-Security-Policy', 'd) WWW-Authenticate'],
+                correctAnswer: 'c) Content-Security-Policy'
+            },
+            {
+                question: 'En CSP, ¿qué significa self?',
+                options: ['a) Que el recurso puede descargarse de cualquier origen', 'b) Que el recurso solo puede descargarse del origen actual', 'c) Que el recurso debe autenticarse antes de la descarga', 'd) Que el recurso se descarga automáticamente'],
+                correctAnswer: 'b) Que el recurso solo puede descargarse del origen actual'
+            },
+            {
+                question: '¿Qué categoría de códigos de respuesta HTTP indica éxito?',
+                options: ['a) 100', 'b) 200', 'c) 300', 'd) 400'],
+                correctAnswer: 'b) 200'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que un nuevo recurso ha sido creado, por ejemplo con un método PUT?',
+                options: ['a) 200', 'b) 201', 'c) 202', 'd) 204'],
+                correctAnswer: 'b) 201'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que una solicitud ha sido recibida pero no procesada, como en procesos batch?',
+                options: ['a) 200', 'b) 201', 'c) 202', 'd) 204'],
+                correctAnswer: 'c) 202'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que un recurso se ha movido permanentemente?',
+                options: ['a) 301', 'b) 302', 'c) 304', 'd) 307'],
+                correctAnswer: 'a) 301'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que un recurso no ha sido modificado desde la última solicitud?',
+                options: ['a) 301', 'b) 302', 'c) 304', 'd) 400'],
+                correctAnswer: 'c) 304'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica un problema con la solicitud del cliente, como una "Bad Request"?',
+                options: ['a) 200', 'b) 300', 'c) 400', 'd) 500'],
+                correctAnswer: 'c) 400'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que se requiere autenticación al cliente y suele mostrar un pop-up de usuario y contraseña?',
+                options: ['a) 400', 'b) 401', 'c) 403', 'd) 404'],
+                correctAnswer: 'b) 401'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que el usuario no tiene permiso para acceder a un recurso, aunque el servidor sabe quién es?',
+                options: ['a) 401', 'b) 403', 'c) 404', 'd) 405'],
+                correctAnswer: 'b) 403'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que un método no está permitido para un recurso, por ejemplo, intentar un POST cuando solo se permite GET?',
+                options: ['a) 403', 'b) 404', 'c) 405', 'd) 413'],
+                correctAnswer: 'c) 405'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica que el cuerpo de la solicitud es demasiado grande, como un fichero excesivamente grande?',
+                options: ['a) 405', 'b) 413', 'c) 500', 'd) 502'],
+                correctAnswer: 'b) 413'
+            },
+            {
+                question: '¿Qué código de respuesta HTTP indica un error interno genérico del servidor?',
+                options: ['a) 404', 'b) 413', 'c) 500', 'd) 503'],
+                correctAnswer: 'c) 500'
+            },
+            {
+                question: 'HTTP/2 derivó de qué protocolo de Google:',
+                options: ['a) HTML5', 'b) SPDY', 'c) QUIC', 'd) FTP'],
+                correctAnswer: 'b) SPDY'
+            },
+            {
+                question: '¿Qué característica principal tiene HTTP/2 en relación a las conexiones TCP?',
+                options: ['a) Usa múltiples conexiones TCP para cada solicitud', 'b) Usa una única conexión TCP para múltiples solicitudes', 'c) No usa conexiones TCP', 'd) Es incompatible con TCP'],
+                correctAnswer: 'b) Usa una única conexión TCP para múltiples solicitudes'
+            },
+            {
+                question: '¿Qué se comprime por defecto en HTTP/2?',
+                options: ['a) El body', 'b) Los headers', 'c) Las URLs', 'd) Las cookies'],
+                correctAnswer: 'b) Los headers'
+            },
+            {
+                question: '¿Requiere HTTP/2 TLS implementado externamente?',
+                options: ['a) Sí, siempre', 'b) No, lo lleva implementado internamente', 'c) Depende del servidor', 'd) Solo para ciertas peticiones'],
+                correctAnswer: 'a) Sí, siempre'
+            },
+            {
+                question: '¿Cómo es el formato de HTTP/2?',
+                options: ['a) Orientado a carácter', 'b) Binario', 'c) XML', 'd) JSON'],
+                correctAnswer: 'b) Binario'
+            },
+            {
+                question: '¿Qué técnica en HTTP/2 permite que sobre varias requests (img, js, css) se genere una única response con todo?',
+                options: ['a) Server PUSH', 'b) Multiplexación', 'c) Priorización de flujos', 'd) Compresión de headers'],
+                correctAnswer: 'a) Server PUSH'
+            },
+            {
+                question: '¿Cuál es la unidad mínima de intercambio en HTTP/2?',
+                options: ['a) Paquete', 'b) Segmento', 'c) Frame', 'd) Stream'],
+                correctAnswer: 'c) Frame'
+            },
+            {
+                question: 'El gran cambio de HTTP/3 es que va sobre qué protocolo:',
+                options: ['a) TCP', 'b) UDP', 'c) SCTP', 'd) SPDY'],
+                correctAnswer: 'b) UDP'
+            },
+            {
+                question: 'SSL/TLS se usa para cifrar un canal HTTP (HTTPS), pero también puede usarse para:',
+                options: ['a) Solo FTP', 'b) FTP (FTPS), email (SMTP, IMAP, POP3) o LDAP (LDAPS)', 'c) Solo email', 'd) Solo LDAP'],
+                correctAnswer: 'b) FTP (FTPS), email (SMTP, IMAP, POP3) o LDAP (LDAPS)'
+            },
+            {
+                question: 'La criptografía, aplicada en SSL/TLS, busca asegurar la:',
+                options: ['a) Velocidad, eficiencia y robustez', 'b) Confidencialidad, Integridad y Autenticidad (Triada CIA)', 'c) Disponibilidad, usabilidad y escalabilidad', 'd) Complejidad, simplicidad y portabilidad'],
+                correctAnswer: 'b) Confidencialidad, Integridad y Autenticidad (Triada CIA)'
+            },
+            {
+                question: '¿Qué aspecto de la seguridad garantiza el secreto y el cifrado de la información?',
+                options: ['a) Integridad', 'b) Autenticidad', 'c) Confidencialidad', 'd) Disponibilidad'],
+                correctAnswer: 'c) Confidencialidad'
+            },
+            {
+                question: '¿Qué aspecto de la seguridad asegura que nadie ha modificado la información en el transcurso de la comunicación?',
+                options: ['a) Confidencialidad', 'b) Autenticidad', 'c) Integridad', 'd) No repudio'],
+                correctAnswer: 'c) Integridad'
+            },
+            {
+                question: '¿Qué aspecto de la seguridad garantiza la autoría, que quien manda la información es quien dice ser?',
+                options: ['a) Integridad', 'b) Confidencialidad', 'c) Autenticidad', 'd) No repudio'],
+                correctAnswer: 'c) Autenticidad'
+            },
+            {
+                question: 'El objetivo principal del Handshake del protocolo SSL/TLS es:',
+                options: ['a) Generar un certificado digital', 'b) Intercambiar claves públicas', 'c) Generar una clave simétrica de sesión', 'd) Cifrar todo el tráfico inmediatamente'],
+                correctAnswer: 'c) Generar una clave simétrica de sesión'
+            },
+            {
+                question: '¿Qué se envía en la trama client-hello durante el Handshake SSL/TLS?',
+                options: ['a) El certificado del servidor', 'b) La clave pre-master cifrada', 'c) Una lista de cipher suites que el cliente sabe manejar', 'd) La clave simétrica de sesión'],
+                correctAnswer: 'c) Una lista de cipher suites que el cliente sabe manejar'
+            },
+            {
+                question: 'En el server-hello, ¿qué se envía al cliente en relación a los algoritmos?',
+                options: ['a) La lista de cipher suites del cliente', 'b) La cipher suite elegida por el servidor', 'c) Un nuevo número aleatorio del cliente', 'd) La clave privada del servidor'],
+                correctAnswer: 'b) La cipher suite elegida por el servidor'
+            },
+            {
+                question: '¿Cómo se cifra la clave pre-master que el cliente envía al servidor?',
+                options: ['a) Con la clave privada del cliente', 'b) Con la clave pública del servidor', 'c) Con la clave simétrica generada', 'd) No se cifra, se envía en claro'],
+                correctAnswer: 'b) Con la clave pública del servidor'
+            },
+            {
+                question: '¿Cuál es una de las vulnerabilidades mencionadas para SSL/TLS?',
+                options: ['a) Ataque de fuerza bruta', 'b) Ataque de renegociación', 'c) Ataque de inundación SYN', 'd) Ataque de inyección SQL'],
+                correctAnswer: 'b) Ataque de renegociación'
+            },
+            {
+                question: '¿Qué tipo de algoritmos criptográficos usan una sola clave para cifrar y descifrar, y son muy eficientes?',
+                options: ['a) Asimétricos', 'b) Híbridos', 'c) Simétricos', 'd) De hash'],
+                correctAnswer: 'c) Simétricos'
+            },
+            {
+                question: '¿Cuál es el principal problema de los algoritmos simétricos?',
+                options: ['a) Son muy lentos', 'b) No pueden cifrar cosas grandes', 'c) El problema de distribución de la clave', 'd) No garantizan la confidencialidad'],
+                correctAnswer: 'c) El problema de distribución de la clave'
+            },
+            {
+                question: '¿Qué tipo de algoritmos usan dos claves, donde lo que se hace con una se deshace con la otra?',
+                options: ['a) Simétricos', 'b) Híbridos', 'c) Asimétricos', 'd) De resumen'],
+                correctAnswer: 'c) Asimétricos'
+            },
+            {
+                question: '¿Cuál es una desventaja de los algoritmos asimétricos?',
+                options: ['a) Son muy rápidos', 'b) Se usan para cifrar canales de comunicación grandes', 'c) Son lentos y no se usan para cosas grandes', 'd) No distribuyen claves'],
+                correctAnswer: 'c) Son lentos y no se usan para cosas grandes'
+            },
+            {
+                question: '¿Qué tipo de algoritmo se usa para el intercambio de claves simétricas?',
+                options: ['a) RSA', 'b) AES', 'c) DH (Diffie-Hellman)', 'd) SHA-256'],
+                correctAnswer: 'c) DH (Diffie-Hellman)'
+            },
+            {
+                question: '¿Qué algoritmos generan un código pequeño de un documento o mensaje y se usan para la integridad?',
+                options: ['a) AES', 'b) RSA', 'c) SHA-1, SHA-2, MD5', 'd) 3DES'],
+                correctAnswer: 'c) SHA-1, SHA-2, MD5'
+            },
+            {
+                question: '¿Qué tamaño de resumen tiene MD5?',
+                options: ['a) 160 bits', 'b) 256 bits', 'c) 512 bits', 'd) 128 bits'],
+                correctAnswer: 'd) 128 bits'
+            },
+            {
+                question: '¿Qué es MIC (Código de Integridad del Mensaje)?',
+                options: ['a) Genera un resumen (hash) del mensaje para asegurar la autenticidad', 'b) Genera un resumen (hash) del mensaje para asegurar la integridad', 'c) Cifra el mensaje completamente', 'd) Intercambia claves simétricas'],
+                correctAnswer: 'b) Genera un resumen (hash) del mensaje para asegurar la integridad'
+            },
+            {
+                question: '¿Qué es MAC/HMAC y para qué se usa principalmente?',
+                options: ['a) Código de Integridad del Mensaje, para integridad', 'b) Código de Autenticación del Mensaje, para integridad y autenticidad', 'c) Cifrado simétrico, para confidencialidad', 'd) Firma digital, solo para confidencialidad'],
+                correctAnswer: 'b) Código de Autenticación del Mensaje, para integridad y autenticidad'
+            },
+            {
+                question: 'En la Firma Digital, ¿qué se cifra con la clave privada del emisor?',
+                options: ['a) El documento completo', 'b) La clave pública del receptor', 'c) El hash calculado del documento', 'd) La fecha y hora de la firma'],
+                correctAnswer: 'c) El hash calculado del documento'
+            },
+            {
+                question: '¿Qué combinación de seguridad busca garantizar una Firma Digital?',
+                options: ['a) Confidencialidad y Disponibilidad', 'b) Integridad y Autenticidad', 'c) Solo Autenticidad', 'd) Solo Integridad'],
+                correctAnswer: 'b) Integridad y Autenticidad'
+            },
+            {
+                question: '¿Cómo se soluciona el problema de distribución de la clave en los sistemas híbridos como SSL?',
+                options: ['a) Cifrando todo el canal con algoritmos asimétricos', 'b) Intercambiando la clave simétrica de forma asimétrica (ej. DH)', 'c) Enviando la clave simétrica en claro', 'd) Usando solo algoritmos simétricos'],
+                correctAnswer: 'b) Intercambiando la clave simétrica de forma asimétrica (ej. DH)'
+            },
+            {
+                question: '¿Quién expide y firma los Certificados X509v3?',
+                options: ['a) El emisor del certificado', 'b) Una Autoridad de Certificación (CA)', 'c) El navegador web', 'd) El usuario final'],
+                correctAnswer: 'b) Una Autoridad de Certificación (CA)'
+            },
+            {
+                question: 'En la legislación española, ¿cómo se conoce a las Autoridades de Certificación?',
+                options: ['a) ISP', 'b) PSC (Prestador de Servicios de Confianza)', 'c) CDN', 'd) IXP'],
+                correctAnswer: 'b) PSC (Prestador de Servicios de Confianza)'
+            },
+            {
+                question: '¿Qué extensión de fichero de certificado contiene la parte pública y la clave privada, protegido con contraseña, y sigue el estándar PKCS#12?',
+                options: ['a) .cer', 'b) .pem', 'c) .pfx y .p12', 'd) .crt'],
+                correctAnswer: 'c) .pfx y .p12'
+            },
+            {
+                question: '¿Qué campo del certificado X509v3 indica para quién se emite y el dominio?',
+                options: ['a) Emisor', 'b) Validez', 'c) Sujeto', 'd) Número de serie'],
+                correctAnswer: 'c) Sujeto'
+            },
+            {
+                question: '¿Qué extensión de certificado se expide para un dominio principal y otros dominios asociados?',
+                options: ['a) Wildcard', 'b) SAN (Subject Alternative Name)', 'c) Solo Dominio', 'd) Single Domain'],
+                correctAnswer: 'b) SAN (Subject Alternative Name)'
+            },
+            {
+                question: '¿Cómo se asegura la autenticidad de la CA en la firma digital de un certificado?',
+                options: ['a) Haciendo un hash de la clave pública de la CA', 'b) Cifrando el hash de todo el certificado con la clave privada de la CA', 'c) Cifrando todo el certificado con la clave pública de la CA', 'd) Enviando un certificado adicional de la CA'],
+                correctAnswer: 'b) Cifrando el hash de todo el certificado con la clave privada de la CA'
+            },
+            {
+                question: '¿Qué formato de firma de documentos electrónicos se utiliza para ficheros de tamaño pequeño (hasta 4 MB) según el portal Valide?',
+                options: ['a) CADES', 'b) PADES', 'c) XADES', 'd) PKCS#7'],
+                correctAnswer: 'a) CADES'
+            },
+            {
+                question: '¿Qué formato de firma de documentos electrónicos se utiliza para ver la información de tu firma y el contenido una vez firmado (PDF)?',
+                options: ['a) XADES', 'b) CADES', 'c) PADES', 'd) PKCS#12'],
+                correctAnswer: 'c) PADES'
+            },
+            {
+                question: 'Durante la verificación de un certificado de servidor, ¿qué se comprueba en relación al dominio?',
+                options: ['a) Si ha sido emitido para cualquier dominio', 'b) Si ha sido emitido para el dominio desde el que se descargó', 'c) Si el dominio es conocido por la CA', 'd) Si el dominio tiene una extensión .com'],
+                correctAnswer: 'b) Si ha sido emitido para el dominio desde el que se descargó'
+            },
+            {
+                question: '¿Qué protocolos se utilizan para comprobar el estado de revocación de un certificado?',
+                options: ['a) HTTP y HTTPS', 'b) FTP y SMTP', 'c) OCSP y CRL', 'd) TCP y UDP'],
+                correctAnswer: 'c) OCSP y CRL'
+            },
+            {
+                question: '¿Qué archivo contiene las CAs de confianza por defecto en Java?',
+                options: ['a) JAVA_HOME/bin/security/cacerts', 'b) JAVA_HOME/jre/lib/security/cacerts', 'c) JAVA_HOME/lib/cacerts.jks', 'd) JAVA_HOME/cert/default.cer'],
+                correctAnswer: 'b) JAVA_HOME/jre/lib/security/cacerts'
+            },
+            {
+                question: '¿Qué herramienta JDK se utiliza para crear y gestionar almacenes de claves, similar a OpenSSL?',
+                options: ['a) jar', 'b) javac', 'c) keytool', 'd) java'],
+                correctAnswer: 'c) keytool'
+            },
+            {
+                question: '¿Qué estándar PKCS define el formato del cifrado RSA?',
+                options: ['a) PKCS#3', 'b) PKCS#5', 'c) PKCS#1', 'd) PKCS#7'],
+                correctAnswer: 'c) PKCS#1'
+            },
+            {
+                question: '¿Qué estándar PKCS se utiliza comúnmente para almacenar claves privadas con su certificado de clave pública, protegido mediante clave simétrica?',
+                options: ['a) PKCS#8', 'b) PKCS#10', 'c) PKCS#11', 'd) PKCS#12'],
+                correctAnswer: 'd) PKCS#12'
+            },
+            {
+                question: '¿Qué estándar PKCS define un API genérico de acceso a dispositivos criptográficos (Cryptographic Token Interface/cryptoki)?',
+                options: ['a) PKCS#7', 'b) PKCS#11', 'c) PKCS#13', 'd) PKCS#15'],
+                correctAnswer: 'b) PKCS#11'
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        const questionDisplay = document.getElementById('question-display');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        // Function to load a question
+        function loadQuestion() {
+            const questionData = questions[currentQuestionIndex];
+            questionDisplay.innerHTML = `
+                <div class="question-text">${questionData.question}</div>
+                <div class="options-container">
+                    ${questionData.options.map((option, index) => `
+                        <button data-option="${option}" class="rounded-lg">${option}</button>
+                    `).join('')}
+                </div>
+                <div class="feedback" id="feedback-message"></div>
+            `;
+
+            // Add event listeners to options
+            document.querySelectorAll('.options-container button').forEach(button => {
+                button.addEventListener('click', handleAnswerClick);
+            });
+
+            updateNavigationButtons();
+        }
+
+        // Function to handle answer click
+        function handleAnswerClick(event) {
+            const selectedOption = event.target;
+            const userAnswer = selectedOption.dataset.option;
+            const correctAnswer = questions[currentQuestionIndex].correctAnswer;
+            const feedbackMessage = document.getElementById('feedback-message');
+
+            // Disable all buttons after an answer is selected
+            document.querySelectorAll('.options-container button').forEach(button => {
+                button.disabled = true;
+            });
+
+            if (userAnswer === correctAnswer) {
+                selectedOption.classList.add('correct');
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.remove('incorrect-feedback');
+                feedbackMessage.classList.add('correct-feedback');
+            } else {
+                selectedOption.classList.add('incorrect');
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
+                feedbackMessage.classList.remove('correct-feedback');
+                feedbackMessage.classList.add('incorrect-feedback');
+
+                // Highlight the correct answer
+                document.querySelectorAll('.options-container button').forEach(button => {
+                    if (button.dataset.option === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+        }
+
+        // Update navigation button states
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questions.length - 1;
+        }
+
+        // Event listener for previous button
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Event listener for next button
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        // Initial load of the first question
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>

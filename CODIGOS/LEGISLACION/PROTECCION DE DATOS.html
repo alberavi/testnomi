@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Protección de Datos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            color: #4b5563;
+            background-color: #ffffff;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #eff6ff;
+            border-color: #93c5fd;
+            color: #1e40af;
+        }
+        .options-container button.correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #fee2e2;
+            border-color: #f87171;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .navigation-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .navigation-buttons button.prev {
+            background-color: #6b7280;
+            color: #ffffff;
+        }
+        .navigation-buttons button.prev:hover {
+            background-color: #4b5563;
+        }
+        .navigation-buttons button.next {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+        .navigation-buttons button.next:hover {
+            background-color: #1d4ed8;
+        }
+        .reset-button {
+            background-color: #ef4444;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            margin-top: 20px;
+            align-self: center;
+        }
+        .reset-button:hover {
+            background-color: #dc2626;
+        }
+        .score-display {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        .message-box.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Test de Protección de Datos</h1>
+        <div id="question-container" class="question-card">
+            <p id="question-text" class="question-text"></p>
+            <div id="options-container" class="options-container">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="prev" disabled>Anterior</button>
+            <button id="next-btn" class="next">Siguiente</button>
+        </div>
+        <div id="score-display" class="score-display">Puntuación: 0/0</div>
+        <button id="reset-progress-btn" class="reset-button">Reiniciar Progreso</button>
+    </div>
+
+    <div id="message-box" class="message-box"></div>
+
+    <script>
+        // Define the questions and their correct answers
+        const quizData = [
+            {
+                question: "¿Cuál de los siguientes principios relativos al tratamiento de datos personales se refiere a la 'limitación de la finalidad'?",
+                options: [
+                    "a) Los datos serán tratados de manera lícita, leal y transparente.",
+                    "b) Los datos serán recogidos con fines determinados, explícitos y legítimos, y no serán tratados ulteriormente de manera incompatible.",
+                    "c) Los datos serán adecuados, pertinentes y limitados a lo necesario.",
+                    "d) Los datos serán mantenidos durante no más tiempo del necesario."
+                ],
+                correctAnswer: "b) Los datos serán recogidos con fines determinados, explícitos y legítimos, y no serán tratados ulteriormente de manera incompatible."
+            },
+            {
+                question: "Según los principios relativos al tratamiento, los datos personales deben ser adecuados, pertinentes y limitados a lo necesario. ¿Cómo se denomina este principio?",
+                options: [
+                    "a) Exactitud.",
+                    "b) Limitación del plazo de conservación.",
+                    "c) Minimización de datos.",
+                    "d) Integridad y confidencialidad."
+                ],
+                correctAnswer: "c) Minimización de datos."
+            },
+            {
+                question: "¿Qué principio establece que los datos personales deben ser tratados de tal manera que se garantice una seguridad adecuada?",
+                options: [
+                    "a) Exactitud.",
+                    "b) Limitación del plazo de conservación.",
+                    "c) Minimización de datos.",
+                    "d) Integridad y confidencialidad."
+                ],
+                correctAnswer: "d) Integridad y confidencialidad."
+            },
+            {
+                question: "El responsable del tratamiento tiene la obligación de demostrar el cumplimiento de la normativa de protección de datos. ¿Cómo se conoce este principio?",
+                options: [
+                    "a) Exactitud.",
+                    "b) Limitación del plazo de conservación.",
+                    "c) Responsabilidad proactiva.",
+                    "d) Licitud del tratamiento."
+                ],
+                correctAnswer: "c) Responsabilidad proactiva."
+            },
+            {
+                question: "¿Cuál de las siguientes condiciones hace que el tratamiento de datos personales sea lícito?",
+                options: [
+                    "a) El interesado dio su consentimiento para un fin genérico.",
+                    "b) El tratamiento es necesario para la ejecución de un contrato en el que el interesado es parte.",
+                    "c) El tratamiento es solo para intereses comerciales del responsable.",
+                    "d) El tratamiento es necesario para el cumplimiento de una obligación moral."
+                ],
+                correctAnswer: "b) El tratamiento es necesario para la ejecución de un contrato en el que el interesado es parte."
+            },
+            {
+                question: "En relación con la licitud del tratamiento, ¿cuándo es válido el consentimiento del interesado?",
+                options: [
+                    "a) Cuando el interesado dio su consentimiento para un fin específico.",
+                    "b) Cuando el consentimiento es implícito.",
+                    "c) Cuando el interesado no tiene conocimiento del fin del tratamiento.",
+                    "d) Cuando el consentimiento se obtiene de forma verbal sin registro."
+                ],
+                correctAnswer: "a) Cuando el interesado dio su consentimiento para un fin específico."
+            },
+            {
+                question: "Si el tratamiento de datos personales es necesario para proteger intereses vitales del interesado o de otra persona física, ¿es considerado lícito?",
+                options: [
+                    "a) No, nunca.",
+                    "b) Sí, es una de las condiciones de licitud.",
+                    "c) Solo si hay consentimiento previo.",
+                    "d) Solo si es para interés público."
+                ],
+                correctAnswer: "b) Sí, es una de las condiciones de licitud."
+            },
+            {
+                question: "¿Qué requisito debe cumplir el responsable para demostrar que el interesado consintió el tratamiento de sus datos personales?",
+                options: [
+                    "a) Obtenerlo de forma verbal, sin necesidad de registro.",
+                    "b) Demostrar que el consentimiento fue inteligible, de fácil acceso y con lenguaje claro y sencillo.",
+                    "c) Asumir el consentimiento por la inacción del interesado.",
+                    "d) El consentimiento no es necesario si el tratamiento es para fines comerciales."
+                ],
+                correctAnswer: "b) Demostrar que el consentimiento fue inteligible, de fácil acceso y con lenguaje claro y sencillo."
+            },
+            {
+                question: "¿Tiene el interesado derecho a retirar su consentimiento para el tratamiento de sus datos personales?",
+                options: [
+                    "a) No, una vez dado no se puede retirar.",
+                    "b) Sí, en cualquier momento.",
+                    "c) Solo si han transcurrido más de 6 meses.",
+                    "d) Solo si el responsable lo autoriza."
+                ],
+                correctAnswer: "b) Sí, en cualquier momento."
+            },
+            {
+                question: "¿Afecta la retirada del consentimiento a la licitud del tratamiento basado en el consentimiento previo a su retirada?",
+                options: [
+                    "a) Sí, anula todo el tratamiento anterior.",
+                    "b) No, la retirada no afecta a la licitud del tratamiento previo.",
+                    "c) Depende del tipo de datos.",
+                    "d) Solo si el tratamiento implicaba transferencia internacional."
+                ],
+                correctAnswer: "b) No, la retirada no afecta a la licitud del tratamiento previo."
+            },
+            {
+                question: "¿Qué se debe informar al interesado antes de dar su consentimiento para el tratamiento de sus datos?",
+                options: [
+                    "a) Nada, solo se necesita el consentimiento.",
+                    "b) Se le debe informar del derecho a retirar el consentimiento.",
+                    "c) Solo la finalidad del tratamiento.",
+                    "d) Solo la identidad del responsable."
+                ],
+                correctAnswer: "b) Se le debe informar del derecho a retirar el consentimiento."
+            },
+            {
+                question: "¿Cómo de fácil debe ser retirar el consentimiento en comparación con darlo?",
+                options: [
+                    "a) Mucho más difícil.",
+                    "b) Tan fácil como darlo.",
+                    "c) La dificultad no es un factor relevante.",
+                    "d) Solo puede ser retirado por escrito."
+                ],
+                correctAnswer: "b) Tan fácil como darlo."
+            },
+            {
+                question: "¿Qué tipo de datos personales está prohibido tratar, según la normativa general?",
+                options: [
+                    "a) Datos de contacto (nombre, dirección, teléfono).",
+                    "b) Datos que revelen el origen étnico o racial, opiniones políticas, convicciones religiosas o filosóficas, afiliación sindical, datos genéticos y biométricos, y datos relativos a la salud o vida/orientación sexual.",
+                    "c) Datos de consumo.",
+                    "d) Datos de localización geográfica."
+                ],
+                correctAnswer: "b) Datos que revelen el origen étnico o racial, opiniones políticas, convicciones religiosas o filosóficas, afiliación sindical, datos genéticos y biométricos, y datos relativos a la salud o vida/orientación sexual."
+            },
+            {
+                question: "¿Es suficiente el consentimiento del afectado para levantar la prohibición de tratar datos de categorías especiales cuya finalidad principal sea identificar su ideología, afiliación sindical, religión, orientación sexual, creencias u origen racial o étnico?",
+                options: [
+                    "a) Sí, el consentimiento siempre es suficiente.",
+                    "b) No, el solo consentimiento no bastará para levantar la prohibición.",
+                    "c) Solo si el afectado es mayor de edad.",
+                    "d) Depende del país miembro."
+                ],
+                correctAnswer: "b) No, el solo consentimiento no bastará para levantar la prohibición."
+            },
+            {
+                question: "¿En qué situación no se aplicará la prohibición de tratamiento de categorías especiales de datos personales?",
+                options: [
+                    "a) Si el tratamiento es necesario para fines comerciales.",
+                    "b) Si el tratamiento es necesario para proteger intereses vitales y el interesado no está capacitado para dar consentimiento.",
+                    "c) Si los datos se utilizan para publicidad dirigida.",
+                    "d) Si los datos se obtienen de fuentes públicas sin restricciones."
+                ],
+                correctAnswer: "b) Si el tratamiento es necesario para proteger intereses vitales y el interesado no está capacitado para dar consentimiento."
+            },
+            {
+                question: "Si el interesado ha hecho manifiestamente públicos sus datos personales, ¿se aplica la prohibición de tratamiento de categorías especiales de datos?",
+                options: [
+                    "a) Sí, siempre se aplica la prohibición.",
+                    "b) No, en este caso no será de aplicación la prohibición.",
+                    "c) Solo si los datos son sobre su salud.",
+                    "d) Depende de si los datos fueron publicados en redes sociales."
+                ],
+                correctAnswer: "b) No, en este caso no será de aplicación la prohibición."
+            },
+            {
+                question: "¿Qué pueden introducir los Estados miembros respecto al tratamiento de datos genéticos, biométricos o relativos a la salud?",
+                options: [
+                    "a) Prohibiciones absolutas sin excepción.",
+                    "b) Condiciones y limitaciones.",
+                    "c) Flexibilizar totalmente su tratamiento.",
+                    "d) No pueden introducir ninguna regulación adicional."
+                ],
+                correctAnswer: "b) Condiciones y limitaciones."
+            },
+            {
+                question: "¿En qué plazo debe el responsable del tratamiento facilitar al interesado el ejercicio de sus derechos, a partir de la recepción de la solicitud?",
+                options: [
+                    "a) 72 horas.",
+                    "b) 1 mes, prorrogable 2 meses.",
+                    "c) 6 meses.",
+                    "d) 1 año."
+                ],
+                correctAnswer: "b) 1 mes, prorrogable 2 meses."
+            },
+            {
+                question: "Si el interesado presenta una solicitud para ejercer sus derechos por medios electrónicos, ¿cómo se facilitará la información?",
+                options: [
+                    "a) Siempre por correo postal.",
+                    "b) Por medios electrónicos, a menos que el interesado solicite lo contrario.",
+                    "c) Siempre de forma presencial.",
+                    "d) Solo por teléfono."
+                ],
+                correctAnswer: "b) Por medios electrónicos, a menos que el interesado solicite lo contrario."
+            },
+            {
+                question: "¿El procedimiento para ejercer los derechos del interesado es gratuito?",
+                options: [
+                    "a) No, siempre tiene un coste.",
+                    "b) Sí, será gratuito.",
+                    "c) Solo si la solicitud se hace por escrito.",
+                    "d) Depende del número de solicitudes realizadas."
+                ],
+                correctAnswer: "b) Sí, será gratuito."
+            },
+            {
+                question: "Cuando los datos personales se obtienen del interesado, ¿qué información debe facilitarse, entre otras?",
+                options: [
+                    "a) Solo el nombre del responsable.",
+                    "b) La identidad y datos de contacto del responsable y, en su caso, de su representante.",
+                    "c) Solo el tipo de datos recogidos.",
+                    "d) El tiempo que se tardará en procesar la solicitud."
+                ],
+                correctAnswer: "b) La identidad y datos de contacto del responsable y, en su caso, de su representante."
+            },
+            {
+                question: "Si existe un delegado de protección de datos (DPO), ¿deben facilitarse sus datos de contacto cuando los datos personales se obtienen del interesado?",
+                options: [
+                    "a) No, solo si el interesado lo solicita explícitamente.",
+                    "b) Sí, los datos de contacto del delegado de protección de datos, en su caso.",
+                    "c) Solo si el DPO es externo a la empresa.",
+                    "d) No es una obligación."
+                ],
+                correctAnswer: "b) Sí, los datos de contacto del delegado de protección de datos, en su caso."
+            },
+            {
+                question: "¿Qué debe informarse al interesado sobre los fines del tratamiento cuando los datos se obtienen directamente de él?",
+                options: [
+                    "a) Solo que los datos serán tratados.",
+                    "b) Los fines del tratamiento y la base jurídica del mismo.",
+                    "c) Solo el número de fines.",
+                    "d) La información de los fines no es obligatoria si hay consentimiento."
+                ],
+                correctAnswer: "b) Los fines del tratamiento y la base jurídica del mismo."
+            },
+            {
+                question: "Si se tiene intención de transferir datos personales a un tercer país o a una organización internacional (OI), ¿qué información se debe facilitar al interesado cuando los datos se obtienen de él?",
+                options: [
+                    "a) Solo la intención de transferencia.",
+                    "b) La intención de transferir datos y las garantías y medios para obtener una copia de estas.",
+                    "c) La transferencia no requiere información previa.",
+                    "d) Solo el nombre del tercer país u OI."
+                ],
+                correctAnswer: "b) La intención de transferir datos y las garantías y medios para obtener una copia de estas."
+            },
+            {
+                question: "Cuando los datos personales no se han obtenido del interesado, ¿qué información sobre el DPO se debe facilitar?",
+                options: [
+                    "a) No es necesario informar sobre el DPO en este caso.",
+                    "b) Los datos de contacto del delegado de protección de datos, en su caso.",
+                    "c) Solo el nombre de la organización del DPO.",
+                    "d) Solo si el DPO ha dado su consentimiento para ser revelado."
+                ],
+                correctAnswer: "b) Los datos de contacto del delegado de protección de datos, en su caso."
+            },
+            {
+                question: "¿A qué información sobre los datos personales tiene derecho de acceso el interesado?",
+                options: [
+                    "a) Solo a si sus datos están siendo tratados.",
+                    "b) A los fines del tratamiento, las categorías de datos y los destinatarios o categorías de destinatarios.",
+                    "c) Solo a la fecha de la última actualización.",
+                    "d) Solo al número de tratamientos realizados."
+                ],
+                correctAnswer: "b) A los fines del tratamiento, las categorías de datos y los destinatarios o categorías de destinatarios."
+            },
+            {
+                question: "¿Qué información sobre la conservación de los datos debe facilitarse al interesado en su derecho de acceso?",
+                options: [
+                    "a) Solo que los datos se conservarán.",
+                    "b) El plazo previsto de conservación o, de no ser posible, los criterios para determinarlo.",
+                    "c) La duración es siempre indefinida.",
+                    "d) La información sobre la conservación no es obligatoria."
+                ],
+                correctAnswer: "b) El plazo previsto de conservación o, de no ser posible, los criterios para determinarlo."
+            },
+            {
+                question: "En el ejercicio del derecho de acceso, ¿debe informarse al interesado sobre su derecho a presentar una reclamación?",
+                options: [
+                    "a) No, solo si lo solicita explícitamente.",
+                    "b) Sí, el derecho a presentar una reclamación ante una autoridad de control.",
+                    "c) Solo si ya ha habido una infracción.",
+                    "d) La reclamación es un proceso separado."
+                ],
+                correctAnswer: "b) Sí, el derecho a presentar una reclamación ante una autoridad de control."
+            },
+            {
+                question: "Si los datos personales no se han obtenido del interesado, ¿qué información adicional se debe facilitar en el derecho de acceso?",
+                options: [
+                    "a) Nada adicional.",
+                    "b) Cualquier información disponible sobre su origen.",
+                    "c) Solo si el interesado lo solicita.",
+                    "d) Solo si el origen es un tercer país."
+                ],
+                correctAnswer: "b) Cualquier información disponible sobre su origen."
+            },
+            {
+                question: "¿Qué derecho permite al interesado solicitar la corrección de datos personales inexactos?",
+                options: [
+                    "a) Derecho de acceso.",
+                    "b) Derecho de supresión.",
+                    "c) Derecho de rectificación.",
+                    "d) Derecho a la limitación del tratamiento."
+                ],
+                correctAnswer: "c) Derecho de rectificación."
+            },
+            {
+                question: "¿Cuándo tiene el interesado derecho a la supresión de sus datos personales (derecho al olvido)?",
+                options: [
+                    "a) Solo si los datos han sido tratados ilícitamente.",
+                    "b) Cuando los datos ya no sean necesarios para los fines para los que fueron recogidos o tratados.",
+                    "c) Solo si el interesado se opone al tratamiento.",
+                    "d) Siempre, sin ninguna condición."
+                ],
+                correctAnswer: "b) Cuando los datos ya no sean necesarios para los fines para los que fueron recogidos o tratados."
+            },
+            {
+                question: "¿Qué ocurre con el derecho de supresión si el interesado retira el consentimiento en que se basa el tratamiento y este no se basa en otro fundamento jurídico?",
+                options: [
+                    "a) No se aplica el derecho de supresión.",
+                    "b) El interesado tiene derecho a la supresión.",
+                    "c) Solo si el tratamiento es de alto riesgo.",
+                    "d) El responsable puede negarse."
+                ],
+                correctAnswer: "b) El interesado tiene derecho a la supresión."
+            },
+            {
+                question: "¿Cuándo tiene el interesado derecho a la limitación del tratamiento de sus datos?",
+                options: [
+                    "a) Solo si el tratamiento es ilícito y el interesado se opone a la supresión.",
+                    "b) Cuando el interesado impugna la exactitud de los datos y se está verificando su exactitud.",
+                    "c) Siempre que lo solicite el interesado.",
+                    "d) Cuando el responsable ya no necesite los datos, pero el interesado sí."
+                ],
+                correctAnswer: "b) Cuando el interesado impugna la exactitud de los datos y se está verificando su exactitud."
+            },
+            {
+                question: "¿Qué implica el derecho a la portabilidad de los datos?",
+                options: [
+                    "a) El derecho a que los datos sean borrados.",
+                    "b) El derecho a recibir los datos en un formato estructurado, de uso común y lectura mecánica, y a transmitirlos a otro responsable.",
+                    "c) El derecho a oponerse al tratamiento.",
+                    "d) El derecho a ser informado sobre el tratamiento."
+                ],
+                correctAnswer: "b) El derecho a recibir los datos en un formato estructurado, de uso común y lectura mecánica, y a transmitirlos a otro responsable."
+            },
+            {
+                question: "¿Es posible transmitir los datos directamente de un responsable a otro en el ejercicio del derecho a la portabilidad?",
+                options: [
+                    "a) No, siempre debe hacerse a través del interesado.",
+                    "b) Sí, cuando sea técnicamente posible.",
+                    "c) Solo si ambos responsables están en el mismo país.",
+                    "d) Solo si los datos son de categorías especiales."
+                ],
+                correctAnswer: "b) Sí, cuando sea técnicamente posible."
+            },
+            {
+                question: "¿A qué derecho se refiere la posibilidad de oponerse a que los datos personales sean objeto de tratamiento, incluida la elaboración de perfiles?",
+                options: [
+                    "a) Derecho de acceso.",
+                    "b) Derecho de supresión.",
+                    "c) Derecho de oposición.",
+                    "d) Derecho de rectificación."
+                ],
+                correctAnswer: "c) Derecho de oposición."
+            },
+            {
+                question: "¿Puede la legislación limitar los derechos y obligaciones en protección de datos?",
+                options: [
+                    "a) No, nunca.",
+                    "b) Sí, con medidas legislativas para salvaguardar ciertos intereses.",
+                    "c) Solo en casos de emergencia nacional.",
+                    "d) Solo para facilitar el tratamiento."
+                ],
+                correctAnswer: "b) Sí, con medidas legislativas para salvaguardar ciertos intereses."
+            },
+            {
+                question: "¿Qué pueden utilizarse como elementos para demostrar el cumplimiento de las obligaciones del responsable del tratamiento?",
+                options: [
+                    "a) Declaraciones orales del responsable.",
+                    "b) La adhesión a códigos de conducta aprobados o a un mecanismo de certificación.",
+                    "c) Realizar auditorías internas no documentadas.",
+                    "d) Presentar solo una parte de la documentación requerida."
+                ],
+                correctAnswer: "b) La adhesión a códigos de conducta aprobados o a un mecanismo de certificación."
+            },
+            {
+                question: "¿Puede el encargado del tratamiento recurrir a otro encargado sin autorización del responsable?",
+                options: [
+                    "a) Sí, siempre que lo notifique después.",
+                    "b) No, no recurrirá a otro encargado sin la autorización del responsable.",
+                    "c) Solo si el nuevo encargado es de confianza.",
+                    "d) Si la subcontratación es inevitable."
+                ],
+                correctAnswer: "b) No, no recurrirá a otro encargado sin la autorización del responsable."
+            },
+            {
+                question: "¿Qué debe regir el tratamiento de datos por parte del encargado del tratamiento?",
+                options: [
+                    "a) Un acuerdo verbal.",
+                    "b) Un contrato o acto jurídico que establezca el objeto, duración, naturaleza y finalidad del tratamiento, tipo de datos, categorías de interesados, y obligaciones y derechos del responsable.",
+                    "c) Un simple intercambio de correos electrónicos.",
+                    "d) No necesita ninguna formalidad si es una relación de confianza."
+                ],
+                correctAnswer: "b) Un contrato o acto jurídico que establezca el objeto, duración, naturaleza y finalidad del tratamiento, tipo de datos, categorías de interesados, y obligaciones y derechos del responsable."
+            },
+            {
+                question: "¿Puede el encargado del tratamiento tratar los datos sin seguir instrucciones del responsable?",
+                options: [
+                    "a) Sí, si considera que es beneficioso para el negocio.",
+                    "b) No, solo podrá tratar dichos datos siguiendo instrucciones del responsable, excepto si están obligados por la legislación vigente.",
+                    "c) Sí, si lo hace en interés del interesado.",
+                    "d) Depende de la complejidad del tratamiento."
+                ],
+                correctAnswer: "b) No, solo podrá tratar dichos datos siguiendo instrucciones del responsable, excepto si están obligados por la legislación vigente."
+            },
+            {
+                question: "¿Quién debe llevar un registro de las actividades de tratamiento?",
+                options: [
+                    "a) Solo la autoridad de control.",
+                    "b) Cada responsable y su representante.",
+                    "c) Solo las empresas con más de 250 empleados.",
+                    "d) Solo el encargado del tratamiento."
+                ],
+                correctAnswer: "b) Cada responsable y su representante."
+            },
+            {
+                question: "¿Qué información debe incluir el registro de las actividades de tratamiento?",
+                options: [
+                    "a) Solo el nombre del responsable.",
+                    "b) Nombre y datos de contacto del responsable, fines del tratamiento, descripción de categorías de interesados y datos, categorías de destinatarios y transferencias a terceros países.",
+                    "c) Solo el volumen de datos tratados.",
+                    "d) No es necesario especificar los fines."
+                ],
+                correctAnswer: "b) Nombre y datos de contacto del responsable, fines del tratamiento, descripción de categorías de interesados y datos, categorías de destinatarios y transferencias a terceros países."
+            },
+            {
+                question: "¿Quién debe poner a disposición de la autoridad de control el registro de las actividades de tratamiento?",
+                options: [
+                    "a) Solo el responsable.",
+                    "b) El responsable o el encargado del tratamiento.",
+                    "c) Solo el delegado de protección de datos.",
+                    "d) Nadie, es un registro interno."
+                ],
+                correctAnswer: "b) El responsable o el encargado del tratamiento."
+            },
+            {
+                question: "¿Cuándo no se aplican las obligaciones del registro de las actividades de tratamiento a una empresa o organización que emplee a menos de 250 personas?",
+                options: [
+                    "a) Nunca se aplican.",
+                    "b) Cuando el tratamiento no entrañe un riesgo para los derechos y libertades de los interesados, no sea ocasional, y no incluya categorías especiales de datos o datos relativos a condenas e infracciones penales.",
+                    "c) Siempre se aplican, sin excepción.",
+                    "d) Solo si la empresa es pública."
+                ],
+                correctAnswer: "b) Cuando el tratamiento no entrañe un riesgo para los derechos y libertades de los interesados, no sea ocasional, y no incluya categorías especiales de datos o datos relativos a condenas e infracciones penales."
+            },
+            {
+                question: "¿Quién debe cooperar con la autoridad de control?",
+                options: [
+                    "a) Solo el responsable del tratamiento.",
+                    "b) El responsable y el encargado del tratamiento.",
+                    "c) Solo el interesado.",
+                    "d) Nadie, la autoridad de control actúa de forma independiente."
+                ],
+                correctAnswer: "b) El responsable y el encargado del tratamiento."
+            },
+            {
+                question: "En caso de violación de la seguridad de los datos personales, ¿en qué plazo debe notificarse a la autoridad de control competente?",
+                options: [
+                    "a) Sin dilación indebida y, de ser posible, a más tardar 72 horas después de tener constancia.",
+                    "b) 1 mes.",
+                    "c) 6 meses.",
+                    "d) No es necesaria la notificación si no hay daño."
+                ],
+                correctAnswer: "a) Sin dilación indebida y, de ser posible, a más tardar 72 horas después de tener constancia."
+            },
+            {
+                question: "¿Cuándo no es necesaria la notificación de una violación de seguridad a la autoridad de control?",
+                options: [
+                    "a) Nunca, siempre es obligatoria.",
+                    "b) Cuando sea improbable que dicha violación constituya un riesgo para los derechos y libertades de las personas físicas.",
+                    "c) Si la violación solo afecta a unos pocos datos.",
+                    "d) Si la empresa es pequeña."
+                ],
+                correctAnswer: "b) Cuando sea improbable que dicha violación constituya un riesgo para los derechos y libertades de las personas físicas."
+            },
+            {
+                question: "¿Cuándo se debe comunicar una violación de la seguridad de los datos personales al interesado?",
+                options: [
+                    "a) Siempre, sin excepción.",
+                    "b) Si entraña un alto riesgo para sus derechos y libertades.",
+                    "c) Solo si el interesado lo solicita.",
+                    "d) Solo si la autoridad de control lo exige."
+                ],
+                correctAnswer: "b) Si entraña un alto riesgo para sus derechos y libertades."
+            },
+            {
+                question: "¿Qué se debe realizar cuando un tipo de tratamiento entrañe un alto riesgo para los derechos y libertades de las personas físicas?",
+                options: [
+                    "a) Nada adicional, solo cumplir con los principios básicos.",
+                    "b) Una evaluación del impacto de las operaciones de tratamiento en la protección de datos personales.",
+                    "c) Una auditoría interna cada 5 años.",
+                    "d) Una notificación al interesado después del tratamiento."
+                ],
+                correctAnswer: "b) Una evaluación del impacto de las operaciones de tratamiento en la protección de datos personales."
+            },
+            {
+                question: "¿De quién debe recabar asesoramiento el responsable del tratamiento al realizar la evaluación de impacto?",
+                options: [
+                    "a) De los interesados.",
+                    "b) Del DPO.",
+                    "c) De un abogado externo.",
+                    "d) De la autoridad de control."
+                ],
+                correctAnswer: "b) Del DPO."
+            },
+            {
+                question: "¿Qué debe incluir una evaluación de impacto relativa a la protección de datos, como mínimo?",
+                options: [
+                    "a) Solo la descripción de las operaciones de tratamiento.",
+                    "b) Descripción de las operaciones y fines, evaluación de la necesidad y proporcionalidad, evaluación de riesgos y medidas para afrontarlos.",
+                    "c) Solo un resumen ejecutivo.",
+                    "d) Un listado de todos los datos personales tratados."
+                ],
+                correctAnswer: "b) Descripción de las operaciones y fines, evaluación de la necesidad y proporcionalidad, evaluación de riesgos y medidas para afrontarlos."
+            },
+            {
+                question: "¿Cuándo consultará el responsable a la autoridad de control antes de proceder al tratamiento?",
+                options: [
+                    "a) Siempre que se realice un tratamiento de datos.",
+                    "b) Cuando una evaluación de impacto muestre un alto riesgo y el responsable no tome medidas.",
+                    "c) Solo si el tratamiento es transfronterizo.",
+                    "d) Cuando el interesado lo solicite."
+                ],
+                correctAnswer: "b) Cuando una evaluación de impacto muestre un alto riesgo y el responsable no tome medidas."
+            },
+            {
+                question: "Si la autoridad de control considera que un tratamiento previsto podría infringir el Reglamento (UE), ¿en qué plazo debe asesorar por escrito al responsable o encargado?",
+                options: [
+                    "a) En 24 horas.",
+                    "b) En 8 semanas desde la solicitud.",
+                    "c) Sin un plazo fijo.",
+                    "d) Solo si la infracción es grave."
+                ],
+                correctAnswer: "b) En 8 semanas desde la solicitud."
+            },
+            {
+                question: "¿Cuándo deben el responsable y el encargado del tratamiento designar un delegado de protección de datos (DPO)?",
+                options: [
+                    "a) Solo si lo exige la ley nacional.",
+                    "b) Si el tratamiento lo lleva a cabo una autoridad pública, o las actividades principales implican observación habitual y sistemática a gran escala, o tratamiento a gran escala de categorías especiales de datos.",
+                    "c) Siempre, sin excepción.",
+                    "d) Solo si la empresa tiene más de 250 empleados."
+                ],
+                correctAnswer: "b) Si el tratamiento lo lleva a cabo una autoridad pública, o las actividades principales implican observación habitual y sistemática a gran escala, o tratamiento a gran escala de categorías especiales de datos."
+            },
+            {
+                question: "¿Puede un grupo empresarial nombrar un único delegado de protección de datos?",
+                options: [
+                    "a) No, cada entidad debe tener el suyo.",
+                    "b) Sí, siempre que sea fácilmente accesible desde cada establecimiento.",
+                    "c) Solo si todas las empresas están en el mismo país.",
+                    "d) Depende del volumen de negocio."
+                ],
+                correctAnswer: "b) Sí, siempre que sea fácilmente accesible desde cada establecimiento."
+            },
+            {
+                question: "¿Cómo puede desempeñar sus funciones el delegado de protección de datos?",
+                options: [
+                    "a) Solo como empleado del responsable o encargado.",
+                    "b) Como empleado del responsable o encargado, o en el marco de un contrato de servicios.",
+                    "c) Solo como consultor externo.",
+                    "d) No hay requisitos formales."
+                ],
+                correctAnswer: "b) Como empleado del responsable o encargado, o en el marco de un contrato de servicios."
+            },
+            {
+                question: "¿Qué deben hacer el responsable o el encargado del tratamiento con los datos de contacto del delegado de protección de datos?",
+                options: [
+                    "a) Mantenerlos en secreto.",
+                    "b) Publicarlos y comunicarlos a la autoridad de control.",
+                    "c) Solo comunicarlos a los empleados.",
+                    "d) Solo facilitarlos si el interesado los solicita."
+                ],
+                correctAnswer: "b) Publicarlos y comunicarlos a la autoridad de control."
+            },
+            {
+                question: "¿Por cuánto tiempo se expide la acreditación de un organismo de certificación?",
+                options: [
+                    "a) Indefinidamente.",
+                    "b) Por un período máximo de cinco años, pudiendo ser renovada.",
+                    "c) Por un año, sin posibilidad de renovación.",
+                    "d) Hasta que el organismo deje de operar."
+                ],
+                correctAnswer: "b) Por un período máximo de cinco años, pudiendo ser renovada."
+            },
+            {
+                question: "¿A qué derecho se refiere la posibilidad de interponer una acción legal contra una autoridad de control por una decisión jurídicamente vinculante?",
+                options: [
+                    "a) Derecho a presentar una reclamación.",
+                    "b) Derecho a la tutela judicial efectiva contra una autoridad de control.",
+                    "c) Derecho a la representación de los interesados.",
+                    "d) Derecho a la indemnización."
+                ],
+                correctAnswer: "b) Derecho a la tutela judicial efectiva contra una autoridad de control."
+            },
+            {
+                question: "¿Qué tipo de entidad puede representar a los interesados en relación con la protección de datos?",
+                options: [
+                    "a) Cualquier persona física con experiencia en derecho.",
+                    "b) Una entidad, organización o asociación sin ánimo de lucro, con mandato del interesado.",
+                    "c) Solo un abogado colegiado.",
+                    "d) Una empresa con fines de lucro que ofrezca servicios legales."
+                ],
+                correctAnswer: "b) Una entidad, organización o asociación sin ánimo de lucro, con mandato del interesado."
+            },
+            {
+                question: "¿Qué características deben tener las multas administrativas impuestas por incumplimiento de la normativa de protección de datos?",
+                options: [
+                    "a) Arbitrarias y simbólicas.",
+                    "b) Efectivas, proporcionadas y disuasorias.",
+                    "c) Mínimas para no afectar la economía.",
+                    "d) Solo con fines recaudatorios."
+                ],
+                correctAnswer: "b) Efectivas, proporcionadas y disuasorias."
+            },
+            {
+                question: "¿Cuál es la multa máxima por incumplimiento de las obligaciones del responsable, encargado, organismos de certificación o autoridad de control?",
+                options: [
+                    "a) 5.000.000 € o 1% del volumen de negocio anual.",
+                    "b) 10.000.000 € o 2% del volumen de negocio anual, optándose por la de mayor cuantía.",
+                    "c) 20.000.000 € o 4% del volumen de negocio anual.",
+                    "d) No hay multas monetarias."
+                ],
+                correctAnswer: "b) 10.000.000 € o 2% del volumen de negocio anual, optándose por la de mayor cuantía."
+            },
+            {
+                question: "¿Cuál es la multa máxima por incumplimiento de los principios básicos del tratamiento o los derechos de los interesados?",
+                options: [
+                    "a) 10.000.000 € o 2% del volumen de negocio anual.",
+                    "b) 20.000.000 € o 4% del volumen de negocio anual, optándose por la de mayor cuantía.",
+                    "c) 50.000.000 € o 6% del volumen de negocio anual.",
+                    "d) La multa no puede superar los 1.000.000 €."
+                ],
+                correctAnswer: "b) 20.000.000 € o 4% del volumen de negocio anual, optándose por la de mayor cuantía."
+            },
+            {
+                question: "¿Qué se entiende por consentimiento del afectado?",
+                options: [
+                    "a) Cualquier manifestación de voluntad.",
+                    "b) Toda manifestación de voluntad libre, específica, informada e inequívoca por la que el interesado acepta el tratamiento de datos personales que le conciernen.",
+                    "c) El consentimiento tácito.",
+                    "d) El consentimiento obtenido por omisión."
+                ],
+                correctAnswer: "b) Toda manifestación de voluntad libre, específica, informada e inequívoca por la que el interesado acepta el tratamiento de datos personales que le conciernen."
+            },
+            {
+                question: "Si el tratamiento de datos se pretende basar en el consentimiento para una pluralidad de finalidades, ¿qué es necesario?",
+                options: [
+                    "a) Un consentimiento genérico para todas las finalidades.",
+                    "b) Que conste de manera específica e inequívoca que dicho consentimiento se otorga para todas ellas.",
+                    "c) Solo el consentimiento para la finalidad principal.",
+                    "d) No es necesario especificar si hay varias finalidades."
+                ],
+                correctAnswer: "b) Que conste de manera específica e inequívoca que dicho consentimiento se otorga para todas ellas."
+            },
+            {
+                question: "¿A partir de qué edad puede el tratamiento de los datos personales de un menor de edad basarse en su consentimiento?",
+                options: [
+                    "a) 12 años.",
+                    "b) 14 años.",
+                    "c) 16 años.",
+                    "d) No hay edad mínima, depende de la madurez."
+                ],
+                correctAnswer: "b) 14 años."
+            },
+            {
+                question: "¿Cuándo se puede realizar el tratamiento de datos de naturaleza penal?",
+                options: [
+                    "a) Libremente por cualquier responsable.",
+                    "b) Conforme a lo establecido en la regulación del Sistema de registros administrativos de apoyo a la Administración de Justicia.",
+                    "c) Solo con el consentimiento explícito del interesado.",
+                    "d) Está totalmente prohibido."
+                ],
+                correctAnswer: "b) Conforme a lo establecido en la regulación del Sistema de registros administrativos de apoyo a la Administración de Justicia."
+            },
+            {
+                question: "En cuanto a la transparencia e información al afectado, ¿qué debe indicar el responsable del tratamiento?",
+                options: [
+                    "a) Solo su nombre.",
+                    "b) Una dirección electrónica u otro medio que permita acceder de forma sencilla e inmediata a la restante información.",
+                    "c) Su número de teléfono.",
+                    "d) Solo información general, no específica."
+                ],
+                correctAnswer: "b) Una dirección electrónica u otro medio que permita acceder de forma sencilla e inmediata a la restante información."
+            },
+            {
+                question: "¿Se presume lícito el tratamiento de datos personales relativos al incumplimiento de obligaciones dinerarias, financieras o de crédito por sistemas comunes de información crediticia?",
+                options: [
+                    "a) No, siempre se presume ilícito.",
+                    "b) Sí, salvo prueba en contrario.",
+                    "c) Solo si los datos son antiguos.",
+                    "d) Depende del tipo de obligación."
+                ],
+                correctAnswer: "b) Sí, salvo prueba en contrario."
+            },
+            {
+                question: "¿Cuál es el límite máximo de conservación de los datos en los sistemas de información crediticia?",
+                options: [
+                    "a) Indefinido.",
+                    "b) Mientras persista el incumplimiento, con un límite máximo de 5 años desde la fecha de vencimiento de la obligación.",
+                    "c) 1 año.",
+                    "d) 10 años."
+                ],
+                correctAnswer: "b) Mientras persista el incumplimiento, con un límite máximo de 5 años desde la fecha de vencimiento de la obligación."
+            },
+            {
+                question: "¿Con qué finalidad se puede llevar a cabo el tratamiento de imágenes a través de sistemas de cámaras o videocámaras?",
+                options: [
+                    "a) Con fines de marketing.",
+                    "b) Para preservar la seguridad de las personas y bienes, así como de sus instalaciones.",
+                    "c) Para cualquier finalidad que la empresa considere oportuna.",
+                    "d) Para vigilancia de la productividad de los empleados."
+                ],
+                correctAnswer: "b) Para preservar la seguridad de las personas y bienes, así como de sus instalaciones."
+            },
+            {
+                question: "¿En qué plazo máximo deben suprimirse las imágenes captadas por videovigilancia?",
+                options: [
+                    "a) 24 horas.",
+                    "b) Un mes desde su captación, excepto si deben conservarse para acreditar la comisión de un acto ilícito.",
+                    "c) 6 meses.",
+                    "d) 1 año."
+                ],
+                correctAnswer: "b) Un mes desde su captación, excepto si deben conservarse para acreditar la comisión de un acto ilícito."
+            },
+            {
+                question: "¿Cómo se entenderá cumplido el deber de información en los tratamientos con fines de videovigilancia?",
+                options: [
+                    "a) Con una notificación por correo electrónico.",
+                    "b) Mediante la colocación de un dispositivo informativo en lugar visible identificando, al menos, la existencia del tratamiento, identidad del responsable y posibilidad de ejercer los derechos.",
+                    "c) Con un aviso verbal.",
+                    "d) Publicando la política de privacidad en la web."
+                ],
+                correctAnswer: "b) Mediante la colocación de un dispositivo informativo en lugar visible identificando, al menos, la existencia del tratamiento, identidad del responsable y posibilidad de ejercer los derechos."
+            },
+            {
+                question: "En el ámbito laboral, ¿se admitirá la instalación de sistemas de grabación de sonidos o videovigilancia en lugares destinados al descanso o esparcimiento de los trabajadores?",
+                options: [
+                    "a) Sí, si hay un aviso.",
+                    "b) No, en ningún caso se admitirá.",
+                    "c) Solo si la empresa es de alto riesgo.",
+                    "d) Si los trabajadores dan su consentimiento."
+                ],
+                correctAnswer: "b) No, en ningún caso se admitirá."
+            },
+            {
+                question: "¿Es lícito el tratamiento de datos para evitar el envío de comunicaciones comerciales a quienes hayan expresado su rechazo a recibirlas?",
+                options: [
+                    "a) No, no es lícito.",
+                    "b) Sí, es lícito.",
+                    "c) Solo si se hace manualmente.",
+                    "d) Depende del tipo de comunicación."
+                ],
+                correctAnswer: "b) Sí, es lícito."
+            },
+            {
+                question: "¿Qué deben consultar quienes quieran hacer comunicaciones de mercadotecnia directa?",
+                options: [
+                    "a) Los listados de clientes.",
+                    "b) Los sistemas de exclusión publicitaria.",
+                    "c) Los registros de la seguridad social.",
+                    "d) Los datos de contacto de los interesados."
+                ],
+                correctAnswer: "b) Los sistemas de exclusión publicitaria."
+            },
+            {
+                question: "¿Con qué finalidad es lícita la creación de sistemas de información de denuncias internas?",
+                options: [
+                    "a) Para espiar a los empleados.",
+                    "b) Para notificar actos contrarios a la normativa.",
+                    "c) Para recoger opiniones anónimas.",
+                    "d) Para cualquier fin interno de la empresa."
+                ],
+                correctAnswer: "b) Para notificar actos contrarios a la normativa."
+            },
+            {
+                question: "¿Cuándo está obligado el responsable del tratamiento a bloquear los datos?",
+                options: [
+                    "a) Solo si hay una orden judicial.",
+                    "b) Cuando proceda a su rectificación o supresión.",
+                    "c) Nunca, los datos se eliminan directamente.",
+                    "d) Solo si los datos son incorrectos."
+                ],
+                correctAnswer: "b) Cuando proceda a su rectificación o supresión."
+            },
+            {
+                question: "¿En qué consiste el bloqueo de los datos?",
+                options: [
+                    "a) En eliminarlos permanentemente.",
+                    "b) En la identificación y reserva de los mismos, impidiendo su tratamiento, excepto para la puesta a disposición de jueces y tribunales, el Ministerio Fiscal o las Administraciones Públicas competentes, para la exigencia de posibles responsabilidades.",
+                    "c) En ocultarlos a los interesados.",
+                    "d) En una copia de seguridad encriptada."
+                ],
+                correctAnswer: "b) En la identificación y reserva de los mismos, impidiendo su tratamiento, excepto para la puesta a disposición de jueces y tribunales, el Ministerio Fiscal o las Administraciones Públicas competentes, para la exigencia de posibles responsabilidades."
+            },
+            {
+                question: "¿En qué plazo deben los responsables y encargados del tratamiento comunicar a la AEPD las designaciones, nombramientos y ceses de los DPOs?",
+                options: [
+                    "a) Sin plazo.",
+                    "b) En el plazo de diez días.",
+                    "c) 1 mes.",
+                    "d) 3 meses."
+                ],
+                correctAnswer: "b) En el plazo de diez días."
+            },
+            {
+                question: "¿Qué mantendrán la AEPD y las autoridades autonómicas de protección de datos respecto a los DPOs?",
+                options: [
+                    "a) Un listado interno.",
+                    "b) Una lista actualizada de DPOs accesible por medios electrónicos.",
+                    "c) Un registro manual.",
+                    "d) No mantienen ningún registro."
+                ],
+                correctAnswer: "b) Una lista actualizada de DPOs accesible por medios electrónicos."
+            },
+            {
+                question: "¿Qué funciones tiene un delegado de protección de datos (DPO)?",
+                options: [
+                    "a) Solo asesorar en materia legal.",
+                    "b) Inspeccionar procedimientos, emitir recomendaciones, informar y asesorar al responsable y empleados, supervisar el cumplimiento de la legalidad, asesorar sobre evaluaciones de impacto, cooperar con la autoridad de control y vigilar los riesgos.",
+                    "c) Gestionar la infraestructura tecnológica.",
+                    "d) Realizar la facturación de la empresa."
+                ],
+                correctAnswer: "b) Inspeccionar procedimientos, emitir recomendaciones, informar y asesorar al responsable y empleados, supervisar el cumplimiento de la legalidad, asesorar sobre evaluaciones de impacto, cooperar con la autoridad de control y vigilar los riesgos."
+            },
+            {
+                question: "Si el DPO es una persona física integrada en la organización, ¿qué protección tiene respecto a sus funciones?",
+                options: [
+                    "a) Puede ser removido o sancionado si no cumple los objetivos comerciales.",
+                    "b) No podrá ser removido ni sancionado por desempeñar sus funciones.",
+                    "c) Solo está protegido si tiene un contrato indefinido.",
+                    "d) La protección depende del tamaño de la organización."
+                ],
+                correctAnswer: "b) No podrá ser removido ni sancionado por desempeñar sus funciones."
+            },
+            {
+                question: "¿Cómo debe ser la cualificación de un delegado de protección de datos?",
+                options: [
+                    "a) No requiere ninguna cualificación específica.",
+                    "b) Titulación universitaria con conocimientos en el derecho y práctica de protección de datos.",
+                    "c) Solo experiencia práctica, sin formación académica.",
+                    "d) Un curso básico de informática."
+                ],
+                correctAnswer: "b) Titulación universitaria con conocimientos en el derecho y práctica de protección de datos."
+            },
+            {
+                question: "¿Cuál es la posición del delegado de protección de datos respecto a la AEPD y las autoridades autonómicas?",
+                options: [
+                    "a) Un mero informador.",
+                    "b) Interlocutor del responsable o encargado.",
+                    "c) Un empleado sin autoridad.",
+                    "d) No tiene relación directa con las autoridades."
+                ],
+                correctAnswer: "b) Interlocutor del responsable o encargado."
+            },
+            {
+                question: "¿Qué recursos, autonomía e inviolabilidad deben dar el responsable y el encargado al DPO en sus funciones?",
+                options: [
+                    "a) Ninguno.",
+                    "b) Deben dar recursos, autonomía e inviolabilidad en sus funciones.",
+                    "c) Solo si el DPO es externo.",
+                    "d) Solo lo mínimo indispensable."
+                ],
+                correctAnswer: "b) Deben dar recursos, autonomía e inviolabilidad en sus funciones."
+            },
+            {
+                question: "¿Pueden los interesados ponerse en contacto con el delegado de protección de datos?",
+                options: [
+                    "a) No, solo a través del responsable.",
+                    "b) Sí, respecto a cuestiones relativas al tratamiento de sus datos.",
+                    "c) Solo si tienen una queja formal.",
+                    "d) Solo por correo postal."
+                ],
+                correctAnswer: "b) Sí, respecto a cuestiones relativas al tratamiento de sus datos."
+            },
+            {
+                question: "Si se presenta una reclamación ante las autoridades de protección de datos, ¿en qué plazo puede el DPO comunicar al afectado la decisión adoptada?",
+                options: [
+                    "a) 1 semana.",
+                    "b) 2 meses máximo desde la recepción de la reclamación.",
+                    "c) 6 meses.",
+                    "d) Sin plazo fijo."
+                ],
+                correctAnswer: "b) 2 meses máximo desde la recepción de la reclamación."
+            },
+            {
+                question: "¿Quién aprueba los códigos de conducta en materia de protección de datos?",
+                options: [
+                    "a) Solo los grupos empresariales.",
+                    "b) La AEPD o la autoridad autonómica de protección de datos competente.",
+                    "c) Los propios interesados.",
+                    "d) Organizaciones internacionales."
+                ],
+                correctAnswer: "b) La AEPD o la autoridad autonómica de protección de datos competente."
+            },
+            {
+                question: "¿Qué se promoverá para demostrar el cumplimiento del Reglamento (UE) en las operaciones de tratamiento de responsables y encargados?",
+                options: [
+                    "a) Auditorías internas obligatorias.",
+                    "b) La creación de mecanismos de certificación en protección de datos y de sellos y marcas de protección de datos.",
+                    "c) Informes anuales de transparencia.",
+                    "d) La publicación de todas las políticas internas."
+                ],
+                correctAnswer: "b) La creación de mecanismos de certificación en protección de datos y de sellos y marcas de protección de datos."
+            },
+            {
+                question: "¿Quién expide la certificación en protección de datos?",
+                options: [
+                    "a) Solo la AEPD.",
+                    "b) Los organismos de certificación o la autoridad de control competente.",
+                    "c) Los propios responsables del tratamiento.",
+                    "d) Cualquier consultor externo."
+                ],
+                correctAnswer: "b) Los organismos de certificación o la autoridad de control competente."
+            },
+            {
+                question: "¿Cuál es la vigencia de la certificación en protección de datos?",
+                options: [
+                    "a) 1 año.",
+                    "b) 3 años, renovable.",
+                    "c) Indefinida.",
+                    "d) 5 años, sin renovación."
+                ],
+                correctAnswer: "b) 3 años, renovable."
+            },
+            {
+                question: "¿Qué puede dar lugar a una certificación común, como el Sello Europeo de Protección de Datos?",
+                options: [
+                    "a) Solo la aprobación de un reglamento nacional.",
+                    "b) La aprobación de los criterios por el Comité Europeo de Protección de Datos.",
+                    "c) El acuerdo entre dos países.",
+                    "d) Una decisión unilateral de una autoridad de control."
+                ],
+                correctAnswer: "b) La aprobación de los criterios por el Comité Europeo de Protección de Datos."
+            },
+            {
+                question: "¿A qué derecho se refiere la posibilidad de que los trabajadores y empleados públicos respeten su tiempo de descanso, permisos y vacaciones fuera del tiempo de trabajo?",
+                options: [
+                    "a) Derecho a la seguridad digital.",
+                    "b) Derecho a la desconexión digital en el ámbito laboral.",
+                    "c) Derecho a la intimidad en el trabajo.",
+                    "d) Derecho a la portabilidad de datos laborales."
+                ],
+                correctAnswer: "b) Derecho a la desconexión digital en el ámbito laboral."
+            },
+            {
+                question: "¿En qué supuestos se preservará el derecho a la desconexión digital?",
+                options: [
+                    "a) Solo en el trabajo presencial.",
+                    "b) En los supuestos de realización total o parcial del trabajo a distancia, así como en el domicilio del empleado vinculado al uso con fines laborales de herramientas tecnológicas.",
+                    "c) Solo en vacaciones.",
+                    "d) Exclusivamente fuera del horario laboral."
+                ],
+                correctAnswer: "b) En los supuestos de realización total o parcial del trabajo a distancia, así como en el domicilio del empleado vinculado al uso con fines laborales de herramientas tecnológicas."
+            },
+            {
+                question: "¿Qué deben garantizar los centros educativos y personas físicas o jurídicas que desarrollen actividades en las que participen menores de edad en la publicación o difusión de sus datos personales en servicios de la sociedad de la información?",
+                options: [
+                    "a) Solo la autorización de los padres.",
+                    "b) La protección del interés superior del menor y sus derechos fundamentales, especialmente el derecho a la protección de datos personales.",
+                    "c) La rapidez en la publicación.",
+                    "d) La cantidad de información publicada."
+                ],
+                correctAnswer: "b) La protección del interés superior del menor y sus derechos fundamentales, especialmente el derecho a la protección de datos personales."
+            },
+            {
+                question: "¿Qué se necesita para la publicación o difusión de datos de menores en redes sociales o equivalentes?",
+                options: [
+                    "a) Solo la autorización del centro educativo.",
+                    "b) El consentimiento del menor o sus representantes legales.",
+                    "c) No se necesita ningún consentimiento si es para fines educativos.",
+                    "d) Basta con una notificación general."
+                ],
+                correctAnswer: "b) El consentimiento del menor o sus representantes legales."
+            },
+            {
+                question: "¿Qué permite el derecho al olvido en búsquedas de Internet?",
+                options: [
+                    "a) Eliminar toda la información de Internet.",
+                    "b) Que los motores de búsqueda eliminen de las listas de resultados, tras una búsqueda a partir del nombre, los enlaces publicados con información inadecuada, inexacta, no pertinente, no actualizada o excesiva.",
+                    "c) Que se borren solo los datos de contacto.",
+                    "d) Eliminar los resultados de búsqueda de forma temporal."
+                ],
+                correctAnswer: "b) Que los motores de búsqueda eliminen de las listas de resultados, tras una búsqueda a partir del nombre, los enlaces publicados con información inadecuada, inexacta, no pertinente, no actualizada o excesiva."
+            },
+            {
+                question: "¿Qué permite el derecho al olvido en servicios de redes sociales y servicios equivalentes?",
+                options: [
+                    "a) Solo la supresión de comentarios ofensivos.",
+                    "b) La supresión de datos a su simple solicitud.",
+                    "c) La limitación de la visibilidad de los perfiles.",
+                    "d) La rectificación de la información."
+                ],
+                correctAnswer: "b) La supresión de datos a su simple solicitud."
+            },
+            {
+                question: "¿Qué es la Agencia Española de Protección de Datos (AEPD)?",
+                options: [
+                    "a) Una entidad privada.",
+                    "b) Autoridad estatal de control independiente encargada de velar por el cumplimiento de la normativa sobre protección de datos.",
+                    "c) Un órgano del Ministerio de Justicia sin autonomía.",
+                    "d) Un organismo de asesoramiento sin capacidad sancionadora."
+                ],
+                correctAnswer: "b) Autoridad estatal de control independiente encargada de velar por el cumplimiento de la normativa sobre protección de datos."
+            },
+            {
+                question: "¿Cuál es la finalidad principal de la AEPD?",
+                options: [
+                    "a) Regular el comercio electrónico.",
+                    "b) Garantizar y tutelar el derecho fundamental a la protección de datos de carácter personal de los ciudadanos.",
+                    "c) Promover la digitalización.",
+                    "d) Resolver disputas entre empresas."
+                ],
+                correctAnswer: "b) Garantizar y tutelar el derecho fundamental a la protección de datos de carácter personal de los ciudadanos."
+            },
+            {
+                question: "¿Cómo se relaciona la AEPD con el Gobierno?",
+                options: [
+                    "a) Es un órgano dependiente del Ministerio del Interior.",
+                    "b) Se relaciona con el Gobierno a través del Ministerio de Justicia.",
+                    "c) Es independiente y no tiene relación con el Gobierno.",
+                    "d) Se relaciona directamente con el Presidente del Gobierno."
+                ],
+                correctAnswer: "b) Se relaciona con el Gobierno a través del Ministerio de Justicia."
+            },
+            {
+                question: "¿Cuál es el mandato del Presidente de la AEPD?",
+                options: [
+                    "a) 3 años, sin posibilidad de renovación.",
+                    "b) 5 años y puede ser renovado una vez.",
+                    "c) Indefinido.",
+                    "d) Depende de la legislatura."
+                ],
+                correctAnswer: "b) 5 años y puede ser renovado una vez."
+            },
+            {
+                question: "¿A qué se adapta el ordenamiento jurídico español con la Ley Orgánica 3/2018 de Protección de Datos Personales y Garantía de los Derechos Digitales?",
+                options: [
+                    "a) A la legislación europea de comercio.",
+                    "b) Al Reglamento (UE) 2016/679 del Parlamento Europeo.",
+                    "c) A la Constitución española.",
+                    "d) A las directivas de ciberseguridad."
+                ],
+                correctAnswer: "b) Al Reglamento (UE) 2016/679 del Parlamento Europeo."
+            },
+            {
+                question: "¿A qué tipo de tratamiento de datos personales se aplica la Ley Orgánica 3/2018?",
+                options: [
+                    "a) Solo al tratamiento automatizado.",
+                    "b) A cualquier tratamiento total o parcialmente automatizado, y al tratamiento no automatizado de datos personales contenidos o destinados a ser incluidos en un fichero.",
+                    "c) Solo a los ficheros públicos.",
+                    "d) Solo a los datos recogidos en papel."
+                ],
+                correctAnswer: "b) A cualquier tratamiento total o parcialmente automatizado, y al tratamiento no automatizado de datos personales contenidos o destinados a ser incluidos en un fichero."
+            },
+            {
+                question: "¿Qué principio de protección de datos se menciona en la Ley Orgánica 3/2018?",
+                options: [
+                    "a) Solo el consentimiento del afectado.",
+                    "b) Exactitud de los datos, deber de confidencialidad, consentimiento de menores, categorías especiales de datos y tratamiento de datos de naturaleza penal.",
+                    "c) Solo la limitación de la finalidad.",
+                    "d) La responsabilidad proactiva."
+                ],
+                correctAnswer: "b) Exactitud de los datos, deber de confidencialidad, consentimiento de menores, categorías especiales de datos y tratamiento de datos de naturaleza penal."
+            },
+            {
+                question: "Cuando los datos personales se obtienen del afectado, ¿qué debe facilitarle el responsable del tratamiento?",
+                options: [
+                    "a) Solo una copia de los datos.",
+                    "b) La información básica e indicándole una dirección electrónica u otro medio que permita acceder de forma sencilla e inmediata a la restante información.",
+                    "c) Un folleto informativo detallado.",
+                    "d) Un resumen oral."
+                ],
+                correctAnswer: "b) La información básica e indicándole una dirección electrónica u otro medio que permita acceder de forma sencilla e inmediata a la restante información."
+            },
+            {
+                question: "¿Qué incluye la información básica que debe facilitarse al afectado cuando los datos se obtienen de él?",
+                options: [
+                    "a) Solo la identidad del responsable.",
+                    "b) La identidad del responsable del tratamiento, la finalidad del tratamiento y la posibilidad de ejercer los derechos.",
+                    "c) El número de empleados de la empresa.",
+                    "d) Las opiniones de otros interesados."
+                ],
+                correctAnswer: "b) La identidad del responsable del tratamiento, la finalidad del tratamiento y la posibilidad de ejercer los derechos."
+            },
+            {
+                question: "Si los datos obtenidos fueran a ser tratados para la elaboración de perfiles, ¿qué debe comprender la información básica?",
+                options: [
+                    "a) Nada adicional.",
+                    "b) Asimismo, esta circunstancia.",
+                    "c) Solo el tipo de perfiles.",
+                    "d) Los beneficios de la elaboración de perfiles."
+                ],
+                correctAnswer: "b) Asimismo, esta circunstancia."
+            },
+            {
+                question: "Cuando los datos personales no hubieran sido obtenidos del afectado, ¿qué información se debe añadir a la información básica?",
+                options: [
+                    "a) La ubicación del servidor.",
+                    "b) Las categorías de datos objeto de tratamiento y las fuentes de las que procedieran los datos.",
+                    "c) Los nombres de los empleados que tratan los datos.",
+                    "d) La estructura de la base de datos."
+                ],
+                correctAnswer: "b) Las categorías de datos objeto de tratamiento y las fuentes de las que procedieran los datos."
+            },
+            {
+                question: "¿Cómo deben ser los medios para que el interesado ejerza sus derechos?",
+                options: [
+                    "a) Complicados y con muchas barreras.",
+                    "b) Fácilmente accesibles.",
+                    "c) Solo por escrito.",
+                    "d) Con un coste elevado para disuadir."
+                ],
+                correctAnswer: "b) Fácilmente accesibles."
+            },
+            {
+                question: "¿Son gratuitas las actuaciones del responsable del tratamiento para atender las solicitudes de ejercicio de los derechos del interesado?",
+                options: [
+                    "a) No, siempre tienen un coste.",
+                    "b) Sí, serán gratuitas.",
+                    "c) Solo si el interesado es de bajos recursos.",
+                    "d) Depende del derecho que se ejerza."
+                ],
+                correctAnswer: "b) Sí, serán gratuitas."
+            },
+            {
+                question: "¿Qué derecho se incluye en la lista de derechos de los interesados junto al Derecho de Rectificación y el Derecho de Oposición?",
+                options: [
+                    "a) Derecho a la información.",
+                    "b) Derecho a la Portabilidad.",
+                    "c) Derecho a la auditoría.",
+                    "d) Derecho a la consulta."
+                ],
+                correctAnswer: "b) Derecho a la Portabilidad."
+            },
+            {
+                question: "¿Qué derecho se incluye en la lista de derechos de los interesados junto al Derecho de Supresión y el Derecho a la Limitación del tratamiento?",
+                options: [
+                    "a) Derecho al olvido.",
+                    "b) Derecho de Acceso.",
+                    "c) Derecho a la compensación.",
+                    "d) Derecho a la intervención humana."
+                ],
+                correctAnswer: "b) Derecho de Acceso."
+            },
+            {
+                question: "¿Qué obligación tienen el responsable y el encargado del tratamiento respecto al registro de actividades?",
+                options: [
+                    "a) Mantenerlo solo si son una gran empresa.",
+                    "b) Deberán mantener el registro de actividades de tratamiento.",
+                    "c) Es opcional.",
+                    "d) Solo si la autoridad de control lo exige."
+                ],
+                correctAnswer: "b) Deberán mantener el registro de actividades de tratamiento."
+            },
+            {
+                question: "¿Cuándo se considera que el acceso por parte de un encargado de tratamiento a los datos personales necesarios para la prestación de un servicio al responsable es una comunicación de datos?",
+                options: [
+                    "a) Siempre.",
+                    "b) Nunca, no se considerará comunicación de datos.",
+                    "c) Solo si el encargado está en un tercer país.",
+                    "d) Si hay un contrato entre ellos."
+                ],
+                correctAnswer: "b) Nunca, no se considerará comunicación de datos."
+            },
+            {
+                question: "¿Qué derecho digital se menciona relacionado con la conectividad?",
+                options: [
+                    "a) Derecho a la privacidad en línea.",
+                    "b) Derecho a la neutralidad de Internet.",
+                    "c) Derecho a la propiedad intelectual.",
+                    "d) Derecho a la copia privada."
+                ],
+                correctAnswer: "b) Derecho a la neutralidad de Internet."
+            },
+            {
+                question: "¿Qué se incluye dentro de los derechos digitales?",
+                options: [
+                    "a) Solo el derecho a la intimidad.",
+                    "b) Derecho a la seguridad digital, derecho a la educación digital, protección de menores en Internet y derecho de rectificación en Internet.",
+                    "c) Solo el derecho a la libre expresión.",
+                    "d) No se mencionan derechos digitales específicos."
+                ],
+                correctAnswer: "b) Derecho a la seguridad digital, derecho a la educación digital, protección de menores en Internet y derecho de rectificación en Internet."
+            },
+            {
+                question: "¿Qué derecho digital se refiere a la posibilidad de que los trabajadores y empleados públicos respeten su tiempo de descanso y su intimidad personal y familiar?",
+                options: [
+                    "a) Derecho a la desconexión digital en el ámbito laboral.",
+                    "b) Derecho a la privacidad.",
+                    "c) Derecho a un trabajo justo.",
+                    "d) Derecho a la organización del tiempo."
+                ],
+                correctAnswer: "a) Derecho a la desconexión digital en el ámbito laboral."
+            },
+            {
+                question: "¿Qué es un 'dato personal' según el Reglamento (UE) 2016/679?",
+                options: [
+                    "a) Cualquier información sobre una persona jurídica.",
+                    "b) Toda información sobre una persona física identificada o identificable (el interesado).",
+                    "c) Solo los datos de contacto.",
+                    "d) Datos que no permiten la identificación."
+                ],
+                correctAnswer: "b) Toda información sobre una persona física identificada o identificable (el interesado)."
+            },
+            {
+                question: "¿Qué se entiende por 'tratamiento' de datos personales?",
+                options: [
+                    "a) Solo la recogida de datos.",
+                    "b) Cualquier operación o conjunto de operaciones realizadas sobre datos personales, automatizadas o no, como recogida, registro, organización, estructuración, conservación, adaptación, etc.",
+                    "c) Únicamente la difusión de datos.",
+                    "d) Solo la supresión de datos."
+                ],
+                correctAnswer: "b) Cualquier operación o conjunto de operaciones realizadas sobre datos personales, automatizadas o no, como recogida, registro, organización, estructuración, conservación, adaptación, etc."
+            },
+            {
+                question: "¿Qué significa 'limitación del tratamiento'?",
+                options: [
+                    "a) La eliminación de los datos.",
+                    "b) El marcado de los datos de carácter personal conservados con el fin de limitar su tratamiento en el futuro.",
+                    "c) La anonimización de los datos.",
+                    "d) La copia de los datos."
+                ],
+                correctAnswer: "b) El marcado de los datos de carácter personal conservados con el fin de limitar su tratamiento en el futuro."
+            },
+            {
+                question: "¿Qué es la 'elaboración de perfiles'?",
+                options: [
+                    "a) La creación de un perfil de usuario en redes sociales.",
+                    "b) Usar datos personales para evaluar aspectos personales de una persona física, en particular para analizar o predecir aspectos sobre rendimiento profesional, economía, salud, preferencias, intereses, fiabilidad, comportamiento o ubicación.",
+                    "c) La agregación de datos estadísticos.",
+                    "d) La categorización de datos por su tipo."
+                ],
+                correctAnswer: "b) Usar datos personales para evaluar aspectos personales de una persona física, en particular para analizar o predecir aspectos sobre rendimiento profesional, economía, salud, preferencias, intereses, fiabilidad, comportamiento o ubicación."
+            },
+            {
+                question: "¿Qué es la 'seudonimización'?",
+                options: [
+                    "a) La completa anonimización de los datos.",
+                    "b) El tratamiento de datos personales de manera tal que ya no puedan atribuirse a un interesado sin utilizar información adicional, siempre que dicha información adicional figure por separado y esté sujeta a medidas técnicas y organizativas para garantizar la no atribución.",
+                    "c) La eliminación de nombres de los datos.",
+                    "d) El cifrado de los datos sin clave."
+                ],
+                correctAnswer: "b) El tratamiento de datos personales de manera tal que ya no puedan atribuirse a un interesado sin utilizar información adicional, siempre que dicha información adicional figure por separado y esté sujeta a medidas técnicas y organizativas para garantizar la no atribución."
+            },
+            {
+                question: "¿Qué es un 'fichero' según el Reglamento (UE)?",
+                options: [
+                    "a) Un documento físico archivado.",
+                    "b) Un conjunto estructurado de datos personales, accesibles, centralizado o descentralizado o repartido de forma funcional o geográfica.",
+                    "c) Una base de datos sin estructura.",
+                    "d) Un disco duro con información."
+                ],
+                correctAnswer: "b) Un conjunto estructurado de datos personales, accesibles, centralizado o descentralizado o repartido de forma funcional o geográfica."
+            },
+            {
+                question: "¿Quién es el 'responsable del tratamiento' o 'responsable'?",
+                options: [
+                    "a) La persona que trabaja con los datos.",
+                    "b) La persona física o jurídica, autoridad pública, servicio u otro organismo que, solo o junto con otros, determine los fines y medios del tratamiento.",
+                    "c) La empresa que aloja los datos.",
+                    "d) El delegado de protección de datos."
+                ],
+                correctAnswer: "b) La persona física o jurídica, autoridad pública, servicio u otro organismo que, solo o junto con otros, determine los fines y medios del tratamiento."
+            },
+            {
+                question: "¿Quién es el 'encargado del tratamiento' o 'encargado'?",
+                options: [
+                    "a) El dueño de los datos.",
+                    "b) La persona física o jurídica, autoridad pública, servicio u otro organismo que trate datos personales por cuenta del responsable del tratamiento.",
+                    "c) El usuario final de los datos.",
+                    "d) El proveedor de servicios de internet."
+                ],
+                correctAnswer: "b) La persona física o jurídica, autoridad pública, servicio u otro organismo que trate datos personales por cuenta del responsable del tratamiento."
+            },
+            {
+                question: "¿Qué es un 'destinatario' de datos personales?",
+                options: [
+                    "a) Solo el interesado.",
+                    "b) Persona física o jurídica, autoridad pública, servicio u otro al que se comuniquen datos personales, se trate o no de un tercero.",
+                    "c) El responsable del tratamiento.",
+                    "d) El encargado del tratamiento."
+                ],
+                correctAnswer: "b) Persona física o jurídica, autoridad pública, servicio u otro al que se comuniquen datos personales, se trate o no de un tercero."
+            },
+            {
+                question: "¿Quién se considera un 'tercero' en el contexto de la protección de datos?",
+                options: [
+                    "a) El responsable del tratamiento.",
+                    "b) La persona física o jurídica, autoridad pública, servicio u organismo distinto del interesado, del responsable del tratamiento, del encargado del tratamiento y de las personas autorizadas para tratar los datos personales bajo autoridad directa del responsable o encargado.",
+                    "c) El delegado de protección de datos.",
+                    "d) El interesado."
+                ],
+                correctAnswer: "b) La persona física o jurídica, autoridad pública, servicio u organismo distinto del interesado, del responsable del tratamiento, del encargado del tratamiento y de las personas autorizadas para tratar los datos personales bajo autoridad directa del responsable o encargado."
+            },
+            {
+                question: "¿Qué se entiende por 'violación de la seguridad de los datos personales'?",
+                options: [
+                    "a) Solo el acceso no autorizado a los datos.",
+                    "b) Toda violación de la seguridad que ocasione la destrucción, pérdida o alteración accidental o ilícita de datos personales transmitidos, conservados o tratados, o la comunicación o acceso no autorizados a dichos datos.",
+                    "c) Cualquier fallo del sistema informático.",
+                    "d) La interrupción temporal del servicio."
+                ],
+                correctAnswer: "b) Toda violación de la seguridad que ocasione la destrucción, pérdida o alteración accidental o ilícita de datos personales transmitidos, conservados o tratados, o la comunicación o acceso no autorizados a dichos datos."
+            },
+            {
+                question: "¿Qué son los 'datos genéticos'?",
+                options: [
+                    "a) Datos sobre el origen geográfico.",
+                    "b) Datos personales relativos a las características genéticas heredadas o adquiridas de una persona física que proporcionen una información única sobre la fisiología o la salud de esa persona, obtenidos en particular del análisis de una muestra biológica.",
+                    "c) Datos sobre preferencias de ropa.",
+                    "d) Datos de ancestros genealógicos."
+                ],
+                correctAnswer: "b) Datos personales relativos a las características genéticas heredadas o adquiridas de una persona física que proporcionen una información única sobre la fisiología o la salud de esa persona, obtenidos en particular del análisis de una muestra biológica."
+            },
+            {
+                question: "¿Qué son los 'datos biométricos'?",
+                options: [
+                    "a) Datos sobre el rendimiento deportivo.",
+                    "b) Datos personales obtenidos a partir de un tratamiento técnico específico, relativos a características físicas, fisiológicas o conductuales de una persona que permitan la identificación única de dicha persona, como imágenes faciales o datos dactiloscópicos.",
+                    "c) Datos de medidas corporales.",
+                    "d) Datos de encuestas de satisfacción."
+                ],
+                correctAnswer: "b) Datos personales obtenidos a partir de un tratamiento técnico específico, relativos a características físicas, fisiológicas o conductuales de una persona que permitan la identificación única de dicha persona, como imágenes faciales o datos dactiloscópicos."
+            },
+            {
+                question: "¿Qué son los 'datos relativos a la salud'?",
+                options: [
+                    "a) Datos sobre el consumo de alimentos.",
+                    "b) Relativos a la salud física o mental de una persona, incluida la prestación de servicios, que revelen su estado de salud.",
+                    "c) Datos sobre seguros de vida.",
+                    "d) Datos de afiliación a gimnasios."
+                ],
+                correctAnswer: "b) Relativos a la salud física o mental de una persona, incluida la prestación de servicios, que revelen su estado de salud."
+            },
+            {
+                question: "¿Quién es un 'representante' según el Reglamento (UE)?",
+                options: [
+                    "a) Cualquier empleado del responsable.",
+                    "b) La persona física o jurídica establecida en la Unión que, habiendo sido designada por escrito por el responsable o el encargado, represente al responsable o al encargado en sus obligaciones.",
+                    "c) Un abogado externo.",
+                    "d) El DPO."
+                ],
+                correctAnswer: "b) La persona física o jurídica establecida en la Unión que, habiendo sido designada por escrito por el responsable o el encargado, represente al responsable o al encargado en sus obligaciones."
+            },
+            {
+                question: "¿Qué es una 'empresa' en el contexto del Reglamento (UE)?",
+                options: [
+                    "a) Solo una sociedad anónima.",
+                    "b) Persona física o jurídica dedicada a una actividad económica, independientemente de su forma jurídica, incluidas las sociedades o asociaciones que desempeñen regularmente una actividad económica.",
+                    "c) Una organización sin ánimo de lucro.",
+                    "d) Cualquier entidad con empleados."
+                ],
+                correctAnswer: "b) Persona física o jurídica dedicada a una actividad económica, independientemente de su forma jurídica, incluidas las sociedades o asociaciones que desempeñen regularmente una actividad económica."
+            },
+            {
+                question: "¿Qué es un 'grupo empresarial'?",
+                options: [
+                    "a) Varias empresas con la misma sede.",
+                    "b) Grupo constituido por una empresa que ejerce el control y sus empresas controladas.",
+                    "c) Una asociación de empresas sin relación jerárquica.",
+                    "d) Empresas que colaboran en un proyecto."
+                ],
+                correctAnswer: "b) Grupo constituido por una empresa que ejerce el control y sus empresas controladas."
+            },
+            {
+                question: "¿Qué son las 'normas corporativas vinculantes'?",
+                options: [
+                    "a) Un código de conducta interno no obligatorio.",
+                    "b) Políticas de protección de datos personales asumidas por un responsable o encargado establecido en un estado miembro para transferencias de datos personales a un responsable o encargado en uno o más países terceros, dentro de un grupo empresarial o una unión de empresas dedicadas a una actividad económica conjunta.",
+                    "c) Normas de seguridad de la información.",
+                    "d) Acuerdos de confidencialidad entre empleados."
+                ],
+                correctAnswer: "b) Políticas de protección de datos personales asumidas por un responsable o encargado establecido en un estado miembro para transferencias de datos personales a un responsable o encargado en uno o más países terceros, dentro de un grupo empresarial o una unión de empresas dedicadas a una actividad económica conjunta."
+            },
+            {
+                question: "¿Qué es una 'autoridad de control'?",
+                options: [
+                    "a) Una organización de consumidores.",
+                    "b) La autoridad pública independiente establecida por un estado miembro.",
+                    "c) Una empresa consultora.",
+                    "d) Un departamento del gobierno central."
+                ],
+                correctAnswer: "b) La autoridad pública independiente establecida por un estado miembro."
+            },
+            {
+                question: "¿Cuándo se considera una autoridad de control 'interesada'?",
+                options: [
+                    "a) Cuando tiene curiosidad por un caso.",
+                    "b) Cuando el responsable o encargado está establecido en su estado miembro, o los interesados de su estado miembro se ven sustancialmente afectados, o se ha presentado una reclamación ante ella.",
+                    "c) Cuando decide investigar un asunto por su cuenta.",
+                    "d) Cuando recibe una subvención para un proyecto."
+                ],
+                correctAnswer: "b) Cuando el responsable o encargado está establecido en su estado miembro, o los interesados de su estado miembro se ven sustancialmente afectados, o se ha presentado una reclamación ante ella."
+            },
+            {
+                question: "¿Qué es un 'tratamiento transfronterizo'?",
+                options: [
+                    "a) Tratamiento de datos entre dos departamentos de una misma empresa.",
+                    "b) Tratamiento realizado en el contexto de actividades de establecimientos en más de un estado miembro, o tratamiento de un único establecimiento que afecta sustancialmente a interesados en más de un estado miembro.",
+                    "c) Tratamiento de datos entre países limítrofes.",
+                    "d) Tratamiento de datos de ciudadanos de diferentes nacionalidades."
+                ],
+                correctAnswer: "b) Tratamiento realizado en el contexto de actividades de establecimientos en más de un estado miembro, o tratamiento de un único establecimiento que afecta sustancialmente a interesados en más de un estado miembro."
+            },
+            {
+                question: "¿Qué es una 'objeción pertinente y motivada'?",
+                options: [
+                    "a) Cualquier queja del interesado.",
+                    "b) La objeción a una propuesta de decisión sobre la existencia o no de infracción del reglamento, o sobre la conformidad con el mismo de acciones, que demuestre la importancia de los riesgos para los derechos y libertades fundamentales de los interesados y la libre circulación de datos personales dentro de la Unión.",
+                    "c) Una objeción basada en suposiciones.",
+                    "d) Una simple declaración de desacuerdo."
+                ],
+                correctAnswer: "b) La objeción a una propuesta de decisión sobre la existencia o no de infracción del reglamento, o sobre la conformidad con el mismo de acciones, que demuestre la importancia de los riesgos para los derechos y libertades fundamentales de los interesados y la libre circulación de datos personales dentro de la Unión."
+            },
+            {
+                question: "¿Qué es un 'servicio de la sociedad de la información'?",
+                options: [
+                    "a) Cualquier servicio ofrecido en línea.",
+                    "b) Servicio prestado normalmente a título oneroso por vía electrónica y a petición del destinatario. También servicios no remunerados por sus destinatarios si constituyen una actividad económica para el prestador de servicios.",
+                    "c) Un servicio de atención al cliente telefónico.",
+                    "d) Una biblioteca pública."
+                ],
+                correctAnswer: "b) Servicio prestado normalmente a título oneroso por vía electrónica y a petición del destinatario. También servicios no remunerados por sus destinatarios si constituyen una actividad económica para el prestador de servicios."
+            },
+            {
+                question: "¿Quién es el 'responsable del fichero o del tratamiento'?",
+                options: [
+                    "a) El que guarda los ficheros.",
+                    "b) Persona física o jurídica, de carácter público o privado, solo o junto con otros, que decide la finalidad y el uso de los datos.",
+                    "c) El que limpia los ficheros.",
+                    "d) El que audita los ficheros."
+                ],
+                correctAnswer: "b) Persona física o jurídica, de carácter público o privado, solo o junto con otros, que decide la finalidad y el uso de los datos."
+            },
+            {
+                question: "¿Qué obligación tiene el responsable del fichero o del tratamiento?",
+                options: [
+                    "a) Mantener los datos desactualizados.",
+                    "b) Inscribir los ficheros ante el Registro General de Protección de Datos, adoptar medidas de seguridad y obtener consentimiento.",
+                    "c) Compartir los datos sin restricciones.",
+                    "d) No informar sobre el tratamiento."
+                ],
+                correctAnswer: "b) Inscribir los ficheros ante el Registro General de Protección de Datos, adoptar medidas de seguridad y obtener consentimiento."
+            },
+            {
+                question: "¿Qué función principal tiene el 'encargado de tratamiento'?",
+                options: [
+                    "a) Decidir los fines del tratamiento.",
+                    "b) Tratar datos de carácter personal por cuenta del responsable de tratamiento, existiendo una relación jurídica que le vincula con el mismo.",
+                    "c) Auditar los sistemas de seguridad.",
+                    "d) Atender las reclamaciones de los interesados."
+                ],
+                correctAnswer: "b) Tratar datos de carácter personal por cuenta del responsable de tratamiento, existiendo una relación jurídica que le vincula con el mismo."
+            },
+            {
+                question: "¿Quién es el 'Delegado de Protección de Datos (DPO)'?",
+                options: [
+                    "a) Un asesor legal externo.",
+                    "b) El responsable de garantizar que se cumpla la normativa dentro de la empresa u organización.",
+                    "c) El director de tecnología.",
+                    "d) Un miembro del consejo de administración."
+                ],
+                correctAnswer: "b) El responsable de garantizar que se cumpla la normativa dentro de la empresa u organización."
+            },
+            {
+                question: "¿Qué funciones se le atribuyen al DPO?",
+                options: [
+                    "a) Solo actuar como punto de contacto con la AEPD.",
+                    "b) Informar y asesorar al encargado y empleados, supervisar el cumplimiento, asesorar sobre evaluaciones de impacto y actuar como representante ante la AEPD.",
+                    "c) Gestionar las redes sociales.",
+                    "d) Desarrollar nuevos productos."
+                ],
+                correctAnswer: "b) Informar y asesorar al encargado y empleados, supervisar el cumplimiento, asesorar sobre evaluaciones de impacto y actuar como representante ante la AEPD."
+            },
+            {
+                question: "¿Se suprime la obligación de designar un DPO por tener más de 250 trabajadores?",
+                options: [
+                    "a) Sí, totalmente.",
+                    "b) No, esa es la condición para designarlo, no para suprimirla.",
+                    "c) Es una afirmación ambigua.",
+                    "d) La designación es siempre voluntaria."
+                ],
+                correctAnswer: "b) No, esa es la condición para designarlo, no para suprimirla."
+            },
+            {
+                question: "¿Cuándo entra en juego la figura del 'Corresponsable de tratamiento'?",
+                options: [
+                    "a) Cuando una sola persona decide los fines y medios.",
+                    "b) Cuando se determinan los fines y/o los medios 'junto con otros'.",
+                    "c) Cuando el tratamiento es ocasional.",
+                    "d) Cuando el tratamiento es de bajo riesgo."
+                ],
+                correctAnswer: "b) Cuando se determinan los fines y/o los medios 'junto con otros'."
+            },
+            {
+                question: "¿Quién es el 'Responsable de seguridad'?",
+                options: [
+                    "a) Cualquier empleado encargado de la seguridad física.",
+                    "b) Persona/s a las que el responsable del fichero ha asignado formalmente la función de coordinar y controlar las medidas de seguridad aplicables por la empresa u organización.",
+                    "c) Un experto en ciberseguridad externo.",
+                    "d) El CEO de la empresa."
+                ],
+                correctAnswer: "b) Persona/s a las que el responsable del fichero ha asignado formalmente la función de coordinar y controlar las medidas de seguridad aplicables por la empresa u organización."
+            },
+            {
+                question: "¿Cuándo es obligatoria la figura del Responsable de seguridad?",
+                options: [
+                    "a) Siempre, en cualquier empresa.",
+                    "b) En caso de que existan ficheros de nivel medio y alto.",
+                    "c) Solo en grandes corporaciones.",
+                    "d) Nunca, es una figura voluntaria."
+                ],
+                correctAnswer: "b) En caso de que existan ficheros de nivel medio y alto."
+            },
+            {
+                question: "¿Quiénes son los 'usuarios' en el ámbito de la protección de datos?",
+                options: [
+                    "a) Los clientes de la empresa.",
+                    "b) Empleados que usan los ficheros de datos personales para introducir nuevos datos, realizar consultas o redactar informes.",
+                    "c) Los visitantes de la página web.",
+                    "d) Los proveedores de servicios."
+                ],
+                correctAnswer: "b) Empleados que usan los ficheros de datos personales para introducir nuevos datos, realizar consultas o redactar informes."
+            },
+            {
+                question: "¿Quién es el 'Afectado o titular de los datos'?",
+                options: [
+                    "a) La persona jurídica.",
+                    "b) Persona física titular de los datos tratados.",
+                    "c) El responsable del tratamiento.",
+                    "d) Cualquier persona involucrada en el tratamiento."
+                ],
+                correctAnswer: "b) Persona física titular de los datos tratados."
+            },
+            {
+                question: "¿Qué derecho tiene el afectado o titular de los datos, entre otros?",
+                options: [
+                    "a) El derecho a vender sus datos.",
+                    "b) El derecho a conocer la identidad del responsable y la finalidad del tratamiento.",
+                    "c) El derecho a impedir cualquier tratamiento.",
+                    "d) El derecho a una compensación por el uso de sus datos."
+                ],
+                correctAnswer: "b) El derecho a conocer la identidad del responsable y la finalidad del tratamiento."
+            },
+            {
+                question: "¿Qué debe garantizar la AEPD y las autoridades autonómicas de protección de datos respecto a la lista de DPOs?",
+                options: [
+                    "a) Que sea secreta.",
+                    "b) Que sea actualizada y accesible por medios electrónicos.",
+                    "c) Que sea publicada solo en boletines oficiales.",
+                    "d) Que sea solo para uso interno."
+                ],
+                correctAnswer: "b) Que sea actualizada y accesible por medios electrónicos."
+            },
+            {
+                question: "¿En qué plazo debe responder el DPO si la reclamación del afectado se presenta ante la AEPD o las autoridades autonómicas y estas la remiten al DPO?",
+                options: [
+                    "a) 2 meses.",
+                    "b) 1 mes.",
+                    "c) 72 horas.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b) 1 mes."
+            },
+            {
+                question: "¿Qué se promoverá a nivel de Estados miembros, autoridades de control, Comité Europeo de Protección de Datos y la Comisión para una correcta aplicación del Reglamento (UE)?",
+                options: [
+                    "a) La elaboración de leyes nacionales.",
+                    "b) La elaboración de códigos de conducta.",
+                    "c) La creación de nuevas autoridades.",
+                    "d) La imposición de sanciones más estrictas."
+                ],
+                correctAnswer: "b) La elaboración de códigos de conducta."
+            },
+            {
+                question: "¿Quién supervisa el cumplimiento de un código de conducta aprobado?",
+                options: [
+                    "a) El propio responsable del tratamiento.",
+                    "b) Un organismo acreditado.",
+                    "c) El interesado.",
+                    "d) Un auditor interno."
+                ],
+                correctAnswer: "b) Un organismo acreditado."
+            },
+            {
+                question: "¿Quién puede realizar la acreditación de instituciones de certificación?",
+                options: [
+                    "a) Solo el gobierno.",
+                    "b) La Entidad Nacional de Acreditación (ENAC).",
+                    "c) Las propias instituciones.",
+                    "d) La AEPD directamente."
+                ],
+                correctAnswer: "b) La Entidad Nacional de Acreditación (ENAC)."
+            },
+            {
+                question: "¿Qué debe comunicar la ENAC a la AEPD y a las autoridades de protección de datos de las CCAA?",
+                options: [
+                    "a) Solo los nombres de las instituciones acreditadas.",
+                    "b) Las concesiones, denegaciones o revocaciones de las acreditaciones, así como su motivación.",
+                    "c) Solo el número de acreditaciones.",
+                    "d) No debe comunicar nada."
+                ],
+                correctAnswer: "b) Las concesiones, denegaciones o revocaciones de las acreditaciones, así como su motivación."
+            },
+            {
+                question: "¿Qué se establece mediante Real Decreto en relación con los códigos de conducta?",
+                options: [
+                    "a) Su contenido genérico.",
+                    "b) El contenido del registro y las especialidades del procedimiento de aprobación.",
+                    "c) Las sanciones por incumplimiento.",
+                    "d) Las directrices para su redacción."
+                ],
+                correctAnswer: "b) El contenido del registro y las especialidades del procedimiento de aprobación."
+            },
+            {
+                question: "¿Qué garantiza la Ley Orgánica 3/2018 además de adaptar el ordenamiento jurídico al Reglamento (UE) 2016/679?",
+                options: [
+                    "a) La estabilidad económica.",
+                    "b) Los derechos digitales de la ciudadanía conforme a la Constitución (Art 18).",
+                    "c) La libertad de prensa.",
+                    "d) El acceso a la información pública."
+                ],
+                correctAnswer: "b) Los derechos digitales de la ciudadanía conforme a la Constitución (Art 18)."
+            },
+            {
+                question: "¿Qué tipo de información básica debe incluirse si se elaboran perfiles con los datos?",
+                options: [
+                    "a) El porcentaje de datos usados.",
+                    "b) La circunstancia de la elaboración de perfiles.",
+                    "c) La opinión del responsable.",
+                    "d) El software utilizado."
+                ],
+                correctAnswer: "b) La circunstancia de la elaboración de perfiles."
+            },
+            {
+                question: "¿Qué derecho digital se refiere a la posibilidad de actualizar informaciones en medios de comunicación digitales?",
+                options: [
+                    "a) Derecho de acceso a la información.",
+                    "b) Derecho a la actualización de informaciones en medios de comunicación digitales.",
+                    "c) Derecho de rectificación.",
+                    "d) Derecho al olvido."
+                ],
+                correctAnswer: "b) Derecho a la actualización de informaciones en medios de comunicación digitales."
+            },
+            {
+                question: "¿Qué se garantiza en relación con la intimidad y el uso de dispositivos digitales en el ámbito laboral?",
+                options: [
+                    "a) El acceso total del empleador.",
+                    "b) El derecho a la intimidad.",
+                    "c) La monitorización continua.",
+                    "d) La ausencia de regulaciones."
+                ],
+                correctAnswer: "b) El derecho a la intimidad."
+            },
+            {
+                question: "¿Qué se regula respecto al uso de sistemas de geolocalización en el ámbito laboral?",
+                options: [
+                    "a) La prohibición total.",
+                    "b) El derecho a la intimidad ante la utilización de sistemas de geolocalización en el ámbito laboral.",
+                    "c) El uso libre sin restricciones.",
+                    "d) La obligatoriedad de su uso."
+                ],
+                correctAnswer: "b) El derecho a la intimidad ante la utilización de sistemas de geolocalización en el ámbito laboral."
+            },
+            {
+                question: "¿Qué derecho se refiere a la posibilidad de que los enlaces que contengan información personal en los motores de búsqueda sean eliminados?",
+                options: [
+                    "a) Derecho a la rectificación.",
+                    "b) Derecho al olvido en búsquedas de Internet.",
+                    "c) Derecho a la portabilidad.",
+                    "d) Derecho de oposición."
+                ],
+                correctAnswer: "b) Derecho al olvido en búsquedas de Internet."
+            },
+            {
+                question: "¿Qué derecho se refiere a la posibilidad de que los datos sean suprimidos de servicios de redes sociales y servicios equivalentes a su simple solicitud?",
+                options: [
+                    "a) Derecho de acceso.",
+                    "b) Derecho al olvido en servicios de redes sociales y servicios equivalentes.",
+                    "c) Derecho de portabilidad.",
+                    "d) Derecho de oposición."
+                ],
+                correctAnswer: "b) Derecho al olvido en servicios de redes sociales y servicios equivalentes."
+            },
+            {
+                question: "¿Qué derecho digital se refiere a la posibilidad de heredar los datos digitales tras el fallecimiento?",
+                options: [
+                    "a) Derecho a la desconexión digital.",
+                    "b) Derecho al testamento digital.",
+                    "c) Derecho al olvido.",
+                    "d) Derecho a la herencia universal."
+                ],
+                correctAnswer: "b) Derecho al testamento digital."
+            },
+            {
+                question: "¿Cuál de las siguientes es una función del Delegado de Protección de Datos?",
+                options: [
+                    "a) Tomar decisiones comerciales de la empresa.",
+                    "b) Supervisar el cumplimiento de la legalidad, asignar responsabilidades, concienciar y formar al personal y las auditorías correspondientes.",
+                    "c) Realizar el soporte técnico.",
+                    "d) Gestionar los recursos humanos."
+                ],
+                correctAnswer: "b) Supervisar el cumplimiento de la legalidad, asignar responsabilidades, concienciar y formar al personal y las auditorías correspondientes."
+            },
+            {
+                question: "¿Qué tipo de tratamiento requiere una evaluación de impacto relativa a la protección de datos?",
+                options: [
+                    "a) Todo tipo de tratamiento de datos.",
+                    "b) Cuando sea probable que un tipo de tratamiento, en particular si utiliza nuevas tecnologías, entrañe un alto riesgo para los derechos y libertades de las personas físicas.",
+                    "c) Solo tratamientos con más de 1000 interesados.",
+                    "d) Únicamente los tratamientos transfronterizos."
+                ],
+                correctAnswer: "b) Cuando sea probable que un tipo de tratamiento, en particular si utiliza nuevas tecnologías, entrañe un alto riesgo para los derechos y libertades de las personas físicas."
+            },
+            {
+                question: "Si el responsable no toma medidas ante un alto riesgo en la evaluación de impacto, ¿qué debe hacer?",
+                options: [
+                    "a) Continuar con el tratamiento.",
+                    "b) Consultar a la autoridad de control antes de proceder al tratamiento.",
+                    "c) Informar a los interesados.",
+                    "d) Anular el tratamiento."
+                ],
+                correctAnswer: "b) Consultar a la autoridad de control antes de proceder al tratamiento."
+            },
+            {
+                question: "¿Cuánto tiempo se conservarán los datos de condenas e infracciones penales según la regulación del Sistema de registros administrativos de apoyo a la Administración de Justicia?",
+                options: [
+                    "a) Indefinidamente.",
+                    "b) Conforme a lo establecido en dicha regulación.",
+                    "c) 5 años.",
+                    "d) Hasta que el interesado solicite su supresión."
+                ],
+                correctAnswer: "b) Conforme a lo establecido en dicha regulación."
+            },
+            {
+                question: "¿Qué deben hacer los responsables y encargados del tratamiento en relación con los DPOs?",
+                options: [
+                    "a) Mantenerlos en la empresa para siempre.",
+                    "b) Comunicar en el plazo de diez días a la AEPD o autoridades autonómicas las designaciones, nombramientos y ceses.",
+                    "c) No es necesario informar a las autoridades.",
+                    "d) Solo informar de los DPOs internos."
+                ],
+                correctAnswer: "b) Comunicar en el plazo de diez días a la AEPD o autoridades autonómicas las designaciones, nombramientos y ceses."
+            },
+            {
+                question: "¿Qué función de un DPO se relaciona con la evaluación de impacto?",
+                options: [
+                    "a) Realizarla completamente.",
+                    "b) Ofrecer el asesoramiento que se le solicite acerca de la evaluación de impacto relativa a la protección de datos y supervisar su aplicación.",
+                    "c) Aprobarla.",
+                    "d) Revisar solo los aspectos técnicos."
+                ],
+                correctAnswer: "b) Ofrecer el asesoramiento que se le solicite acerca de la evaluación de impacto relativa a la protección de datos y supervisar su aplicación."
+            },
+            {
+                question: "¿Cuál es la finalidad de los sistemas de información de denuncias internas?",
+                options: [
+                    "a) El control absoluto de los empleados.",
+                    "b) Notificar actos contrarios a la normativa.",
+                    "c) Recopilar información personal de los trabajadores.",
+                    "d) Monitorear el rendimiento laboral."
+                ],
+                correctAnswer: "b) Notificar actos contrarios a la normativa."
+            },
+            {
+                question: "¿Qué se entiende por 'exactitud' en los principios de tratamiento de datos?",
+                options: [
+                    "a) Que los datos son siempre correctos.",
+                    "b) Que los datos son exactos y, si fuera necesario, actualizados.",
+                    "c) Que los datos son correctos solo al momento de la recogida.",
+                    "d) Que los datos pueden contener errores mínimos."
+                ],
+                correctAnswer: "b) Que los datos son exactos y, si fuera necesario, actualizados."
+            },
+            {
+                question: "¿Qué implica el deber de confidencialidad de los datos?",
+                options: [
+                    "a) Que los datos solo pueden ser compartidos con terceros.",
+                    "b) Que los datos personales deben ser tratados de tal manera que se garantice una seguridad adecuada, incluyendo su integridad y confidencialidad.",
+                    "c) Que los datos deben ser públicos.",
+                    "d) Que los datos deben ser destruidos inmediatamente."
+                ],
+                correctAnswer: "b) Que los datos personales deben ser tratados de tal manera que se garantice una seguridad adecuada, incluyendo su integridad y confidencialidad."
+            },
+            {
+                question: "¿Cómo puede el interesado ejercer sus derechos si la información se le facilita por medios electrónicos?",
+                options: [
+                    "a) Solo por correo ordinario.",
+                    "b) Por medios electrónicos, a menos que solicite lo contrario.",
+                    "c) Solo de forma presencial.",
+                    "d) Solo por teléfono."
+                ],
+                correctAnswer: "b) Por medios electrónicos, a menos que solicite lo contrario."
+            },
+            {
+                question: "¿Qué se garantiza a los trabajadores y empleados públicos respecto a la desconexión digital?",
+                options: [
+                    "a) Un límite en el número de horas trabajadas.",
+                    "b) El respeto de su tiempo de descanso, permisos y vacaciones, así como de su intimidad personal y familiar.",
+                    "c) El uso ilimitado de dispositivos digitales.",
+                    "d) La obligación de estar siempre conectado."
+                ],
+                correctAnswer: "b) El respeto de su tiempo de descanso, permisos y vacaciones, así como de su intimidad personal y familiar."
+            },
+            {
+                question: "¿A qué se refiere el derecho a la intimidad frente al uso de dispositivos de videovigilancia y de grabación de sonidos en el lugar de trabajo?",
+                options: [
+                    "a) A la prohibición de cámaras en el trabajo.",
+                    "b) A que no se admitirá la instalación de sistemas de grabación de sonidos ni de videovigilancia en lugares destinados al descanso o esparcimiento.",
+                    "c) A la libre instalación de cámaras en cualquier lugar.",
+                    "d) Al derecho a ser grabado sin previo aviso."
+                ],
+                correctAnswer: "b) A que no se admitirá la instalación de sistemas de grabación de sonidos ni de videovigilancia en lugares destinados al descanso o esparcimiento."
+            },
+            {
+                question: "¿Qué deben consultar quienes quieran hacer comunicaciones de mercadotecnia directa?",
+                options: [
+                    "a) Bases de datos internas.",
+                    "b) Sistemas de exclusión publicitaria.",
+                    "c) Las listas de teléfonos.",
+                    "d) Los datos de contacto de sus clientes."
+                ],
+                correctAnswer: "b) Sistemas de exclusión publicitaria."
+            },
+            {
+                question: "¿Cuál es el plazo máximo de conservación de las imágenes de videovigilancia?",
+                options: [
+                    "a) 24 horas.",
+                    "b) Un mes, excepto si han de conservarse para acreditar la comisión de un acto.",
+                    "c) 3 meses.",
+                    "d) Indefinido."
+                ],
+                correctAnswer: "b) Un mes, excepto si han de conservarse para acreditar la comisión de un acto."
+            },
+            {
+                question: "¿Qué debe identificarse en el dispositivo informativo de videovigilancia?",
+                options: [
+                    "a) Solo el número de cámaras.",
+                    "b) La existencia del tratamiento, identidad del responsable y posibilidad de ejercitar los derechos.",
+                    "c) Los nombres de las personas vigiladas.",
+                    "d) La dirección IP de las cámaras."
+                ],
+                correctAnswer: "b) La existencia del tratamiento, identidad del responsable y posibilidad de ejercitar los derechos."
+            },
+            {
+                question: "¿Qué debe contener la información básica que se facilita cuando los datos se obtienen del afectado?",
+                options: [
+                    "a) Solo la dirección del responsable.",
+                    "b) La identidad del responsable del tratamiento, la finalidad del tratamiento y la posibilidad de ejercer los derechos.",
+                    "c) Los detalles técnicos del tratamiento.",
+                    "d) La historia de la empresa."
+                ],
+                correctAnswer: "b) La identidad del responsable del tratamiento, la finalidad del tratamiento y la posibilidad de ejercer los derechos."
+            },
+            {
+                question: "¿Qué se garantiza en la era digital según la Ley Orgánica 3/2018?",
+                options: [
+                    "a) Solo el derecho a la información.",
+                    "b) Derechos como la neutralidad de Internet y el acceso universal a Internet.",
+                    "c) La regulación de todos los contenidos en línea.",
+                    "d) La supresión de toda la información personal en línea."
+                ],
+                correctAnswer: "b) Derechos como la neutralidad de Internet y el acceso universal a Internet."
+            },
+            {
+                question: "¿Qué implica el derecho a la intimidad y el uso de dispositivos digitales en el ámbito laboral?",
+                options: [
+                    "a) Que el empleador puede acceder a todos los dispositivos personales.",
+                    "b) Una protección de la intimidad de los trabajadores frente al uso de dispositivos digitales.",
+                    "c) La instalación de software de seguimiento en todos los dispositivos.",
+                    "d) El control total del empleador sobre la actividad digital del trabajador."
+                ],
+                correctAnswer: "b) Una protección de la intimidad de los trabajadores frente al uso de dispositivos digitales."
+            },
+            {
+                question: "¿Qué se debe tener en cuenta al evaluar la necesidad y proporcionalidad de las operaciones de tratamiento en una evaluación de impacto?",
+                options: [
+                    "a) Solo el coste económico.",
+                    "b) La necesidad y la proporcionalidad de las operaciones de tratamiento con respecto a su finalidad.",
+                    "c) La popularidad del tratamiento.",
+                    "d) Las opiniones de los usuarios."
+                ],
+                correctAnswer: "b) La necesidad y la proporcionalidad de las operaciones de tratamiento con respecto a su finalidad."
+            },
+            {
+                question: "¿Qué se incluye en las funciones del DPO en relación con los riesgos?",
+                options: [
+                    "a) Ignorar los riesgos.",
+                    "b) Vigilará los riesgos asociados a las operaciones de tratamiento, teniendo en cuenta la naturaleza, alcance, contexto y fines del tratamiento.",
+                    "c) Asumir todos los riesgos.",
+                    "d) Notificar los riesgos una vez se materializan."
+                ],
+                correctAnswer: "b) Vigilará los riesgos asociados a las operaciones de tratamiento, teniendo en cuenta la naturaleza, alcance, contexto y fines del tratamiento."
+            },
+            {
+                question: "¿Qué se entiende por 'consentimiento del interesado' en el Reglamento (UE)?",
+                options: [
+                    "a) Un acuerdo verbal.",
+                    "b) Toda manifestación de voluntad libre, específica, informada e inequívoca por la que el interesado acepta, ya sea mediante una declaración o una clara acción afirmativa, el tratamiento de datos personales que le conciernen.",
+                    "c) Un consentimiento tácito.",
+                    "d) Un consentimiento implícito."
+                ],
+                correctAnswer: "b) Toda manifestación de voluntad libre, específica, informada e inequívoca por la que el interesado acepta, ya sea mediante una declaración o una clara acción afirmativa, el tratamiento de datos personales que le conciernen."
+            },
+            {
+                question: "¿Qué figura interviene en la protección de datos como el que decide la finalidad y el uso de los datos?",
+                options: [
+                    "a) El encargado de tratamiento.",
+                    "b) El responsable del fichero o del tratamiento.",
+                    "c) El DPO.",
+                    "d) El afectado."
+                ],
+                correctAnswer: "b) El responsable del fichero o del tratamiento."
+            },
+            {
+                question: "¿Qué figura interviene en la protección de datos como la persona que trata datos por cuenta del responsable?",
+                options: [
+                    "a) El responsable de seguridad.",
+                    "b) El encargado de tratamiento.",
+                    "c) El usuario.",
+                    "d) El corresponsable."
+                ],
+                correctAnswer: "b) El encargado de tratamiento."
+            },
+            {
+                question: "¿Quién es la persona física titular de los datos tratados?",
+                options: [
+                    "a) El responsable del tratamiento.",
+                    "b) El afectado o titular de los datos.",
+                    "c) El encargado del tratamiento.",
+                    "d) El delegado de protección de datos."
+                ],
+                correctAnswer: "b) El afectado o titular de los datos."
+            },
+            {
+                question: "¿Qué derecho permite recibir los datos personales en un formato estructurado, de uso común y lectura mecánica, y transmitirlos a otro responsable?",
+                options: [
+                    "a) Derecho de acceso.",
+                    "b) Derecho a la portabilidad de los datos.",
+                    "c) Derecho de rectificación.",
+                    "d) Derecho de supresión."
+                ],
+                correctAnswer: "b) Derecho a la portabilidad de los datos."
+            },
+            {
+                question: "¿En qué plazo se puede prorrogar la respuesta a una solicitud de ejercicio de derechos del interesado?",
+                options: [
+                    "a) 1 mes.",
+                    "b) 2 meses.",
+                    "c) 3 meses.",
+                    "d) 6 meses."
+                ],
+                correctAnswer: "b) 2 meses."
+            },
+            {
+                question: "¿Cuál es la condición para que un grupo empresarial pueda nombrar un único DPO?",
+                options: [
+                    "a) Que todas las empresas estén en el mismo edificio.",
+                    "b) Que sea fácilmente accesible desde cada establecimiento.",
+                    "c) Que el grupo no supere los 500 empleados.",
+                    "d) Que solo traten datos de bajo riesgo."
+                ],
+                correctAnswer: "b) Que sea fácilmente accesible desde cada establecimiento."
+            },
+            {
+                question: "¿Qué se entiende por 'minimización de datos'?",
+                options: [
+                    "a) Recoger la menor cantidad posible de datos.",
+                    "b) Que los datos sean adecuados, pertinentes y limitados a lo necesario.",
+                    "c) Eliminar los datos después de su uso.",
+                    "d) Anular los datos."
+                ],
+                correctAnswer: "b) Que los datos sean adecuados, pertinentes y limitados a lo necesario."
+            },
+            {
+                question: "¿Qué deben hacer los responsables del tratamiento con los datos de videovigilancia si se han captado actos ilícitos por los trabajadores?",
+                options: [
+                    "a) Suprimirlos inmediatamente.",
+                    "b) Conservarlos para acreditar la comisión del acto.",
+                    "c) Notificar a los trabajadores.",
+                    "d) Compartirlos con otros empleadores."
+                ],
+                correctAnswer: "b) Conservarlos para acreditar la comisión del acto."
+            },
+            {
+                question: "¿Qué se entiende por 'limitación del plazo de conservación' de los datos?",
+                options: [
+                    "a) Que los datos se conservan indefinidamente.",
+                    "b) Que los datos se mantienen durante no más tiempo del necesario para los fines del tratamiento.",
+                    "c) Que los datos deben ser destruidos en un plazo fijo sin excepciones.",
+                    "d) Que los datos solo se conservan en formato físico."
+                ],
+                correctAnswer: "b) Que los datos se mantienen durante no más tiempo del necesario para los fines del tratamiento."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let score = 0;
+
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const resetProgressBtn = document.getElementById('reset-progress-btn');
+        const scoreDisplay = document.getElementById('score-display');
+        const messageBox = document.getElementById('message-box');
+
+        // Function to show a temporary message
+        function showMessage(message) {
+            messageBox.textContent = message;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 2000); // Message disappears after 2 seconds
+        }
+
+        // Load progress from Local Storage
+        function loadProgress() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedScore = localStorage.getItem('score');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Initialize userAnswers array if not found in local storage
+                userAnswers = new Array(quizData.length).fill(null);
+            }
+            if (savedScore !== null) {
+                score = parseInt(savedScore);
+            }
+        }
+
+        // Save progress to Local Storage
+        function saveProgress() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('score', score);
+        }
+
+        // Display current question and options
+        function displayQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionTextElement.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.dataset.index = index; // Store original index for tracking
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainer.appendChild(button);
+
+                // If user has already answered this question, show their answer and the correct one
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    disableOptions();
+                    if (option === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    } else if (option === userAnswers[currentQuestionIndex]) {
+                        button.classList.add('incorrect');
+                    }
+                }
+            });
+
+            updateNavigationButtons();
+            updateScoreDisplay();
+        }
+
+        // Handle user selecting an answer
+        function selectAnswer(selectedButton, selectedOption) {
+            if (userAnswers[currentQuestionIndex] !== null) {
+                // If already answered, do nothing
+                return;
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedOption; // Store user's selected option
+
+            disableOptions(); // Disable all options after selection
+
+            if (selectedOption === currentQuestion.correctAnswer) {
+                selectedButton.classList.add('correct');
+                score++;
+                showMessage('¡Correcto!');
+            } else {
+                selectedButton.classList.add('incorrect');
+                // Highlight the correct answer if the user was wrong
+                Array.from(optionsContainer.children).forEach(button => {
+                    if (button.textContent === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+                showMessage('Incorrecto. La respuesta correcta está resaltada.');
+            }
+            saveProgress(); // Save progress after each answer
+            updateScoreDisplay();
+        }
+
+        // Disable all option buttons
+        function disableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+            });
+        }
+
+        // Enable all option buttons (used when navigating to a new question)
+        function enableOptions() {
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = false;
+                button.classList.remove('correct', 'incorrect'); // Remove styling
+            });
+        }
+
+        // Update navigation button states
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === quizData.length - 1;
+        }
+
+        // Update score display
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Puntuación: ${score}/${quizData.length}`;
+        }
+
+        // Event listener for previous button
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                enableOptions(); // Re-enable and clear styling for the new question
+                displayQuestion();
+                saveProgress();
+            }
+        });
+
+        // Event listener for next button
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                enableOptions(); // Re-enable and clear styling for the new question
+                displayQuestion();
+                saveProgress();
+            }
+        });
+
+        // Event listener for reset progress button
+        resetProgressBtn.addEventListener('click', () => {
+            localStorage.clear(); // Clear all local storage related to the quiz
+            currentQuestionIndex = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            score = 0;
+            enableOptions();
+            displayQuestion();
+            showMessage('Progreso reiniciado.');
+        });
+
+        // Initial load
+        loadProgress();
+        displayQuestion();
+    </script>
+</body>
+</html>

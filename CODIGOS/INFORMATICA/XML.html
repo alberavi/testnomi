@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo de XML y JSON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+        .question-container {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background-color: #ffffff;
+            font-size: 1.1rem;
+            color: #4a5568;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .options-container button:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background-color: #edf2f7;
+            border-color: #cbd5e0;
+        }
+        .options-container button.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+            color: #2b6cb0;
+        }
+        .options-container button.correct {
+            background-color: #a7f3d0; /* Tailwind green-200 */
+            border-color: #38a169; /* Tailwind green-600 */
+            color: #1a202c;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #fecaca; /* Tailwind red-200 */
+            border-color: #e53e3e; /* Tailwind red-600 */
+            color: #1a202c;
+            font-weight: 600;
+        }
+        .options-container button.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .feedback-message {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .feedback-message.correct-feedback {
+            color: #38a169; /* Tailwind green-600 */
+        }
+        .feedback-message.incorrect-feedback {
+            color: #e53e3e; /* Tailwind red-600 */
+        }
+        .navigation-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navigation-buttons button:hover {
+            transform: translateY(-2px);
+        }
+        .navigation-buttons .prev-button {
+            background-color: #cbd5e0; /* Tailwind gray-300 */
+            color: #2d3748;
+            border: none;
+        }
+        .navigation-buttons .prev-button:hover {
+            background-color: #a0aec0; /* Tailwind gray-400 */
+        }
+        .navigation-buttons .next-button {
+            background-color: #4299e1; /* Tailwind blue-500 */
+            color: #ffffff;
+            border: none;
+        }
+        .navigation-buttons .next-button:hover {
+            background-color: #3182ce; /* Tailwind blue-600 */
+        }
+        .navigation-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            height: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4299e1;
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+        .question-counter {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 15px;
+            text-align: right;
+        }
+        .final-results {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-top: 30px;
+        }
+        .restart-button {
+            background-color: #48bb78; /* Tailwind green-500 */
+            color: #ffffff;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            border: none;
+        }
+        .restart-button:hover {
+            background-color: #38a169; /* Tailwind green-600 */
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="quiz-container">
+            <div class="question-counter" id="question-counter"></div>
+            <div class="question-container">
+                <p class="question-text" id="question-text"></p>
+                <div class="options-container" id="options-container">
+                    <!-- Options will be loaded here by JavaScript -->
+                </div>
+            </div>
+            <div class="feedback-message" id="feedback-message"></div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="navigation-buttons">
+                <button id="prev-button" class="prev-button" disabled>Anterior</button>
+                <button id="next-button" class="next-button">Siguiente</button>
+            </div>
+        </div>
+        <div id="results-container" class="hidden">
+            <p class="final-results" id="final-score"></p>
+            <button id="restart-button" class="restart-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos para las preguntas y respuestas
+        const quizData = [
+            {
+                question: "¿De dónde deriva el estándar XML?",
+                options: ["a) HTML", "b) SGML", "c) JSON", "d) DTD"],
+                correctAnswer: "b) SGML"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones describe una de las utilidades de XML?",
+                options: ["a) Simplificar el diseño gráfico de páginas web.", "b) Estructurar la información de configuración.", "c) Acelerar la transmisión de datos sin estructurar.", "d) Definir la lógica de programación de aplicaciones."],
+                correctAnswer: "b) Estructurar la información de configuración."
+            },
+            {
+                question: "¿Qué restricción impone XML sobre SGML en relación con las etiquetas?",
+                options: ["a) Todas las etiquetas deben ser de cierre automático.", "b) Las etiquetas de apertura son opcionales.", "c) Todas las etiquetas deben llevar cierre (incluso empty elements).", "d) Solo las etiquetas raíz necesitan cierre."],
+                correctAnswer: "c) Todas las etiquetas deben llevar cierre (incluso empty elements)."
+            },
+            {
+                question: "¿Cómo deben ir los valores de los atributos en XML?",
+                options: ["a) Sin comillas.", "b) Entre comillas simples.", "c) Entre comillas dobles.", "d) Entre comillas simples o dobles."],
+                correctAnswer: "d) Entre comillas simples o dobles."
+            },
+            {
+                question: "¿XML es sensible a mayúsculas y minúsculas (Case-Sensitive)?",
+                options: ["a) Sí.", "b) No.", "c) Solo en los nombres de los elementos.", "d) Solo en los valores de los atributos."],
+                correctAnswer: "a) Sí."
+            },
+            {
+                question: "¿Cuál de los siguientes estaba completamente alineado con SGML?",
+                options: ["a) HTML5", "b) XHTML", "c) HTML4", "d) XML"],
+                correctAnswer: "c) HTML4"
+            },
+            {
+                question: "¿Cuál de los siguientes estaba basado en las reglas de XML?",
+                options: ["a) HTML4", "b) HTML5", "c) XHTML", "d) SGML"],
+                correctAnswer: "c) XHTML"
+            },
+            {
+                question: "En una declaración XML <?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>, ¿cuál de los atributos es obligatorio?",
+                options: ["a) encoding", "b) standalone", "c) version", "d) Ninguno."],
+                correctAnswer: "c) version"
+            },
+            {
+                question: "¿Qué indica el atributo standalone=\"no\" en la declaración XML?",
+                options: ["a) Que el XML no es válido.", "b) Que el DTD está en un fichero externo.", "c) Que la gramática está contenida en el mismo XML.", "d) Que el documento no necesita una gramática."],
+                correctAnswer: "b) Que el DTD está en un fichero externo."
+            },
+            {
+                question: "Si la gramática de un XML está contenida en el mismo fichero XML y no necesita DTD, ¿qué valor debería tener el atributo standalone?",
+                options: ["a) no", "b) yes", "c) external", "d) internal"],
+                correctAnswer: "b) yes"
+            },
+            {
+                question: "¿Cuál es el valor por defecto del atributo standalone en la declaración XML?",
+                options: ["a) yes", "b) no", "c) true", "d) false"],
+                correctAnswer: "b) no"
+            },
+            {
+                question: "¿Qué es &amp; en XML y qué lo sustituye el analizador XML?",
+                options: ["a) Es un comentario; lo elimina.", "b) Es un espacio de nombres; lo interpreta como un prefijo.", "c) Es un entity macro escape; lo sustituye por \"&amp;\".", "d) Es un atributo; lo considera un valor."],
+                correctAnswer: "c) Es un entity macro escape; lo sustituye por \"&amp;\"."
+            },
+            {
+                question: "¿Qué efecto tiene <![CDATA[texto que el parser no analiza]]> en un documento XML?",
+                options: ["a) El analizador lo ignora completamente.", "b) El analizador lo interpreta como un comentario.", "c) El analizador no lo interpreta y lo devuelve literalmente.", "d) El analizador lo convierte a entidades HTML."],
+                correctAnswer: "c) El analizador no lo interpreta y lo devuelve literalmente."
+            },
+            {
+                question: "Un \"empty element\" en XML:",
+                options: ["a) No puede tener atributos ni hijos.", "b) No puede tener hijos pero sí atributos.", "c) Puede tener hijos pero no atributos.", "d) Debe contener texto plano."],
+                correctAnswer: "b) No puede tener hijos pero sí atributos."
+            },
+            {
+                question: "¿Para qué se utilizan los espacios de nombres en XML?",
+                options: ["a) Para mejorar el rendimiento del análisis sintáctico.", "b) Para permitir la inclusión de prefijos en las etiquetas y evitar duplicados de nombres.", "c) Para indicar la codificación de caracteres del documento.", "d) Para definir la versión del estándar XML utilizado."],
+                correctAnswer: "b) Para permitir la inclusión de prefijos en las etiquetas y evitar duplicados de nombres."
+            },
+            {
+                question: "¿Los DTDs dan soporte a los espacios de nombres?",
+                options: ["a) Sí, completamente.", "b) No, no dan soporte a los espacios de nombres.", "c) Solo si se utiliza una versión específica de DTD.", "d) Solo para atributos, no para elementos."],
+                correctAnswer: "b) No, no dan soporte a los espacios de nombres."
+            },
+            {
+                question: "Para que un documento XML se considere \"Bien Formado\", ¿cuántos elementos raíz debe contener?",
+                options: ["a) Cero o uno.", "b) Exactamente uno.", "c) Uno o más.", "d) Puede contener varios, siempre que estén anidados."],
+                correctAnswer: "b) Exactamente uno."
+            },
+            {
+                question: "¿Cómo deben ir los valores de atributos en un XML \"Bien Formado\"?",
+                options: ["a) Sin comillas.", "b) Entre comillas simples.", "c) Entre comillas dobles.", "d) Entre comillas simples o dobles."],
+                correctAnswer: "d) Entre comillas simples o dobles."
+            },
+            {
+                question: "¿Cómo terminan los elementos vacíos en un XML \"Bien Formado\"?",
+                options: ["a) Con una etiqueta de apertura y sin cierre.", "b) Con una etiqueta de fin explícita.", "c) Con \"/\" (autocierre) o etiqueta de fin.", "d) Depende del tipo de documento."],
+                correctAnswer: "c) Con \"/\" (autocierre) o etiqueta de fin."
+            },
+            {
+                question: "¿Con qué caracteres pueden comenzar las etiquetas XML?",
+                options: ["a) Con cualquier carácter alfanumérico.", "b) Con una letra, un número o un guion.", "c) Con una letra, \"_\" o \":\".", "d) Solo con letras mayúsculas."],
+                correctAnswer: "c) Con una letra, \"_\" o \":\"."
+            },
+            {
+                question: "¿Qué significa que un documento XML sea \"Válido\"?",
+                options: ["a) Que cumple con la sintaxis XML.", "b) Que ha sido aprobado por la W3C.", "c) Que está bien formado y además cumple con las reglas de la gramática (DTD/XSD).", "d) Que ha sido generado por un procesador XML oficial."],
+                correctAnswer: "c) Que está bien formado y además cumple con las reglas de la gramática (DTD/XSD)."
+            },
+            {
+                question: "¿Qué significan las siglas DTD y XSD?",
+                options: ["a) Document Type Definition / XML Style Description", "b) Data Type Definition / XML Syntax Definition", "c) Document Type Definition / XML Schema Definition", "d) Data Transformation Document / XML Standard Document"],
+                correctAnswer: "c) Document Type Definition / XML Schema Definition"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones es correcta respecto a la definición de la estructura/gramática con DTD y XSD?",
+                options: ["a) DTD es más flexible en definición de tipos de datos que XSD.", "b) XSD fue la primera y es menos flexible.", "c) DTD no especifica tipos de datos.", "d) XSD no permite definir restricciones a los valores."],
+                correctAnswer: "c) DTD no especifica tipos de datos."
+            },
+            {
+                question: "En un DTD, ¿qué indica (#PCDATA) como tipo de contenido de un elemento?",
+                options: ["a) Que el elemento contiene cualquier tipo de dato.", "b) Que el elemento contiene solo texto.", "c) Que el elemento está vacío.", "d) Que el elemento contiene otros elementos."],
+                correctAnswer: "b) Que el elemento contiene solo texto."
+            },
+            {
+                question: "En un DTD, si un elemento puede contener una mezcla de etiquetas y textos, ¿qué tipo de contenido se usaría?",
+                options: ["a) #PCDATA", "b) EMPTY", "c) ANY", "d) CDATA"],
+                correctAnswer: "c) ANY"
+            },
+            {
+                question: "En un DTD, ¿qué tipo de atributo se utiliza para una clave primaria?",
+                options: ["a) CDATA", "b) IDREF", "c) ID", "d) NMTOKEN"],
+                correctAnswer: "c) ID"
+            },
+            {
+                question: "En un DTD, si un atributo es opcional, ¿qué palabra clave se utiliza?",
+                options: ["a) #REQUIRED", "b) #FIXED", "c) #IMPLIED", "d) #OPTIONAL"],
+                correctAnswer: "c) #IMPLIED"
+            },
+            {
+                question: "En un DTD, si un atributo debe tener un valor fijo, ¿qué palabra clave se utiliza?",
+                options: ["a) #IMPLIED", "b) #REQUIRED", "c) #FIXED", "d) #DEFAULT"],
+                correctAnswer: "c) #FIXED"
+            },
+            {
+                question: "¿Qué indica el operador * en la definición de un elemento dentro de un DTD (ej. (futbol | f1 | tenis)*)?",
+                options: ["a) Que el elemento debe aparecer al menos una vez.", "b) Que el elemento puede aparecer cero o una vez.", "c) Que el elemento puede aparecer cero o muchas veces.", "d) Que el elemento debe aparecer exactamente una vez."],
+                correctAnswer: "c) Que el elemento puede aparecer cero o muchas veces."
+            },
+            {
+                question: "¿Qué indica el operador + en la definición de un elemento dentro de un DTD?",
+                options: ["a) Cero o muchas ocurrencias.", "b) Cero o una ocurrencia.", "c) Una o muchas ocurrencias.", "d) Exactamente una ocurrencia."],
+                correctAnswer: "c) Una o muchas ocurrencias."
+            },
+            {
+                question: "¿Qué indica el operador ? en la definición de un elemento dentro de un DTD?",
+                options: ["a) Cero o muchas ocurrencias.", "b) Cero o una ocurrencia.", "c) Una o muchas ocurrencias.", "d) Exactamente una ocurrencia."],
+                correctAnswer: "b) Cero o una ocurrencia."
+            },
+            {
+                question: "En un XSD, la definición de un tipo a partir de otro se logra mediante:",
+                options: ["a) xs:restriction", "b) xs:extension base", "c) xs:union", "d) xs:list"],
+                correctAnswer: "b) xs:extension base"
+            },
+            {
+                question: "¿Qué atributo se utiliza en un esquema XML (XSD) para enlazar el fichero de datos con la gramática, dando de alta el espacio de nombres XML Schema Instance?",
+                options: ["a) xsi:schemaLocation", "b) xmlns:xsi", "c) xsi:noNamespaceSchemaLocation", "d) xml:link"],
+                correctAnswer: "b) xmlns:xsi"
+            },
+            {
+                question: "¿Qué valor del atributo minOccurs en un XSD indica que una ocurrencia es obligatoria si no se especifica?",
+                options: ["a) 0", "b) 1", "c) unbounded", "d) required"],
+                correctAnswer: "b) 1"
+            },
+            {
+                question: "¿Qué significa pattern value=\"[CER]\" en la restricción de un tipo simple en XSD?",
+                options: ["a) Que el valor debe contener la secuencia \"CER\".", "b) Que el valor puede ser \"C\", \"E\" o \"R\".", "c) Que el valor debe ser un número entre C, E y R.", "d) Que el valor debe ser una cadena con al menos uno de esos caracteres."],
+                correctAnswer: "b) Que el valor puede ser \"C\", \"E\" o \"R\"."
+            },
+            {
+                question: "¿Cómo deben ir los valores de los atributos en un XML según un XSD?",
+                options: ["a) Sin comillas.", "b) Entre comillas simples.", "c) Entre comillas dobles.", "d) Siempre entre comillas."],
+                correctAnswer: "d) Siempre entre comillas."
+            },
+            {
+                question: "¿Cuál es el propósito principal de las Transformaciones XSL?",
+                options: ["a) Validar documentos XML.", "b) Transformar datos XML.", "c) Generar gráficos a partir de datos XML.", "d) Cifrar documentos XML."],
+                correctAnswer: "b) Transformar datos XML."
+            },
+            {
+                question: "Según el documento, ¿las Transformaciones XSL están obsoletas?",
+                options: ["a) No, son una tecnología de vanguardia.", "b) Sí, ya están obsoletas.", "c) Solo en ciertas implementaciones.", "d) Solo para formatos de salida específicos."],
+                correctAnswer: "b) Sí, ya están obsoletas."
+            },
+            {
+                question: "Si se fusiona un XML con un XSLT y un Processor (Ej: Apache Xalan), ¿cuál es el resultado?",
+                options: ["a) Un documento PDF.", "b) Otro documento de marcas.", "c) Una imagen.", "d) Un objeto de negocio en memoria."],
+                correctAnswer: "b) Otro documento de marcas."
+            },
+            {
+                question: "Con XSLFO (Formating Object) y un procesador (Ej: Apache FOP), el resultado de fusionar un XML sería:",
+                options: ["a) Otro documento XML.", "b) Un documento de marcas.", "c) Un entregable (PDF, imagen, etc).", "d) Un archivo de configuración."],
+                correctAnswer: "c) Un entregable (PDF, imagen, etc)."
+            },
+            {
+                question: "¿Cuál es el API de programación de XML que es un estándar de la W3C y que, según el documento, \"ya nadie lo usa\"?",
+                options: ["a) SAX", "b) JAXB", "c) DOM", "d) StAX"],
+                correctAnswer: "c) DOM"
+            },
+            {
+                question: "¿Qué genera el Parser DOM a partir del XML?",
+                options: ["a) Un flujo de eventos.", "b) Un árbol de objetos en memoria.", "c) Clases de negocio.", "d) Un fichero de texto plano."],
+                correctAnswer: "b) Un árbol de objetos en memoria."
+            },
+            {
+                question: "¿Cuál es la principal desventaja del API DOM cuando el XML es grande?",
+                options: ["a) Es muy lento.", "b) No permite modificar el árbol.", "c) Puede llegar a ocupar mucha memoria.", "d) No es compatible con todos los navegadores."],
+                correctAnswer: "c) Puede llegar a ocupar mucha memoria."
+            },
+            {
+                question: "Todos los nodos en DOM son de tipo/interface Node, pero también existen especializaciones. ¿Cuál de las siguientes NO es una especialización de Node mencionada?",
+                options: ["a) Element", "b) Attribute", "c) Text", "d) Document"],
+                correctAnswer: "b) Attribute (la especialización es Attr)"
+            },
+            {
+                question: "¿Cuál de las especializaciones de Node en DOM se considera de tipo instrumental y representa a todo el documento, no siendo un nodo real del árbol?",
+                options: ["a) Element", "b) Attr", "c) Text", "d) Document"],
+                correctAnswer: "d) Document"
+            },
+            {
+                question: "¿Cuál es el parser DOM de Java?",
+                options: ["a) SAXParser", "b) DocumentBuilder", "c) JAXBContext", "d) XMLStreamReader"],
+                correctAnswer: "b) DocumentBuilder"
+            },
+            {
+                question: "¿Qué estándar existe para \"seleccionar\" nodos de un XML, similar a CSS Selectors?",
+                options: ["a) XSLT", "b) XPath", "c) XQuery", "d) XSD"],
+                correctAnswer: "b) XPath"
+            },
+            {
+                question: "¿De qué mundo es el API SAX?",
+                options: ["a) Microsoft .NET", "b) Python", "c) Java", "d) PHP"],
+                correctAnswer: "c) Java"
+            },
+            {
+                question: "¿Cómo funciona el Parser SAX con el XML?",
+                options: ["a) Genera un árbol de objetos en memoria para su recorrido.", "b) Lee el XML y envía eventos a una clase previamente definida.", "c) Permite la modificación directa del documento XML.", "d) Valida el documento contra un esquema."],
+                correctAnswer: "b) Lee el XML y envía eventos a una clase previamente definida."
+            },
+            {
+                question: "¿Cuál es la principal limitación de SAX en cuanto al recorrido del documento?",
+                options: ["a) Permite un recorrido bidireccional limitado.", "b) No permite ningún tipo de recorrido (funciona forward-only).", "c) Solo permite recorrer los elementos, no los atributos.", "d) Solo permite recorrer el documento una vez."],
+                correctAnswer: "b) No permite ningún tipo de recorrido (funciona forward-only)."
+            },
+            {
+                question: "¿Cuál es la ventaja de SAX frente a otros métodos de procesamiento de XML?",
+                options: ["a) Es el más flexible.", "b) Es el más fácil de desarrollar.", "c) Es el más rápido.", "d) Permite manipular el documento."],
+                correctAnswer: "c) Es el más rápido."
+            },
+            {
+                question: "¿Cuál es el parser SAX de Java?",
+                options: ["a) DocumentBuilder", "b) SAXParser", "c) JAXBContext", "d) XMLReader"],
+                correctAnswer: "b) SAXParser"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre JAXB y DOM en cuanto a los objetos que genera el parser?",
+                options: ["a) JAXB genera objetos de Element y Attr, mientras que DOM genera clases de negocio.", "b) JAXB genera clases de negocio, mientras que DOM genera objetos de Element, Attr, etc.", "c) Ambos generan objetos idénticos.", "d) JAXB no genera objetos, solo eventos."],
+                correctAnswer: "b) JAXB genera clases de negocio, mientras que DOM genera objetos de Element, Attr, etc."
+            },
+            {
+                question: "¿Qué utilidad de la JDK permite generar automáticamente clases de negocio para JAXB a partir de un XSD?",
+                options: ["a) javac", "b) jar", "c) xjc", "d) java"],
+                correctAnswer: "c) xjc"
+            },
+            {
+                question: "¿Qué es StAX, según la descripción proporcionada?",
+                options: ["a) Una variante de SAX.", "b) Una variante de JAXB.", "c) Un nuevo estándar W3C para XML.", "d) Un lenguaje de transformación XML."],
+                correctAnswer: "b) Una variante de JAXB."
+            },
+            {
+                question: "¿Para qué sirve StAX principalmente?",
+                options: ["a) Para generar documentos PDF.", "b) Para realizar validación de esquemas.", "c) Para hacer streaming (lectura bajo demanda por trozos).", "d) Para transformar XML a HTML."],
+                correctAnswer: "c) Para hacer streaming (lectura bajo demanda por trozos)."
+            },
+            {
+                question: "¿Cuál es el proceso de leer el XML y levantar el árbol de objetos de negocio en memoria en JAXB?",
+                options: ["a) Marshall", "b) Unmarshall", "c) Parsing", "d) Serialization"],
+                correctAnswer: "b) Unmarshall"
+            },
+            {
+                question: "¿Cuál es el proceso de llevar el árbol de objetos de negocio a su XML correspondiente en JAXB?",
+                options: ["a) Unmarshall", "b) Parsing", "c) Marshall", "d) Deserialization"],
+                correctAnswer: "c) Marshall"
+            },
+            {
+                question: "El proceso de Marshall en JAXB es sinónimo de:",
+                options: ["a) Deserializar", "b) Serializar", "c) Compilar", "d) Interpretar"],
+                correctAnswer: "b) Serializar"
+            },
+            {
+                question: "El proceso de Unmarshall en JAXB es sinónimo de:",
+                options: ["a) Serializar", "b) Deserializar", "c) Compilar", "d) Interpretar"],
+                correctAnswer: "b) Deserializar"
+            },
+            {
+                question: "¿Para qué suelen usarse los lenguajes de marca ligeros?",
+                options: ["a) Para comunicaciones de alta velocidad entre servidores.", "b) Para generar documentación de forma atractiva para la web.", "c) Para la definición de esquemas de bases de datos.", "d) Para el desarrollo de aplicaciones móviles nativas."],
+                correctAnswer: "b) Para generar documentación de forma atractiva para la web."
+            },
+            {
+                question: "¿Cuál de los siguientes es un ejemplo de lenguaje de marca ligero mencionado en el documento?",
+                options: ["a) XML", "b) HTML", "c) Markdown (.md)", "d) SGML"],
+                correctAnswer: "c) Markdown (.md)"
+            },
+            {
+                question: "¿Qué significa JSON?",
+                options: ["a) Java Object Notation", "b) JavaScript Object Network", "c) JavaScript Object Notation", "d) Joint Standard Object Naming"],
+                correctAnswer: "c) JavaScript Object Notation"
+            },
+            {
+                question: "¿Cuál es el tipo MIME de JSON?",
+                options: ["a) text/xml", "b) application/xml", "c) application/json", "d) text/plain"],
+                correctAnswer: "c) application/json"
+            },
+            {
+                question: "¿JSON es un lenguaje Schema-less por defecto?",
+                options: ["a) No, siempre requiere un esquema.", "b) Sí, por defecto no se busca garantizar su validez.", "c) Solo si se utiliza con JavaScript.", "d) Depende de la implementación."],
+                correctAnswer: "b) Sí, por defecto no se busca garantizar su validez."
+            },
+            {
+                question: "¿Qué iniciativa busca crear una gramática para validar el documento JSON?",
+                options: ["a) JSON-LD", "b) JSON Schema", "c) JSON API", "d) JSON-RPC"],
+                correctAnswer: "b) JSON Schema"
+            },
+            {
+                question: "¿Para qué se utiliza JSON muy a menudo?",
+                options: ["a) Diseño de interfaces gráficas.", "b) Intercambio de datos.", "c) Cifrado de información.", "d) Definición de estilos CSS."],
+                correctAnswer: "b) Intercambio de datos."
+            },
+            {
+                question: "¿Cuáles son los tipos de datos básicos de JSON?",
+                options: ["a) Object, String, Number, Date, Boolean.", "b) Object, Array, Number, String, true, false y null.", "c) Element, Attribute, Text, Document.", "d) Integer, Float, Double, Char."],
+                correctAnswer: "b) Object, Array, Number, String, true, false y null."
+            },
+            {
+                question: "En JSON, ¿qué representa el tipo de dato Object?",
+                options: ["a) Un solo valor.", "b) Una lista ordenada de valores.", "c) Un conjunto de atributos (clave-valor).", "d) Un tipo de dato numérico."],
+                correctAnswer: "c) Un conjunto de atributos (clave-valor)."
+            },
+            {
+                question: "¿Cuál de las siguientes librerías se menciona como popular para procesar JSON?",
+                options: ["a) Xerxes", "b) Apache FOP", "c) Jackson", "d) Xalan"],
+                correctAnswer: "c) Jackson"
+            },
+            {
+                question: "¿Cuáles son las API's de programación mencionadas para JSON?",
+                options: ["a) JSON-DOM y JSON-SAX.", "b) JSON-B (alto nivel) y JSON-P (bajo nivel).", "c) JSON-XML y JSON-HTML.", "d) JSON-API y JSON-RPC."],
+                correctAnswer: "b) JSON-B (alto nivel) y JSON-P (bajo nivel)."
+            },
+            {
+                question: "En JSON, ¿cómo deben ir siempre los atributos?",
+                options: ["a) Sin comillas.", "b) Entre comillas simples.", "c) Entre comillas dobles.", "d) Pueden ir con o sin comillas."],
+                correctAnswer: "c) Entre comillas dobles."
+            },
+            {
+                question: "Si el valor de un atributo en JSON es de tipo cadena, ¿cómo debe ir?",
+                options: ["a) Sin comillas.", "b) Entre comillas simples.", "c) Entre comillas dobles.", "d) El tipo cadena no es permitido como valor."],
+                correctAnswer: "c) Entre comillas dobles."
+            },
+            {
+                question: "¿Cómo se representan las fechas en JSON?",
+                options: ["a) Como un tipo de dato date específico.", "b) Como un tipo de dato datetime específico.", "c) Como cadenas, entre comillas.", "d) Como números enteros representando timestamps."],
+                correctAnswer: "c) Como cadenas, entre comillas."
+            },
+            {
+                question: "¿Cuál de los siguientes tipos de datos no lleva comillas en JSON?",
+                options: ["a) String", "b) Number", "c) Object", "d) Array"],
+                correctAnswer: "b) Number"
+            },
+            {
+                question: "¿Cuál es el separador decimal en JSON?",
+                options: ["a) Coma (,)", "b) Punto (.)", "c) Guion (-)", "d) Espacio ()"],
+                correctAnswer: "b) Punto (.)"
+            },
+            {
+                question: "¿Cuál es el separador de elementos en un array JSON?",
+                options: ["a) Punto y coma (;)", "b) Dos puntos (:)", "c) Coma (,)", "d) Barra (/)"],
+                correctAnswer: "c) Coma (,)"
+            },
+            {
+                question: "¿Qué significa NaN en JSON?",
+                options: ["a) Not an Array", "b) Not a Number", "c) Null and None", "d) New Anonymous Node"],
+                correctAnswer: "b) Not a Number"
+            },
+            {
+                question: "¿Se permiten comentarios en JSON?",
+                options: ["a) Sí, utilizando ``.", "b) Sí, utilizando //.", "c) Sí, utilizando /* */.", "d) No, no hay comentarios en JSON."],
+                correctAnswer: "d) No, no hay comentarios en JSON."
+            },
+            {
+                question: "¿En qué ámbito tiene un uso muy importante JSON, especialmente para autenticación web?",
+                options: ["a) Procesamiento de imágenes.", "b) Sistemas de gestión de bases de datos.", "c) Seguridad (JWT).", "d) Edición de video."],
+                correctAnswer: "c) Seguridad (JWT)."
+            },
+            {
+                question: "¿Qué significa el acrónimo recursivo YAML?",
+                options: ["a) Yet Another Markup Language.", "b) YAML Ain't Markup Language.", "c) XML And Markup Language.", "d) Your Awesome Markup Logic."],
+                correctAnswer: "b) YAML Ain't Markup Language."
+            },
+            {
+                question: "¿Cuál de los siguientes es un uso mencionado para YAML?",
+                options: ["a) Crear hojas de estilo CSS.", "b) Definir la lógica de aplicaciones móviles.", "c) Definir un playbook de Ansible.", "d) Desarrollar algoritmos de inteligencia artificial."],
+                correctAnswer: "c) Definir un playbook de Ansible."
+            },
+            {
+                question: "¿Se utiliza YAML para definir el entorno de trabajo de un desarrollador en DockerCompose?",
+                options: ["a) No, solo XML.", "b) Sí.", "c) Solo JSON.", "d) Depende de la versión de DockerCompose."],
+                correctAnswer: "b) Sí."
+            },
+            {
+                question: "En JSON Schema, ¿qué indica \"additionalProperties\": true?",
+                options: ["a) Que todas las propiedades deben ser adicionales.", "b) Que se permiten propiedades no definidas explícitamente.", "c) Que solo las propiedades obligatorias son permitidas.", "d) Que no se permiten propiedades adicionales."],
+                correctAnswer: "b) Que se permiten propiedades no definidas explícitamente."
+            },
+            {
+                question: "En JSON Schema, ¿qué indica la propiedad \"required\": [\"name\", \"artist\"]?",
+                options: ["a) Que name y artist son propiedades opcionales.", "b) Que name y artist deben ser siempre cadenas de texto.", "c) Que name y artist son propiedades obligatorias.", "d) Que name y artist pueden ser nulos."],
+                correctAnswer: "c) Que name y artist son propiedades obligatorias."
+            },
+            {
+                question: "En JSON Schema, ¿qué indica el uso de \"$ref\": \"#/$defs/dimension\"?",
+                options: ["a) Una referencia a un archivo externo.", "b) Una definición de tipo de dato local.", "c) Una referencia a una definición de esquema reutilizable.", "d) Una forma de incluir comentarios."],
+                correctAnswer: "c) Una referencia a una definición de esquema reutilizable."
+            },
+            {
+                question: "En JSON Schema, para una propiedad, ¿qué indica \"enum\": [\"oil\", \"watercolor\"]?",
+                options: ["a) Que el valor debe ser un tipo de enumeración.", "b) Que solo se permiten los valores \"oil\" o \"watercolor\".", "c) Que el valor es una cadena de texto.", "d) Que el valor es una lista de opciones."],
+                correctAnswer: "b) Que solo se permiten los valores \"oil\" o \"watercolor\"."
+            },
+            {
+                question: "En JSON Schema, ¿qué indica \"minimum\": 1 para una propiedad numérica?",
+                options: ["a) Que el valor mínimo es 1, pero puede ser 0.", "b) Que el valor debe ser exactamente 1.", "c) Que solo se permiten números positivos (mayor o igual a 1).", "d) Que el valor es opcional."],
+                correctAnswer: "c) Que solo se permiten números positivos (mayor o igual a 1)."
+            },
+            {
+                question: "¿Cuál de las siguientes es una característica de XPath?",
+                options: ["a) Un lenguaje para transformar XML a HTML.", "b) Un lenguaje para seleccionar nodos de un XML.", "c) Un lenguaje para definir esquemas XML.", "d) Un API para procesar XML en Java."],
+                correctAnswer: "b) Un lenguaje para seleccionar nodos de un XML."
+            },
+            {
+                question: "En XPath, ¿cómo se seleccionan todos los elementos p?",
+                options: ["a) p", "b) //p", "c) p>", "d) p:*"],
+                correctAnswer: "b) //p"
+            },
+            {
+                question: "En XPath, ¿cómo se seleccionan todos los elementos hijos directos de un elemento p?",
+                options: ["a) //p/*", "b) p>", "c) p:*", "d) //p/"],
+                correctAnswer: "d) //p/"
+            },
+            {
+                question: "En XPath, ¿cómo se selecciona un elemento con un atributo llamado title?",
+                options: ["a) [title]", "b) //*[@title]", "c) title", "d) //title"],
+                correctAnswer: "b) //*[@title]"
+            },
+            {
+                question: "¿Cuál es la forma en CSS3 de seleccionar un elemento por su ID?",
+                options: ["a) [id='foo']", "b) //id='foo'", "c) #foo", "d) .foo"],
+                correctAnswer: "c) #foo"
+            },
+            {
+                question: "En CSS3, ¿cómo se selecciona un elemento por su clase foo?",
+                options: ["a) [class='foo']", "b) //class='foo'", "c) #foo", "d) .foo"],
+                correctAnswer: "d) .foo"
+            },
+            {
+                question: "En XPath, ¿cómo se selecciona el primer hijo de todos los elementos p?",
+                options: ["a) //p/*[0]", "b) p>*:first-child", "c) //p[0]", "d) p/*[1]"],
+                correctAnswer: "d) p/*[1]"
+            },
+            {
+                question: "¿Es posible en CSS3 seleccionar todos los elementos p que tienen un hijo a?",
+                options: ["a) Sí, con p a.", "b) No, no es posible.", "c) Sí, con p:has(a).", "d) Sí, con p > a."],
+                correctAnswer: "b) No, no es posible." // Based on the provided answer key, CSS3 does not have :has() selector directly.
+            },
+            {
+                question: "En XPath, ¿cómo se selecciona el siguiente elemento hermano de un elemento p?",
+                options: ["a) p+", "b) //p/following-sibling::*[0]", "c) p~*", "d) p/next()"],
+                correctAnswer: "b) //p/following-sibling::*[0]"
+            },
+            {
+                question: "¿Es posible en CSS3 seleccionar el elemento hermano anterior?",
+                options: ["a) Sí, con p-.", "b) No, no es posible.", "c) Sí, con p:prev().", "d) Sí, con p<."],
+                correctAnswer: "b) No, no es posible."
+            },
+            {
+                question: "¿Qué indica el atributo use=\"required\" en una definición de atributo en un esquema XML (XSD)?",
+                options: ["a) Que el atributo es opcional.", "b) Que el atributo es obligatorio.", "c) Que el atributo tiene un valor por defecto.", "d) Que el atributo no debe estar presente."],
+                correctAnswer: "b) Que el atributo es obligatorio."
+            },
+            {
+                question: "En un XSD, ¿qué indica type=\"xs:time\" para un elemento?",
+                options: ["a) Que el elemento contiene un valor booleano.", "b) Que el elemento contiene una cadena de texto.", "c) Que el elemento contiene un valor de tiempo.", "d) Que el elemento contiene una fecha."],
+                correctAnswer: "c) Que el elemento contiene un valor de tiempo."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(quizData.length).fill(null); // To store user's selected option index
+        let answeredQuestions = new Array(quizData.length).fill(false); // To track if a question has been answered
+
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const progressBar = document.getElementById('progress-bar');
+        const questionCounter = document.getElementById('question-counter');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const finalScore = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        // Function to load a question
+        function loadQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionText.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = ''; // Clear previous options
+            feedbackMessage.textContent = ''; // Clear feedback
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('rounded-lg', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'focus:ring-opacity-50');
+                button.addEventListener('click', () => selectAnswer(index, button));
+
+                // If the question was already answered, show the selected and correct answers
+                if (answeredQuestions[currentQuestionIndex]) {
+                    button.classList.add('disabled'); // Disable all buttons
+                    if (index === userAnswers[currentQuestionIndex]) {
+                        if (option === currentQuestion.correctAnswer) {
+                            button.classList.add('correct');
+                        } else {
+                            button.classList.add('incorrect');
+                        }
+                    } else if (option === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                }
+                optionsContainer.appendChild(button);
+            });
+
+            updateNavigationButtons();
+            updateProgressBar();
+            updateQuestionCounter();
+        }
+
+        // Function to handle answer selection
+        function selectAnswer(selectedIndex, clickedButton) {
+            if (answeredQuestions[currentQuestionIndex]) {
+                return; // Do nothing if already answered
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedIndex; // Store the selected option index
+            answeredQuestions[currentQuestionIndex] = true; // Mark as answered
+
+            // Disable all options after selection
+            Array.from(optionsContainer.children).forEach(button => {
+                button.classList.add('disabled');
+            });
+
+            // Highlight correct and incorrect answers
+            Array.from(optionsContainer.children).forEach((button, index) => {
+                if (button === clickedButton) {
+                    if (currentQuestion.options[index] === currentQuestion.correctAnswer) {
+                        button.classList.add('correct');
+                        feedbackMessage.textContent = '¡Correcto!';
+                        feedbackMessage.classList.remove('incorrect-feedback');
+                        feedbackMessage.classList.add('correct-feedback');
+                    } else {
+                        button.classList.add('incorrect');
+                        feedbackMessage.textContent = `Incorrecto. La respuesta correcta era: ${currentQuestion.correctAnswer}`;
+                        feedbackMessage.classList.remove('correct-feedback');
+                        feedbackMessage.classList.add('incorrect-feedback');
+                    }
+                } else if (currentQuestion.options[index] === currentQuestion.correctAnswer) {
+                    button.classList.add('correct'); // Highlight correct answer even if not selected
+                }
+            });
+        }
+
+        // Function to update navigation buttons state
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1 && answeredQuestions[currentQuestionIndex];
+
+            if (currentQuestionIndex === quizData.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                nextButton.textContent = 'Ver Resultados';
+            } else {
+                nextButton.textContent = 'Siguiente';
+            }
+        }
+
+        // Function to update progress bar
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Function to update question counter
+        function updateQuestionCounter() {
+            questionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        }
+
+        // Event listener for previous button
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Event listener for next button
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                showResults();
+            }
+        });
+
+        // Function to show final results
+        function showResults() {
+            score = 0;
+            for (let i = 0; i < quizData.length; i++) {
+                if (userAnswers[i] !== null && quizData[i].options[userAnswers[i]] === quizData[i].correctAnswer) {
+                    score++;
+                }
+            }
+            finalScore.textContent = `Tu puntuación final es: ${score} de ${quizData.length}`;
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // Event listener for restart button
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            answeredQuestions.fill(false);
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            loadQuestion();
+        });
+
+        // Initial load
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>

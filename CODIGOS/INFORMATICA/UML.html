@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de UML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+        }
+        .question-card {
+            background-color: #f8fafc;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .options-container button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            background-color: #edf2f7;
+            color: #4a5568;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .options-container button:hover:not(.correct):not(.incorrect) {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+        }
+        .options-container button.correct {
+            background-color: #d1fae5; /* Green for correct */
+            border-color: #34d399;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .options-container button.incorrect {
+            background-color: #fee2e2; /* Red for incorrect */
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .options-container button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none; /* Hidden by default */
+        }
+        .feedback.correct-feedback {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+        .feedback.incorrect-feedback {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .navigation-buttons button:hover {
+            background-color: #3182ce;
+        }
+        .navigation-buttons button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .quiz-summary {
+            text-align: center;
+            padding: 40px;
+            background-color: #f8fafc;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #cbd5e1;
+        }
+        .quiz-summary h2 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .quiz-summary p {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 15px;
+        }
+        .quiz-summary button {
+            padding: 12px 25px;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .quiz-summary button:hover {
+            background-color: #3182ce;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div id="quiz-content">
+            <!-- Questions will be loaded here by JavaScript -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" disabled>Anterior</button>
+            <button id="next-btn">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const quizContent = document.getElementById('quiz-content');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userAnswers = []; // To store user's selected answer index for each question
+
+        const questions = [
+            {
+                question: "¿Qué organismo estandariza UML?",
+                options: ["a) ISO", "b) IEC", "c) OMG", "d) Todas las anteriores"],
+                correctAnswer: "c) OMG"
+            },
+            {
+                question: "¿Qué es UML según el texto?",
+                options: ["a) Una metodología de desarrollo.", "b) Una notación para modelar software.", "c) Un lenguaje de programación.", "d) Una base de datos."],
+                correctAnswer: "b) Una notación para modelar software."
+            },
+            {
+                question: "¿Qué se usa para mantener el orden y la estructura en el diseño de sistemas según el texto?",
+                options: ["a) RUP", "b) OCL", "c) UML 2.5.1", "d) XMI"],
+                correctAnswer: "c) UML 2.5.1"
+            },
+            {
+                question: "¿Cuál de las siguientes capas forma parte de la infraestructura del metamodelo de soporte de UML?",
+                options: ["a) MO", "b) PSM", "c) PIM", "d) PA"],
+                correctAnswer: "a) MO"
+            },
+            {
+                question: "¿Qué componente del metamodelo UML se encarga de las instancias en tiempo de ejecución?",
+                options: ["a) M1", "b) M2", "c) M3", "d) MO"],
+                correctAnswer: "d) MO"
+            },
+            {
+                question: "¿Qué es OCL?",
+                options: ["a) Un lenguaje de programación.", "b) Un lenguaje para definir restricciones y reglas en UML.", "c) Una herramienta de intercambio de datos.", "d) Una metodología de desarrollo."],
+                correctAnswer: "b) Un lenguaje para definir restricciones y reglas en UML."
+            },
+            {
+                question: "Un ejemplo de restricción en OCL es:",
+                options: ["a) {procesadores=3}", "b) <<UI>>", "c) {edad > 0}", "d) {ordered}"],
+                correctAnswer: "c) {edad > 0}"
+            },
+            {
+                question: "¿Qué mecanismo de extensión de UML permite añadir o modificar la semántica de un elemento?",
+                options: ["a) Restricciones", "b) Valores etiquetados", "c) Estereotipos", "d) Perfiles"],
+                correctAnswer: "c) Estereotipos"
+            },
+            {
+                question: "¿Qué indica el estereotipo <<UI>> aplicado a una clase?",
+                options: ["a) Que la clase es de tipo Implementación.", "b) Que la clase es de tipo Utilidad.", "c) Que la clase es de tipo Interfaz de Usuario.", "d) Que la clase es de tipo Infraestructura."],
+                correctAnswer: "c) Que la clase es de tipo Interfaz de Usuario."
+            },
+            {
+                question: "¿Qué son los perfiles en UML?",
+                options: ["a) Un conjunto de valores etiquetados.", "b) Un conjunto de estereotipos, restricciones, etc., de un tema específico.", "c) Un tipo de diagrama UML.", "d) Un lenguaje para definir reglas."],
+                correctAnswer: "b) Un conjunto de estereotipos, restricciones, etc., de un tema específico."
+            },
+            {
+                question: "¿Qué concepto de POO define la estructura (atributos) y el comportamiento (métodos) de una entidad?",
+                options: ["a) Objeto", "b) Clase", "c) Mensaje", "d) Atributo"],
+                correctAnswer: "b) Clase"
+            },
+            {
+                question: "¿Qué permite la identidad de un objeto?",
+                options: ["a) Distinguir un objeto de otro.", "b) Almacenar información.", "c) Modificar sus atributos.", "d) Implementar un comportamiento."],
+                correctAnswer: "a) Distinguir un objeto de otro."
+            },
+            {
+                question: "¿Qué es la sobrecarga en POO?",
+                options: ["a) Un método que llama a otros métodos.", "b) Varios métodos con el mismo nombre que se diferencian por el número y/o tipo de parámetros.", "c) Un método que devuelve múltiples valores.", "d) Un método que no tiene parámetros."],
+                correctAnswer: "b) Varios métodos con el mismo nombre que se diferencian por el número y/o tipo de parámetros."
+            },
+            {
+                question: "¿Qué es un mensaje en POO?",
+                options: ["a) La declaración de una clase.", "b) La llamada a un método sobre un objeto.", "c) Un tipo de dato.", "d) Un error de compilación."],
+                correctAnswer: "b) La llamada a un método sobre un objeto."
+            },
+            {
+                question: "¿Qué significa MDA?",
+                options: ["a) Model-Driven Application.", "b) Model-Driven Architecture.", "c) Model-Driven Analysis.", "d) Multiple-Deployment Architecture."],
+                correctAnswer: "b) Model-Driven Architecture."
+            },
+            {
+                question: "¿Qué es el PIM en MDA?",
+                options: ["a) Platform Independent Method.", "b) Platform Independent Model.", "c) Process Integration Module.", "d) Program Internal Model."],
+                correctAnswer: "b) Platform Independent Model."
+            },
+            {
+                question: "¿Cuál es el primer paso de la abstracción según los principios de POO?",
+                options: ["a) Identificar las clases.", "b) Capturar los detalles de negocio a modelar.", "c) Definir los métodos.", "d) Crear los objetos."],
+                correctAnswer: "b) Capturar los detalles de negocio a modelar."
+            },
+            {
+                question: "¿Qué principio de POO busca la ocultación de los detalles internos del objeto?",
+                options: ["a) Abstracción", "b) Polimorfismo", "c) Encapsulamiento", "d) Herencia"],
+                correctAnswer: "c) Encapsulamiento"
+            },
+            {
+                question: "¿Qué efecto principal tiene la herencia en POO?",
+                options: ["a) Reducir el acoplamiento.", "b) Reutilización de código.", "c) Implementar interfaces.", "d) Definir restricciones."],
+                correctAnswer: "b) Reutilización de código."
+            },
+            {
+                question: "En un diagrama de clases, ¿qué tipo de relación es la Agregación?",
+                options: ["a) Dependencia", "b) Contención física", "c) Contención lógica", "d) Realización"],
+                correctAnswer: "c) Contención lógica"
+            },
+            {
+                question: "¿Qué tipo de relación es la Composición en un diagrama de clases?",
+                options: ["a) Contención lógica.", "b) Contención física (Todo/Parte).", "c) Asociación simple.", "d) Generalización."],
+                correctAnswer: "b) Contención física (Todo/Parte)."
+            },
+            {
+                question: "Si el nombre de una clase en un diagrama de clases está en cursiva, ¿qué significa?",
+                options: ["a) Que es una clase concreta.", "b) Que es una clase abstracta.", "c) Que es una interfaz.", "d) Que tiene un error."],
+                correctAnswer: "b) Que es una clase abstracta."
+            },
+            {
+                question: "¿Para qué son útiles los diagramas de objetos?",
+                options: ["a) Para representar la arquitectura del sistema.", "b) Para analizar ciertas partes del diagrama de clases haciendo \"zoom\".", "c) Para mostrar el flujo de control.", "d) Para definir procesos de negocio."],
+                correctAnswer: "b) Para analizar ciertas partes del diagrama de clases haciendo \"zoom\"."
+            },
+            {
+                question: "En un diagrama de componentes, ¿qué representa el semicírculo?",
+                options: ["a) Los métodos que puedes usar.", "b) De quién depende ese interfaz, a quién necesita.", "c) El puerto del componente.", "d) El componente en sí."],
+                correctAnswer: "b) De quién depende ese interfaz, a quién necesita."
+            },
+            {
+                question: "¿Qué diagrama muestra la arquitectura del sistema como despliegue de artefactos software?",
+                options: ["a) Diagrama de componentes.", "b) Diagrama de estructura compuesta.", "c) Diagrama de despliegue.", "d) Diagrama de perfil."],
+                correctAnswer: "c) Diagrama de despliegue."
+            },
+            {
+                question: "¿Qué diagrama se usa para especificar cómo transitan los objetos de una clase y es la antesala del patrón de diseño State?",
+                options: ["a) Diagrama de actividad.", "b) Diagrama de casos de uso.", "c) Diagrama de transición de estados o máquina de estados.", "d) Diagrama de secuencia."],
+                correctAnswer: "c) Diagrama de transición de estados o máquina de estados."
+            },
+            {
+                question: "¿Cómo se llama una condición entre corchetes [...] en un diagrama de máquina de estados?",
+                options: ["a) Precondición.", "b) Postcondición.", "c) Guarda.", "d) Restricción."],
+                correctAnswer: "c) Guarda."
+            },
+            {
+                question: "¿Qué diagrama ayuda a definir procesos de negocio y casos de uso, siendo similar a un flujograma?",
+                options: ["a) Diagrama de transición de estados.", "b) Diagrama de actividad.", "c) Diagrama de secuencia.", "d) Diagrama de paquetes."],
+                correctAnswer: "b) Diagrama de actividad."
+            },
+            {
+                question: "¿Qué representan los diagramas de casos de uso?",
+                options: ["a) La estructura interna de una clase.", "b) Los requisitos funcionales de la aplicación.", "c) La interacción entre objetos.", "d) El despliegue de artefactos."],
+                correctAnswer: "b) Los requisitos funcionales de la aplicación."
+            },
+            {
+                question: "En los diagramas de casos de uso, ¿qué indica la relación <<extend>>?",
+                options: ["a) Un comportamiento obligatorio.", "b) Un comportamiento opcional.", "c) Una herencia entre casos de uso.", "d) Una dependencia."],
+                correctAnswer: "b) Un comportamiento opcional."
+            },
+            {
+                question: "¿Qué indica la relación <<include>> en los diagramas de casos de uso?",
+                options: ["a) Un comportamiento opcional.", "b) Un comportamiento obligatorio.", "c) Una extensión de funcionalidad.", "d) Una relación de herencia."],
+                correctAnswer: "b) Un comportamiento obligatorio."
+            },
+            {
+                question: "¿Qué acompaña a los casos de uso para su especificación?",
+                options: ["a) Un diagrama de secuencia.", "b) Un SRS (especificación de requisitos de software).", "c) Un diagrama de actividad.", "d) Un diagrama de clases."],
+                correctAnswer: "b) Un SRS (especificación de requisitos de software)."
+            },
+            {
+                question: "¿Qué diagrama de interacción se centra en las condiciones que cambian dentro y entre las líneas de vida a lo largo de un eje de tiempo lineal?",
+                options: ["a) Diagrama de comunicación.", "b) Diagrama de secuencia.", "c) Diagrama de tiempos.", "d) Diagrama interaction-overview."],
+                correctAnswer: "c) Diagrama de tiempos."
+            },
+            {
+                question: "¿Qué diagrama de interacción es equivalente al diagrama de comunicación?",
+                options: ["a) Diagrama de tiempos.", "b) Diagrama interaction-overview.", "c) Diagrama de secuencia.", "d) Diagrama de objetos."],
+                correctAnswer: "c) Diagrama de secuencia."
+            },
+            {
+                question: "En el polimorfismo, ¿qué significa \"Late binding\" o \"Ligadura dinámica\"?",
+                options: ["a) Que el método a invocar se determina en tiempo de compilación.", "b) Que el método a invocar se determina en tiempo de ejecución.", "c) Que el objeto se enlaza a un tipo específico.", "d) Que se puede cambiar el tipo de un objeto en tiempo de ejecución."],
+                correctAnswer: "b) Que el método a invocar se determina en tiempo de ejecución."
+            },
+            {
+                question: "En Java, ¿qué operador se utiliza para comprobar si un objeto es de un tipo compatible (incluyendo herencia)?",
+                options: ["a) typeof", "b) isInstance", "c) instanceof", "d) getName"],
+                correctAnswer: "c) instanceof"
+            },
+            {
+                question: "¿Cuál es el estándar de UML mencionado en el texto?",
+                options: ["a) ISO-IEC 19501", "b) IEEE 802.3", "c) ANSI/ISA-95", "d) RFC 793"],
+                correctAnswer: "a) ISO-IEC 19501"
+            },
+            {
+                question: "¿Qué parte de la superestructura de UML se basa en la infraestructura?",
+                options: ["a) El metamodelo.", "b) La notación y semántica de los diagramas.", "c) OCL.", "d) XMI."],
+                correctAnswer: "b) La notación y semántica de los diagramas."
+            },
+            {
+                question: "¿Qué lenguaje se usa para el intercambio de modelos UML entre herramientas?",
+                options: ["a) OCL", "b) RUP", "c) XMI (XML Metadata Interchange)", "d) MOF"],
+                correctAnswer: "c) XMI (XML Metadata Interchange)"
+            },
+            {
+                question: "Un ejemplo de valor etiquetado en UML es:",
+                options: ["a) <<UI>>", "b) {edad > 0}", "c) {procesadores=3}", "d) {ordered}"],
+                correctAnswer: "c) {procesadores=3}"
+            },
+            {
+                question: "¿Qué es un atributo en POO?",
+                options: ["a) La implementación de un comportamiento.", "b) Datos de negocio o referencias a otros objetos.", "c) La llamada a un método.", "d) Un tipo de dato abstracto."],
+                correctAnswer: "b) Datos de negocio o referencias a otros objetos."
+            },
+            {
+                question: "¿Cuál es el significado de PSM en el contexto de MDA?",
+                options: ["a) Platform Specific Method.", "b) Platform System Model.", "c) Platform Specific Model.", "d) Process Standard Module."],
+                correctAnswer: "c) Platform Specific Model."
+            },
+            {
+                question: "¿Qué implica la \"capacidad para que un mismo objeto frente a un mismo mensaje tenga comportamientos diferentes\"?",
+                options: ["a) Encapsulamiento.", "b) Abstracción.", "c) Polimorfismo.", "d) Herencia."],
+                correctAnswer: "c) Polimorfismo."
+            },
+            {
+                question: "¿Qué tipo de diagrama de estructura representa un ejemplo de árbol de objetos en memoria?",
+                options: ["a) Diagrama de clases.", "b) Diagrama de componentes.", "c) Diagrama de objetos.", "d) Diagrama de despliegue."],
+                correctAnswer: "c) Diagrama de objetos."
+            },
+            {
+                question: "¿Cuál es la idea de alto nivel que agrupa una serie de clases y ofrece un servicio a otros en un diagrama de componentes?",
+                options: ["a) Interfaz.", "b) Puerto.", "c) Componente.", "d) Conector."],
+                correctAnswer: "c) Componente."
+            },
+            {
+                question: "¿Qué diagrama muestra la estructura interna de una clase y las colaboraciones?",
+                options: ["a) Diagrama de paquetes.", "b) Diagrama de despliegue.", "c) Diagrama de estructura compuesta.", "d) Diagrama de perfil."],
+                correctAnswer: "c) Diagrama de estructura compuesta."
+            },
+            {
+                question: "¿Para qué se utilizan los diagramas de perfil?",
+                options: ["a) Para agrupar clases y componentes.", "b) Para su uso en una plataforma concreta (.NET, Java, etc.).", "c) Para modelar el comportamiento dinámico.", "d) Para definir la arquitectura del sistema."],
+                correctAnswer: "b) Para su uso en una plataforma concreta (.NET, Java, etc.)."
+            },
+            {
+                question: "¿Qué elemento de UML se agrupa en un diagrama de paquetes?",
+                options: ["a) Clases.", "b) Componentes.", "c) Elementos UML.", "d) Todas las anteriores."],
+                correctAnswer: "d) Todas las anteriores."
+            },
+            {
+                question: "¿Qué no reflejan los casos de uso según el texto?",
+                options: ["a) Los requisitos funcionales.", "b) El flujo de ejecución.", "c) La granularidad media-baja.", "d) Las relaciones de inclusión."],
+                correctAnswer: "b) El flujo de ejecución."
+            },
+            {
+                question: "¿Qué se especifica en un punto de extensión de un caso de uso?",
+                options: ["a) El comportamiento obligatorio.", "b) Las condiciones bajo las cuales se produce o no la extensión.", "c) Los actores primarios.", "d) El nombre del caso de uso."],
+                correctAnswer: "b) Las condiciones bajo las cuales se produce o no la extensión."
+            },
+            {
+                question: "Si un actor en un diagrama de casos de uso está a la derecha, ¿qué tipo de actor es?",
+                options: ["a) Principal.", "b) Primario.", "c) Secundario.", "d) Actor del sistema."],
+                correctAnswer: "c) Secundario."
+            },
+            {
+                question: "¿Qué diagrama de interacción es una mezcla entre el diagrama de actividad y otros de interacción?",
+                options: ["a) Diagrama de secuencia.", "b) Diagrama de comunicación.", "c) Diagrama interaction-overview.", "d) Diagrama de tiempos."],
+                correctAnswer: "c) Diagrama interaction-overview."
+            },
+            {
+                question: "¿Qué representan los números en un diagrama de comunicación?",
+                options: ["a) El orden de los mensajes.", "b) La cantidad de objetos.", "c) La duración de la interacción.", "d) La prioridad de los mensajes."],
+                correctAnswer: "a) El orden de los mensajes."
+            },
+            {
+                question: "¿Qué persigue el polimorfismo en términos de código?",
+                options: ["a) Código más específico.", "b) Código más complejo.", "c) Código más genérico, lo que implica mejor mantenimiento.", "d) Código más redundante."],
+                correctAnswer: "c) Código más genérico, lo que implica mejor mantenimiento."
+            },
+            {
+                question: "¿Cuántos actores clave siempre habrá en el polimorfismo según el texto?",
+                options: ["a) Uno: el objeto.", "b) Dos: Cliente y Proveedor.", "c) Tres: Cliente, Proveedor y Mensaje.", "d) Cuatro: Cliente, Proveedor, Objeto y Método."],
+                correctAnswer: "b) Dos: Cliente y Proveedor."
+            },
+            {
+                question: "¿Qué función en Java es similar a typeof de .NET pero funciona también con tipos compatibles, no solo herencia?",
+                options: ["a) isInstance()", "b) getClass()", "c) instanceof", "d) getName()"],
+                correctAnswer: "a) isInstance()"
+            },
+            {
+                question: "¿Qué se recomienda usar en Java para comprobar la clase de un objeto en lugar de instanceof?",
+                options: ["a) getClass()", "b) isInstance()", "c) getName()", "d) typeof"],
+                correctAnswer: "b) isInstance()"
+            },
+            {
+                question: "En el diagrama de clases, la relación de asociación tiene muchas consecuencias en:",
+                options: ["a) La definición de los atributos.", "b) La implementación.", "c) La herencia.", "d) El polimorfismo."],
+                correctAnswer: "b) La implementación."
+            },
+            {
+                question: "¿Qué permite la \"reutilización\" como efecto de la herencia?",
+                options: ["a) Reducir la complejidad.", "b) Extender clases con cierta similitud semántica.", "c) Ocultar detalles internos.", "d) Implementar comportamientos diferentes."],
+                correctAnswer: "b) Extender clases con cierta similitud semántica."
+            },
+            {
+                question: "¿Qué se utiliza para agrupar clases, componentes y elementos UML?",
+                options: ["a) Diagrama de estructura compuesta.", "b) Diagrama de perfil.", "c) Diagrama de paquetes.", "d) Diagrama de componentes."],
+                correctAnswer: "c) Diagrama de paquetes."
+            },
+            {
+                question: "¿Qué no existe en los casos de uso según el texto?",
+                options: ["a) Relación de herencia entre actores.", "b) Casos de uso \"abstractos\" (ej: Gestionar...).", "c) Relación de inclusión.", "d) Puntos de extensión."],
+                correctAnswer: "b) Casos de uso \"abstractos\" (ej: Gestionar...)."
+            },
+            {
+                question: "¿Qué permite un diagrama interaction-overview en relación con un diagrama de actividad?",
+                options: ["a) Representar el flujo de control general.", "b) Hacer zoom en una parte del diagrama de actividad para ver el de secuencia.", "c) Mostrar la arquitectura de despliegue.", "d) Definir restricciones."],
+                correctAnswer: "b) Hacer zoom en una parte del diagrama de actividad para ver el de secuencia."
+            },
+            {
+                question: "¿Qué representa la línea vertical en un diagrama de secuencia?",
+                options: ["a) El orden de los mensajes.", "b) La línea temporal.", "c) La conexión entre objetos.", "d) La duración de la interacción."],
+                correctAnswer: "b) La línea temporal."
+            },
+            {
+                question: "¿Qué es RUP en relación con UML?",
+                options: ["a) La notación.", "b) La metodología.", "c) El lenguaje de restricciones.", "d) El estándar de intercambio."],
+                correctAnswer: "b) La metodología."
+            },
+            {
+                question: "¿Qué capa del metamodelo de soporte de UML corresponde al \"User model\"?",
+                options: ["a) M0", "b) M1", "c) M2", "d) M3"],
+                correctAnswer: "b) M1"
+            },
+            {
+                question: "¿Qué se puede definir con OCL además de restricciones?",
+                options: ["a) Clases.", "b) Casos de prueba.", "c) Objetos.", "d) Interfaces."],
+                correctAnswer: "b) Casos de prueba."
+            },
+            {
+                question: "¿Qué es un estereotipo en UML?",
+                options: ["a) Una restricción.", "b) Un valor etiquetado.", "c) Un mecanismo para añadir/modificar semántica a un elemento.", "d) Un tipo de perfil."],
+                correctAnswer: "c) Un mecanismo para añadir/modificar semántica a un elemento."
+            },
+            {
+                question: "¿Qué define una clase en POO?",
+                options: ["a) Solo la estructura.", "b) Solo el comportamiento.", "c) Estructura (atributos) y comportamiento (métodos).", "d) Mensajes."],
+                correctAnswer: "c) Estructura (atributos) y comportamiento (métodos)."
+            },
+            {
+                question: "¿Qué se invoca sobre un objeto mediante un mensaje?",
+                options: ["a) Un atributo.", "b) Un método.", "c) Una clase.", "d) Una identidad."],
+                correctAnswer: "b) Un método."
+            },
+            {
+                question: "¿Qué principio de POO captura los detalles de negocio a modelar?",
+                options: ["a) Encapsulamiento.", "b) Polimorfismo.", "c) Herencia.", "d) Abstracción."],
+                correctAnswer: "d) Abstracción."
+            },
+            {
+                question: "En un diagrama de clases, ¿qué relación es la de \"todo/parte\"?",
+                options: ["a) Agregación.", "b) Composición.", "c) Dependencia.", "d) Asociación."],
+                correctAnswer: "b) Composición."
+            },
+            {
+                question: "¿Qué tipo de clase implementa una interfaz en un diagrama de clases?",
+                options: ["a) Una clase abstracta.", "b) Una relación de realización.", "c) Una relación de herencia.", "d) Una clase estereotipada."],
+                correctAnswer: "b) Una relación de realización."
+            },
+            {
+                question: "¿Qué representan los \"enlaces\" o \"links\" en un diagrama de objetos?",
+                options: ["a) Atributos.", "b) Métodos.", "c) Conexiones entre objetos.", "d) Clases."],
+                correctAnswer: "c) Conexiones entre objetos."
+            },
+            {
+                question: "¿Qué se usa para unir unos componentes con otros en un diagrama de componentes?",
+                options: ["a) Los métodos.", "b) El semicírculo que representa la dependencia.", "c) El círculo que representa los métodos que se pueden usar.", "d) No se especifica."],
+                correctAnswer: "c) El círculo que representa los métodos que se pueden usar."
+            },
+            {
+                question: "¿Qué tipo de diagrama de comportamiento se utiliza para plantear pruebas unitarias en las transiciones, donde hay condiciones?",
+                options: ["a) Diagrama de actividad.", "b) Diagrama de casos de uso.", "c) Diagrama de máquina de estados.", "d) Diagrama de secuencia."],
+                correctAnswer: "c) Diagrama de máquina de estados."
+            },
+            {
+                question: "¿Qué se puede añadir en un diagrama de actividad para mostrar los objetos sobre los que trabajan ciertas actividades?",
+                options: ["a) Guardas.", "b) Swimlanes.", "c) Objetos.", "d) Puntos de decisión."],
+                correctAnswer: "c) Objetos."
+            },
+            {
+                question: "¿Qué nivel de granularidad capturan los casos de uso?",
+                options: ["a) Alto.", "b) Bajo.", "c) Medio-bajo.", "d) Medio-alto."],
+                correctAnswer: "c) Medio-bajo."
+            },
+            {
+                question: "¿Qué se muestra en un diagrama de comunicación que no se ve en un diagrama de secuencia?",
+                options: ["a) La línea temporal.", "b) Los números que representan el orden.", "c) Los enlaces entre objetos.", "d) Las bifurcaciones."],
+                correctAnswer: "c) Los enlaces entre objetos."
+            },
+            {
+                question: "¿Qué permite el polimorfismo en relación con los tipos?",
+                options: ["a) Definir nuevos tipos.", "b) Relacionar tipos entre sí y que a veces sean intercambiables.", "c) Convertir un tipo en otro.", "d) Ignorar los tipos."],
+                correctAnswer: "b) Relacionar tipos entre sí y que a veces sean intercambiables."
+            },
+            {
+                question: "¿Qué representa una línea con una flecha en el diagrama de clases (según la nota \"Las flechas son de diseño\")?",
+                options: ["a) Herencia.", "b) Asociación unidireccional.", "c) Dependencia.", "d) Realización."],
+                correctAnswer: "b) Asociación unidireccional."
+            },
+            {
+                question: "¿Qué es un objeto según la definición proporcionada?",
+                options: ["a) Una estructura de programación.", "b) El estado (valor de los atributos) y la identidad de un elemento para almacenar información.", "c) Un comportamiento.", "d) Una llamada a un método."],
+                correctAnswer: "b) El estado (valor de los atributos) y la identidad de un elemento para almacenar información."
+            },
+            {
+                question: "¿Qué se logra con la composición como técnica para reutilizar sin forzar herencia?",
+                options: ["a) Polimorfismo.", "b) Encapsulamiento.", "c) Reutilización.", "d) Abstracción."],
+                correctAnswer: "c) Reutilización."
+            },
+            {
+                question: "¿Qué especifica una relación de Dependencia en un diagrama de clases?",
+                options: ["a) Contención lógica.", "b) Contención física.", "c) Una semántica entre dos clases o entidades, y debe ir estereotipada.", "d) Una implementación de interfaz."],
+                correctAnswer: "c) Una semántica entre dos clases o entidades, y debe ir estereotipada."
+            },
+            {
+                question: "¿Qué representa el círculo en un diagrama de componentes?",
+                options: ["a) El puerto del componente.", "b) De quién depende ese interfaz.", "c) Los métodos que puedes usar.", "d) El componente en sí."],
+                correctAnswer: "c) Los métodos que puedes usar."
+            },
+            {
+                question: "¿Qué pueden poner varios diagramas de actividad para organizarse?",
+                options: ["a) Guardas.", "b) Puntos de decisión.", "c) Capas/calles/swimlanes.", "d) Puntos de fusión."],
+                correctAnswer: "c) Capas/calles/swimlanes."
+            },
+            {
+                question: "¿En qué se centran los diagramas de tiempos?",
+                options: ["a) El orden de los mensajes.", "b) Las condiciones que cambian dentro y entre las líneas de vida a lo largo de un eje de tiempo lineal.", "c) La interacción entre objetos.", "d) Los estados de un sistema."],
+                correctAnswer: "b) Las condiciones que cambian dentro y entre las líneas de vida a lo largo de un eje de tiempo lineal."
+            },
+            {
+                question: "¿Qué es lo que determina el método a invocar en tiempo de ejecución en el polimorfismo?",
+                options: ["a) La ligadura estática.", "b) La ligadura dinámica (Late binding).", "c) La sobrecarga.", "d) La herencia."],
+                correctAnswer: "b) La ligadura dinámica (Late binding)."
+            },
+            {
+                question: "¿Qué significa que \"los casos de uso no 'explotan' como los DFD's\"?",
+                options: ["a) Que no se pueden dividir en subcasos de uso.", "b) Que no reflejan el flujo de datos detallado.", "c) Que no se pueden organizar en paquetes.", "d) Que no pueden tener relaciones de extensión."],
+                correctAnswer: "b) Que no reflejan el flujo de datos detallado."
+            },
+            {
+                question: "¿Qué tipo de dato es AccountState en el diagrama de clases?",
+                options: ["a) Clase.", "b) Enumeración.", "c) Interfaz.", "d) Atributo."],
+                correctAnswer: "b) Enumeración."
+            },
+            {
+                question: "¿Qué significa isReferenceOnly en la clase Book Item?",
+                options: ["a) Es un atributo para identificar el libro.", "b) Es un estereotipo de clase.", "c) Es una restricción de tipo Boolean.", "d) Es un método."],
+                correctAnswer: "b) Es un estereotipo de clase."
+            },
+            {
+                question: "¿Qué es RFID en la clase Book Item?",
+                options: ["a) Un método.", "b) Un atributo.", "c) Una clase asociada.", "d) Un estereotipo."],
+                correctAnswer: "b) Un atributo."
+            },
+            {
+                question: "¿Qué tipo de relación hay entre Account y Library?",
+                options: ["a) Composición.", "b) Agregación.", "c) Asociación.", "d) Herencia."],
+                correctAnswer: "b) Agregación."
+            },
+            {
+                question: "¿Qué tipo de relación hay entre Catalog y Library?",
+                options: ["a) Agregación.", "b) Composición.", "c) Asociación.", "d) Dependencia."],
+                correctAnswer: "b) Composición."
+            },
+            {
+                question: "¿Qué tipo de relación hay entre Catalog y Search?",
+                options: ["a) Asociación.", "b) Composición.", "c) Realización de interfaz.", "d) Dependencia."],
+                correctAnswer: "c) Realización de interfaz."
+            },
+            {
+                question: "¿Qué tipo de relación hay entre Search y Patron?",
+                options: ["a) Realización de interfaz.", "b) Asociación.", "c) Uso (usage dependency).", "d) Herencia."],
+                correctAnswer: "c) Uso (usage dependency)."
+            },
+            {
+                question: "¿Qué representa la multiplicidad 0..1 en el atributo ISBN de la clase Book?",
+                options: ["a) Que es opcional.", "b) Que es obligatorio.", "c) Que es una lista.", "d) Que solo puede haber una instancia."],
+                correctAnswer: "a) Que es opcional."
+            },
+            {
+                question: "¿Qué representa 1..* en la relación entre Book y Author?",
+                options: ["a) Que un autor escribe cero o más libros.", "b) Que un autor escribe uno o más libros.", "c) Que un libro tiene uno o más autores.", "d) Que un libro tiene cero o más autores."],
+                correctAnswer: "c) Que un libro tiene uno o más autores."
+            },
+            {
+                question: "¿Qué representa 0..12 en la relación entre Account y Book Item (reservado)?",
+                options: ["a) Que una cuenta puede reservar hasta 12 ítems de libro.", "b) Que un ítem de libro puede ser reservado por hasta 12 cuentas.", "c) Que hay al menos 12 reservas.", "d) Que la relación es opcional."],
+                correctAnswer: "a) Que una cuenta puede reservar hasta 12 ítems de libro."
+            },
+            {
+                question: "¿Qué indica el rombo negro en la relación entre Library y Patron?",
+                options: ["a) Agregación.", "b) Composición.", "c) Asociación.", "d) Herencia."],
+                correctAnswer: "b) Composición."
+            },
+            {
+                question: "¿Qué tipo de clase es Book en el diagrama de clases?",
+                options: ["a) Estereotipada.", "b) Abstracta.", "c) Entidad.", "d) Interfaz."],
+                correctAnswer: "b) Abstracta."
+            }
+        ];
+
+        // Function to load a question
+        function loadQuestion() {
+            // Clear previous content
+            quizContent.innerHTML = '';
+
+            if (currentQuestionIndex >= questions.length) {
+                showSummary();
+                return;
+            }
+
+            const questionData = questions[currentQuestionIndex];
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.textContent = `${currentQuestionIndex + 1}. ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+
+            questionData.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.onclick = () => selectAnswer(index, button);
+                optionsContainer.appendChild(button);
+            });
+
+            questionCard.appendChild(optionsContainer);
+
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback';
+            feedbackDiv.id = `feedback-${currentQuestionIndex}`;
+            questionCard.appendChild(feedbackDiv);
+
+            quizContent.appendChild(questionCard);
+
+            updateNavigationButtons();
+            // If the user has already answered this question, show the result
+            if (userAnswers[currentQuestionIndex] !== undefined) {
+                const selectedOptionIndex = userAnswers[currentQuestionIndex];
+                const buttons = optionsContainer.querySelectorAll('button');
+                buttons[selectedOptionIndex].click(); // Simulate click to show feedback
+            }
+        }
+
+        // Function to handle answer selection
+        function selectAnswer(selectedIndex, clickedButton) {
+            const questionData = questions[currentQuestionIndex];
+            const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
+            const buttons = clickedButton.parentNode.querySelectorAll('button');
+
+            // Disable all buttons for this question
+            buttons.forEach(button => button.disabled = true);
+
+            // Mark correct and incorrect answers
+            buttons.forEach((button, index) => {
+                if (button.textContent === questionData.correctAnswer) {
+                    button.classList.add('correct');
+                } else if (index === selectedIndex) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            // Show feedback message
+            if (clickedButton.textContent === questionData.correctAnswer) {
+                feedbackDiv.textContent = '¡Correcto!';
+                feedbackDiv.classList.add('correct-feedback');
+                if (userAnswers[currentQuestionIndex] === undefined) { // Only increment score if it's the first attempt
+                    score++;
+                }
+            } else {
+                feedbackDiv.textContent = `Incorrecto. La respuesta correcta es: ${questionData.correctAnswer}`;
+                feedbackDiv.classList.add('incorrect-feedback');
+            }
+            feedbackDiv.style.display = 'block';
+
+            // Store the user's answer
+            userAnswers[currentQuestionIndex] = selectedIndex;
+        }
+
+        // Function to update navigation button states
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questions.length; // Disable next if all questions are done
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Ver Resultados';
+            } else {
+                nextBtn.textContent = 'Siguiente';
+            }
+        }
+
+        // Function to show quiz summary
+        function showSummary() {
+            quizContent.innerHTML = `
+                <div class="quiz-summary">
+                    <h2>Test Completado</h2>
+                    <p>Has respondido ${score} de ${questions.length} preguntas correctamente.</p>
+                    <button id="restart-btn">Reiniciar Test</button>
+                </div>
+            `;
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            document.getElementById('restart-btn').onclick = restartQuiz;
+        }
+
+        // Function to restart the quiz
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.length = 0; // Clear user answers
+            prevBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'inline-block';
+            loadQuestion();
+        }
+
+        // Event listeners for navigation buttons
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Initial load
+        loadQuestion();
+    </script>
+</body>
+</html>
