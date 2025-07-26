@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Comandos Linux</title>
+    <title>COMANDOS LINUX</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -29,6 +29,12 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+        }
+        .quiz-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c5282;
+            margin-bottom: 20px;
         }
         .question-text {
             font-size: 1.5rem;
@@ -96,7 +102,10 @@
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Align items vertically */
             margin-top: 20px;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
         }
         .nav-button {
             background-color: #4299e1;
@@ -107,6 +116,8 @@
             cursor: pointer;
             font-size: 1.1rem;
             transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            min-width: 120px; /* Minimum width for buttons */
         }
         .nav-button:hover {
             background-color: #3182ce;
@@ -117,16 +128,70 @@
             cursor: not-allowed;
             transform: none;
         }
+        .reset-button {
+            background-color: #e53e3e; /* Red color for reset */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1;
+            min-width: 120px;
+        }
+        .reset-button:hover {
+            background-color: #c53030;
+            transform: translateY(-2px);
+        }
         .current-question-indicator {
             font-size: 1rem;
             color: #666;
             margin-top: 10px;
         }
+        .results-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .results-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c5282;
+            margin-bottom: 20px;
+        }
+        .results-summary p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .results-summary .correct-count {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .results-summary .incorrect-count {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .results-summary .unanswered-count {
+            color: #ffc107;
+            font-weight: bold;
+        }
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .quiz-container {
+            .quiz-container, .results-container {
                 padding: 20px;
                 gap: 15px;
+            }
+            .quiz-title, .results-title {
+                font-size: 1.5rem;
             }
             .question-text {
                 font-size: 1.2rem;
@@ -135,23 +200,36 @@
                 font-size: 1rem;
                 padding: 12px 15px;
             }
-            .nav-button {
+            .nav-button, .reset-button {
                 padding: 10px 20px;
                 font-size: 1rem;
+            }
+            .navigation-buttons {
+                flex-direction: column; /* Stack buttons vertically on small screens */
             }
         }
     </style>
 </head>
 <body>
-    <div class="quiz-container">
+    <div class="quiz-container" id="quiz-container">
+        <h1 class="quiz-title">COMANDOS LINUX</h1>
         <div class="question-text" id="question-text"></div>
         <div class="options-container" id="options-container"></div>
         <div class="feedback-message" id="feedback-message"></div>
         <div class="current-question-indicator" id="question-indicator"></div>
         <div class="navigation-buttons">
             <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="reset-button" class="reset-button">Reiniciar Test</button>
             <button id="next-button" class="nav-button">Siguiente</button>
         </div>
+    </div>
+
+    <div class="results-container hidden" id="results-container">
+        <h1 class="results-title">COMANDOS LINUX - Resultados</h1>
+        <div class="results-summary" id="results-summary">
+            <!-- Results will be displayed here -->
+        </div>
+        <button id="restart-quiz-button" class="reset-button">Reiniciar Test</button>
     </div>
 
     <script>
@@ -1161,17 +1239,52 @@
 
         let currentQuestionIndex = 0;
         let answeredQuestions = new Array(quizData.length).fill(false); // To track if a question has been answered
-        let selectedAnswers = new Array(quizData.length).fill(null); // To store selected answer index
+        let selectedAnswers = new Array(quizData.length).fill(null); // To store selected answer index (index of option)
 
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
         const questionTextElement = document.getElementById('question-text');
         const optionsContainerElement = document.getElementById('options-container');
         const feedbackMessageElement = document.getElementById('feedback-message');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button'); // New reset button
         const questionIndicator = document.getElementById('question-indicator');
+        const resultsSummary = document.getElementById('results-summary');
+        const restartQuizButton = document.getElementById('restart-quiz-button'); // Restart button on results page
+
+        const LOCAL_STORAGE_KEY = 'linuxQuizProgress';
+
+        // Function to save quiz progress to LocalStorage
+        function saveProgress() {
+            const progress = {
+                currentQuestionIndex: currentQuestionIndex,
+                answeredQuestions: answeredQuestions,
+                selectedAnswers: selectedAnswers
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
+        }
+
+        // Function to load quiz progress from LocalStorage
+        function loadProgress() {
+            const savedProgress = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                currentQuestionIndex = progress.currentQuestionIndex;
+                answeredQuestions = progress.answeredQuestions;
+                selectedAnswers = progress.selectedAnswers;
+            } else {
+                // If no saved progress, initialize
+                resetQuiz();
+            }
+        }
 
         // Function to load a question
         function loadQuestion() {
+            // Hide results container if visible
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+
             const currentQuestion = quizData[currentQuestionIndex];
             questionTextElement.textContent = currentQuestion.question;
             optionsContainerElement.innerHTML = ''; // Clear previous options
@@ -1186,11 +1299,15 @@
                 // If the question has been answered, disable buttons and show feedback
                 if (answeredQuestions[currentQuestionIndex]) {
                     button.classList.add('disabled');
+                    // Highlight correct answer
                     if (option === currentQuestion.correctAnswer) {
                         button.classList.add('correct');
-                    } else if (selectedAnswers[currentQuestionIndex] === index) {
+                    }
+                    // Highlight selected answer if it was incorrect
+                    if (selectedAnswers[currentQuestionIndex] === index && option !== currentQuestion.correctAnswer) {
                         button.classList.add('incorrect');
                     }
+                    // Show feedback for answered questions
                     showFeedback(selectedAnswers[currentQuestionIndex] !== null && currentQuestion.options[selectedAnswers[currentQuestionIndex]] === currentQuestion.correctAnswer);
                 } else {
                     button.addEventListener('click', () => selectAnswer(button, index));
@@ -1201,6 +1318,7 @@
 
             updateNavigationButtons();
             updateQuestionIndicator();
+            saveProgress(); // Save progress after loading a question
         }
 
         // Function to handle answer selection
@@ -1233,6 +1351,12 @@
             // Show feedback message
             showFeedback(isCorrect);
             updateNavigationButtons();
+            saveProgress(); // Save progress after answering a question
+
+            // If it's the last question and it's answered, show results
+            if (currentQuestionIndex === quizData.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                showResults();
+            }
         }
 
         // Function to show feedback message
@@ -1260,6 +1384,43 @@
             questionIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
         }
 
+        // Function to show final results
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < quizData.length; i++) {
+                if (answeredQuestions[i]) {
+                    if (selectedAnswers[i] !== null && quizData[i].options[selectedAnswers[i]] === quizData[i].correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                } else {
+                    unansweredCount++;
+                }
+            }
+
+            resultsSummary.innerHTML = `
+                <p>Preguntas Correctas: <span class="correct-count">${correctCount}</span></p>
+                <p>Preguntas Incorrectas: <span class="incorrect-count">${incorrectCount}</span></p>
+                <p>Preguntas Sin Contestar: <span class="unanswered-count">${unansweredCount}</span></p>
+            `;
+
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // Function to reset the quiz
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            answeredQuestions = new Array(quizData.length).fill(false);
+            selectedAnswers = new Array(quizData.length).fill(null);
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear saved progress
+            loadQuestion(); // Load the first question
+        }
+
         // Event listeners for navigation buttons
         prevButton.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
@@ -1272,11 +1433,21 @@
             if (currentQuestionIndex < quizData.length - 1) {
                 currentQuestionIndex++;
                 loadQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                // If it's the last question and it's answered, show results
+                showResults();
             }
         });
 
-        // Initial load of the first question
-        loadQuestion();
+        // Event listener for the reset button
+        resetButton.addEventListener('click', resetQuiz);
+
+        // Event listener for the restart quiz button on the results page
+        restartQuizButton.addEventListener('click', resetQuiz);
+
+        // Initial load of the quiz
+        loadProgress(); // Try to load saved progress
+        loadQuestion(); // Load the current question (or first if no progress)
     </script>
 </body>
 </html>
