@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Interactivo de Redes</title>
+    <title>TCP/IP</title> <!-- Título del navegador -->
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -27,6 +27,13 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem; /* gap-6 */
+        }
+        .quiz-title {
+            font-size: 2rem; /* text-3xl */
+            font-weight: 800; /* font-extrabold */
+            color: #2c5282; /* blue-800 */
+            text-align: center;
+            margin-bottom: 2rem;
         }
         .question-text {
             font-size: 1.5rem; /* text-2xl */
@@ -84,7 +91,16 @@
         .feedback.incorrect {
             color: #dc3545; /* red-600 */
         }
-        .next-button, .restart-button {
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between; /* Space out the buttons */
+            align-items: center; /* Vertically align buttons */
+            width: 100%;
+            margin-top: 1.5rem; /* Add some margin above the buttons */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 1rem; /* Gap between buttons when wrapping */
+        }
+        .next-button, .restart-button-inline, .restart-button { /* Added restart-button-inline */
             background-color: #4299e1; /* blue-500 */
             color: white;
             padding: 1rem 2rem; /* py-4 px-8 */
@@ -94,9 +110,10 @@
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.1s ease;
             border: none;
-            align-self: center; /* Center the button */
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            text-align: center; /* Center text within buttons */
         }
-        .next-button:hover, .restart-button:hover {
+        .next-button:hover, .restart-button-inline:hover, .restart-button:hover {
             background-color: #3182ce; /* blue-600 */
             transform: translateY(-2px);
         }
@@ -117,24 +134,56 @@
             text-align: right;
             margin-bottom: 0.5rem; /* mb-2 */
         }
+        .results-detail {
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+            color: #2d3748;
+            text-align: center;
+        }
+        .results-detail p {
+            margin-bottom: 0.5rem;
+        }
+        .results-detail .correct-count {
+            color: #28a745;
+        }
+        .results-detail .incorrect-count {
+            color: #dc3545;
+        }
+        .results-detail .unanswered-count {
+            color: #ffc107;
+        }
     </style>
 </head>
 <body>
     <div id="quiz-app" class="quiz-container">
+        <h1 class="quiz-title" id="quiz-main-title">Test TCP/IP</h1> <!-- Título visible en la página -->
+
         <div class="question-counter" id="question-counter"></div>
         <div class="question-text" id="question-text"></div>
         <div id="options-container" class="flex flex-col">
             <!-- Options will be dynamically loaded here -->
         </div>
         <div id="feedback" class="feedback"></div>
-        <button id="next-button" class="next-button" disabled>Siguiente Pregunta</button>
+        <!-- Navigation buttons (Previous, Restart, and Next) -->
+        <div class="nav-buttons">
+            <button id="prev-button" class="next-button" disabled>Pregunta Anterior</button>
+            <button id="restart-button-inline" class="restart-button-inline hidden">Reiniciar Test</button> <!-- Botón de reiniciar en línea -->
+            <button id="next-button" class="next-button" disabled>Siguiente Pregunta</button>
+        </div>
         <div id="results-container" class="hidden">
             <div class="score-container" id="final-score"></div>
-            <button id="restart-button" class="restart-button">Reiniciar Test</button>
+            <div class="results-detail">
+                <p class="correct-count" id="correct-count"></p>
+                <p class="incorrect-count" id="incorrect-count"></p>
+                <p class="unanswered-count" id="unanswered-count"></p>
+            </div>
+            <!-- Restart button on the results screen -->
+            <button id="restart-button" class="restart-button mt-6">Reiniciar Test</button>
         </div>
     </div>
 
     <script>
+        // Array of quiz questions
         const questions = [
             {
                 question: "¿Cuál es el principal propósito del Modelo OSI en la arquitectura de red?",
@@ -1138,25 +1187,76 @@
             }
         ];
 
+        // Quiz state variables
         let currentQuestionIndex = 0;
         let score = 0;
         let selectedOption = null; // To store the currently selected option element
+        let userAnswers = []; // To store user's answers for each question
 
+        // Get DOM elements
+        const quizMainTitle = document.getElementById('quiz-main-title'); // New: Main title element
         const questionCounterElement = document.getElementById('question-counter');
         const questionTextElement = document.getElementById('question-text');
         const optionsContainer = document.getElementById('options-container');
         const feedbackElement = document.getElementById('feedback');
         const nextButton = document.getElementById('next-button');
+        const prevButton = document.getElementById('prev-button'); // Previous button
+        const restartButtonInline = document.getElementById('restart-button-inline'); // New: Inline restart button
         const resultsContainer = document.getElementById('results-container');
         const finalScoreElement = document.getElementById('final-score');
-        const restartButton = document.getElementById('restart-button');
+        const restartButton = document.getElementById('restart-button'); // Restart button on results page
+        const correctCountElement = document.getElementById('correct-count');
+        const incorrectCountElement = document.getElementById('incorrect-count');
+        const unansweredCountElement = document.getElementById('unanswered-count');
 
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            localStorage.setItem('quizState', JSON.stringify({
+                currentQuestionIndex: currentQuestionIndex,
+                score: score,
+                userAnswers: userAnswers
+            }));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem('quizState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                score = state.score;
+                userAnswers = state.userAnswers || []; // Ensure userAnswers is initialized
+            } else {
+                // Initialize userAnswers if no saved state
+                userAnswers = new Array(questions.length).fill(null);
+            }
+        }
+
+        // Function to display the current question
         function displayQuestion() {
             // Clear previous state
             optionsContainer.innerHTML = '';
             feedbackElement.textContent = '';
             nextButton.disabled = true;
             selectedOption = null;
+
+            // Show main quiz elements
+            quizMainTitle.classList.remove('hidden'); // Ensure title is visible
+            questionTextElement.classList.remove('hidden');
+            optionsContainer.classList.remove('hidden');
+            feedbackElement.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            restartButtonInline.classList.remove('hidden'); // Show inline restart button
+            questionCounterElement.classList.remove('hidden');
+            resultsContainer.classList.add('hidden'); // Hide results container
+
+            // Manage previous button visibility
+            if (currentQuestionIndex === 0) {
+                prevButton.disabled = true;
+            } else {
+                prevButton.disabled = false;
+            }
 
             if (currentQuestionIndex < questions.length) {
                 const currentQuestion = questions[currentQuestionIndex];
@@ -1171,11 +1271,23 @@
                     button.addEventListener('click', () => selectOption(button));
                     optionsContainer.appendChild(button);
                 });
+
+                // If user has already answered this question, load their answer and show feedback
+                const savedAnswer = userAnswers[currentQuestionIndex];
+                if (savedAnswer) {
+                    const selectedBtn = optionsContainer.querySelector(`[data-option="${savedAnswer.selectedOption}"]`);
+                    if (selectedBtn) {
+                        selectOption(selectedBtn); // Visually select the option
+                        checkAnswer(true); // Check answer without incrementing score again
+                    }
+                }
             } else {
                 showResults();
             }
+            saveQuizState(); // Save state after displaying question
         }
 
+        // Function to handle option selection
         function selectOption(button) {
             // If an option was previously selected, remove its 'selected' class
             if (selectedOption) {
@@ -1188,9 +1300,9 @@
             nextButton.disabled = false; // Enable next button once an option is selected
         }
 
-        function checkAnswer() {
+        // Function to check the answer
+        function checkAnswer(isFromLoad = false) {
             if (!selectedOption) {
-                // This should not happen if nextButton is disabled until an option is selected
                 return;
             }
 
@@ -1203,14 +1315,25 @@
                 btn.removeEventListener('click', () => selectOption(btn)); // Remove event listener
             });
 
+            // Store the user's answer
+            if (!isFromLoad) {
+                userAnswers[currentQuestionIndex] = {
+                    questionIndex: currentQuestionIndex,
+                    selectedOption: userAnswer,
+                    isCorrect: (userAnswer === correctAnswer)
+                };
+            }
+
             if (userAnswer === correctAnswer) {
-                score++;
+                if (!isFromLoad) { // Only increment score if not loading from storage
+                    score++;
+                }
                 feedbackElement.textContent = '¡Correcto!';
                 feedbackElement.classList.remove('incorrect');
                 feedbackElement.classList.add('correct');
                 selectedOption.classList.add('correct');
             } else {
-                feedbackElement.textContent = `Incorrecto. La respuesta correcta era: ${correctAnswer.toUpperCase()})`;
+                feedbackElement.textContent = `Incorrecto. La respuesta correcta era: ${correctAnswer.toUpperCase()}`;
                 feedbackElement.classList.remove('correct');
                 feedbackElement.classList.add('incorrect');
                 selectedOption.classList.add('incorrect');
@@ -1223,15 +1346,14 @@
                 });
             }
             nextButton.disabled = false; // Ensure next button is enabled to proceed
+            saveQuizState(); // Save state after checking answer
         }
 
+        // Function to move to the next question
         function nextQuestion() {
-            // First, check the answer if it hasn't been checked yet (e.g., if user clicks next without selecting)
-            // This logic is slightly redundant if nextButton is only enabled after selection,
-            // but good for robustness.
-            if (selectedOption && feedbackElement.textContent === '') {
+            // If an option was selected but the answer wasn't checked (e.g., direct next click after selection)
+            if (selectedOption && !userAnswers[currentQuestionIndex]) {
                 checkAnswer();
-                return; // Stop here, let the user see the feedback, then click next again
             }
 
             currentQuestionIndex++;
@@ -1242,26 +1364,72 @@
             }
         }
 
+        // Function to move to the previous question
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        // Function to show final results
         function showResults() {
+            // Hide quiz elements
+            quizMainTitle.classList.add('hidden'); // Hide title on results page
             questionTextElement.classList.add('hidden');
             optionsContainer.classList.add('hidden');
             feedbackElement.classList.add('hidden');
             nextButton.classList.add('hidden');
+            prevButton.classList.add('hidden'); // Hide previous button on results
+            restartButtonInline.classList.add('hidden'); // Hide inline restart button on results
             questionCounterElement.classList.add('hidden');
 
+            // Show results container
             resultsContainer.classList.remove('hidden');
             finalScoreElement.textContent = `Tu puntuación final es: ${score} de ${questions.length}`;
+
+            // Calculate detailed results
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let unansweredQuestions = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                const userAnswer = userAnswers[i];
+                if (userAnswer) {
+                    if (userAnswer.isCorrect) {
+                        correctAnswers++;
+                    } else {
+                        incorrectAnswers++;
+                    }
+                } else {
+                    unansweredQuestions++;
+                }
+            }
+
+            correctCountElement.textContent = `Respuestas Correctas: ${correctAnswers}`;
+            incorrectCountElement.textContent = `Respuestas Incorrectas: ${incorrectAnswers}`;
+            unansweredCountElement.textContent = `Preguntas Sin Contestar: ${unansweredQuestions}`;
+
+            // Clear localStorage after showing results
+            localStorage.removeItem('quizState');
         }
 
+        // Function to restart the quiz
         function restartQuiz() {
             currentQuestionIndex = 0;
             score = 0;
             selectedOption = null;
+            userAnswers = new Array(questions.length).fill(null); // Reset all answers
+            localStorage.removeItem('quizState'); // Clear saved state
 
+            // Show quiz elements
+            quizMainTitle.classList.remove('hidden'); // Show title on restart
             questionTextElement.classList.remove('hidden');
             optionsContainer.classList.remove('hidden');
             feedbackElement.classList.remove('hidden');
             nextButton.classList.remove('hidden');
+            prevButton.classList.remove('hidden'); // Show previous button on restart
+            restartButtonInline.classList.remove('hidden'); // Show inline restart button
             questionCounterElement.classList.remove('hidden');
             resultsContainer.classList.add('hidden');
 
@@ -1270,10 +1438,15 @@
 
         // Event Listeners
         nextButton.addEventListener('click', nextQuestion);
-        restartButton.addEventListener('click', restartQuiz);
+        prevButton.addEventListener('click', prevQuestion); // Event listener for previous button
+        restartButton.addEventListener('click', restartQuiz); // Restart button on results page
+        restartButtonInline.addEventListener('click', restartQuiz); // Inline restart button
 
-        // Initial display
-        document.addEventListener('DOMContentLoaded', displayQuestion);
+        // Initial display on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizState(); // Load state when the page loads
+            displayQuestion(); // Display the current question based on loaded state
+        });
 
         // Add event listener to options container to delegate clicks
         optionsContainer.addEventListener('click', (event) => {
@@ -1283,7 +1456,6 @@
                 checkAnswer();
             }
         });
-
     </script>
 </body>
 </html>
