@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Interactivo</title>
+    <title>HTTP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -28,6 +28,13 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+        }
+        .quiz-title { /* New style for the visible title */
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* text-gray-900 */
+            text-align: center;
+            margin-bottom: 20px;
         }
         .question-card {
             background-color: #f9fafb;
@@ -84,6 +91,7 @@
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Centrar verticalmente los botones */
             margin-top: 20px;
         }
         .navigation-buttons button {
@@ -94,6 +102,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            flex-grow: 1; /* Permite que los botones crezcan */
+            margin: 0 5px; /* Espacio entre botones */
         }
         .navigation-buttons button:hover {
             background-color: #4338ca;
@@ -102,21 +112,71 @@
             background-color: #9ca3af;
             cursor: not-allowed;
         }
+        .results-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+        .results-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .results-item {
+            font-size: 1.125rem;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+        .results-item strong {
+            color: #1f2937;
+        }
+        .restart-button-results {
+            padding: 12px 25px;
+            border-radius: 8px;
+            background-color: #ef4444; /* Rojo para reiniciar */
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+        .restart-button-results:hover {
+            background-color: #dc2626;
+        }
     </style>
 </head>
 <body>
-    <div class="quiz-container">
+    <div class="quiz-container" id="quiz-container">
+        <h1 class="quiz-title">Test de HTTP</h1> <!-- Added visible title -->
         <div id="question-display" class="question-card">
-            <!-- Question and options will be loaded here by JavaScript -->
+            <!-- La pregunta y las opciones se cargarán aquí mediante JavaScript -->
         </div>
         <div class="navigation-buttons">
             <button id="prev-btn" disabled>Anterior</button>
+            <button id="restart-btn">Reiniciar</button> <!-- Botón de Reiniciar -->
             <button id="next-btn">Siguiente</button>
         </div>
     </div>
 
+    <div class="results-container hidden" id="results-container">
+        <div class="results-title">Resultados del Test HTTP</div>
+        <div class="results-item">Preguntas Correctas: <strong id="correct-answers-count">0</strong></div>
+        <div class="results-item">Preguntas Incorrectas: <strong id="incorrect-answers-count">0</strong></div>
+        <div class="results-item">Preguntas Sin Contestar: <strong id="unanswered-questions-count">0</strong></div>
+        <button id="restart-btn-results" class="restart-button-results">Reiniciar Test</button>
+    </div>
+
     <script>
-        // Array of quiz questions and their correct answers
+        // Array de preguntas del test y sus respuestas correctas
         const questions = [
             {
                 question: '¿Qué tipo de redes son consideradas el "Backbone de Internet" y tienen un alcance internacional?',
@@ -621,15 +681,50 @@
         ];
 
         let currentQuestionIndex = 0;
+        let userAnswers = []; // Almacena las respuestas del usuario
+        const quizContainer = document.getElementById('quiz-container');
         const questionDisplay = document.getElementById('question-display');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const resultsContainer = document.getElementById('results-container');
+        const correctAnswersCount = document.getElementById('correct-answers-count');
+        const incorrectAnswersCount = document.getElementById('incorrect-answers-count');
+        const unansweredQuestionsCount = document.getElementById('unanswered-questions-count');
+        const restartBtnResults = document.getElementById('restart-btn-results');
 
-        // Function to load a question
+        // Función para cargar las respuestas guardadas del localStorage
+        function loadUserAnswers() {
+            const savedAnswers = localStorage.getItem('userAnswers');
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Inicializa userAnswers con null para cada pregunta si no hay respuestas guardadas
+                userAnswers = new Array(questions.length).fill(null);
+            }
+
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+        }
+
+        // Función para guardar las respuestas en localStorage
+        function saveUserAnswers() {
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+        }
+
+        // Función para cargar una pregunta
         function loadQuestion() {
+            // Ocultar resultados si están visibles
+            quizContainer.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+
             const questionData = questions[currentQuestionIndex];
+            // Add question number to the display
             questionDisplay.innerHTML = `
-                <div class="question-text">${questionData.question}</div>
+                <div class="question-text">${currentQuestionIndex + 1}. ${questionData.question}</div>
                 <div class="options-container">
                     ${questionData.options.map((option, index) => `
                         <button data-option="${option}" class="rounded-lg">${option}</button>
@@ -638,22 +733,44 @@
                 <div class="feedback" id="feedback-message"></div>
             `;
 
-            // Add event listeners to options
+            // Añadir event listeners a las opciones
             document.querySelectorAll('.options-container button').forEach(button => {
                 button.addEventListener('click', handleAnswerClick);
             });
 
+            // Si ya hay una respuesta guardada para esta pregunta, mostrarla
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                const selectedOptionButton = document.querySelector(`button[data-option="${savedAnswer.answer}"]`);
+                if (selectedOptionButton) {
+                    applyAnswerFeedback(selectedOptionButton, savedAnswer.answer, questions[currentQuestionIndex].correctAnswer);
+                }
+            }
+
             updateNavigationButtons();
         }
 
-        // Function to handle answer click
+        // Función para manejar el clic en una respuesta
         function handleAnswerClick(event) {
             const selectedOption = event.target;
             const userAnswer = selectedOption.dataset.option;
             const correctAnswer = questions[currentQuestionIndex].correctAnswer;
+
+            // Guardar la respuesta del usuario
+            userAnswers[currentQuestionIndex] = {
+                answer: userAnswer,
+                isCorrect: userAnswer === correctAnswer
+            };
+            saveUserAnswers(); // Guardar en localStorage
+
+            applyAnswerFeedback(selectedOption, userAnswer, correctAnswer);
+        }
+
+        // Función para aplicar el feedback visual a la respuesta
+        function applyAnswerFeedback(selectedOption, userAnswer, correctAnswer) {
             const feedbackMessage = document.getElementById('feedback-message');
 
-            // Disable all buttons after an answer is selected
+            // Deshabilitar todos los botones después de seleccionar una respuesta
             document.querySelectorAll('.options-container button').forEach(button => {
                 button.disabled = true;
             });
@@ -669,7 +786,7 @@
                 feedbackMessage.classList.remove('correct-feedback');
                 feedbackMessage.classList.add('incorrect-feedback');
 
-                // Highlight the correct answer
+                // Resaltar la respuesta correcta
                 document.querySelectorAll('.options-container button').forEach(button => {
                     if (button.dataset.option === correctAnswer) {
                         button.classList.add('correct');
@@ -678,30 +795,85 @@
             }
         }
 
-        // Update navigation button states
+        // Actualizar el estado de los botones de navegación
         function updateNavigationButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === questions.length - 1;
+
+            // Si es la última pregunta, el botón "Siguiente" debería llevar a los resultados
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Ver Resultados';
+                nextBtn.disabled = false; // Asegurar que el botón esté habilitado para ver resultados
+            } else {
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.disabled = false; // Habilitado para navegar a la siguiente pregunta
+            }
         }
 
-        // Event listener for previous button
+        // Función para mostrar los resultados finales
+        function showResults() {
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] === null) {
+                    unanswered++;
+                } else if (userAnswers[i].isCorrect) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
+            }
+
+            correctAnswersCount.textContent = correct;
+            incorrectAnswersCount.textContent = incorrect;
+            unansweredQuestionsCount.textContent = unanswered;
+
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // Función para reiniciar el test
+        function restartTest() {
+            localStorage.removeItem('userAnswers');
+            localStorage.removeItem('currentQuestionIndex');
+            userAnswers = new Array(questions.length).fill(null);
+            currentQuestionIndex = 0;
+            loadQuestion();
+        }
+
+        // Event listener para el botón "Anterior"
         prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
+                saveUserAnswers(); // Guardar el índice actual
                 loadQuestion();
             }
         });
 
-        // Event listener for next button
+        // Event listener para el botón "Siguiente"
         nextBtn.addEventListener('click', () => {
             if (currentQuestionIndex < questions.length - 1) {
                 currentQuestionIndex++;
+                saveUserAnswers(); // Guardar el índice actual
                 loadQuestion();
+            } else {
+                // Si es la última pregunta y se presiona "Siguiente", mostrar resultados
+                showResults();
             }
         });
 
-        // Initial load of the first question
-        window.onload = loadQuestion;
+        // Event listener para el botón "Reiniciar" en la navegación
+        restartBtn.addEventListener('click', restartTest);
+
+        // Event listener para el botón "Reiniciar Test" en la pantalla de resultados
+        restartBtnResults.addEventListener('click', restartTest);
+
+        // Carga inicial: cargar respuestas y la primera pregunta
+        window.onload = () => {
+            loadUserAnswers();
+            loadQuestion();
+        };
     </script>
 </body>
 </html>
