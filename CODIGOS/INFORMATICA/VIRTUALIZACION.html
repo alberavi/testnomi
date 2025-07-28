@@ -80,13 +80,11 @@
             font-style: italic;
             display: none; /* Hidden by default */
         }
-        .answer-button.incorrect + .solution-text {
-            display: block; /* Show solution for incorrect answers */
-        }
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            gap: 10px; /* Space between buttons */
         }
         .nav-button {
             padding: 10px 20px;
@@ -98,6 +96,14 @@
             font-size: 1rem;
             font-weight: 600;
             transition: background-color 0.2s ease-in-out;
+            flex-grow: 1; /* Allow buttons to grow */
+            text-align: center;
+        }
+        .nav-button.restart-button {
+            background-color: #ef4444; /* Red color for restart */
+        }
+        .nav-button.restart-button:hover {
+            background-color: #dc2626;
         }
         .nav-button:hover {
             background-color: #4338ca;
@@ -119,6 +125,37 @@
             font-size: 1rem;
             color: #6b7280;
         }
+        .results-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .results-card h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .results-card p {
+            font-size: 1.1rem;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+        .results-card .score-correct {
+            color: #065f46;
+            font-weight: 600;
+        }
+        .results-card .score-incorrect {
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .results-card .score-unanswered {
+            color: #6b7280;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -128,11 +165,13 @@
         <div id="quizContent"></div>
         <div class="navigation-buttons">
             <button id="prevButton" class="nav-button" disabled>Anterior</button>
+            <button id="restartButton" class="nav-button restart-button">Reiniciar Test</button>
             <button id="nextButton" class="nav-button">Siguiente</button>
         </div>
     </div>
 
     <script>
+        // Array of quiz questions
         const questions = [
             {
                 question: "¿Qué es una virtualización?",
@@ -1237,24 +1276,74 @@
         ];
 
         let currentQuestionIndex = 0;
+        // Store user answers: array of selected option index for each question
+        let userAnswers = [];
+
         const quizContent = document.getElementById('quizContent');
         const prevButton = document.getElementById('prevButton');
         const nextButton = document.getElementById('nextButton');
+        const restartButton = document.getElementById('restartButton');
         const progressIndicator = document.getElementById('progressIndicator');
 
+        // Function to save current state to localStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Function to load state from localStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // Initialize userAnswers if no saved data
+                userAnswers = new Array(questions.length).fill(null);
+            }
+        }
+
+        // Function to clear state from localStorage
+        function clearState() {
+            localStorage.removeItem('currentQuestionIndex');
+            localStorage.removeItem('userAnswers');
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            renderQuestion();
+        }
+
+        // Function to render the current question or results
         function renderQuestion() {
+            // If all questions are answered, show results
+            if (currentQuestionIndex === questions.length) {
+                showResults();
+                return;
+            }
+
             const questionData = questions[currentQuestionIndex];
+            const userAnswer = userAnswers[currentQuestionIndex];
+
             quizContent.innerHTML = `
                 <div class="question-card">
                     <p class="question-text">${questionData.question}</p>
                     <div id="optionsContainer">
                         ${questionData.options.map((option, index) => `
-                            <button class="answer-button" data-index="${index}" data-correct="${option.startsWith(questionData.correctAnswer)}">
+                            <button class="answer-button" 
+                                data-index="${index}" 
+                                data-correct="${option.startsWith(questionData.correctAnswer)}"
+                                ${userAnswer !== null && userAnswer !== undefined ? 'disabled' : ''}
+                                class="${userAnswer === index ? (option.startsWith(questionData.correctAnswer) ? 'correct' : 'incorrect') : ''}
+                                ${userAnswer !== null && option.startsWith(questionData.correctAnswer) ? 'correct' : ''}"
+                            >
                                 ${option}
                             </button>
                         `).join('')}
                     </div>
-                    <p class="solution-text" id="solutionText">
+                    <p class="solution-text" id="solutionText" style="display: ${userAnswer !== null ? 'block' : 'none'};">
                         <strong>Solución:</strong> ${questionData.solution}
                     </p>
                 </div>
@@ -1264,17 +1353,35 @@
             const answerButtons = quizContent.querySelectorAll('.answer-button');
             answerButtons.forEach(button => {
                 button.addEventListener('click', handleAnswerClick);
+                // Apply correct/incorrect classes if already answered
+                if (userAnswer !== null && parseInt(button.dataset.index) === userAnswer) {
+                    if (button.dataset.correct === 'true') {
+                        button.classList.add('correct');
+                    } else {
+                        button.classList.add('incorrect');
+                    }
+                }
+                // Highlight correct answer if already answered and not correct
+                if (userAnswer !== null && button.dataset.correct === 'true') {
+                    button.classList.add('correct');
+                }
             });
 
             updateNavigationButtons();
             updateProgressIndicator();
+            saveState(); // Save state after rendering
         }
 
+        // Function to handle answer click
         function handleAnswerClick(event) {
             const clickedButton = event.target;
+            const selectedOptionIndex = parseInt(clickedButton.dataset.index, 10);
             const isCorrect = clickedButton.dataset.correct === 'true';
             const solutionText = document.getElementById('solutionText');
             const optionsContainer = document.getElementById('optionsContainer');
+
+            // Store the user's answer
+            userAnswers[currentQuestionIndex] = selectedOptionIndex;
 
             // Disable all answer buttons for the current question
             optionsContainer.querySelectorAll('.answer-button').forEach(button => {
@@ -1293,17 +1400,77 @@
                 });
                 solutionText.style.display = 'block'; // Show solution for incorrect answers
             }
+            saveState(); // Save state after answering
         }
 
+        // Function to update navigation button states
         function updateNavigationButtons() {
             prevButton.disabled = currentQuestionIndex === 0;
-            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+            nextButton.disabled = currentQuestionIndex === questions.length; // Disable next if on results page
+            
+            // Show/hide navigation buttons based on results page
+            if (currentQuestionIndex === questions.length) {
+                prevButton.style.display = 'none';
+                nextButton.style.display = 'none';
+                restartButton.style.display = 'block'; // Only show restart on results
+            } else {
+                prevButton.style.display = 'block';
+                nextButton.style.display = 'block';
+                restartButton.style.display = 'block';
+            }
         }
 
+        // Function to update progress indicator
         function updateProgressIndicator() {
-            progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            if (currentQuestionIndex < questions.length) {
+                progressIndicator.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            } else {
+                progressIndicator.textContent = 'Test Finalizado';
+            }
         }
 
+        // Function to show final results
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null || userAnswer === undefined) {
+                    unansweredCount++;
+                } else {
+                    const selectedOption = question.options[userAnswer];
+                    if (selectedOption.startsWith(question.correctAnswer)) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            });
+
+            quizContent.innerHTML = `
+                <div class="results-card">
+                    <h2>Resultados del Test</h2>
+                    <p>Preguntas Correctas: <span class="score-correct">${correctCount}</span></p>
+                    <p>Preguntas Incorrectas: <span class="score-incorrect">${incorrectCount}</span></p>
+                    <p>Preguntas Sin Contestar: <span class="score-unanswered">${unansweredCount}</span></p>
+                    <button id="restartButtonResults" class="nav-button restart-button mt-4">Reiniciar Test</button>
+                </div>
+            `;
+            // Hide progress indicator on results page
+            progressIndicator.style.display = 'none';
+
+            // Add event listener to restart button on results page
+            document.getElementById('restartButtonResults').addEventListener('click', () => {
+                clearState();
+                progressIndicator.style.display = 'block'; // Show progress indicator again
+            });
+
+            updateNavigationButtons();
+        }
+
+        // Event listener for previous button
         prevButton.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
@@ -1311,15 +1478,25 @@
             }
         });
 
+        // Event listener for next button
         nextButton.addEventListener('click', () => {
-            if (currentQuestionIndex < questions.length - 1) {
+            if (currentQuestionIndex < questions.length) {
                 currentQuestionIndex++;
                 renderQuestion();
             }
         });
 
-        // Initial render
-        renderQuestion();
+        // Event listener for restart button
+        restartButton.addEventListener('click', () => {
+            clearState();
+            progressIndicator.style.display = 'block'; // Show progress indicator again
+        });
+
+        // Initial load and render
+        window.onload = () => {
+            loadState();
+            renderQuestion();
+        };
     </script>
 </body>
 </html>
