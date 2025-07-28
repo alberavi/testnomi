@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Seguridad en SI</title>
+    <title>SEGURIDAD EN SISTEMAS OPERATIVOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -108,6 +108,7 @@
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            gap: 10px; /* Space between buttons */
         }
         .navigation-buttons button {
             padding: 12px 25px;
@@ -116,6 +117,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
         }
         .navigation-buttons button.prev {
             background-color: #cbd5e0;
@@ -133,6 +135,15 @@
         }
         .navigation-buttons button.next:hover {
             background-color: #3182ce;
+            transform: translateY(-1px);
+        }
+        .navigation-buttons button.restart-middle {
+            background-color: #ffc107; /* Yellow for restart */
+            color: #333;
+            border: 1px solid #ffb300;
+        }
+        .navigation-buttons button.restart-middle:hover {
+            background-color: #e0a800;
             transform: translateY(-1px);
         }
         .navigation-buttons button:disabled {
@@ -161,7 +172,10 @@
             color: #2d3748;
             margin-top: 20px;
         }
-        .restart-button {
+        .score-container p {
+            margin-bottom: 10px;
+        }
+        .restart-button-final {
             display: block;
             margin: 20px auto 0;
             padding: 12px 30px;
@@ -174,7 +188,7 @@
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
         }
-        .restart-button:hover {
+        .restart-button-final:hover {
             background-color: #45a049;
             transform: translateY(-1px);
         }
@@ -182,7 +196,7 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div id="quiz-app" class="quiz-container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Test de Seguridad en Sistemas de Información</h1>
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">SEGURIDAD EN SISTEMAS OPERATIVOS</h1>
 
         <div class="progress-bar-container">
             <div id="progress-bar" class="progress-bar"></div>
@@ -194,16 +208,18 @@
 
         <div class="navigation-buttons">
             <button id="prev-btn" class="prev" disabled>Anterior</button>
+            <button id="restart-middle-btn" class="restart-middle">Reiniciar</button>
             <button id="next-btn" class="next">Siguiente</button>
         </div>
 
         <div id="score-display" class="score-container hidden">
             <!-- Score will be displayed here -->
         </div>
-        <button id="restart-btn" class="restart-button hidden">Reiniciar Test</button>
+        <button id="restart-btn-final" class="restart-button-final hidden">Reiniciar Test</button>
     </div>
 
     <script>
+        // Array of quiz questions
         const questions = [
             {
                 question: "¿Cuál es el objetivo principal de la seguridad en sistemas de información (SI)?",
@@ -707,17 +723,52 @@
             }
         ];
 
+        // Global variables for quiz state
         let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null);
         let score = 0;
-        const userAnswers = new Array(questions.length).fill(null);
 
+        // DOM elements
         const questionDisplay = document.getElementById('question-display');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
+        const restartMiddleBtn = document.getElementById('restart-middle-btn');
         const progressBar = document.getElementById('progress-bar');
         const scoreDisplay = document.getElementById('score-display');
-        const restartBtn = document.getElementById('restart-btn');
+        const restartBtnFinal = document.getElementById('restart-btn-final');
 
+        // Function to save quiz state to localStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('score', score);
+        }
+
+        // Function to load quiz state from localStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedScore = localStorage.getItem('score');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedScore !== null) {
+                score = parseInt(savedScore);
+            }
+
+            // If all questions are answered, show results directly
+            if (userAnswers.every(answer => answer !== null) && currentQuestionIndex === questions.length - 1) {
+                showResults();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        // Function to render the current question
         function renderQuestion() {
             const q = questions[currentQuestionIndex];
             questionDisplay.innerHTML = `
@@ -751,8 +802,10 @@
 
             updateNavigationButtons();
             updateProgressBar();
+            saveState(); // Save state after rendering
         }
 
+        // Handler for answer clicks
         function handleAnswerClick(event) {
             const selectedOption = event.target.dataset.option;
             const currentQuestion = questions[currentQuestionIndex];
@@ -775,21 +828,26 @@
             showFeedback(selectedOption);
 
             // Update score if it's a new correct answer
+            // Check if the answer was previously null or incorrect to avoid double counting
+            const previousAnswer = userAnswers[currentQuestionIndex];
             if (selectedOption === currentQuestion.correctAnswer) {
-                if (!questionCard.classList.contains('correct') && !questionCard.classList.contains('incorrect')) {
+                if (previousAnswer !== currentQuestion.correctAnswer) { // Only increment if it wasn't already correct
                     score++;
                 }
                 questionCard.classList.add('correct');
                 questionCard.classList.remove('incorrect');
             } else {
-                if (questionCard.classList.contains('correct')) {
-                    score--; // Decrement if it was previously correct and now changed to incorrect
+                if (previousAnswer === currentQuestion.correctAnswer) { // Decrement if it was correct and now changed to incorrect
+                    score--;
                 }
                 questionCard.classList.add('incorrect');
                 questionCard.classList.remove('correct');
             }
+            saveState(); // Save state after answer
+            updateNavigationButtons(); // Update button state after answering
         }
 
+        // Function to show feedback for the selected answer
         function showFeedback(selectedOption) {
             const currentQuestion = questions[currentQuestionIndex];
             const feedbackElement = document.getElementById(`feedback-${currentQuestionIndex}`);
@@ -813,36 +871,84 @@
             feedbackElement.style.display = 'block';
         }
 
+        // Function to update navigation button states
         function updateNavigationButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null; // Allow next only if answered
-            if (currentQuestionIndex === questions.length - 1) {
+            // Next button is disabled only if it's the last question AND it hasn't been answered yet.
+            // If it's the last question and answered, it should become "Ver Resultados".
+            nextBtn.disabled = (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] === null);
+
+            if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
                 nextBtn.textContent = 'Ver Resultados';
-            } else {
+            } else if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finalizar Test';
+            }
+            else {
                 nextBtn.textContent = 'Siguiente';
             }
         }
 
+        // Function to update the progress bar
         function updateProgressBar() {
             const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
             progressBar.style.width = `${progress}%`;
         }
 
+        // Function to show final results
         function showResults() {
             questionDisplay.classList.add('hidden');
             prevBtn.classList.add('hidden');
             nextBtn.classList.add('hidden');
+            restartMiddleBtn.classList.add('hidden'); // Hide middle restart button
             progressBar.classList.add('hidden');
             scoreDisplay.classList.remove('hidden');
-            restartBtn.classList.remove('hidden');
+            restartBtnFinal.classList.remove('hidden');
+
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let unansweredQuestions = 0;
+
+            userAnswers.forEach((answer, index) => {
+                if (answer === null) {
+                    unansweredQuestions++;
+                } else if (answer === questions[index].correctAnswer) {
+                    correctAnswers++;
+                } else {
+                    incorrectAnswers++;
+                }
+            });
 
             scoreDisplay.innerHTML = `
-                <p>Has completado el test.</p>
-                <p>Tu puntuación final es: ${score} de ${questions.length}</p>
-                <p>${(score / questions.length * 100).toFixed(2)}% de acierto.</p>
+                <p class="text-2xl font-bold mb-4">¡Test Completado!</p>
+                <p>Preguntas Correctas: <span class="text-green-600">${correctAnswers}</span></p>
+                <p>Preguntas Incorrectas: <span class="text-red-600">${incorrectAnswers}</span></p>
+                <p>Preguntas Sin Contestar: <span class="text-yellow-600">${unansweredQuestions}</span></p>
+                <p class="mt-4">Tu puntuación final es: <span class="text-blue-600">${score}</span> de ${questions.length}</p>
+                <p class="text-xl font-semibold">${(score / questions.length * 100).toFixed(2)}% de acierto.</p>
             `;
+            saveState(); // Save state after showing results
         }
 
+        // Function to reset the quiz
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            localStorage.removeItem('currentQuestionIndex');
+            localStorage.removeItem('userAnswers');
+            localStorage.removeItem('score');
+
+            questionDisplay.classList.remove('hidden');
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            restartMiddleBtn.classList.remove('hidden'); // Show middle restart button
+            progressBar.classList.remove('hidden');
+            scoreDisplay.classList.add('hidden');
+            restartBtnFinal.classList.add('hidden');
+            renderQuestion();
+        }
+
+        // Event Listeners
         prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
@@ -858,25 +964,20 @@
                 // If on the last question and answered, show results
                 if (userAnswers[currentQuestionIndex] !== null) {
                     showResults();
+                } else {
+                    // If on the last question but not answered, still allow to "Finalizar Test"
+                    // User will see unanswered questions in the results
+                    showResults();
                 }
             }
         });
 
-        restartBtn.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.fill(null);
-            questionDisplay.classList.remove('hidden');
-            prevBtn.classList.remove('hidden');
-            nextBtn.classList.remove('hidden');
-            progressBar.classList.remove('hidden');
-            scoreDisplay.classList.add('hidden');
-            restartBtn.classList.add('hidden');
-            renderQuestion();
-        });
+        restartMiddleBtn.addEventListener('click', resetQuiz); // Restart button in the middle
+        restartBtnFinal.addEventListener('click', resetQuiz); // Restart button on the results screen
 
-        // Initial render
-        renderQuestion();
+        // Initial load of the quiz state
+        loadState();
     </script>
 </body>
 </html>
+
