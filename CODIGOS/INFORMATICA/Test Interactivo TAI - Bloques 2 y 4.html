@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Interactivo TAI - Bloques 2 y 4</title>
+    <title>TEST BLOQUE 2 Y 4</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -109,6 +109,7 @@
             justify-content: center;
             gap: 1rem;
             margin-top: 2rem;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
         }
         .nav-button {
             background-color: #4f46e5; /* Primary blue button */
@@ -129,6 +130,43 @@
             cursor: not-allowed;
         }
 
+        /* Results section styling */
+        .results-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .results-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 1rem;
+        }
+        .results-item {
+            font-size: 1.1rem;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+        }
+        .results-item.correct {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .results-item.incorrect {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .results-item.unanswered {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
         /* Animations */
         @keyframes pulseCorrect {
             0% { transform: scale(1); }
@@ -145,7 +183,7 @@
 
         /* Responsive adjustments */
         @media (max-width: 640px) {
-            .quiz-container {
+            .quiz-container, .results-container {
                 padding: 1.5rem;
                 border-radius: 1rem;
                 margin: 0.5rem;
@@ -170,12 +208,18 @@
                 width: 100%;
                 padding: 0.6rem;
             }
+            .results-title {
+                font-size: 1.5rem;
+            }
+            .results-item {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div id="quiz-app" class="quiz-container">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">Test Interactivo TAI - Bloques 2 y 4 (100 Preguntas)</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">TEST BLOQUE 2 Y 4</h1>
         <div id="question-area">
             <!-- Question will be loaded here by JavaScript -->
             <p class="question-text" id="question-text"></p>
@@ -187,10 +231,19 @@
                 <p class="explanation-text" id="explanation-text"></p>
             </div>
         </div>
+        <div id="results-area" class="results-container hidden">
+            <h2 class="results-title">Resultados del Test</h2>
+            <p id="correct-count" class="results-item correct"></p>
+            <p id="incorrect-count" class="results-item incorrect"></p>
+            <p id="unanswered-count" class="results-item unanswered"></p>
+            <button id="restart-quiz-results-btn" class="nav-button mt-4">Reiniciar Test</button>
+        </div>
+
         <div class="navigation-buttons">
-            <button id="check-answer-btn" class="nav-button">Comprobar Respuesta</button>
+            <button id="prev-question-btn" class="nav-button hidden">Pregunta Anterior</button>
+            <button id="restart-quiz-btn" class="nav-button">Reiniciar Test</button>
+            <button id="skip-question-btn" class="nav-button hidden">Saltar Pregunta</button>
             <button id="next-question-btn" class="nav-button hidden">Siguiente Pregunta</button>
-            <button id="restart-quiz-btn" class="nav-button hidden">Reiniciar Test</button>
         </div>
     </div>
 
@@ -218,7 +271,7 @@
                         'd) Disponer del puerto TCP/80, configurando el servidor web para que lleve a cabo una redirección automática de HTTP a HTTPS.'
                     ],
                     correctAnswer: 'd) Disponer del puerto TCP/80, configurando el servidor web para que lleve a cabo una redirección automática de HTTP a HTTPS.',
-                    explanation: 'La práctica recomendada por el CCN (y en general en seguridad web) es permitir el acceso al puerto 80 (HTTP) pero configurar el servidor para que automáticamente redirija todo el tráfico hacia el puerto 443 (HTTPS), garantizando que las comunicaciones siempre viajen cifradas.'
+                    explanation: 'La práctica recomendada por el CCN (y en general en seguridad web) es permitir el acceso al puerto 80 (HTTP) pero configurar el servidor para que automáticamente redirija todo el tráfico hacia el puerto 443 (HTTPS), garantizando que las comunicaciones siempre viajan cifradas.'
                 },
                 {
                     question: '4. El CPD donde está alojado el sistema tiene una puerta cuyo control de acceso es con tarjeta inteligente y PIN. Hace dos días, se supo que alguien no autorizado había entrado esperando agazapado a que alguien autorizado entrase, pasando detrás de él sin que éste advirtiera que tenía a un intruso detrás. Este incidente de ingeniería social en seguridad física se conoce con el nombre de:',
@@ -1033,7 +1086,7 @@
                         'd) JavaScript'
                     ],
                     correctAnswer: 'd) JavaScript',
-                    explanation: 'JavaScript es el lenguaje de programación fundamental para el desarrollo web frontend, ejecutándose en el navegador. Con la aparición de Node.js, JavaScript también se ha convertido en una opción muy popular para el desarrollo de backend, permitiendo un stack completo con un solo lenguaje.'
+                    explanation: 'JavaScript es un lenguaje de programación fundamental para el desarrollo web frontend, ejecutándose en el navegador. Con la aparición de Node.js, JavaScript también se ha convertido en una opción muy popular para el desarrollo de backend, permitiendo un stack completo con un solo lenguaje.'
                 },
                 {
                     question: '89. ¿Qué es un "token JWT" (JSON Web Token) en el contexto de la autenticación y autorización?',
@@ -1170,67 +1223,149 @@
             ];
 
             let currentQuestionIndex = 0;
-            let selectedOption = null;
+            let userSelectedAnswers = []; // Stores the selected option string for each question
+            let questionResults = []; // Stores 'answered_correct', 'answered_incorrect', or 'unanswered' for each question
 
+            const quizContainer = document.getElementById('quiz-app');
+            const questionArea = document.getElementById('question-area');
+            const resultsArea = document.getElementById('results-area');
             const questionTextElement = document.getElementById('question-text');
             const optionsContainer = document.getElementById('options-container');
             const feedbackContainer = document.getElementById('feedback-container');
             const feedbackTitle = document.getElementById('feedback-title');
             const explanationText = document.getElementById('explanation-text');
-            const checkAnswerBtn = document.getElementById('check-answer-btn');
-            const nextQuestionBtn = document.getElementById('next-question-btn');
-            const restartQuizBtn = document.getElementById('restart-quiz-btn');
 
+            // Removed checkAnswerBtn as it's no longer needed
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            const prevQuestionBtn = document.getElementById('prev-question-btn');
+            const restartQuizBtn = document.getElementById('restart-quiz-btn'); // Main restart button
+            const skipQuestionBtn = document.getElementById('skip-question-btn'); // New skip button
+            const restartQuizResultsBtn = document.getElementById('restart-quiz-results-btn'); // Restart button on results screen
+
+            const correctCountElement = document.getElementById('correct-count');
+            const incorrectCountElement = document.getElementById('incorrect-count');
+            const unansweredCountElement = document.getElementById('unanswered-count');
+
+            const LOCAL_STORAGE_KEY = 'quizStateTAI';
+
+            /**
+             * Loads the quiz state from localStorage.
+             * If no state is found, initializes default state.
+             */
+            function loadState() {
+                try {
+                    const storedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+                    if (storedState) {
+                        const parsedState = JSON.parse(storedState);
+                        currentQuestionIndex = parsedState.currentQuestionIndex || 0;
+                        userSelectedAnswers = parsedState.userSelectedAnswers || new Array(questions.length).fill(null);
+                        questionResults = parsedState.questionResults || new Array(questions.length).fill('unanswered');
+                    } else {
+                        // Initialize if no state found
+                        initializeQuizState();
+                    }
+                } catch (e) {
+                    console.error("Error loading state from localStorage, initializing new quiz.", e);
+                    initializeQuizState();
+                }
+            }
+
+            /**
+             * Saves the current quiz state to localStorage.
+             */
+            function saveState() {
+                const stateToSave = {
+                    currentQuestionIndex: currentQuestionIndex,
+                    userSelectedAnswers: userSelectedAnswers,
+                    questionResults: questionResults
+                };
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+            }
+
+            /**
+             * Initializes or resets the quiz state.
+             */
+            function initializeQuizState() {
+                currentQuestionIndex = 0;
+                userSelectedAnswers = new Array(questions.length).fill(null);
+                questionResults = new Array(questions.length).fill('unanswered');
+                saveState(); // Save initial empty state
+            }
+
+            /**
+             * Loads and displays the current question.
+             */
             function loadQuestion() {
+                // Ensure we are in quiz view
+                questionArea.classList.remove('hidden');
+                resultsArea.classList.add('hidden');
+
                 const currentQuestion = questions[currentQuestionIndex];
-                questionTextElement.textContent = currentQuestion.question; // Question number is already in the text
+                questionTextElement.textContent = currentQuestion.question;
                 optionsContainer.innerHTML = ''; // Clear previous options
                 feedbackContainer.classList.add('hidden'); // Hide feedback
                 feedbackContainer.classList.remove('correct', 'incorrect'); // Clear feedback styling
-                selectedOption = null; // Reset selected option
 
-                currentQuestion.options.forEach((option, index) => {
+                const answered = userSelectedAnswers[currentQuestionIndex] !== null;
+
+                currentQuestion.options.forEach((option) => {
                     const button = document.createElement('button');
                     button.textContent = option;
                     button.classList.add('option-button');
                     button.setAttribute('data-option', option);
-                    button.addEventListener('click', () => selectOption(button));
+
+                    if (answered) {
+                        // If already answered, disable and show correct/incorrect styling
+                        button.classList.add('disabled');
+                        if (option === currentQuestion.correctAnswer) {
+                            button.classList.add('correct');
+                        } else if (option === userSelectedAnswers[currentQuestionIndex]) {
+                            button.classList.add('incorrect');
+                        }
+                    } else {
+                        // Only add click listener if not answered yet - now directly checks answer
+                        button.addEventListener('click', () => checkAnswer(button));
+                    }
+
+                    // Pre-select if this option was chosen
+                    if (option === userSelectedAnswers[currentQuestionIndex]) {
+                        button.classList.add('selected');
+                    }
                     optionsContainer.appendChild(button);
                 });
 
-                // Show/hide buttons
-                checkAnswerBtn.classList.remove('hidden');
-                nextQuestionBtn.classList.add('hidden');
-                restartQuizBtn.classList.add('hidden');
-                checkAnswerBtn.disabled = true; // Disable check button until an option is selected
+                // Display feedback if already answered
+                if (answered) {
+                    displayFeedback(questionResults[currentQuestionIndex] === 'answered_correct');
+                }
+
+                updateNavigationButtons();
             }
 
-            function selectOption(button) {
-                // Remove 'selected' class from all options
+            /**
+             * Handles option selection and immediately checks the answer.
+             * @param {HTMLElement} clickedButton The clicked option button.
+             */
+            function checkAnswer(clickedButton) {
+                // First, mark the selected option
                 document.querySelectorAll('.option-button').forEach(btn => {
                     btn.classList.remove('selected');
                 });
-                // Add 'selected' class to the clicked button
-                button.classList.add('selected');
-                selectedOption = button.getAttribute('data-option');
-                checkAnswerBtn.disabled = false; // Enable check button
-            }
-
-            function checkAnswer() {
-                if (!selectedOption) return; // Do nothing if no option is selected
+                clickedButton.classList.add('selected');
+                userSelectedAnswers[currentQuestionIndex] = clickedButton.getAttribute('data-option');
 
                 const currentQuestion = questions[currentQuestionIndex];
+                const selectedOption = userSelectedAnswers[currentQuestionIndex];
                 const isCorrect = (selectedOption === currentQuestion.correctAnswer);
 
                 // Disable all option buttons after checking
                 document.querySelectorAll('.option-button').forEach(btn => {
                     btn.classList.add('disabled');
-                    btn.removeEventListener('click', selectOption); // Remove listener
+                    btn.removeEventListener('click', checkAnswer); // Remove listener to prevent re-checking
                 });
 
                 // Highlight correct/incorrect answer
-                const allOptionButtons = document.querySelectorAll('.option-button');
-                allOptionButtons.forEach(btn => {
+                document.querySelectorAll('.option-button').forEach(btn => {
                     if (btn.getAttribute('data-option') === currentQuestion.correctAnswer) {
                         btn.classList.add('correct');
                     } else if (btn.getAttribute('data-option') === selectedOption && !isCorrect) {
@@ -1238,52 +1373,142 @@
                     }
                 });
 
-                // Display feedback
+                // Update question result status
+                questionResults[currentQuestionIndex] = isCorrect ? 'answered_correct' : 'answered_incorrect';
+                saveState(); // Save state after answering
+
+                displayFeedback(isCorrect);
+                updateNavigationButtons();
+            }
+
+            /**
+             * Displays feedback based on correctness.
+             * @param {boolean} isCorrect True if the answer is correct, false otherwise.
+             */
+            function displayFeedback(isCorrect) {
+                const currentQuestion = questions[currentQuestionIndex];
                 feedbackContainer.classList.remove('hidden');
                 explanationText.textContent = currentQuestion.explanation;
 
                 if (isCorrect) {
                     feedbackTitle.textContent = '¡Correcto!';
                     feedbackContainer.classList.add('correct');
+                    feedbackContainer.classList.remove('incorrect');
                 } else {
                     feedbackTitle.textContent = 'Incorrecto. La respuesta correcta es: ' + currentQuestion.correctAnswer;
                     feedbackContainer.classList.add('incorrect');
-                }
-
-                // Show next question button or restart button
-                checkAnswerBtn.classList.add('hidden');
-                if (currentQuestionIndex < questions.length - 1) {
-                    nextQuestionBtn.classList.remove('hidden');
-                } else {
-                    restartQuizBtn.classList.remove('hidden');
+                    feedbackContainer.classList.remove('correct');
                 }
             }
 
+            /**
+             * Moves to the next question.
+             */
             function nextQuestion() {
                 currentQuestionIndex++;
                 if (currentQuestionIndex < questions.length) {
                     loadQuestion();
                 } else {
-                    // This state should ideally not be reached if restartQuizBtn is shown correctly
-                    alert('¡Has completado el test!');
-                    restartQuizBtn.classList.remove('hidden');
-                    nextQuestionBtn.classList.add('hidden');
+                    displayResults();
+                }
+                saveState(); // Save state after navigation
+            }
+
+            /**
+             * Skips the current question.
+             */
+            function skipQuestion() {
+                // If the question hasn't been answered, mark it as unanswered
+                if (userSelectedAnswers[currentQuestionIndex] === null) {
+                    questionResults[currentQuestionIndex] = 'unanswered';
+                }
+                nextQuestion(); // Move to the next question
+            }
+
+            /**
+             * Moves to the previous question.
+             */
+            function prevQuestion() {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    loadQuestion();
+                    saveState(); // Save state after navigation
                 }
             }
 
+            /**
+             * Updates the visibility and enabled state of navigation buttons.
+             */
+            function updateNavigationButtons() {
+                const answered = userSelectedAnswers[currentQuestionIndex] !== null;
+                const isLastQuestion = currentQuestionIndex === questions.length - 1;
+
+                // Previous Question button
+                prevQuestionBtn.classList.toggle('hidden', currentQuestionIndex === 0);
+
+                // Skip Question button (only visible if not answered and not last question)
+                skipQuestionBtn.classList.toggle('hidden', answered || isLastQuestion);
+
+                // Next Question button (visible if answered or if it's the last question and answered)
+                // If it's the last question and answered, this button will lead to results
+                nextQuestionBtn.classList.toggle('hidden', !answered && !isLastQuestion);
+                nextQuestionBtn.textContent = isLastQuestion && answered ? 'Ver Resultados' : 'Siguiente Pregunta';
+            }
+
+            /**
+             * Displays the final results of the quiz.
+             */
+            function displayResults() {
+                questionArea.classList.add('hidden');
+                resultsArea.classList.remove('hidden');
+                document.querySelector('.navigation-buttons').classList.add('hidden'); // Hide navigation buttons
+
+                let correctCount = 0;
+                let incorrectCount = 0;
+                let unansweredCount = 0;
+
+                for (let i = 0; i < questions.length; i++) {
+                    const status = questionResults[i];
+                    if (status === 'answered_correct') {
+                        correctCount++;
+                    } else if (status === 'answered_incorrect') {
+                        incorrectCount++;
+                    } else {
+                        unansweredCount++;
+                    }
+                }
+
+                correctCountElement.textContent = `Correctas: ${correctCount}`;
+                incorrectCountElement.textContent = `Incorrectas: ${incorrectCount}`;
+                unansweredCountElement.textContent = `Sin contestar: ${unansweredCount}`;
+            }
+
+            /**
+             * Resets the quiz to its initial state.
+             */
             function restartQuiz() {
-                currentQuestionIndex = 0;
-                loadQuestion();
+                localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear stored state
+                initializeQuizState(); // Reset all variables
+                loadQuestion(); // Load the first question
+                // Ensure quiz area is visible and results area is hidden
+                questionArea.classList.remove('hidden');
+                resultsArea.classList.add('hidden');
+                document.querySelector('.navigation-buttons').classList.remove('hidden'); // Show navigation buttons
             }
 
             // Event Listeners for navigation buttons
-            checkAnswerBtn.addEventListener('click', checkAnswer);
+            // checkAnswerBtn is removed, so its listener is gone
             nextQuestionBtn.addEventListener('click', nextQuestion);
+            prevQuestionBtn.addEventListener('click', prevQuestion);
             restartQuizBtn.addEventListener('click', restartQuiz);
+            skipQuestionBtn.addEventListener('click', skipQuestion);
+            restartQuizResultsBtn.addEventListener('click', restartQuiz); // For the restart button on results screen
 
-            // Initial load
+            // Initial load of quiz state and question
+            loadState();
             loadQuestion();
         });
     </script>
 </body>
 </html>
+
