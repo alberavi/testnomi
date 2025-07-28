@@ -119,20 +119,20 @@
                 <button id="prev-button" class="button button-secondary hidden">Anterior</button>
                 <button id="restart-quiz-button" class="button button-secondary">Reiniciar Test</button>
                 <button id="next-button" class="button button-primary">Siguiente</button>
-                <button id="submit-button" class="button button-primary hidden">Finalizar Test</button> <!-- Nuevo botón -->
+                <button id="submit-button" class="button button-primary hidden">Finalizar Test</button>
             </div>
+        </div>
 
-            <div id="results-display" class="mt-8 p-6 bg-blue-50 rounded-xl shadow-inner hidden" style="border: 2px solid purple;">
-                <h2 class="text-2xl font-bold text-center text-blue-800 mb-4">Resultados del Test</h2>
-                <p class="text-lg text-center text-blue-700" id="score-text"></p>
-                <p class="text-md text-center text-green-700" id="correct-count"></p>
-                <p class="text-md text-center text-red-700" id="incorrect-count"></p>
-                <p class="text-md text-center text-gray-700" id="unanswered-count"></p>
-                <div id="review-questions" class="mt-6 space-y-4">
-                    <!-- Preguntas para revisión se insertarán aquí -->
-                </div>
-                <button id="restart-button" class="button button-primary mx-auto block mt-8 hidden">Reiniciar Test</button>
+        <div id="results-display" style="display: none;" class="mt-8 p-6 bg-blue-50 rounded-xl shadow-inner">
+            <h2 class="text-2xl font-bold text-center text-blue-800 mb-4">Resultados del Test</h2>
+            <p class="text-lg text-center text-blue-700" id="score-text"></p>
+            <p class="text-md text-center text-green-700" id="correct-count"></p>
+            <p class="text-md text-center text-red-700" id="incorrect-count"></p>
+            <p class="text-md text-center text-gray-700" id="unanswered-count"></p>
+            <div id="review-questions" class="mt-6 space-y-4">
+                <!-- Preguntas para revisión se insertarán aquí -->
             </div>
+            <button id="restart-button" class="button button-primary mx-auto block mt-8">Reiniciar Test</button>
         </div>
     </div>
 
@@ -1272,7 +1272,7 @@
         const hintText = document.getElementById('hint-text');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
-        const submitButton = document.getElementById('submit-button'); // Nueva referencia
+        const submitButton = document.getElementById('submit-button');
         const restartQuizButton = document.getElementById('restart-quiz-button');
         const quizContainer = document.getElementById('quiz-container');
         const resultsDisplay = document.getElementById('results-display');
@@ -1309,13 +1309,24 @@
             console.log("Estado guardado: currentQuestionIndex =", currentQuestionIndex, "userAnswers =", userAnswers);
         }
 
+        // Función para mostrar el contenedor del quiz y ocultar los resultados
+        function showQuizContainer() {
+            quizContainer.style.display = 'block';
+            resultsDisplay.style.display = 'none';
+            console.log("showQuizContainer(): quizContainer visible, resultsDisplay oculto");
+        }
+
+        // Función para mostrar los resultados y ocultar el contenedor del quiz
+        function showResultsContainer() {
+            quizContainer.style.display = 'none';
+            resultsDisplay.style.display = 'block';
+            console.log("showResultsContainer(): quizContainer oculto, resultsDisplay visible");
+        }
+
         // Función para mostrar la pregunta actual
         function displayQuestion() {
             console.log("displayQuestion() llamado para la pregunta:", currentQuestionIndex + 1);
-            // Asegurarse de que el contenedor del quiz esté visible y los resultados ocultos
-            quizContainer.classList.remove('hidden');
-            resultsDisplay.classList.add('hidden');
-            console.log("displayQuestion: quizContainer hidden =", quizContainer.classList.contains('hidden'), "resultsDisplay hidden =", resultsDisplay.classList.contains('hidden'));
+            showQuizContainer(); // Asegurarse de que el quiz esté visible y los resultados ocultos
             
             const question = quizData.questions[currentQuestionIndex];
             questionText.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.questions.length}: ${question.question}`;
@@ -1367,7 +1378,6 @@
                 // Añadir event listener para actualizar la respuesta del usuario
                 radioInput.addEventListener('change', (event) => {
                     console.log("Opción seleccionada para la pregunta", currentQuestionIndex + 1, ":", event.target.value);
-                    console.log("Estado actual antes de la comprobación de resultados: currentQuestionIndex =", currentQuestionIndex, "Total preguntas =", quizData.questions.length); // Log adicional
                     // Solo procesar si la pregunta no ha sido respondida
                     if (userAnswers[currentQuestionIndex] === null) {
                         // Remover 'selected' de todas las opciones y luego añadirla a la seleccionada
@@ -1413,6 +1423,12 @@
                         optionsContainer.querySelectorAll('input[type="radio"]').forEach(input => {
                             input.disabled = true;
                         });
+
+                        // Si es la última pregunta, mostrar los resultados automáticamente
+                        if (currentQuestionIndex === quizData.questions.length - 1) {
+                            console.log("Última pregunta respondida. Llamando a showResults().");
+                            showResults();
+                        }
                     }
                 });
             });
@@ -1431,16 +1447,11 @@
         // Función para actualizar la visibilidad de los botones de navegación
         function updateNavigationButtons() {
             prevButton.classList.toggle('hidden', currentQuestionIndex === 0);
-            
-            // Mostrar el botón "Finalizar Test" en la última pregunta, ocultar "Siguiente"
-            if (currentQuestionIndex === quizData.questions.length - 1) {
-                nextButton.classList.add('hidden');
-                submitButton.classList.remove('hidden');
-            } else {
-                nextButton.classList.remove('hidden');
-                submitButton.classList.add('hidden');
-            }
-            console.log("Botones de navegación actualizados. Siguiente oculto:", nextButton.classList.contains('hidden'), "Finalizar Test oculto:", submitButton.classList.contains('hidden'));
+            // El botón "Siguiente" se oculta si estamos en la última pregunta.
+            // El botón "Finalizar Test" se muestra si estamos en la última pregunta.
+            nextButton.classList.toggle('hidden', currentQuestionIndex === quizData.questions.length - 1);
+            submitButton.classList.toggle('hidden', currentQuestionIndex !== quizData.questions.length - 1);
+            console.log("Botones de navegación actualizados. Siguiente oculto:", nextButton.classList.contains('hidden'), "Finalizar oculto:", submitButton.classList.contains('hidden'));
         }
 
         // Función para calcular y mostrar los resultados
@@ -1467,24 +1478,17 @@
                 }
             });
 
-            console.log("showResults: Ocultando quizContainer y mostrando resultsDisplay.");
-            quizContainer.classList.add('hidden');
-            resultsDisplay.classList.remove('hidden');
-            console.log("showResults: Estado de visibilidad DESPUÉS de toggle: quizContainer hidden =", quizContainer.classList.contains('hidden'), "resultsDisplay hidden =", resultsDisplay.classList.contains('hidden'));
+            showResultsContainer(); // Asegurarse de que los resultados estén visibles y el quiz oculto
             
             scoreText.textContent = `Has obtenido ${score} de ${quizData.questions.length} preguntas correctas.`;
             correctCountText.textContent = `Correctas: ${correctCount}`;
             incorrectCountText.textContent = `Incorrectas: ${incorrectCount}`;
             unansweredCountText.textContent = `Sin contestar: ${unansweredCount}`;
 
-            console.log("Score Text:", scoreText.textContent);
-            console.log("Correct Count Text:", correctCountText.textContent);
-            console.log("Incorrect Count Text:", incorrectCountText.textContent);
-            console.log("Unanswered Count Text:", unansweredCountText.textContent);
-
             displayReview();
-            restartButton.classList.remove('hidden');
-            console.log("showResults: Botón de reiniciar en resultados visible:", !restartButton.classList.contains('hidden'));
+            // Asegurar que el botón de reiniciar sea visible en la vista de resultados
+            restartButton.style.display = 'block'; // Mostrar el botón de reiniciar
+            console.log("Botón de reiniciar en resultados visible.");
         }
 
         // Función para mostrar la revisión de preguntas
@@ -1536,12 +1540,11 @@
         function resetTest() {
             console.log("resetTest() llamado. Reiniciando test.");
             currentQuestionIndex = 0;
-            userAnswers.fill(null);
+            userAnswers = new Array(quizData.questions.length).fill(null); // Resetear a null
             score = 0;
             localStorage.removeItem('currentQuestionIndex');
             localStorage.removeItem('userAnswers');
-            resultsDisplay.classList.add('hidden');
-            quizContainer.classList.remove('hidden');
+            showQuizContainer(); // Resetear y mostrar el quiz
             displayQuestion();
         }
 
@@ -1564,11 +1567,10 @@
             }
         });
 
-        submitButton.addEventListener('click', () => { // Event listener para el nuevo botón
-            console.log("Botón Finalizar Test clickeado. Llamando a showResults().");
+        submitButton.addEventListener('click', () => {
+            console.log("Botón Finalizar Test clickeado.");
             showResults();
         });
-
         restartQuizButton.addEventListener('click', resetTest); // Botón de reiniciar en la pantalla del quiz
         restartButton.addEventListener('click', resetTest); // Botón de reiniciar en la pantalla de resultados
 
@@ -1576,15 +1578,7 @@
         window.onload = () => {
             console.log("Página cargada. Cargando estado y mostrando pregunta.");
             loadState(); // Cargar el estado al inicio
-
-            // Si todas las preguntas han sido respondidas, mostrar resultados directamente
-            const allAnswered = userAnswers.every(answer => answer !== null);
-            if (allAnswered && userAnswers.length === quizData.questions.length) {
-                console.log("Todas las preguntas respondidas al cargar. Mostrando resultados.");
-                showResults();
-            } else {
-                displayQuestion();
-            }
+            displayQuestion();
         };
 
     </script>
