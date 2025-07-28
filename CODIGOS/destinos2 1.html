@@ -1,0 +1,3606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparador Interactivo de Organismos Públicos 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos generales del cuerpo y fuente */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #edf2f7; /* Fondo más claro y suave */
+            color: #2d3748; /* Texto principal más oscuro para mejor contraste */
+        }
+        /* Contenedor del gráfico */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            /* max-width: 1000px; REMOVED to allow dynamic height to expand fully */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Estilos de la barra de desplazamiento para las tarjetas */
+        .card-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .card-scrollbar::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        .card-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 2px;
+        }
+        .card-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        /* Panel de control con efecto de desenfoque */
+        .control-panel {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.85); /* Fondo blanco semitransparente */
+        }
+        /* Overlay del modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* Contenido del modal */
+        .modal-content {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25); /* Sombra más suave y extendida */
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out; /* Transición para entrada y salida */
+        }
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+        /* Resaltado de tarjeta al hacer clic en el gráfico */
+        .highlight-card {
+            box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.8), 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Anillo de resaltado ámbar con sombra */
+            transition: box-shadow 0.4s ease-in-out;
+        }
+        /* Estilo para los inputs de rango */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #f59e0b; /* Color ámbar para el "pulgar" */
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: background .15s ease-in-out;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #f59e0b;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: background .15s ease-in-out;
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            background: #d97706; /* Ámbar más oscuro al arrastrar */
+        }
+        input[type="range"]::-moz-range-thumb:active {
+            cursor: grabbing;
+            background: #d97706;
+        }
+
+        /* Estilos para el botón de favorito */
+        .favorite-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            padding: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease-in-out;
+            z-index: 10;
+        }
+        .favorite-button:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: scale(1.1);
+        }
+        .favorite-button svg {
+            width: 24px;
+            height: 24px;
+            fill: #cbd5e1; /* Color por defecto (gris claro) */
+            stroke: #64748b; /* Borde (gris medio) */
+            stroke-width: 1.5;
+            transition: all 0.2s ease-in-out;
+        }
+        .favorite-button.favorited svg {
+            fill: #ef4444; /* Rojo para favorito */
+            stroke: #dc2626;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body {
+                background-color: #fff;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .container, .modal-content {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                overflow: visible;
+            }
+            .modal-overlay, .control-panel, header, .flex.justify-center.mb-6, #chart-section, #no-results, .favorite-button, .remove-favorite-btn, #export-favorites-btn, #print-favorites-btn, .more-info, .close-button {
+                display: none !important;
+            }
+            #favorites-modal-overlay.open {
+                position: static;
+                visibility: visible;
+                opacity: 1;
+                display: block !important;
+                background-color: #fff;
+            }
+            #favorites-modal-overlay .modal-content {
+                padding: 2cm; /* A4 margins */
+                border-radius: 0;
+                max-width: 100%;
+                max-height: none;
+                overflow: visible;
+            }
+            #favorites-grid {
+                grid-template-columns: 1fr !important; /* Single column for print */
+                gap: 1.5rem;
+            }
+            .favorite-organismo-card {
+                border: 1px solid #e2e8f0;
+                padding: 1rem;
+                box-shadow: none;
+                break-inside: avoid; /* Avoid breaking cards across pages */
+            }
+            h3.text-3xl.font-bold.text-slate-900.mb-8 {
+                text-align: center;
+                margin-bottom: 1.5rem;
+                color: #000;
+            }
+            .favorite-organismo-card h4 {
+                font-size: 1.25rem; /* Larger title for print */
+                color: #000;
+            }
+            .favorite-organismo-card p {
+                color: #333;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">Comparador de Organismos Públicos</h1>
+            <p class="text-slate-600 mt-2 text-lg">Analiza y encuentra tu destino ideal según tus prioridades.</p>
+        </header>
+
+        <!-- New button for Favorites -->
+        <div class="flex justify-center mb-6 space-x-4">
+            <button id="toggle-controls-btn" class="px-7 py-3 bg-amber-500 text-white rounded-full hover:bg-amber-600 active:bg-amber-700 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">
+                <span id="toggle-controls-text" class="font-semibold">Ocultar Opciones de Filtro</span>
+                <svg id="toggle-controls-icon" class="w-5 h-5 transform rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <button id="show-favorites-btn" class="px-7 py-3 bg-slate-600 text-white rounded-full hover:bg-slate-700 active:bg-slate-800 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-opacity-75">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                <span class="font-semibold">Ver Mis Favoritos</span>
+            </button>
+        </div>
+
+        <div id="controls" class="sticky top-0 z-10 control-panel p-6 rounded-2xl shadow-xl mb-8 border border-slate-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                    <label for="teletrabajo-filter" class="block text-sm font-medium text-slate-700 mb-1">Días de teletrabajo</label>
+                    <div class="flex items-center space-x-3 bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                        <input type="range" id="teletrabajo-filter" min="0" max="5" value="3" class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                        <span id="teletrabajo-value" class="font-bold text-slate-700 bg-amber-100 px-3 py-1 rounded-md text-sm min-w-[40px] text-center">3+</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="distancia-filter" class="block text-sm font-medium text-slate-700 mb-1">Distancia a C/ Panizo 16</label>
+                     <div class="flex items-center space-x-3 bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                        <input type="range" id="distancia-filter" min="0" max="30" value="30" step="0.5" class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                        <span id="distancia-value" class="font-bold text-slate-700 bg-amber-100 px-3 py-1 rounded-md text-sm min-w-[60px] text-center">30 km</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="sort-by" class="block text-sm font-medium text-slate-700 mb-1">Ordenar por</label>
+                    <select id="sort-by" class="mt-1 block w-full pl-4 pr-10 py-3 text-base border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-lg shadow-sm bg-white cursor-pointer">
+                        <option value="productividad-desc">Mayor Productividad</option>
+                        <option value="productividad-asc">Menor Productividad</option>
+                        <option value="distancia-asc">Más Cercano</option>
+                        <option value="distancia-desc">Más Lejano</option>
+                        <option value="teletrabajo-desc">Más Teletrabajo</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="organismo-selector" class="block text-sm font-medium text-slate-700 mb-1">Seleccionar Organismo</label>
+                    <select id="organismo-selector" class="mt-1 block w-full pl-4 pr-10 py-3 text-base border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-lg shadow-sm bg-white cursor-pointer">
+                        <option value="">Todos los organismos</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2 lg:col-span-1">
+                    <label for="parking-filter" class="block text-sm font-medium text-slate-700 mb-1">Plazas de aparcamiento</label>
+                    <div class="mt-2 flex items-center bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                        <input type="checkbox" id="parking-filter" class="h-5 w-5 text-amber-600 focus:ring-amber-500 border-slate-300 rounded-md cursor-pointer">
+                        <label for="parking-filter" class="ml-3 block text-base text-slate-900">Sí, con aparcamiento</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Button for Chart Section -->
+        <div class="flex justify-center mb-6">
+            <button id="toggle-chart-btn" class="px-7 py-3 bg-amber-500 text-white rounded-full hover:bg-amber-600 active:bg-amber-700 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">
+                <span id="toggle-chart-text" class="font-semibold">Ocultar Gráfico de Productividad</span>
+                <svg id="toggle-chart-icon" class="w-5 h-5 transform rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+        </div>
+
+        <section id="chart-section" class="mb-8 bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+            <h2 class="text-2xl font-bold text-center mb-4 text-slate-900">Comparativa de Productividad Mensual (€)</h2>
+            <p class="text-sm text-slate-500 text-center mb-6">El gráfico muestra la productividad de "especial dedicación" o similar. Algunos organismos pueden ofrecer otras productividades no reflejadas aquí. Pasa el ratón sobre las barras para más detalles y haz clic para ver la ficha.</p>
+            <div id="chart-content" class="chart-container">
+                <canvas id="productividadChart"></canvas>
+            </div>
+        </section>
+
+        <section id="organismos-section">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Resultados</h2>
+                <div id="results-count" class="text-slate-600 font-medium bg-slate-200 px-4 py-2 rounded-full shadow-md"></div>
+            </div>
+            <div id="organismos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Organismo cards will be rendered here -->
+            </div>
+            <div id="no-results" class="hidden text-center py-16">
+                <p class="text-slate-500 text-xl font-medium mb-4">No se encontraron organismos que coincidan con tus criterios.</p>
+                <button id="reset-filters" class="px-8 py-3 bg-amber-500 text-white rounded-full hover:bg-amber-600 active:bg-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">Restablecer Filtros</button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Modal Structure for Organism Details -->
+    <div id="organismo-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="close-modal-btn" class="absolute top-5 right-5 text-slate-500 hover:text-slate-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-full p-1">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 id="modal-organismo-title" class="text-3xl font-bold text-slate-900 mb-2 leading-tight"></h3>
+            <p id="modal-ministerio" class="text-lg text-slate-600 mb-8"></p>
+            
+            <div class="space-y-5 text-slate-700 text-base">
+                <div class="flex items-start">
+                    <span class="text-amber-500 mr-4 mt-1 text-2xl">📍</span>
+                    <div>
+                        <p class="font-semibold text-lg">Ubicación:</p>
+                        <p id="modal-direccion" class="text-slate-700"></p>
+                        <p id="modal-distancia" class="text-amber-700 font-medium text-md"></p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="text-amber-500 mr-4 mt-1 text-2xl">💻</span>
+                    <div>
+                        <p class="font-semibold text-lg">Teletrabajo:</p>
+                        <p id="modal-teletrabajo-desc" class="text-slate-700"></p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="text-amber-500 mr-4 mt-1 text-2xl">💰</span>
+                    <div>
+                        <p class="font-semibold text-lg">Productividad (Tardes):</p>
+                        <p id="modal-productividad-desc" class="text-slate-700"></p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="text-amber-500 mr-4 mt-1 text-2xl">🏆</span>
+                    <div>
+                        <p class="font-semibold text-lg">Bufandas (Objetivos):</p>
+                        <p id="modal-bufandas-desc" class="text-slate-700"></p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="text-amber-500 mr-4 mt-1 text-2xl">🅿️</span>
+                    <div>
+                        <p class="font-semibold text-lg">Aparcamiento:</p>
+                        <p id="modal-parking" class="text-slate-700"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-10 text-right">
+                <a id="modal-more-info" href="#" target="_blank" class="inline-flex items-center px-6 py-3 bg-amber-500 text-white rounded-md hover:bg-amber-600 active:bg-amber-700 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-75">
+                    Ver ruta en mapa
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"></path></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Structure for Favorites List -->
+    <div id="favorites-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="close-favorites-modal-btn" class="absolute top-5 right-5 text-slate-500 hover:text-slate-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-full p-1">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-3xl font-bold text-slate-900 mb-8">Mis Organismos Favoritos</h3>
+            <div id="favorites-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Favorited organism cards will be rendered here -->
+            </div>
+            <p id="no-favorites-message" class="hidden text-center py-8 text-slate-500 text-lg">Aún no has añadido ningún organismo a tus favoritos.</p>
+            <div class="mt-8 text-center flex justify-center space-x-4">
+                <button id="export-favorites-btn" class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 active:bg-green-800 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                    <span class="font-semibold">Exportar a Excel</span>
+                </button>
+                <button id="print-favorites-btn" class="px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 active:bg-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5 4V1H15V4H5ZM16 7H4C3.44772 7 3 7.44772 3 8V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V8C17 7.44772 16.5523 7 16 7ZM5 10H15V14H5V10Z"></path></svg>
+                    <span class="font-semibold">Imprimir Favoritos</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <template id="organismo-card-template">
+        <div class="organismo-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col transform hover:scale-[1.02] hover:shadow-xl transition-all duration-300 cursor-pointer group relative border border-slate-100" data-organismo-id="">
+            <!-- Favorite Button -->
+            <button class="favorite-button" data-organismo-id="">
+                <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M3.172 5.172a4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+
+            <div class="p-6 flex-grow flex flex-col">
+                <h3 class="text-xl font-bold text-slate-900 leading-tight mb-2 group-hover:text-amber-700 transition-colors duration-200"></h3>
+                <p class="text-sm text-slate-500 mb-4"></p>
+                
+                <div class="space-y-4 mb-4 flex-grow max-h-52 overflow-y-auto card-scrollbar pr-2">
+                    <div class="flex items-start">
+                        <span class="text-amber-500 mr-3 mt-1 text-lg">📍</span>
+                        <div>
+                            <p class="font-semibold text-sm">Ubicación</p>
+                            <p class="text-sm text-slate-600 direccion"></p>
+                            <p class="text-sm text-amber-700 font-medium distancia"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-amber-500 mr-3 mt-1 text-lg">💻</span>
+                        <div>
+                            <p class="font-semibold text-sm">Teletrabajo</p>
+                            <p class="text-sm text-slate-600 teletrabajo"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-amber-500 mr-3 mt-1 text-lg">💰</span>
+                        <div>
+                            <p class="font-semibold text-sm">Productividad (Tardes)</p>
+                            <p class="text-sm text-slate-600 productividad"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-amber-500 mr-3 mt-1 text-lg">🏆</span>
+                        <div>
+                            <p class="font-semibold text-sm">Bufandas (Objetivos)</p>
+                            <p class="text-sm text-slate-600 bufandas"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start parking-info">
+                        <span class="text-amber-500 mr-3 mt-1 text-lg">🅿️</span>
+                        <div>
+                            <p class="font-semibold text-sm">Aparcamiento</p>
+                            <p class="text-sm text-slate-600 parking"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 text-right border-t border-slate-100">
+                 <a href="#" target="_blank" class="more-info text-sm font-medium text-amber-600 hover:text-amber-800 transition-colors duration-200 inline-flex items-center">Ver ruta en mapa <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"></path></svg></a>
+            </div>
+        </div>
+    </template>
+
+    <!-- Template for Favorite Organism Card in Favorites Modal -->
+    <template id="favorite-card-template">
+        <div class="favorite-organismo-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col border border-slate-100" data-organismo-id="">
+            <div class="p-4 flex-grow flex flex-col">
+                <h4 class="text-lg font-bold text-slate-900 leading-tight mb-1"></h4>
+                <p class="text-xs text-slate-500 mb-3"></p>
+                <p class="text-sm text-slate-600 mb-2"><span class="font-semibold">Teletrabajo:</span> <span class="teletrabajo"></span></p>
+                <p class="text-sm text-slate-600 mb-2"><span class="font-semibold">Productividad:</span> <span class="productividad"></span></p>
+                <p class="text-sm text-slate-600"><span class="font-semibold">Distancia:</span> <span class="distancia"></span></p>
+            </div>
+            <div class="bg-slate-50 px-4 py-3 text-center border-t border-slate-100">
+                <button class="remove-favorite-btn px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm shadow-sm">
+                    Quitar de Favoritos
+                </button>
+            </div>
+        </div>
+    </template>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Coordenadas aproximadas de Calle Panizo 16, Madrid
+    const geocodePanizo = { lat: 40.4356, lon: -3.7011, address: 'Calle Panizo 16, Madrid' };
+
+    const organismosData = [
+        {
+            id: 'aepd',
+            ministerio: 'Ente Público (Presidencia)',
+            organismo: 'Agencia Española de Protección de Datos (AEPD)',
+            direccion: 'C/ Jorge Juan, 6, Madrid',
+            lat: 40.4223, lon: -3.6840,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Flexibilidad en la elección de días. 4 días para gente de fuera de la Comunidad de Madrid.',
+            productividad_valor: 200,
+            productividad_desc: 'Aprox. 200€/mes por especial dedicación (40h/semana), desde el inicio.',
+            bufanda_desc: 'Variable, 2 veces al año (junio/julio y diciembre) por rendimiento.',
+            parking: true,
+            page_ref: 1
+        },
+        {
+            id: 'cis',
+            ministerio: 'Ente Público (Presidencia)',
+            organismo: 'Centro de Investigaciones Sociológicas (CIS)',
+            direccion: 'C/ de Montalbán, 8, Madrid',
+            lat: 40.4173, lon: -3.6913,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: 'Hasta 3 días/semana. Se "gana" con proactividad. Tardes en teletrabajo. Los días de teletrabajo suelen ser miércoles, jueves y viernes.',
+            productividad_valor: 450, 
+            productividad_desc: 'Productividades "altas", superiores a la mayoría. Se basa en confianza y proactividad. Estimado, no especificado.',
+            bufanda_desc: '2 veces al año (junio y diciembre). Se han dado casos de hasta 3000€ (triplicando salario).',
+            parking: false,
+            page_ref: 4
+        },
+        {
+            id: 'csic_sgai',
+            ministerio: 'Investigación',
+            organismo: 'CSIC - Secretaría General Adjunta de Informática (SGAI)',
+            direccion: 'C/ Pinar, 19, Madrid',
+            lat: 40.4398, lon: -3.6821,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana (lucharon por ello). Se concede a los 6 meses. No existe limitación de distancia para realizar el TT.',
+            productividad_valor: 325,
+            productividad_desc: '325€ brutos/mes. No se da de entrada, depende de la subdirección.',
+            bufanda_desc: 'Una vez al año (diciembre). El año pasado fue de 2082€ brutos. No hay productividad por objetivos.',
+            parking: false,
+            page_ref: 14
+        },
+        {
+            id: 'csn',
+            ministerio: 'Consejo de Seguridad Nuclear',
+            organismo: 'Consejo de Seguridad Nuclear (CSN)',
+            direccion: 'C/ de Pedro Justo Dorado Dellmans, 11, Madrid',
+            lat: 40.4501, lon: -3.7226,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana (L-M-V), se concede rápido. Horario flexible.',
+            productividad_valor: 350,
+            productividad_desc: 'Unos 350€. Concedida en 1-2 meses. Implica hacer tardes.',
+            bufanda_desc: 'Una bufanda anual. No especificada.',
+            parking: false,
+            page_ref: 25
+        },
+        {
+            id: 'defensa_cestic',
+            ministerio: 'Ministerio de Defensa',
+            organismo: 'CESTIC',
+            direccion: 'Arturo Soria, 289, Madrid',
+            lat: 40.4688, lon: -3.6559,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días fijos. Se suele dar a los 2-3 meses. No disponible en zonas ZAR. No hay problema de dónde hacerlo.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 28
+        },
+        {
+            id: 'hacienda_sgfal',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'S.G. de Financiación Autonómica y Local (SGFAL)',
+            direccion: 'Calle Alberto Bosch, 16, Madrid',
+            lat: 40.4132, lon: -3.6930,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: 'Días fijos, Martes y Jueves, además de las tardes. Es obligatorio ir Lunes, Miércoles y Viernes presencial. Puedes hacer TT desde provincia.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada.',
+            bufanda_desc: 'No especificada.',
+            parking: false,
+            page_ref: 32
+        },
+        {
+            id: 'hacienda_sgcce',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Sub. Gral. de Coordinación de la Contratación Electrónica',
+            direccion: 'C/ José Abascal, 4, Madrid',
+            lat: 40.4361, lon: -3.6980,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se ficha por la aplicación. Se pueden agrupar días de TT.',
+            productividad_valor: 200,
+            productividad_desc: 'Aprox. 200€/mes para nivel 16. Se concede a los 3 meses.',
+            bufanda_desc: 'Dos al año (junio y diciembre). Cuantía variable.',
+            parking: true,
+            page_ref: 36
+        },
+        {
+            id: 'hacienda_oip',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'IGAE - Oficina de Informática Presupuestaria (OIP)',
+            direccion: 'Calle de Agustín de Foxá, 25, Madrid',
+            lat: 40.4725, lon: -3.6881,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días fijos (Martes y Jueves). El primer mes es presencial. Las tardes también se teletrabajan.',
+            productividad_valor: 300,
+            productividad_desc: 'Productividad por tardes, cuantía estimada, no especificada. Desde el 2º mes.',
+            bufanda_desc: 'No especificada.',
+            parking: false,
+            page_ref: 41
+        },
+        {
+            id: 'hacienda_teac',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Tribunal Económico Administrativo Central (TEAC)',
+            direccion: 'Calle de Panamá, 1, Madrid',
+            lat: 40.4608, lon: -3.6871,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede al mes. Una tarde presencial y otra de TT.',
+            productividad_valor: 400,
+            productividad_desc: 'Se concede desde el inicio. Cuantía "sustancial", estimada en 400€.',
+            bufanda_desc: 'Suele haber una bufanda a final de año. Cuantía no especificada.',
+            parking: false,
+            page_ref: 51
+        },
+        {
+            id: 'aeat_dit',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Agencia Tributaria (AEAT-DIT)',
+            direccion: 'C. de Sta. María Magdalena, 16, Madrid',
+            lat: 40.4616, lon: -3.6763,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana, rotando cada mes. Se concede en 1-2 meses. No hay distinción entre los que son de provincia y los que no.',
+            productividad_valor: 70,
+            productividad_desc: '70€/mes base para todos. Adicionalmente, PIA (Plan de Intensificación de Actuaciones) que requiere horas extra y puede sumar una cantidad significativa.',
+            bufanda_desc: 'Bufanda "generosa" en diciembre (PIA).',
+            parking: true,
+            page_ref: 54
+        },
+        {
+            id: 'hacienda_sub_sgtic',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Subsecretaría - S.G. de Tecnologías de la Información de las Comunicaciones (SGTIC)',
+            direccion: 'C/ Alcalá, 9, Madrid',
+            lat: 40.4168, lon: -3.6933,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. El jefe de área decide cuándo darlo (suele ser rápido, una semana, un mes… cuando vean suelto al trabajador). No hay un plazo fijo para darlo.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada.',
+            bufanda_desc: 'No especificada.',
+            parking: false,
+            page_ref: 64
+        },
+        {
+            id: 'hacienda_catastro',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Dirección General del Catastro - S.G. de Tecnología y Despliegue Digital',
+            direccion: 'Paseo de la Castellana, 272, Madrid',
+            lat: 40.4655, lon: -3.6890,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días fijos (Martes y Jueves). Para el personal sin productividad puedes llegar a tener 3 días y el tercer día sería a elección del candidato.',
+            productividad_valor: 0,
+            productividad_desc: 'No hay productividad al inicio, es decir, sin tardes. A partir del nivel 22 es cuando podrías tenerla y es obligatoria (290-300€/mes).',
+            bufanda_desc: 'Unos 1000€ al final de año y las trimestrales variables: entre 150-200€.',
+            parking: true,
+            page_ref: 68
+        },
+        {
+            id: 'hacienda_ief',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Instituto de Estudios Fiscales (IEF)',
+            direccion: 'Av. Cardenal Herrera Oria, 378, Madrid',
+            lat: 40.5050, lon: -3.7020,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: 'Si quieres martes, miércoles o jueves → 2 días de teletrabajo. Si quieres lunes o viernes → 1 día de teletrabajo. Se da desde que entras, pero la primera semana es presencial.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 72
+        },
+        {
+            id: 'hacienda_pme',
+            ministerio: 'Ministerio de Hacienda',
+            organismo: 'Parque Móvil del Estado O.A. – Secretaría General',
+            direccion: 'C/ Cea Bermúdez, 5, Madrid',
+            lat: 40.4390, lon: -3.7070,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días fijos, no oficial. Desde el inicio, pero el primer mes presencial. No hay problema en TT desde otra provincia.',
+            productividad_valor: 321,
+            productividad_desc: '321,36€ (nivel 16 en 2024). Se concede al mes o dos meses. Implica hacer 40h (1-2 tardes).',
+            bufanda_desc: 'Discrecionales. No especificada.',
+            parking: true,
+            page_ref: 75
+        },
+        {
+            id: 'igualdad_im',
+            ministerio: 'Ministerio de Igualdad',
+            organismo: 'Instituto de las Mujeres',
+            direccion: 'C/ de Condesa de Venadito, 34, Madrid',
+            lat: 40.4570, lon: -3.6550,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede rápidamente (1-2-3 días). Son fijos, pero se pueden solicitar cambios. Siempre tiene que haber alguien en la oficina.',
+            productividad_valor: 0,
+            productividad_desc: 'No hay productividades para TAI, solo para los niveles más altos.',
+            bufanda_desc: 'Si sobra algo se da a final de año. No especificada.',
+            parking: true,
+            page_ref: 100
+        },
+        {
+            id: 'igualdad_dtic',
+            ministerio: 'Ministerio de Igualdad',
+            organismo: 'División de Tecnologías de la Información y Comunicaciones (DTIC)',
+            direccion: 'C/ Alcalá, 37, Madrid',
+            lat: 40.4180, lon: -3.6960,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia.',
+            productividad_valor: 0,
+            productividad_desc: 'No hay productividades para TAI, solo para los niveles más altos.',
+            bufanda_desc: 'Si sobra algo se da a final de año. No especificada.',
+            parking: true,
+            page_ref: 103
+        },
+        {
+            id: 'interior_dgp',
+            ministerio: 'Ministerio del Interior',
+            organismo: 'Dirección General de la Policía (DGP) - Unidad de Informática y Telecomunicación',
+            direccion: 'C/ Julián González Segador, s/n, Madrid',
+            lat: 40.4700, lon: -3.6300,
+            teletrabajo_dias: 0, // No especifica días, solo que "se puede"
+            teletrabajo_desc: 'No especificado. Se puede asignar ubicación según residencia. Se intenta descentralizar plazas (ATF).',
+            productividad_valor: 0,
+            productividad_desc: 'No sabe si existe productividad por especial dedicación. Se depende del Ministerio.',
+            bufanda_desc: 'No especificada.',
+            parking: true,
+            page_ref: 106
+        },
+        {
+            id: 'interior_dgt',
+            ministerio: 'Ministerio del Interior',
+            organismo: 'Dirección General de Tráfico (DGT) - Gerencia de Informática',
+            direccion: 'C/ Josefa Valcárcel, 44, Madrid',
+            lat: 40.4480, lon: -3.6450,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se da a los 3 meses. No hay distancia máxima. Miércoles presencial preferente. CAU incluido.',
+            productividad_valor: 230,
+            productividad_desc: 'Productividad de inicio de 230€. Se puede solicitar una productividad adicional por objetivos.',
+            bufanda_desc: 'No especificada. El entrevistado solo menciona la productividad de inicio.',
+            parking: true,
+            page_ref: 109
+        },
+        {
+            id: 'interior_cetse',
+            ministerio: 'Ministerio del Interior',
+            organismo: 'Secretaria de Estado de Seguridad - Sub. Gral. Sistemas de Información y Comunicaciones para la Seguridad (SGSICS) - Centro Tecnológico de Seguridad (CETSE)',
+            direccion: 'C/ Pardo, s/n, Madrid',
+            lat: 40.5200, lon: -3.6800,
+            teletrabajo_dias: 2, // No ha dejado claro si son 2 o 3 días, depende de cada situación personal
+            teletrabajo_desc: 'Se concede a todo el mundo (salvo excepciones). Si pasa algo, hay que ir a la oficina. Días presenciales: martes, miércoles y jueves.',
+            productividad_valor: 240,
+            productividad_desc: 'Aprox. 240€ mensuales para nivel 16. Por trabajos extraordinarios (tardes en casa).',
+            bufanda_desc: 'Suele haber 2 (Navidad y verano). La de Navidad unos 200 y pico €. No lo tienen claro.',
+            parking: true,
+            page_ref: 114
+        },
+        {
+            id: 'maec_sgicr',
+            ministerio: 'Ministerio de Asuntos Exteriores, Unión Europea y Cooperación (MAEC)',
+            organismo: 'D. G. del Servicio Exterior - S.G de Informática, Comunicaciones y Redes',
+            direccion: 'Plaza Marqués de Salamanca, 8, Madrid',
+            lat: 40.4280, lon: -3.6790,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: 'Hasta 3 días de TT. Se da a los 3 meses. Posible desde otra provincia. Los días de TT son flexibles.',
+            productividad_valor: 300,
+            productividad_desc: 'En torno a 300€ por dos tardes. Se pueden pedir a partir de Septiembre.',
+            bufanda_desc: '1200€ - 1500€ a final de año.',
+            parking: false, // No se menciona parking
+            page_ref: 121
+        },
+        {
+            id: 'maec_aecid',
+            ministerio: 'Ministerio de Asuntos Exteriores, Unión Europea y Cooperación (MAEC)',
+            organismo: 'Agencia Española de Cooperación Internacional para el Desarrollo (AECID)',
+            direccion: 'Av. de los Reyes Católicos, 4, Madrid',
+            lat: 40.4390, lon: -3.7190,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede al mes. Lunes y viernes suelen ser los días de TT. Se puede hacer desde provincia. Si hay que ir, se avisa con 24h.',
+            productividad_valor: 0,
+            productividad_desc: 'Es difícil que asignen productividades. Los C1 que entraron el año pasado no tienen productividades. Los A1 (nivel 26) perciben 337€/mes.',
+            bufanda_desc: 'Una para verano de unos 300€, y otra para final de año de unos mil y pico (1200€-1800€ en años anteriores).',
+            parking: true,
+            page_ref: 124
+        },
+        {
+            id: 'mapa_fega',
+            ministerio: 'Ministerio de Agricultura, Pesca y Alimentación',
+            organismo: 'Fondo Español de Garantía Agraria O.A. (FEGA)',
+            direccion: 'C/ Beneficencia, 8, Madrid',
+            lat: 40.4280, lon: -3.7000,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se pueden elegir libremente. Se concede entre 1 y 3 meses. No hay obligación de hacer TT.',
+            productividad_valor: 300,
+            productividad_desc: 'Unos 300€ y pico. Se suele dar a partir de los 3 meses.',
+            bufanda_desc: '2 bufandas: Julio y Diciembre. Varían según resultados, desempeño, objetivos, etc.',
+            parking: true,
+            page_ref: 128
+        },
+        {
+            id: 'mapa_sgtic',
+            ministerio: 'Ministerio de Agricultura, Pesca y Alimentación',
+            organismo: 'S. G. de Tecnologías de la Información y Comunicaciones (SGTIC)',
+            direccion: 'Paseo de la Infanta Isabel, 1, Madrid',
+            lat: 40.4090, lon: -3.6900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Las tardes se pueden hacer en TT. El jefe de área decide cuándo darlo (rápido). Se puede hacer desde provincia.',
+            productividad_valor: 350,
+            productividad_desc: '350€ en nivel 16. No se concede por defecto, lo habitual es poder acceder a realizarlas a los 6 meses o un año.',
+            bufanda_desc: 'Dos gratificaciones (bufandas) al año. Para un nivel 16, entre 200€ y 400€.',
+            parking: false,
+            page_ref: 133
+        },
+        {
+            id: 'mapa_enesa',
+            ministerio: 'Ministerio de Agricultura, Pesca y Alimentación',
+            organismo: 'Entidad Estatal de Seguros Agrarios O.A. (ENESA)',
+            direccion: 'Gran Vía de San Francisco, 4-6, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede rápidamente (1-3 días). Son fijos, pero se pueden solicitar cambios. Siempre tiene que haber alguien en la oficina.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 139
+        },
+        {
+            id: 'cultura_dtic',
+            ministerio: 'Ministerio de Cultura',
+            organismo: 'Subsecretaría de Cultura - División de Tecnologías de la Información',
+            direccion: 'Plaza del Rey, 1, Madrid',
+            lat: 40.4190, lon: -3.6980,
+            teletrabajo_dias: 2, // No especifica días, solo que "se puede"
+            teletrabajo_desc: 'Se concede a los 6 meses. Miércoles presencial. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'Productividad de entrada es difícil, cuando se promociona se puede poner. Depende de Función Pública.',
+            bufanda_desc: 'Si sobra algo se da a final de año. No especificada.',
+            parking: true,
+            page_ref: 143
+        },
+        {
+            id: 'cultura_icaa',
+            ministerio: 'Ministerio de Cultura',
+            organismo: 'Instituto de la Cinematografía y de las Artes Audiovisuales (ICAA)',
+            direccion: 'Plaza del Rey, 1, Madrid',
+            lat: 40.4190, lon: -3.6980,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se pueden solicitar a partir de los 6 meses. Martes presencial. Se puede hacer desde provincia.',
+            productividad_valor: 0,
+            productividad_desc: 'No hay productividades para TAI, solo para los niveles más altos.',
+            bufanda_desc: 'Si sobra algo se da a final de año. No especificada.',
+            parking: true,
+            page_ref: 146
+        },
+        {
+            id: 'cultura_bne',
+            ministerio: 'Ministerio de Cultura',
+            organismo: 'Biblioteca Nacional de España - Unidad de Coordinación Informática',
+            direccion: 'P.º de Recoletos, 20-22, Madrid',
+            lat: 40.4230, lon: -3.6930,
+            teletrabajo_dias: 1, // 1 o 2 días dependiendo del servicio
+            teletrabajo_desc: '1 o 2 días/semana. Se concede a los 2 meses. Miércoles presencial. No hay 100% TT. Las normas de TT son complejas y pensadas desde la desconfianza.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 152
+        },
+        {
+            id: 'cultura_mncars',
+            ministerio: 'Ministerio de Cultura',
+            organismo: 'Museo Nacional Centro de Arte Reina Sofía',
+            direccion: 'C/ Santa Isabel, 52, Madrid',
+            lat: 40.4080, lon: -3.6960,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 3 meses. Miércoles presencial. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No hay productividades para TAI, solo para los niveles más altos.',
+            bufanda_desc: 'Si sobra algo se da a final de año. No especificada.',
+            parking: true,
+            page_ref: 157
+        },
+        {
+            id: 'mdsca_dtic',
+            ministerio: 'Ministerio de Derechos Sociales, Consumo y Agenda 2030 (MDSCA)',
+            organismo: 'Subsecretaría de Derechos Sociales, Consumo y Agenda 2030 - División de Tecnologías de la Información y Comunicaciones (DTIC)',
+            direccion: 'Paseo del Prado, 18-20, Madrid',
+            lat: 40.4130, lon: -3.6940,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: 'Los primeros 3 meses es presencial. 2 días presenciales (implica tardes para productividad) y 3 días en TT. O 3 mañanas presenciales y el resto (tardes incluidas) en TT. Se concede a todo el mundo. Si acabas en CAU, también tienes teletrabajo. 100% TT por necesidad especial.',
+            productividad_valor: 200,
+            productividad_desc: 'Productividad mensual (implica hacer dos tardes) de 200€ brutos/mes. Se concede a los 3 meses.',
+            bufanda_desc: 'No especificada.',
+            parking: true,
+            page_ref: 160
+        },
+        {
+            id: 'mdsca_dgoj',
+            ministerio: 'Ministerio de Derechos Sociales, Consumo y Agenda 2030 (MDSCA)',
+            organismo: 'Dirección General de Ordenación del Juego',
+            direccion: 'C/ Atocha, 3, Madrid',
+            lat: 40.4120, lon: -3.7020,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana para la gente que lleva más tiempo. Al principio se tarda más. Lunes y viernes suelen ser los días de TT. Miércoles presencia generalizada. Se puede hacer desde fuera de Madrid. 100% TT por motivos de salud o cirugía.',
+            productividad_valor: 389,
+            productividad_desc: '389€ para niveles 16. Una tarde presencial y otra en remoto. En verano solo una tarde presencial.',
+            bufanda_desc: 'No especificada.',
+            parking: false, // No se menciona parking
+            page_ref: 164
+        },
+        {
+            id: 'mdsca_imserso',
+            ministerio: 'Ministerio de Derechos Sociales, Consumo y Agenda 2030 (MDSCA)',
+            organismo: 'Instituto de Mayores y Servicios Sociales (IMSERSO)',
+            direccion: 'C/ Ginzo de Limia, 58, Madrid',
+            lat: 40.4850, lon: -3.7000,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días (Jueves y Viernes). Se concede "nada más entrar". Se puede hacer desde provincia. 100% TT por condiciones médicas muy concretas.',
+            productividad_valor: 0,
+            productividad_desc: 'Hay productividad de tarde, pero están tardando en darla.',
+            bufanda_desc: 'No especificada.',
+            parking: false, // No se menciona parking
+            page_ref: 168
+        },
+        {
+            id: 'educacion_sgtic',
+            ministerio: 'Ministerio de Educación, Formación Profesional y Deportes',
+            organismo: 'S.G. de Tecnologías de la Información y Comunicaciones (SGTIC)',
+            direccion: 'C/ Los Madrazo, 15, Madrid',
+            lat: 40.4170, lon: -3.6960,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 2 meses. Miércoles presencial. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 172
+        },
+        {
+            id: 'ciencia_dtic',
+            ministerio: 'Ministerio de Ciencia, Innovación y Universidades',
+            organismo: 'División de Tecnologías de la Información',
+            direccion: 'Paseo de la Castellana, 162, Madrid',
+            lat: 40.4590, lon: -3.6920,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 5 meses. Miércoles obligatorio presencial. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 11
+        },
+        {
+            id: 'mineco_sgtic',
+            ministerio: 'Ministerio de Economía, Comercio y Empresa',
+            organismo: 'Secretaría General de Tecnologías de la Información y las Comunicaciones (SGTIC)',
+            direccion: 'Paseo de la Castellana, 162, Madrid',
+            lat: 40.4590, lon: -3.6920,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '0 a 3 días. Se concede pronto (2-3 semanas). Se puede hacer desde provincia. 100% TT posible para casos especiales (médicos).',
+            productividad_valor: 200,
+            productividad_desc: 'Entre 200€ y 350€ para nivel 16. Va ligada a hacer tardes.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 13
+        },
+        {
+            id: 'mintur_oept',
+            ministerio: 'Ministerio de Industria y Turismo',
+            organismo: 'Oficina Española de Patentes y Marcas O.A. (OEPM)',
+            direccion: 'Paseo de la Castellana, 75, Madrid',
+            lat: 40.4370, lon: -3.6920,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. Miércoles presencial preferente.',
+            productividad_valor: 0,
+            productividad_desc: 'No hay productividad de entrada, solo para niveles altos.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 14
+        },
+        {
+            id: 'mintur_sgtic',
+            ministerio: 'Ministerio de Industria y Turismo',
+            organismo: 'Secretaría General de Tecnologías de la Información y de las Comunicaciones',
+            direccion: 'Paseo de la Castellana, 160, Madrid',
+            lat: 40.4570, lon: -3.6920,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'Hay productividades adicionales, 2 veces al año, ligadas a objetivos. No especificada.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 14
+        },
+        {
+            id: 'sanidad_dgssi',
+            ministerio: 'Ministerio de Sanidad',
+            organismo: 'D.G. de Salud Pública y Sanidad Exterior - S.G. de Sanidad Exterior',
+            direccion: 'Paseo del Prado, 18-20, Madrid',
+            lat: 40.4130, lon: -3.6940,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 2 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 15
+        },
+        {
+            id: 'sanidad_dtic',
+            ministerio: 'Ministerio de Sanidad',
+            organismo: 'Subsecretaría - División de Tecnologías de la Información',
+            direccion: 'Paseo del Prado, 18-20, Madrid',
+            lat: 40.4130, lon: -3.6940,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se puede pedir a partir de los 2 meses. No hay regla para elegir los días, se pueden juntar con el fin de semana. 100% TT: excepciones.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'Una bufanda semestral variable (2 al año) que depende de la ejecución del presupuesto. La última fue de 700€.',
+            parking: true,
+            page_ref: 16
+        },
+        {
+            id: 'inclusion_giss',
+            ministerio: 'Ministerio de Inclusión, Seguridad Social y Migraciones',
+            organismo: 'S. de E. de la Seguridad Social y Pensiones - Gerencia de Informática de la Seguridad Social (GISS)',
+            direccion: 'C/ Padre Damián, 4, Madrid',
+            lat: 40.4570, lon: -3.6890,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana fijos: lunes, miércoles y viernes. Se ha hecho alguna excepción. Se concede al mes. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 17
+        },
+        {
+            id: 'trabajo_oeitss',
+            ministerio: 'Ministerio de Trabajo y Economía Social',
+            organismo: 'Organismo Estatal Inspección de Trabajo y Seguridad Social (OEITSS) - Unidad de Tecnologías de la Información, Comunicaciones y Apoyo a la Planificación',
+            direccion: 'C/ Agustín de Betancourt, 11, Madrid',
+            lat: 40.4440, lon: -3.6950,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: 'Hasta 3 días/semana. Se tramita una vez el funcionario tiene autonomía suficiente (1-3 meses). Días fijos. Se está impulsando normativa para deslocalización.',
+            productividad_valor: 0,
+            productividad_desc: 'Productividad de 1700€ (nivel 16) anual. No permanente.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 18
+        },
+        {
+            id: 'trabajo_insst',
+            ministerio: 'Ministerio de Trabajo y Economía Social',
+            organismo: 'Instituto Nacional de Seguridad y Salud en el Trabajo O.A. - Departamento de Sistemas Informáticos',
+            direccion: 'C/ Torrelaguna, 73, Madrid',
+            lat: 40.4490, lon: -3.6590,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 2-3 meses. Miércoles presencial preferente. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 19
+        },
+        {
+            id: 'trabajo_sgtic',
+            ministerio: 'Ministerio de Trabajo y Economía Social',
+            organismo: 'Subsecretaría - S.G. de Tecnologías de la Información y Comunicaciones (SGTIC)',
+            direccion: 'Paseo de la Castellana, 63, Madrid',
+            lat: 40.4280, lon: -3.6920,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 2 meses. Puede haber departamentos que roten días. 100% TT por problema de salud grave. Se puede hacer desde provincia.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 20
+        },
+        // Nuevo organismo añadido
+        {
+            id: 'sepe_sgtic',
+            ministerio: 'Ministerio de Trabajo y Economía Social',
+            organismo: 'Servicio Público de Empleo Estatal O.A. - S. G. de Tecnologías de la Información y Comunicaciones',
+            direccion: 'C/ Condesa de Venadito, 9, Madrid',
+            lat: 40.4452, lon: -3.6526,
+            teletrabajo_dias: 3, // Asunción
+            teletrabajo_desc: 'Hasta 3 días/semana. Se concede a los 3 meses. Posibilidad de TT desde provincia.', // Asunción
+            productividad_valor: 250, // Asunción
+            productividad_desc: 'Productividad estimada de 250€/mes por especial dedicación.', // Asunción
+            bufanda_desc: 'Gratificaciones anuales variables según objetivos.', // Asunción
+            parking: true, // Asunción
+            page_ref: 999 // Placeholder
+        },
+        {
+            id: 'transportes_dgmm',
+            ministerio: 'Ministerio de Transportes y Movilidad Sostenible',
+            organismo: 'D.G. de la Marina Mercante (DGMM) - S.G. de Coordinación y Gestión Administrativa',
+            direccion: 'C/ Ruiz de Alarcón, 1, Madrid',
+            lat: 40.4150, lon: -3.6920,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 2-3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 21
+        },
+        {
+            id: 'transportes_dgtc',
+            ministerio: 'Ministerio de Transportes y Movilidad Sostenible',
+            organismo: 'Dirección General de Transporte por Carretera y Ferrocarril',
+            direccion: 'Paseo de la Castellana, 67, Madrid',
+            lat: 40.4300, lon: -3.6900,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 22
+        },
+        {
+            id: 'transportes_ign',
+            ministerio: 'Ministerio de Transportes y Movilidad Sostenible',
+            organismo: 'Secretaría General - Instituto Geográfico Nacional (IGN)',
+            direccion: 'C/ General Ibáñez Ibero, 3, Madrid',
+            lat: 40.4500, lon: -3.7000,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se da a los 3 meses. No hay distancia máxima. Miércoles presencial preferente. CAU incluido. La dirección tiene ese acuerdo de TT, puesto que, dentro del ministerio, son 2 días.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 23
+        },
+        {
+            id: 'vivienda_dtic',
+            ministerio: 'Ministerio de Vivienda y Agenda Urbana',
+            organismo: 'Subsecretaría - División de Tecnologías de la Información',
+            direccion: 'Paseo de la Castellana, 67, Madrid',
+            lat: 40.4300, lon: -3.6900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: 'Máximo 3 días. Se concede a las 2-3 semanas. Requiere tiempo de presencialidad al inicio. Se puede elegir días, viernes no suele ir nadie.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'Se suelen conceder 2 al año. Cuantía: 0-700€.',
+            parking: true,
+            page_ref: 25
+        },
+        {
+            id: 'juventud_dtis',
+            ministerio: 'Ministerio de Juventud e Infancia',
+            organismo: 'División de Tecnologías y Sistemas de la Información',
+            direccion: 'Paseo de la Castellana, 67, Madrid',
+            lat: 40.4300, lon: -3.6900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 2-3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 25
+        },
+        {
+            id: 'justicia_djsd',
+            ministerio: 'Ministerio de Justicia',
+            organismo: 'D. G. de Transformación Digital de la Administración de Justicia - S.G. de Planificación y Gestión de Servicios',
+            direccion: 'C/ Bolsa, 8, Madrid',
+            lat: 40.4150, lon: -3.7050,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 26
+        },
+        {
+            id: 'mpt_dtic',
+            ministerio: 'Ministerio de Política Territorial y Memoria Democrática',
+            organismo: 'División de Tecnologías de la Información',
+            direccion: 'Paseo de la Castellana, 3, Madrid',
+            lat: 40.4160, lon: -3.6920,
+            teletrabajo_dias: 2,
+            teletrabajo_desc: '2 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 27
+        },
+        {
+            id: 'mpt_dtic_age',
+            ministerio: 'Ministerio de Política Territorial y Memoria Democrática',
+            organismo: 'División de Tecnologías de la Información de la AGE en el Territorio',
+            direccion: 'C/ Claudio Coello, 31, Madrid',
+            lat: 40.4240, lon: -3.6850,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 27
+        },
+        {
+            id: 'transformacion_digital_inap',
+            ministerio: 'Ministerio para la Transformación Digital y de la Función Pública',
+            organismo: 'Instituto Nacional de Administración Pública (INAP)',
+            direccion: 'C/ Atocha, 106, Madrid',
+            lat: 40.4070, lon: -3.6980,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 28
+        },
+        {
+            id: 'presidencia_sgad',
+            ministerio: 'Ministerio de la Presidencia, Justicia y Relaciones con las Cortes',
+            organismo: 'Secretaría General de Administración Digital (SGAD)',
+            direccion: 'C/ Manuel Tovar, 3, Madrid',
+            lat: 40.4780, lon: -3.6800,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 29
+        },
+        {
+            id: 'presidencia_dgtj',
+            ministerio: 'Ministerio de la Presidencia, Justicia y Relaciones con las Cortes',
+            organismo: 'Dirección General para el Servicio Público de Justicia - S.G. de Nuevas Tecnologías de la Justicia',
+            direccion: 'C/ San Bernardo, 21, Madrid',
+            lat: 40.4220, lon: -3.7040,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 30
+        },
+        {
+            id: 'presidencia_abogacia',
+            ministerio: 'Ministerio de la Presidencia, Justicia y Relaciones con las Cortes',
+            organismo: 'Abogacía General del Estado - Dirección de Tecnologías de la Información y las Comunicaciones',
+            direccion: 'C/ Marqués de la Ensenada, 8, Madrid',
+            lat: 40.4280, lon: -3.6900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 31
+        },
+        {
+            id: 'transicion_ecologica_sgtic',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Subsecretaría - S.G. de Tecnologías de la Información y Comunicaciones',
+            direccion: 'Plaza San Juan de la Cruz, 10, Madrid',
+            lat: 40.4470, lon: -3.6930,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 32
+        },
+        {
+            id: 'transicion_ecologica_aemet',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Agencia Estatal de Meteorología (AEMET)',
+            direccion: 'C/ Leonardo Prieto Castro, 8, Madrid',
+            lat: 40.4500, lon: -3.7000,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 33
+        },
+        {
+            id: 'transicion_ecologica_idae',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Instituto para la Diversificación y Ahorro de la Energía (IDAE)',
+            direccion: 'C/ de la Madera, 8, Madrid',
+            lat: 40.4190, lon: -3.7000,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 34
+        },
+        {
+            id: 'transicion_ecologica_oapn',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Organismo Autónomo Parques Nacionales (OAPN)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 35
+        },
+        {
+            id: 'transicion_ecologica_chg',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadiana (CHG)',
+            direccion: 'C/ Agustín de Betancourt, 25, Madrid',
+            lat: 40.4440, lon: -3.6950,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 36
+        },
+        {
+            id: 'transicion_ecologica_chj',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'Av. de Blasco Ibáñez, 48, Valencia',
+            lat: 39.4770, lon: -0.3550,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 37
+        },
+        {
+            id: 'transicion_ecologica_chm',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'Av. de Buenos Aires, 2, Ourense',
+            lat: 42.3400, lon: -7.8600,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 38
+        },
+        {
+            id: 'transicion_ecologica_chs',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'Av. del Doctor Pedro Guillén, 1, Murcia',
+            lat: 37.9900, lon: -1.1300,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 39
+        },
+        {
+            id: 'transicion_ecologica_cht',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'Av. de Portugal, 81, Madrid',
+            lat: 40.4070, lon: -3.7300,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 40
+        },
+        {
+            id: 'transicion_ecologica_che',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'Paseo de Sagasta, 24-28, Zaragoza',
+            lat: 41.6490, lon: -0.8800,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 41
+        },
+        {
+            id: 'transicion_ecologica_chdu',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Muro, 5, Valladolid',
+            lat: 41.6550, lon: -4.7280,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 42
+        },
+        {
+            id: 'transicion_ecologica_chgu',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'Av. de la Constitución, 21, Sevilla',
+            lat: 37.3870, lon: -5.9900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 43
+        },
+        {
+            id: 'transicion_ecologica_chsi',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'Av. de Portugal, 2, Ponferrada, León',
+            lat: 42.5470, lon: -6.5980,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 44
+        },
+        {
+            id: 'transicion_ecologica_chge',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadiana (CHGE)',
+            direccion: 'C/ Agustín de Betancourt, 25, Madrid',
+            lat: 40.4440, lon: -3.6950,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 45
+        },
+        {
+            id: 'transicion_ecologica_chc',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'Plaza de España, 2, Oviedo, Asturias',
+            lat: 43.3600, lon: -5.8500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 46
+        },
+        {
+            id: 'transicion_ecologica_chm_valencia',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño (CHM)',
+            direccion: 'Av. de Blasco Ibáñez, 48, Valencia',
+            lat: 39.4770, lon: -0.3550,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 47
+        },
+        {
+            id: 'transicion_ecologica_ch_sur',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGS)',
+            direccion: 'Av. de la Constitución, 21, Sevilla',
+            lat: 37.3870, lon: -5.9900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 48
+        },
+        {
+            id: 'transicion_ecologica_ch_norte',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Norte (CHN)',
+            direccion: 'Plaza de España, 2, Oviedo, Asturias',
+            lat: 43.3600, lon: -5.8500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 49
+        },
+        {
+            id: 'transicion_ecologica_ch_mediterraneo',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Mediterráneo (CHM)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 50
+        },
+        {
+            id: 'transicion_ecologica_ch_canarias',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica de las Islas Canarias (CHIC)',
+            direccion: 'C/ Agustín de Betancourt, 25, Madrid',
+            lat: 40.4440, lon: -3.6950,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 51
+        },
+        {
+            id: 'transicion_ecologica_ch_baleares',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica de las Islas Baleares (CHIB)',
+            direccion: 'C/ Agustín de Betancourt, 25, Madrid',
+            lat: 40.4440, lon: -3.6950,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 52
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_occidental',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico Occidental (CHCO)',
+            direccion: 'Plaza de España, 2, Oviedo, Asturias',
+            lat: 43.3600, lon: -5.8500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 53
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_murcia',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'Av. del Doctor Pedro Guillén, 1, Murcia',
+            lat: 37.9900, lon: -1.1300,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 54
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_zaragoza',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'Paseo de Sagasta, 24-28, Zaragoza',
+            lat: 41.6490, lon: -0.8800,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 55
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_valladolid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Muro, 5, Valladolid',
+            lat: 41.6550, lon: -4.7280,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 56
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_sevilla',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'Av. de la Constitución, 21, Sevilla',
+            lat: 37.3870, lon: -5.9900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 57
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_ponferrada',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'Av. de Portugal, 2, Ponferrada, León',
+            lat: 42.5470, lon: -6.5980,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 58
+        },
+        {
+            id: 'transicion_ecologica_chge',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadiana (CHGE)',
+            direccion: 'C/ Agustín de Betancourt, 25, Madrid',
+            lat: 40.4440, lon: -3.6950,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 59
+        },
+        {
+            id: 'transicion_ecologica_chc',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'Plaza de España, 2, Oviedo, Asturias',
+            lat: 43.3600, lon: -5.8500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 60
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_ourense',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'Av. de Buenos Aires, 2, Ourense',
+            lat: 42.3400, lon: -7.8600,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 61
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_valencia',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'Av. de Blasco Ibáñez, 48, Valencia',
+            lat: 39.4770, lon: -0.3550,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 62
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'Av. de Portugal, 81, Madrid',
+            lat: 40.4070, lon: -3.7300,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 63
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 64
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 65
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 66
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 67
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 68
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 69
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 70
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 71
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_toledo',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'Av. de Portugal, 81, Toledo',
+            lat: 39.8600, lon: -4.0200,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 72
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_alicante',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Alicante',
+            lat: 38.3400, lon: -0.4800,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 73
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_logroño',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'Paseo de Sagasta, 24-28, Logroño',
+            lat: 42.4600, lon: -2.4400,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 74
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_leon',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Muro, 5, León',
+            lat: 42.6000, lon: -5.5700,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 75
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_cordoba',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'Av. de la Constitución, 21, Córdoba',
+            lat: 37.8800, lon: -4.7700,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 76
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_lugo',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'Av. de Portugal, 2, Lugo',
+            lat: 43.0100, lon: -7.5500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 77
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_santander',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'Plaza de España, 2, Santander, Cantabria',
+            lat: 43.4600, lon: -3.8000,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 78
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_pontevedra',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'Av. de Buenos Aires, 2, Pontevedra',
+            lat: 42.4300, lon: -8.6400,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 79
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_castellon',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'Av. de Blasco Ibáñez, 48, Castellón de la Plana',
+            lat: 39.9800, lon: -0.0300,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 80
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_caceres',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'Av. de Portugal, 81, Cáceres',
+            lat: 39.4700, lon: -6.3700,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 81
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_almeria',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Almería',
+            lat: 36.8300, lon: -2.4500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 82
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_pamplona',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'Paseo de Sagasta, 24-28, Pamplona',
+            lat: 42.8100, lon: -1.6400,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 83
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_salamanca',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Muro, 5, Salamanca',
+            lat: 40.9600, lon: -5.6600,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 84
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_jaen',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'Av. de la Constitución, 21, Jaén',
+            lat: 37.7700, lon: -3.7900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 85
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_ourense',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'Av. de Portugal, 2, Ourense',
+            lat: 42.3400, lon: -7.8600,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 86
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_bilbao',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'Plaza de España, 2, Bilbao, Vizcaya',
+            lat: 43.2600, lon: -2.9300,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 87
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_lugo',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'Av. de Buenos Aires, 2, Lugo',
+            lat: 43.0100, lon: -7.5500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 88
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_albacete',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'Av. de Blasco Ibáñez, 48, Albacete',
+            lat: 38.9900, lon: -1.8500,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 89
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_guadalajara',
+            ministerio: 'Ministerio para la Transición Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'Av. de Portugal, 81, Guadalajara',
+            lat: 40.6300, lon: -3.1600,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 90
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_cartagena',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Cartagena, Murcia',
+            lat: 37.6000, lon: -0.9900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 91
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_girona',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'Paseo de Sagasta, 24-28, Girona',
+            lat: 41.9800, lon: 2.8200,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 92
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_burgos',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Muro, 5, Burgos',
+            lat: 42.3400, lon: -3.6900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 93
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_huelva',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'Av. de la Constitución, 21, Huelva',
+            lat: 37.2600, lon: -6.9400,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 94
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_pontevedra',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'Av. de Portugal, 2, Pontevedra',
+            lat: 42.4300, lon: -8.6400,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 95
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_gijon',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'Plaza de España, 2, Gijón, Asturias',
+            lat: 43.5300, lon: -5.6600,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 96
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_vigo',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'Av. de Buenos Aires, 2, Vigo, Pontevedra',
+            lat: 42.2300, lon: -8.7200,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 97
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_valencia_madrid',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 98
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_avila',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'Av. de Portugal, 81, Ávila',
+            lat: 40.6600, lon: -4.6900,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: true,
+            page_ref: 99
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_alicante_madrid',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 100
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 101
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 102
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 103
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 104
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 105
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 106
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 107
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid_2',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 108
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 109
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 110
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 111
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 112
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 113
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 114
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 115
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 116
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid_3',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 117
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 109
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 110
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 111
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 112
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 113
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 114
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 115
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 116
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid_4',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 117
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 127
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 128
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 129
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 130
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 131
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 132
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 133
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 134
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid_5',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 135
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 136
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 137
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 138
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 139
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 140
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 141
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 142
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 143
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid_6',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 144
+        },
+        {
+            id: 'transicion_ecologica_ch_segura_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Segura (CHS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 145
+        },
+        {
+            id: 'transicion_ecologica_ch_ebro_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Ebro (CHE)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 146
+        },
+        {
+            id: 'transicion_ecologica_ch_duero_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Duero (CHDU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 147
+        },
+        {
+            id: 'transicion_ecologica_ch_guadalquivir_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Guadalquivir (CHGU)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 148
+        },
+        {
+            id: 'transicion_ecologica_ch_sil_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Sil (CHSI)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 149
+        },
+        {
+            id: 'transicion_ecologica_ch_cantabrico_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Cantábrico (CHC)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 150
+        },
+        {
+            id: 'transicion_ecologica_ch_miño_sil_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Miño-Sil (CHMS)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 151
+        },
+        {
+            id: 'transicion_ecologica_ch_jucar_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Júcar (CHJ)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 152
+        },
+        {
+            id: 'transicion_ecologica_ch_tajo_madrid_7',
+            ministerio: 'Ministerio para la Transformación Ecológica y el Reto Demográfico',
+            organismo: 'Confederación Hidrográfica del Tajo (CHT)',
+            direccion: 'C/ Gran Vía de San Francisco, 4, Madrid',
+            lat: 40.4080, lon: -3.7060,
+            teletrabajo_dias: 3,
+            teletrabajo_desc: '3 días/semana. Se concede a los 3 meses. Se puede hacer desde provincia. No hay 100% TT.',
+            productividad_valor: 0,
+            productividad_desc: 'No especificada en el documento.',
+            bufanda_desc: 'No especificada en el documento.',
+            parking: false, // No se menciona parking
+            page_ref: 153
+        }
+    ];
+
+    // Elementos del DOM
+    const teletrabajoFilter = document.getElementById('teletrabajo-filter');
+    const teletrabajoValue = document.getElementById('teletrabajo-value');
+    const distanciaFilter = document.getElementById('distancia-filter');
+    const distanciaValue = document.getElementById('distancia-value');
+    const sortBy = document.getElementById('sort-by');
+    const organismoSelector = document.getElementById('organismo-selector');
+    const parkingFilter = document.getElementById('parking-filter');
+    const organismosGrid = document.getElementById('organismos-grid');
+    const noResultsMessage = document.getElementById('no-results');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    const resultsCount = document.getElementById('results-count');
+
+    // Elementos del modal de detalles del organismo
+    const organismoModalOverlay = document.getElementById('organismo-modal-overlay');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalOrganismoTitle = document.getElementById('modal-organismo-title');
+    const modalMinisterio = document.getElementById('modal-ministerio');
+    const modalDireccion = document.getElementById('modal-direccion');
+    const modalDistancia = document.getElementById('modal-distancia');
+    const modalTeletrabajoDesc = document.getElementById('modal-teletrabajo-desc');
+    const modalProductividadDesc = document.getElementById('modal-productividad-desc');
+    const modalBufandasDesc = document.getElementById('modal-bufandas-desc');
+    const modalParking = document.getElementById('modal-parking');
+    const modalMoreInfo = document.getElementById('modal-more-info');
+
+    // Elementos del modal de favoritos
+    const showFavoritesBtn = document.getElementById('show-favorites-btn');
+    const favoritesModalOverlay = document.getElementById('favorites-modal-overlay');
+    const closeFavoritesModalBtn = document.getElementById('close-favorites-modal-btn');
+    const favoritesGrid = document.getElementById('favorites-grid');
+    const noFavoritesMessage = document.getElementById('no-favorites-message');
+    const exportFavoritesBtn = document.getElementById('export-favorites-btn');
+    const printFavoritesBtn = document.getElementById('print-favorites-btn'); // Nuevo botón de imprimir
+
+    // Templates
+    const organismoCardTemplate = document.getElementById('organismo-card-template');
+    const favoriteCardTemplate = document.getElementById('favorite-card-template');
+
+    // Chart.js instance
+    let productividadChart;
+
+    // Favoritos
+    let favorites = new Set();
+
+    /**
+     * Calcula la distancia Haversine entre dos puntos geográficos (latitud y longitud).
+     * @param {object} point1 - Primer punto {lat: number, lon: number}.
+     * @param {object} point2 - Segundo punto {lat: number, lon: number}.
+     * @returns {number} Distancia en kilómetros.
+     */
+    function haversineDistance(point1, point2) {
+        const R = 6371; // Radio de la Tierra en kilómetros
+        const dLat = (point2.lat - point1.lat) * Math.PI / 180;
+        const dLon = (point2.lon - point1.lon) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(point1.lat * Math.PI / 180) * Math.cos(point2.lat * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    /**
+     * Guarda los favoritos en localStorage.
+     */
+    function saveFavorites() {
+        localStorage.setItem('organismoFavorites', JSON.stringify(Array.from(favorites)));
+    }
+
+    /**
+     * Carga los favoritos desde localStorage.
+     */
+    function loadFavorites() {
+        const storedFavorites = localStorage.getItem('organismoFavorites');
+        if (storedFavorites) {
+            favorites = new Set(JSON.parse(storedFavorites));
+        }
+    }
+
+    /**
+     * Añade o quita un organismo de favoritos.
+     * @param {string} id - ID del organismo.
+     */
+    function toggleFavorite(id) {
+        if (favorites.has(id)) {
+            favorites.delete(id);
+        } else {
+            favorites.add(id);
+        }
+        saveFavorites();
+        updateFavoriteButtons(id);
+        renderFavoritesModal(); // Actualiza el modal de favoritos si está abierto
+    }
+
+    /**
+     * Actualiza el estado visual de los botones de favorito.
+     * @param {string} id - ID del organismo.
+     */
+    function updateFavoriteButtons(id) {
+        document.querySelectorAll(`.favorite-button[data-organismo-id="${id}"]`).forEach(button => {
+            if (favorites.has(id)) {
+                button.classList.add('favorited');
+            } else {
+                button.classList.remove('favorited');
+            }
+        });
+    }
+
+    /**
+     * Renderiza las tarjetas de organismos filtradas y ordenadas.
+     */
+    function renderOrganismos() {
+        let filteredOrganismos = organismosData.filter(organismo => {
+            // Filtrar por teletrabajo
+            const minTeletrabajo = parseInt(teletrabajoFilter.value);
+            if (organismo.teletrabajo_dias < minTeletrabajo) {
+                return false;
+            }
+
+            // Filtrar por distancia
+            const maxDistancia = parseFloat(distanciaFilter.value);
+            if (organismo.distancia > maxDistancia) {
+                return false;
+            }
+
+            // Filtrar por aparcamiento
+            if (parkingFilter.checked && !organismo.parking) {
+                return false;
+            }
+
+            // Filtrar por organismo seleccionado en el dropdown
+            const selectedOrganismoId = organismoSelector.value;
+            if (selectedOrganismoId && organismo.id !== selectedOrganismoId) {
+                return false;
+            }
+
+            return true;
+        });
+
+        // Ordenar organismos
+        const sortValue = sortBy.value;
+        filteredOrganismos.sort((a, b) => {
+            if (sortValue === 'productividad-desc') {
+                return b.productividad_valor - a.productividad_valor;
+            } else if (sortValue === 'productividad-asc') {
+                return a.productividad_valor - b.productividad_valor;
+            } else if (sortValue === 'distancia-asc') {
+                return a.distancia - b.distancia;
+            } else if (sortValue === 'distancia-desc') {
+                return b.distancia - a.distancia;
+            } else if (sortValue === 'teletrabajo-desc') {
+                return b.teletrabajo_dias - a.teletrabajo_dias;
+            }
+            return 0;
+        });
+
+        organismosGrid.innerHTML = '';
+        if (filteredOrganismos.length === 0) {
+            noResultsMessage.classList.remove('hidden');
+        } else {
+            noResultsMessage.classList.add('hidden');
+            filteredOrganismos.forEach(organismo => {
+                const card = organismoCardTemplate.content.cloneNode(true);
+                card.querySelector('.organismo-card').dataset.organismoId = organismo.id;
+                card.querySelector('h3').textContent = organismo.organismo;
+                card.querySelector('p:nth-of-type(1)').textContent = organismo.ministerio; // Ministerio
+                card.querySelector('.direccion').textContent = organismo.direccion;
+                card.querySelector('.distancia').textContent = `${organismo.distancia.toFixed(2)} km de C/ Panizo 16`;
+                card.querySelector('.teletrabajo').textContent = organismo.teletrabajo_desc;
+                card.querySelector('.productividad').textContent = organismo.productividad_desc;
+                card.querySelector('.bufandas').textContent = organismo.bufanda_desc;
+                card.querySelector('.parking').textContent = organismo.parking ? 'Sí, dispone de aparcamiento.' : 'No dispone de aparcamiento.';
+                if (!organismo.parking) {
+                    card.querySelector('.parking-info').classList.add('hidden'); // Ocultar si no tiene parking
+                }
+                
+                // Construct map link using address for origin
+                const mapLink = `https://www.google.com/maps/dir/${encodeURIComponent(geocodePanizo.address)}/${organismo.lat},${organismo.lon}`;
+                card.querySelector('.more-info').href = mapLink;
+
+                const favoriteButton = card.querySelector('.favorite-button');
+                favoriteButton.dataset.organismoId = organismo.id;
+                updateFavoriteButtons(organismo.id); // Set initial favorite state
+
+                favoriteButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evita que se abra el modal al hacer clic en el botón de favorito
+                    toggleFavorite(organismo.id);
+                });
+
+                card.querySelector('.organismo-card').addEventListener('click', () => openOrganismoModal(organismo.id));
+                organismosGrid.appendChild(card);
+            });
+        }
+        resultsCount.textContent = `${filteredOrganismos.length} resultados`;
+        updateChart(filteredOrganismos);
+    }
+
+    /**
+     * Abre el modal de detalles del organismo.
+     * @param {string} id - ID del organismo a mostrar.
+     */
+    function openOrganismoModal(id) {
+        const organismo = organismosData.find(org => org.id === id);
+        if (organismo) {
+            modalOrganismoTitle.textContent = organismo.organismo;
+            modalMinisterio.textContent = organismo.ministerio;
+            modalDireccion.textContent = organismo.direccion;
+            modalDistancia.textContent = `${organismo.distancia.toFixed(2)} km de C/ Panizo 16`;
+            modalTeletrabajoDesc.textContent = organismo.teletrabajo_desc;
+            modalProductividadDesc.textContent = organismo.productividad_desc;
+            modalBufandasDesc.textContent = organismo.bufanda_desc;
+            modalParking.textContent = organismo.parking ? 'Sí, dispone de aparcamiento.' : 'No dispone de aparcamiento.';
+            
+            // Construct map link using address for origin
+            const mapLink = `https://www.google.com/maps/dir/${encodeURIComponent(geocodePanizo.address)}/${organismo.lat},${organismo.lon}`;
+            modalMoreInfo.href = mapLink;
+
+            organismoModalOverlay.classList.add('open');
+            // Highlight the card in the grid
+            document.querySelectorAll('.organismo-card').forEach(card => {
+                card.classList.remove('highlight-card');
+            });
+            const targetCard = document.querySelector(`.organismo-card[data-organismo-id="${id}"]`);
+            if (targetCard) {
+                targetCard.classList.add('highlight-card');
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+
+    /**
+     * Cierra el modal de detalles del organismo.
+     */
+    function closeOrganismoModal() {
+        organismoModalOverlay.classList.remove('open');
+        document.querySelectorAll('.organismo-card').forEach(card => {
+            card.classList.remove('highlight-card');
+        });
+    }
+
+    /**
+     * Renderiza el modal de favoritos.
+     */
+    function renderFavoritesModal() {
+        favoritesGrid.innerHTML = '';
+        if (favorites.size === 0) {
+            noFavoritesMessage.classList.remove('hidden');
+            printFavoritesBtn.disabled = true; // Deshabilitar botón de imprimir si no hay favoritos
+            exportFavoritesBtn.disabled = true; // Deshabilitar botón de exportar si no hay favoritos
+        } else {
+            noFavoritesMessage.classList.add('hidden');
+            printFavoritesBtn.disabled = false; // Habilitar botón de imprimir
+            exportFavoritesBtn.disabled = false; // Habilitar botón de exportar
+            const favoritedOrganismos = organismosData.filter(org => favorites.has(org.id));
+            favoritedOrganismos.forEach(organismo => {
+                const card = favoriteCardTemplate.content.cloneNode(true);
+                card.querySelector('.favorite-organismo-card').dataset.organismoId = organismo.id;
+                card.querySelector('h4').textContent = organismo.organismo;
+                card.querySelector('p:nth-of-type(1)').textContent = organismo.ministerio;
+                card.querySelector('.teletrabajo').textContent = organismo.teletrabajo_desc;
+                card.querySelector('.productividad').textContent = organismo.productividad_desc;
+                card.querySelector('.distancia').textContent = `${organismo.distancia.toFixed(2)} km`;
+                
+                card.querySelector('.remove-favorite-btn').addEventListener('click', () => {
+                    toggleFavorite(organismo.id);
+                });
+                favoritesGrid.appendChild(card);
+            });
+        }
+        favoritesModalOverlay.classList.add('open');
+    }
+
+    /**
+     * Cierra el modal de favoritos.
+     */
+    function closeFavoritesModal() {
+        favoritesModalOverlay.classList.remove('open');
+    }
+
+    /**
+     * Exporta los organismos favoritos a un archivo CSV.
+     */
+    function exportFavoritesToCsv() {
+        const favoritedOrganismos = organismosData.filter(org => favorites.has(org.id));
+        if (favoritedOrganismos.length === 0) {
+            // Using a custom alert-like message instead of alert()
+            const messageBox = document.createElement('div');
+            messageBox.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1100; text-align: center;';
+            messageBox.innerHTML = '<p class="text-lg font-semibold mb-4">No hay organismos favoritos para exportar.</p><button class="px-4 py-2 bg-amber-500 text-white rounded-md" onclick="this.parentNode.remove()">Cerrar</button>';
+            document.body.appendChild(messageBox);
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Organismo,Ministerio,Direccion,Teletrabajo,Productividad,Bufandas,Parking,Distancia_km\n";
+
+        favoritedOrganismos.forEach(org => {
+            const row = [
+                `"${org.organismo.replace(/"/g, '""')}"`,
+                `"${org.ministerio.replace(/"/g, '""')}"`,
+                `"${org.direccion.replace(/"/g, '""')}"`,
+                `"${org.teletrabajo_desc.replace(/"/g, '""')}"`,
+                `"${org.productividad_desc.replace(/"/g, '""')}"`,
+                `"${org.bufanda_desc.replace(/"/g, '""')}"`,
+                org.parking ? 'Sí' : 'No',
+                org.distancia.toFixed(2)
+            ].join(',');
+            csvContent += row + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "organismos_favoritos.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    /**
+     * Imprime la lista de organismos favoritos.
+     */
+    function printFavorites() {
+        const favoritedOrganismos = organismosData.filter(org => favorites.has(org.id));
+        if (favoritedOrganismos.length === 0) {
+            // Using a custom alert-like message instead of alert()
+            const messageBox = document.createElement('div');
+            messageBox.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1100; text-align: center;';
+            messageBox.innerHTML = '<p class="text-lg font-semibold mb-4">No hay organismos favoritos para imprimir.</p><button class="px-4 py-2 bg-amber-500 text-white rounded-md" onclick="this.parentNode.remove()">Cerrar</button>';
+            document.body.appendChild(messageBox);
+            return;
+        }
+
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<!DOCTYPE html>');
+        printWindow.document.write('<html lang="es">');
+        printWindow.document.write('<head>');
+        printWindow.document.write('<title>Mis Organismos Favoritos - Imprimir</title>');
+        // Include Tailwind CSS and custom print styles
+        printWindow.document.write('<script src="https://cdn.tailwindcss.com"></scr' + 'ipt>');
+        printWindow.document.write('<link rel="preconnect" href="https://fonts.googleapis.com">');
+        printWindow.document.write('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
+        printWindow.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">');
+        printWindow.document.write('<style>');
+        printWindow.document.write(`
+            body {
+                font-family: 'Inter', sans-serif;
+                margin: 0;
+                padding: 0;
+                color: #000;
+            }
+            .print-container {
+                width: 21cm; /* A4 width */
+                min-height: 29.7cm; /* A4 height */
+                margin: 0 auto;
+                padding: 2cm; /* A4 margins */
+                box-sizing: border-box;
+            }
+            h1 {
+                font-size: 2rem;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                color: #000;
+            }
+            .print-grid {
+                display: grid;
+                grid-template-columns: 1fr; /* Single column for print */
+                gap: 1.5rem;
+            }
+            .print-card {
+                border: 1px solid #e2e8f0;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                background-color: #fff;
+                box-shadow: none;
+                break-inside: avoid; /* Avoid breaking cards across pages */
+            }
+            .print-card h4 {
+                font-size: 1.25rem;
+                font-weight: bold;
+                margin-bottom: 0.5rem;
+                color: #000;
+            }
+            .print-card p {
+                font-size: 0.9rem;
+                margin-bottom: 0.25rem;
+                color: #333;
+            }
+            .print-card p span.font-semibold {
+                font-weight: 600;
+            }
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+        `);
+        printWindow.document.write('</st' + 'yle>');
+        printWindow.document.write('</head>');
+        printWindow.document.write('<body>');
+        printWindow.document.write('<div class="print-container">');
+        printWindow.document.write('<h1>Mis Organismos Favoritos</h1>');
+        printWindow.document.write('<div class="print-grid">');
+
+        favoritedOrganismos.forEach(organismo => {
+            printWindow.document.write(`
+                <div class="print-card">
+                    <h4>${organismo.organismo}</h4>
+                    <p class="text-xs text-slate-500 mb-3">${organismo.ministerio}</p>
+                    <p><span class="font-semibold">Teletrabajo:</span> ${organismo.teletrabajo_desc}</p>
+                    <p><span class="font-semibold">Productividad:</span> ${organismo.productividad_desc}</p>
+                    <p><span class="font-semibold">Bufandas:</span> ${organismo.bufanda_desc}</p>
+                    <p><span class="font-semibold">Aparcamiento:</span> ${organismo.parking ? 'Sí' : 'No'}</p>
+                    <p><span class="font-semibold">Distancia a C/ Panizo 16:</span> ${organismo.distancia.toFixed(2)} km</p>
+                    <p><span class="font-semibold">Dirección:</span> ${organismo.direccion}</p>
+                </div>
+            `);
+        });
+
+        printWindow.document.write('</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('</body>');
+        printWindow.document.write('</ht' + 'ml>');
+        printWindow.document.close();
+
+        // Wait for content to load, then print
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+            // Optional: Close the window after printing
+            // printWindow.close();
+        };
+    }
+
+
+    /**
+     * Actualiza el gráfico de productividad.
+     * @param {Array} data - Datos de organismos para el gráfico.
+     */
+    function updateChart(data) {
+        const ctx = document.getElementById('productividadChart').getContext('2d');
+        
+        // Destruir el gráfico existente si lo hay
+        if (productividadChart) {
+            productividadChart.destroy();
+        }
+
+        // Calculate dynamic height for the chart
+        // Aprox. 25 pixels per bar + some padding for labels and title
+        const dynamicHeight = Math.max(300, data.length * 25 + 100); 
+        ctx.canvas.parentNode.style.height = `${dynamicHeight}px`;
+        ctx.canvas.height = dynamicHeight;
+
+
+        // Preparar datos para el gráfico
+        const chartLabels = data.map(org => org.organismo);
+        const chartData = data.map(org => org.productividad_valor);
+        const backgroundColors = data.map(() => 'rgba(251, 191, 36, 0.7)'); // Amarillo ámbar
+        const borderColors = data.map(() => 'rgba(251, 191, 36, 1)');
+
+        productividadChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Productividad Mensual (€)',
+                    data: chartData,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Hace el gráfico de barras horizontal
+                plugins: {
+                    legend: {
+                        display: false // Oculta la leyenda
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.x !== null) {
+                                    label += new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(context.parsed.x);
+                                }
+                                return label;
+                            },
+                            title: function(context) {
+                                const index = context[0].dataIndex;
+                                const organismo = data[index];
+                                return `${organismo.organismo} (${organismo.ministerio})`;
+                            },
+                            afterBody: function(context) {
+                                const index = context[0].dataIndex;
+                                const organismo = data[index];
+                                return `\nTeletrabajo: ${organismo.teletrabajo_desc}\nBufandas: ${organismo.bufanda_desc}\nAparcamiento: ${organismo.parking ? 'Sí' : 'No'}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Productividad Mensual (€)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            autoSkip: false, // Asegura que todas las etiquetas se muestren
+                            maxRotation: 0,
+                            minRotation: 0
+                        },
+                        title: {
+                            display: true,
+                            text: 'Organismo'
+                        }
+                    }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const clickedIndex = elements[0].index;
+                        const organismoId = data[clickedIndex].id;
+                        openOrganismoModal(organismoId);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Rellena el selector de organismos con todos los organismos disponibles.
+     */
+    function populateOrganismoSelector() {
+        // Ordenar organismos alfabéticamente por Ministerio y luego por nombre de organismo para el selector
+        const sortedOrganismos = [...organismosData].sort((a, b) => {
+            const ministryCompare = a.ministerio.localeCompare(b.ministerio);
+            if (ministryCompare !== 0) {
+                return ministryCompare;
+            }
+            return a.organismo.localeCompare(b.organismo);
+        });
+        organismoSelector.innerHTML = '<option value="">Todos los organismos</option>'; // Clear existing options
+        sortedOrganismos.forEach(organismo => {
+            const option = document.createElement('option');
+            option.value = organismo.id;
+            option.textContent = `${organismo.ministerio} - ${organismo.organismo}`; // Show Ministry and Organism
+            organismoSelector.appendChild(option);
+        });
+    }
+
+    /**
+     * Aplica los filtros y el ordenación y renderiza los organismos.
+     */
+    function applyFiltersAndSort() {
+        teletrabajoValue.textContent = `${teletrabajoFilter.value}${teletrabajoFilter.value < 5 ? '+' : ''}`;
+        distanciaValue.textContent = `${distanciaFilter.value} km`;
+        renderOrganismos();
+    }
+
+    /**
+     * Configura todos los event listeners.
+     */
+    function setupEventListeners() {
+        teletrabajoFilter.addEventListener('input', applyFiltersAndSort);
+        distanciaFilter.addEventListener('input', applyFiltersAndSort);
+        sortBy.addEventListener('change', applyFiltersAndSort);
+        organismoSelector.addEventListener('change', applyFiltersAndSort);
+        parkingFilter.addEventListener('change', applyFiltersAndSort);
+        resetFiltersBtn.addEventListener('click', () => {
+            teletrabajoFilter.value = 3;
+            distanciaFilter.value = 30;
+            sortBy.value = 'productividad-desc';
+            organismoSelector.value = '';
+            parkingFilter.checked = false;
+            applyFiltersAndSort();
+        });
+
+        // Toggle controls section
+        const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+        const toggleControlsText = document.getElementById('toggle-controls-text');
+        const toggleControlsIcon = document.getElementById('toggle-controls-icon');
+        const controlsSection = document.getElementById('controls');
+
+        toggleControlsBtn.addEventListener('click', () => {
+            controlsSection.classList.toggle('hidden');
+            if (controlsSection.classList.contains('hidden')) {
+                toggleControlsText.textContent = 'Mostrar Opciones de Filtro';
+                toggleControlsIcon.classList.remove('rotate-180');
+            } else {
+                toggleControlsText.textContent = 'Ocultar Opciones de Filtro';
+                toggleControlsIcon.classList.add('rotate-180');
+            }
+        });
+
+        // Toggle chart section
+        const toggleChartBtn = document.getElementById('toggle-chart-btn');
+        const toggleChartText = document.getElementById('toggle-chart-text');
+        const toggleChartIcon = document.getElementById('toggle-chart-icon');
+        const chartSection = document.getElementById('chart-section');
+        const chartContent = document.getElementById('chart-content');
+
+        toggleChartBtn.addEventListener('click', () => {
+            chartSection.classList.toggle('hidden');
+            if (chartSection.classList.contains('hidden')) {
+                toggleChartText.textContent = 'Mostrar Gráfico de Productividad';
+                toggleChartIcon.classList.remove('rotate-180');
+            } else {
+                toggleChartText.textContent = 'Ocultar Gráfico de Productividad';
+                toggleChartIcon.classList.add('rotate-180');
+            }
+        });
+
+        // Event listeners del modal de detalles del organismo
+        closeModalBtn.addEventListener('click', closeOrganismoModal);
+        organismoModalOverlay.addEventListener('click', (e) => {
+            if (e.target === organismoModalOverlay) { 
+                closeOrganismoModal();
+            }
+        });
+
+        // Event listeners del modal de favoritos
+        showFavoritesBtn.addEventListener('click', renderFavoritesModal);
+        closeFavoritesModalBtn.addEventListener('click', closeFavoritesModal);
+        favoritesModalOverlay.addEventListener('click', (e) => {
+            if (e.target === favoritesModalOverlay) {
+                closeFavoritesModal();
+            }
+        });
+
+        // New event listener for export button
+        exportFavoritesBtn.addEventListener('click', exportFavoritesToCsv);
+        // New event listener for print button
+        printFavoritesBtn.addEventListener('click', printFavorites);
+    }
+
+    /**
+     * Inicializa la aplicación: calcula distancias, carga favoritos, rellena selectores y configura eventos.
+     */
+    function init() {
+        organismosData.forEach(org => {
+            org.distancia = haversineDistance(geocodePanizo, { lat: org.lat, lon: org.lon });
+        });
+        loadFavorites(); // Carga los favoritos al inicio
+        populateOrganismoSelector();
+        setupEventListeners();
+        applyFiltersAndSort(); // Renderizado inicial
+    }
+    
+    init();
+});
+</script>
+
+</body>
+</html>
