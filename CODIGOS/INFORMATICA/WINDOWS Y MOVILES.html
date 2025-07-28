@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Interactivo de Windows y Móviles</title>
+    <title>WINDOWS Y MOVILES</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -27,6 +27,12 @@
             text-align: center;
             position: relative;
             overflow: hidden;
+        }
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
         .question-container {
             margin-bottom: 25px;
@@ -78,9 +84,10 @@
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Align items vertically */
             margin-top: 30px;
         }
-        .nav-button {
+        .nav-button, .restart-middle-button {
             background-color: #4338ca;
             color: white;
             padding: 12px 25px;
@@ -91,12 +98,19 @@
             transition: background-color 0.3s ease;
             border: none;
         }
-        .nav-button:hover {
+        .nav-button:hover, .restart-middle-button:hover {
             background-color: #3730a3;
         }
-        .nav-button:disabled {
+        .nav-button:disabled, .restart-middle-button:disabled {
             background-color: #a78bfa;
             cursor: not-allowed;
+        }
+        .restart-middle-button {
+            background-color: #10b981; /* Different color for restart button */
+            margin: 0 10px; /* Space between navigation buttons */
+        }
+        .restart-middle-button:hover {
+            background-color: #059669;
         }
         .result-message {
             margin-top: 20px;
@@ -116,7 +130,38 @@
             color: #2c3e50;
             margin-top: 20px;
         }
-        .restart-button {
+        .final-results {
+            margin-top: 30px;
+            text-align: left;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .final-results h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .final-results p {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        .final-results .correct-count {
+            color: #065f46;
+            font-weight: 600;
+        }
+        .final-results .incorrect-count {
+            color: #991b1b;
+            font-weight: 600;
+        }
+        .final-results .unanswered-count {
+            color: #f39c12;
+            font-weight: 600;
+        }
+        .restart-button-final {
             background-color: #10b981;
             color: white;
             padding: 12px 25px;
@@ -128,7 +173,7 @@
             border: none;
             margin-top: 20px;
         }
-        .restart-button:hover {
+        .restart-button-final:hover {
             background-color: #059669;
         }
         @media (min-width: 640px) {
@@ -140,17 +185,30 @@
 </head>
 <body>
     <div class="container">
-        <div class="question-container" id="question-container">
-            <div class="question-text" id="question-text"></div>
-            <div class="options-grid" id="options-grid"></div>
+        <h1 class="title">WINDOWS Y MOVILES</h1>
+        <div id="quiz-content">
+            <div class="question-container" id="question-container">
+                <div class="question-text" id="question-text"></div>
+                <div class="options-grid" id="options-grid"></div>
+            </div>
+            <div class="result-message" id="result-message"></div>
+            <div class="navigation-buttons">
+                <button id="prev-button" class="nav-button" disabled>Anterior</button>
+                <button id="restart-middle-button" class="restart-middle-button">Reiniciar Test</button>
+                <button id="next-button" class="nav-button">Siguiente</button>
+            </div>
+            <div class="score-display" id="score-display">Puntuación: 0 / 0</div>
         </div>
-        <div class="result-message" id="result-message"></div>
-        <div class="navigation-buttons">
-            <button id="prev-button" class="nav-button" disabled>Anterior</button>
-            <button id="next-button" class="nav-button">Siguiente</button>
+
+        <div id="final-results-container" class="hidden">
+            <div class="final-results">
+                <h3>Resultados Finales</h3>
+                <p>Preguntas Correctas: <span id="correct-count" class="correct-count">0</span></p>
+                <p>Preguntas Incorrectas: <span id="incorrect-count" class="incorrect-count">0</span></p>
+                <p>Preguntas Sin Contestar: <span id="unanswered-count" class="unanswered-count">0</span></p>
+                <button id="restart-button-final" class="restart-button-final">Reiniciar Test</button>
+            </div>
         </div>
-        <div class="score-display" id="score-display">Puntuación: 0 / 0</div>
-        <button id="restart-button" class="restart-button hidden">Reiniciar Test</button>
     </div>
 
     <script>
@@ -268,11 +326,46 @@
         const resultMessageElement = document.getElementById('result-message');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
+        const restartMiddleButton = document.getElementById('restart-middle-button'); // New restart button
         const scoreDisplay = document.getElementById('score-display');
-        const restartButton = document.getElementById('restart-button');
+        const quizContent = document.getElementById('quiz-content');
+        const finalResultsContainer = document.getElementById('final-results-container');
+        const correctCountElement = document.getElementById('correct-count');
+        const incorrectCountElement = document.getElementById('incorrect-count');
+        const unansweredCountElement = document.getElementById('unanswered-count');
+        const restartButtonFinal = document.getElementById('restart-button-final');
+
+        const LOCAL_STORAGE_KEY = 'windowsMobileQuiz';
+
+        // Function to save state to Local Storage
+        function saveState() {
+            const state = {
+                currentQuestionIndex,
+                score,
+                userAnswers,
+                answeredCorrectly
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+        }
+
+        // Function to load state from Local Storage
+        function loadState() {
+            const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                score = state.score;
+                userAnswers = state.userAnswers;
+                answeredCorrectly = state.answeredCorrectly;
+            }
+        }
 
         // Function to load a question
         function loadQuestion() {
+            // Hide final results if visible
+            quizContent.classList.remove('hidden');
+            finalResultsContainer.classList.add('hidden');
+
             const question = questions[currentQuestionIndex];
             questionTextElement.textContent = question.question;
             optionsGridElement.innerHTML = ''; // Clear previous options
@@ -296,20 +389,22 @@
                         resultMessageElement.textContent = '¡Correcto!';
                         resultMessageElement.classList.add('correct-text');
                     } else {
-                        button.classList.add('incorrect');
+                        // Highlight the selected incorrect option
+                        if (option === selectedOption) {
+                            button.classList.add('incorrect');
+                        }
                         resultMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${question.answer}`;
                         resultMessageElement.classList.add('incorrect-text');
                     }
-                    // Highlight the correct answer if it's not the one selected
-                    if (option === question.answer && selectedOption !== question.answer) {
+                    // Always highlight the correct answer if it's not the one selected
+                    if (option === question.answer) {
                         button.classList.add('correct');
-                    } else if (option === selectedOption && selectedOption !== question.answer) {
-                        button.classList.add('incorrect');
                     }
                 }
             });
             updateNavigationButtons();
             updateScoreDisplay();
+            saveState(); // Save state after loading question
         }
 
         // Function to handle option selection
@@ -328,7 +423,7 @@
                 clickedButton.classList.add('correct');
                 resultMessageElement.textContent = '¡Correcto!';
                 resultMessageElement.classList.add('correct-text');
-                if (!answeredCorrectly[currentQuestionIndex]) {
+                if (!answeredCorrectly[currentQuestionIndex]) { // Only increment score if not already marked correct
                     score++;
                     answeredCorrectly[currentQuestionIndex] = true;
                 }
@@ -345,6 +440,7 @@
                 answeredCorrectly[currentQuestionIndex] = false; // Mark as incorrectly answered
             }
             updateScoreDisplay();
+            saveState(); // Save state after selection
         }
 
         // Function to disable all option buttons
@@ -359,16 +455,51 @@
             prevButton.disabled = currentQuestionIndex === 0;
             nextButton.disabled = currentQuestionIndex === questions.length - 1;
 
+            // Show final results only on the last question if it's answered
             if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
-                restartButton.classList.remove('hidden');
-            } else {
-                restartButton.classList.add('hidden');
+                // No need to show restartButton here, it's always visible in the middle
             }
         }
 
         // Function to update score display
         function updateScoreDisplay() {
             scoreDisplay.textContent = `Puntuación: ${score} / ${questions.length}`;
+        }
+
+        // Function to show final results
+        function showFinalResults() {
+            quizContent.classList.add('hidden');
+            finalResultsContainer.classList.remove('hidden');
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] !== null) {
+                    if (questions[i].options[userAnswers[i]] === questions[i].answer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                } else {
+                    unansweredCount++;
+                }
+            }
+
+            correctCountElement.textContent = correctCount;
+            incorrectCountElement.textContent = incorrectCount;
+            unansweredCountElement.textContent = unansweredCount;
+        }
+
+        // Function to restart the test
+        function restartTest() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            answeredCorrectly.fill(false);
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear local storage
+            loadQuestion();
         }
 
         // Event listeners for navigation buttons
@@ -383,20 +514,20 @@
             if (currentQuestionIndex < questions.length - 1) {
                 currentQuestionIndex++;
                 loadQuestion();
+            } else if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                // If on the last question and it's answered, show final results
+                showFinalResults();
             }
         });
 
-        // Event listener for restart button
-        restartButton.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.fill(null);
-            answeredCorrectly.fill(false);
-            loadQuestion();
-            restartButton.classList.add('hidden');
-        });
+        // Event listener for the middle restart button
+        restartMiddleButton.addEventListener('click', restartTest);
 
-        // Initial load of the first question
+        // Event listener for the final restart button
+        restartButtonFinal.addEventListener('click', restartTest);
+
+        // Initial load of the first question or saved state
+        loadState();
         loadQuestion();
     </script>
 </body>
