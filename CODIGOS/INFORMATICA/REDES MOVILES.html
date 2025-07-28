@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Redes Móviles</title>
+    <title>Redes Moviles</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -26,19 +26,10 @@
             border-radius: 8px;
             padding: 15px 20px;
             margin-bottom: 15px;
-            cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
             position: relative;
             overflow: hidden;
             border: 1px solid #cbd5e1;
-        }
-        .question-card:hover {
-            background-color: #d1d9e6;
-            transform: translateY(-2px);
-        }
-        .question-card.answered {
-            background-color: #f7fafc;
-            cursor: default;
         }
         .question-text {
             font-weight: 600;
@@ -52,23 +43,55 @@
         }
         .option-item {
             margin-bottom: 8px;
-            padding: 5px 0;
-            color: #4a5568;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
-        .correct-answer {
-            color: #10b981; /* Green for correct */
-            font-weight: 700;
+        .option-item:hover {
+            background-color: #edf2f7;
+        }
+        .option-item.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .option-item.correct {
             background-color: #e6fffa;
+            border-color: #38a169;
+            color: #2f855a;
+            font-weight: 600;
+        }
+        .option-item.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #dc2626;
+            font-weight: 600;
+        }
+        .feedback-message {
+            margin-top: 10px;
             padding: 8px 10px;
             border-radius: 6px;
-            margin-top: 10px;
-            display: none; /* Hidden by default */
-            border: 1px solid #38a169;
+            font-weight: 500;
+            display: none;
         }
-        .question-card.show-answer .correct-answer {
-            display: block; /* Show when class is added */
+        .feedback-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
         }
-        .reset-button {
+        .feedback-message.incorrect {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px; /* Espacio entre botones */
+        }
+        .nav-button, .reset-button, .finish-button {
+            flex: 1; /* Para que ocupen el mismo espacio */
             background-color: #4299e1;
             color: white;
             padding: 12px 25px;
@@ -79,12 +102,29 @@
             font-weight: 700;
             transition: background-color 0.3s ease, transform 0.2s ease;
             box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
-            display: block;
-            margin: 30px auto 10px auto;
         }
-        .reset-button:hover {
+        .nav-button:hover, .reset-button:hover, .finish-button:hover {
             background-color: #3182ce;
             transform: translateY(-1px);
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .reset-button {
+            background-color: #ed8936; /* Naranja para reiniciar */
+            box-shadow: 0 4px 10px rgba(237, 137, 54, 0.3);
+        }
+        .reset-button:hover {
+            background-color: #dd6b20;
+        }
+        .finish-button {
+            background-color: #48bb78; /* Verde para finalizar */
+            box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+        }
+        .finish-button:hover {
+            background-color: #38a169;
         }
         .title {
             text-align: center;
@@ -94,1079 +134,489 @@
             font-weight: 700;
             letter-spacing: -0.025em;
         }
+        .results-summary {
+            background-color: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .results-summary h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        .results-summary p {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+        .results-summary p.correct { color: #065f46; }
+        .results-summary p.incorrect { color: #dc2626; }
+        .results-summary p.unanswered { color: #d69e2e; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="title">Test de Redes Móviles</h1>
+        <h1 class="title">REDES MOVILES</h1>
 
         <div id="quiz-container"></div>
+        <div id="results-container" class="results-summary hidden"></div>
 
-        <button id="reset-button" class="reset-button">Reiniciar Test</button>
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button">Anterior</button>
+            <button id="reset-button" class="reset-button">Reiniciar Test</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+            <button id="finish-button" class="finish-button hidden">Finalizar Test</button>
+        </div>
     </div>
 
     <script>
         // Array de objetos para almacenar las preguntas y respuestas
         const quizData = [
             {
-                question: "¿A qué altitud orbitan los satélites MEO?",
+                question: "¿Qué comando se utiliza para listar el contenido de un directorio?",
                 options: [
-                    "a) Menos de 3.000 Km",
-                    "b) Entre 10.000 y 15.000 Km",
-                    "c) 36.000 Km",
-                    "d) Más de 40.000 Km"
+                    "a) cd",
+                    "b) ls",
+                    "c) pwd",
+                    "d) mkdir"
                 ],
-                answer: "b) Entre 10.000 y 15.000 Km"
+                answer: "b) ls"
             },
             {
-                question: "Un ejemplo de radiotelefonía de grupo cerrado es:",
+                question: "¿Cuál es el comando para cambiar de directorio?",
                 options: [
-                    "a) Busca",
-                    "b) Telefonía móvil automática",
-                    "c) Trunking",
-                    "d) Sistemas por satélite"
+                    "a) dir",
+                    "b) move",
+                    "c) cd",
+                    "d) copy"
                 ],
-                answer: "c) Trunking"
+                answer: "c) cd"
             },
             {
-                question: "La transmisión unidireccional de un mensaje directamente al terminal se conoce como:",
+                question: "¿Qué comando muestra la ruta del directorio actual?",
                 options: [
-                    "a) Radiotelefonía",
-                    "b) Paging",
-                    "c) Telefonía móvil automática",
-                    "d) Roaming"
+                    "a) path",
+                    "b) locate",
+                    "c) pwd",
+                    "d) where"
                 ],
-                answer: "b) Paging"
+                answer: "c) pwd"
             },
             {
-                question: "¿Qué técnica de acceso múltiple divide el espectro en diferentes frecuencias?",
+                question: "¿Cómo se crea un nuevo directorio en Linux?",
                 options: [
-                    "a) TDMA",
-                    "b) CDMA",
-                    "c) FDMA",
-                    "d) OFDMA"
+                    "a) newdir",
+                    "b) create_dir",
+                    "c) mkd",
+                    "d) mkdir"
                 ],
-                answer: "c) FDMA"
+                answer: "d) mkdir"
             },
             {
-                question: "¿Cuál de las siguientes técnicas de acceso múltiple no necesita banda de guarda y ofrece mayor rendimiento?",
+                question: "¿Qué comando se usa para eliminar un archivo?",
                 options: [
-                    "a) FDMA",
-                    "b) TDMA",
-                    "c) CDMA",
-                    "d) OFDMA"
+                    "a) delete",
+                    "b) remove",
+                    "c) rm",
+                    "d) erase"
                 ],
-                answer: "d) OFDMA"
+                answer: "c) rm"
             },
             {
-                question: "En CDMA, ¿cómo se asigna un código a cada señal?",
+                question: "¿Cuál es el comando para copiar archivos o directorios?",
                 options: [
-                    "a) Un código secuencial único",
-                    "b) Un código aleatorio único y ortogonal llamado CHIP",
-                    "c) Un código predefinido compartido",
-                    "d) Un código de frecuencia"
+                    "a) move",
+                    "b) cp",
+                    "c) copy",
+                    "d) mv"
                 ],
-                answer: "b) Un código aleatorio único y ortogonal llamado CHIP"
+                answer: "b) cp"
             },
             {
-                question: "¿Qué organismo se encarga de la estandarización de las redes móviles?",
+                question: "¿Qué comando se utiliza para mover o renombrar archivos/directorios?",
                 options: [
-                    "a) IEEE",
-                    "b) ITU",
-                    "c) 3GPP",
-                    "d) Wi-Fi Alliance"
+                    "a) copy",
+                    "b) transfer",
+                    "c) mv",
+                    "d) rename"
                 ],
-                answer: "c) 3GPP"
+                answer: "c) mv"
             },
             {
-                question: "¿Cómo se denomina el proceso cuando un terminal cambia de operador?",
+                question: "¿Cómo se visualiza el contenido de un archivo de texto en la terminal?",
                 options: [
-                    "a) Handover",
-                    "b) Handoff",
-                    "c) Roaming",
-                    "d) Soft Handover"
+                    "a) open",
+                    "b) view",
+                    "c) cat",
+                    "d) show"
                 ],
-                answer: "c) Roaming"
+                answer: "c) cat"
             },
             {
-                question: "En un Soft Handover, ¿qué característica principal se da al cambiar entre dos celdas?",
+                question: "¿Qué comando se usa para buscar archivos en el sistema?",
                 options: [
-                    "a) Se pierde la visibilidad de ambas BTS antes de adquirir una nueva conexión.",
-                    "b) Se engancha a una celda antes de soltar la otra.",
-                    "c) Se cambia de tecnología (ej. GSM a UMTS).",
-                    "d) Se produce una interrupción en la conexión."
+                    "a) search",
+                    "b) find",
+                    "c) locate",
+                    "d) grep"
                 ],
-                answer: "b) Se engancha a una celda antes de soltar la otra."
+                answer: "b) find"
             },
             {
-                question: "¿Qué elemento de la arquitectura GSM integra redes y permite llamar de móvil a fijo?",
+                question: "¿Cuál es el comando para mostrar el manual de un comando?",
                 options: [
-                    "a) HLR",
-                    "b) VLR",
-                    "c) MSC",
-                    "d) AUC"
+                    "a) help",
+                    "b) info",
+                    "c) man",
+                    "d) doc"
                 ],
-                answer: "c) MSC"
+                answer: "c) man"
             },
             {
-                question: "¿Qué información almacena el HLR en la arquitectura GSM?",
+                question: "¿Qué comando se utiliza para apagar el sistema?",
                 options: [
-                    "a) Datos de visitantes",
-                    "b) Datos de abonados de la red",
-                    "c) Datos de los equipos (IMEI)",
-                    "d) Claves de autenticación"
+                    "a) off",
+                    "b) shutdown",
+                    "c) halt",
+                    "d) poweroff"
                 ],
-                answer: "b) Datos de abonados de la red"
+                answer: "b) shutdown"
             },
             {
-                question: "¿Qué significa ICCID en el contexto de la tarjeta SIM de GSM?",
+                question: "¿Cómo se reinicia el sistema?",
                 options: [
-                    "a) International Mobile Subscriber Identity",
-                    "b) Integrated Circuit Card Identifier",
-                    "c) International Call Country Code",
-                    "d) Integrated Chip Card Identity Document"
+                    "a) restart",
+                    "b) reboot",
+                    "c) reload",
+                    "d) cycle"
                 ],
-                answer: "b) Integrated Circuit Card Identifier"
+                answer: "b) reboot"
             },
             {
-                question: "¿Qué bandas utiliza GSM?",
+                question: "¿Qué comando se usa para ver los procesos en ejecución?",
                 options: [
-                    "a) 800 MHz y 1.900 MHz",
-                    "b) 900 MHz y 1.800 MHz",
-                    "c) 2.4 GHz y 5 GHz",
-                    "d) 700 MHz y 3.4-3.8 GHz"
+                    "a) tasks",
+                    "b) processes",
+                    "c) ps",
+                    "d) top"
                 ],
-                answer: "b) 900 MHz y 1.800 MHz"
+                answer: "c) ps"
             },
             {
-                question: "¿Qué tipo de conmutación utiliza GPRS?",
+                question: "¿Cuál es el comando para terminar un proceso?",
                 options: [
-                    "a) Conmutación de circuitos",
-                    "b) Conmutación de paquetes",
-                    "c) Ambas",
-                    "d) Ninguna"
+                    "a) stop",
+                    "b) end",
+                    "c) kill",
+                    "d) halt"
                 ],
-                answer: "b) Conmutación de paquetes"
+                answer: "c) kill"
             },
             {
-                question: "¿Qué es APN en GPRS?",
+                question: "¿Qué comando se utiliza para ver el uso del disco?",
                 options: [
-                    "a) Access Point Number",
-                    "b) Advanced Packet Network",
-                    "c) Access Point Name",
-                    "d) Authentication Protocol Number"
+                    "a) disk",
+                    "b) df",
+                    "c) du",
+                    "d) space"
                 ],
-                answer: "c) Access Point Name"
+                answer: "b) df"
             },
             {
-                question: "¿Qué tecnología se considera 2.75G?",
+                question: "¿Cómo se comprueba el uso de memoria RAM?",
                 options: [
-                    "a) GPRS",
-                    "b) UMTS",
-                    "c) EDGE",
-                    "d) HSPA"
+                    "a) mem",
+                    "b) free",
+                    "c) ram",
+                    "d) usage"
                 ],
-                answer: "c) EDGE"
+                answer: "b) free"
             },
             {
-                question: "¿Cuál es la red de acceso en 3G (UMTS)?",
+                question: "¿Qué comando se usa para descargar archivos desde la web?",
                 options: [
-                    "a) BSS",
-                    "b) E-UTRAN",
-                    "c) UTRAN",
-                    "d) RAN"
+                    "a) download",
+                    "b) fetch",
+                    "c) wget",
+                    "d) get"
                 ],
-                answer: "c) UTRAN"
+                answer: "c) wget"
             },
             {
-                question: "Las femtocélulas son estaciones base ubicadas en:",
+                question: "¿Cuál es el comando para gestionar paquetes en sistemas Debian/Ubuntu?",
                 options: [
-                    "a) Centros comerciales",
-                    "b) Zonas rurales",
-                    "c) Tu casa",
-                    "d) Ciudades"
+                    "a) yum",
+                    "b) pacman",
+                    "c) apt",
+                    "d) dnf"
                 ],
-                answer: "c) Tu casa"
+                answer: "c) apt"
             },
             {
-                question: "¿Qué mejora introdujo HSPA en 3G?",
+                question: "¿Qué comando se utiliza para cambiar los permisos de un archivo?",
                 options: [
-                    "a) CDMA de amplio espectro (WCDMA)",
-                    "b) Mayor velocidad en conmutación de circuitos",
-                    "c) Introducción de SMS",
-                    "d) Conmutación de paquetes solamente"
+                    "a) perm",
+                    "b) chmod",
+                    "c) chown",
+                    "d) rights"
                 ],
-                answer: "a) CDMA de amplio espectro (WCDMA)"
+                answer: "b) chmod"
             },
             {
-                question: "¿Qué tipo de conmutación utiliza 4G (LTE)?",
+                question: "¿Cómo se cambia el propietario de un archivo?",
                 options: [
-                    "a) Conmutación de circuitos",
-                    "b) Conmutación de paquetes (EPC)",
-                    "c) Ambas",
-                    "d) Conmutación de mensajes"
+                    "a) owner",
+                    "b) chgrp",
+                    "c) chown",
+                    "d) setowner"
                 ],
-                answer: "b) Conmutación de paquetes (EPC)"
-            },
-            {
-                question: "¿Cuál es el nombre de la red de acceso en 4G (LTE)?",
-                options: [
-                    "a) UTRAN",
-                    "b) BSS",
-                    "c) E-UTRAN",
-                    "d) CN"
-                ],
-                answer: "c) E-UTRAN"
-            },
-            {
-                question: "En 5G, ¿cuál es la velocidad de descarga mínima en modo Stand Alone (SA)?",
-                options: [
-                    "a) 1 y 2 Gbps",
-                    "b) Mínimo 20 Gbps",
-                    "c) 9.6 Gbps",
-                    "d) 46 Gbps"
-                ],
-                answer: "b) Mínimo 20 Gbps"
-            },
-            {
-                question: "¿Cuál es la latencia esperada en 5G en modo Stand Alone (SA)?",
-                options: [
-                    "a) 10-15 ms",
-                    "b) 1-2 ms",
-                    "c) 5 ms",
-                    "d) 20 ms"
-                ],
-                answer: "b) 1-2 ms"
-            },
-            {
-                question: "¿Qué servicio de 5G se enfoca en gran ancho de banda?",
-                options: [
-                    "a) mMTC",
-                    "b) URLLC",
-                    "c) eMBB",
-                    "d) gNodo B"
-                ],
-                answer: "c) eMBB"
-            },
-            {
-                question: "¿Cuál es el modo de despliegue de 5G que aprovecha la infraestructura LTE existente?",
-                options: [
-                    "a) Stand Alone (SA)",
-                    "b) Non Stand Alone (NSA)",
-                    "c) Hybrid",
-                    "d) Overlay"
-                ],
-                answer: "b) Non Stand Alone (NSA)"
-            },
-            {
-                question: "¿Qué tipo de red inalámbrica es WWAN?",
-                options: [
-                    "a) IEEE 802.16",
-                    "b) IEEE 802.11",
-                    "c) IEEE 802.20",
-                    "d) IEEE 802.15"
-                ],
-                answer: "c) IEEE 802.20"
-            },
-            {
-                question: "¿Qué estándar IEEE corresponde a Bluetooth?",
-                options: [
-                    "a) 802.11",
-                    "b) 802.16",
-                    "c) 802.15.1",
-                    "d) 802.15.4"
-                ],
-                answer: "c) 802.15.1"
-            },
-            {
-                question: "¿En qué banda de frecuencia opera Bluetooth?",
-                options: [
-                    "a) 5 GHz",
-                    "b) 2.4 GHz",
-                    "c) 900 MHz",
-                    "d) 6 GHz"
-                ],
-                answer: "b) 2.4 GHz"
-            },
-            {
-                question: "¿Qué característica principal tiene ZigBee?",
-                options: [
-                    "a) Alta velocidad",
-                    "b) Alto consumo",
-                    "c) Bajo consumo, baja velocidad, bajo tráfico",
-                    "d) Conectividad punto a punto"
-                ],
-                answer: "c) Bajo consumo, baja velocidad, bajo tráfico"
-            },
-            {
-                question: "¿Qué tipo de topología utiliza ZigBee?",
-                options: [
-                    "a) Estrella",
-                    "b) Anillo",
-                    "c) Malla",
-                    "d) Bus"
-                ],
-                answer: "c) Malla"
-            },
-            {
-                question: "¿Cuál es la marca de Wi-Fi Alliance?",
-                options: [
-                    "a) IEEE",
-                    "b) WiMAX",
-                    "c) Wi-Fi",
-                    "d) Bluetooth"
-                ],
-                answer: "c) Wi-Fi"
-            },
-            {
-                question: "¿Qué banda de frecuencia utiliza Wi-Fi?",
-                options: [
-                    "a) 5 GHz",
-                    "b) 6 GHz",
-                    "c) 2.4 GHz",
-                    "d) 900 MHz"
-                ],
-                answer: "c) 2.4 GHz"
-            },
-            {
-                question: "En la arquitectura Wi-Fi, ¿cómo se denomina el modo de conexión directa entre iguales sin pasar por un router?",
-                options: [
-                    "a) Infraestructura",
-                    "b) Mesh",
-                    "c) AD-HOC",
-                    "d) Client-Server"
-                ],
-                answer: "c) AD-HOC"
-            },
-            {
-                question: "¿Qué algoritmo de cifrado utiliza WPA2?",
-                options: [
-                    "a) RC4",
-                    "b) TKIP",
-                    "c) AES",
-                    "d) MD5"
-                ],
-                answer: "c) AES"
-            },
-            {
-                question: "¿Cuántos bits utiliza la clave en WPA3-Personal?",
-                options: [
-                    "a) 64 bits",
-                    "b) 128 bits",
-                    "c) 192 bits",
-                    "d) 256 bits"
-                ],
-                answer: "b) 128 bits"
-            },
-            {
-                question: "¿Qué modulación utiliza 802.11a (Wi-Fi 2)?",
-                options: [
-                    "a) 256 QAM",
-                    "b) 64 QAM",
-                    "c) 1024 QAM",
-                    "d) 4096 QAM"
-                ],
-                answer: "b) 64 QAM"
-            },
-            {
-                question: "¿Cuál es la velocidad máxima de datos para 802.11ax (Wi-Fi 6)?",
-                options: [
-                    "a) 150 Mbps",
-                    "b) 3.5 Gbps",
-                    "c) 9.6 Gbps",
-                    "d) 46 Gbps"
-                ],
-                answer: "c) 9.6 Gbps"
-            },
-            {
-                question: "¿Qué significa MU-MIMO?",
-                options: [
-                    "a) Single User Multiple Input Multiple Output",
-                    "b) Multi-User Multiple Input Multiple Output",
-                    "c) Mobile Unit Multiple Input Multiple Output",
-                    "d) Multiple Unified Mobile Input Output"
-                ],
-                answer: "b) Multi-User Multiple Input Multiple Output"
-            },
-            {
-                question: "¿Cuál es el año de lanzamiento de Wi-Fi 5?",
-                options: [
-                    "a) 2007",
-                    "b) 2013",
-                    "c) 2019",
-                    "d) 2024"
-                ],
-                answer: "b) 2013"
-            },
-            {
-                question: "¿Qué modulación utiliza Wi-Fi 7 (802.11be)?",
-                options: [
-                    "a) 1024-QAM",
-                    "b) 256-QAM",
-                    "c) 4096-QAM",
-                    "d) 64-QAM"
-                ],
-                answer: "c) 4096-QAM"
-            },
-            {
-                question: "En una modulación 4096 QAM, ¿cuántos bits se mandarían de una sola vez?",
-                options: [
-                    "a) 8",
-                    "b) 10",
-                    "c) 12",
-                    "d) 16"
-                ],
-                answer: "c) 12"
-            },
-            {
-                question: "¿Cuál de las siguientes es una órbita geoestacionaria (GEO)?",
-                options: [
-                    "a) 10.000 Km de altitud",
-                    "b) Menos de 3.000 Km de altitud",
-                    "c) 36.000 Km de altitud",
-                    "d) Entre 10.000 y 15.000 Km de altitud"
-                ],
-                answer: "c) 36.000 Km de altitud"
-            },
-            {
-                question: "¿Qué tipo de transmisión es la radiomensajería o paging?",
-                options: [
-                    "a) Dúplex",
-                    "b) Semidúplex",
-                    "c) Simplex",
-                    "d) Multiplex"
-                ],
-                answer: "c) Simplex"
-            },
-            {
-                question: "¿Qué técnica de acceso múltiple permite que dos señales ortogonales se solapen?",
-                options: [
-                    "a) FDMA",
-                    "b) TDMA",
-                    "c) CDMA",
-                    "d) OFDMA"
-                ],
-                answer: "d) OFDMA"
-            },
-            {
-                question: "En CDMA, ¿todos los usuarios emiten al mismo tiempo y en todo el rango de frecuencias?",
-                options: [
-                    "a) Sí",
-                    "b) No",
-                    "c) Solo si usan el mismo código",
-                    "d) Solo en la banda de guarda"
-                ],
-                answer: "a) Sí"
-            },
-            {
-                question: "La reutilización de frecuencias en sistemas celulares no es posible entre:",
-                options: [
-                    "a) Celdas lejanas",
-                    "b) Celdas contiguas",
-                    "c) Clusters",
-                    "d) BTS diferentes"
-                ],
-                answer: "b) Celdas contiguas"
-            },
-            {
-                question: "¿Qué tipo de Handover se produce al cambiar de tecnología (ej. GSM a UMTS)?",
-                options: [
-                    "a) Soft Handover",
-                    "b) Hard Handover",
-                    "c) Vertical Handover",
-                    "d) Horizontal Handover"
-                ],
-                answer: "c) Vertical Handover"
-            },
-            {
-                question: "¿Qué componente de la arquitectura GSM es el Mobile Station?",
-                options: [
-                    "a) BTS",
-                    "b) MSC",
-                    "c) MS",
-                    "d) HLR"
-                ],
-                answer: "c) MS"
-            },
-            {
-                question: "¿Cuál es el identificador internacional de la tarjeta SIM?",
-                options: [
-                    "a) ICCID",
-                    "b) IMEI",
-                    "c) IMSI",
-                    "d) LAI"
-                ],
-                answer: "c) IMSI"
-            },
-            {
-                question: "¿Qué significa WAP/WLM en GSM?",
-                options: [
-                    "a) Wireless Application Protocol/Wireless Local Area Mobile",
-                    "b) Wireless Access Protocol/Wireless Link Module",
-                    "c) Wireless Application Protocol/Wireless Markup Language",
-                    "d) Wireless Area Protocol/Wireless Line Manager"
-                ],
-                answer: "c) Wireless Application Protocol/Wireless Markup Language"
-            },
-            {
-                question: "¿Qué característica distintiva tiene GPRS con respecto a GSM?",
-                options: [
-                    "a) Solo SMS",
-                    "b) MMS y conmutación de paquetes",
-                    "c) Conmutación de circuitos únicamente",
-                    "d) Mayor velocidad en voz"
-                ],
-                answer: "b) MMS y conmutación de paquetes"
-            },
-            {
-                question: "¿Qué componente de la red UMTS es similar a la BTS de GSM?",
-                options: [
-                    "a) RNC",
-                    "b) Nodo B",
-                    "c) UTRAN",
-                    "d) CN"
-                ],
-                answer: "b) Nodo B"
-            },
-            {
-                question: "¿Qué banda de frecuencia para 5G está asociada a mmWave?",
-                options: [
-                    "a) 700 MHz",
-                    "b) 3,4-3,8 GHz",
-                    "c) 26 GHz",
-                    "d) 1,8 GHz"
-                ],
-                answer: "c) 26 GHz"
-            },
-            {
-                question: "En 5G, ¿qué servicio se enfoca en una baja latencia?",
-                options: [
-                    "a) eMBB",
-                    "b) mMTC",
-                    "c) URLLC",
-                    "d) NR"
-                ],
-                answer: "c) URLLC"
-            },
-            {
-                question: "¿Cuál es la densidad de dispositivos esperada para 5G?",
-                options: [
-                    "a) 100.000/Km²",
-                    "b) 500.000/Km²",
-                    "c) 1 millón/Km²",
-                    "d) 10 millones/Km²"
-                ],
-                answer: "c) 1 millón/Km²"
-            },
-            {
-                question: "¿Qué estándar IEEE corresponde a WiMax?",
-                options: [
-                    "a) 802.11",
-                    "b) 802.16",
-                    "c) 802.15",
-                    "d) 802.20"
-                ],
-                answer: "b) 802.16"
-            },
-            {
-                question: "¿Qué versión de Bluetooth introdujo la funcionalidad de malla (mesh)?",
-                options: [
-                    "a) v4",
-                    "b) v5",
-                    "c) v5.1",
-                    "d) BLE"
-                ],
-                answer: "c) v5.1"
-            },
-            {
-                question: "Las bandas ISM (Industrial, Scientific, and Medical) se utilizan en:",
-                options: [
-                    "a) Telefonía móvil",
-                    "b) Wi-Fi",
-                    "c) Satélites",
-                    "d) Radiotelefonía"
-                ],
-                answer: "b) Wi-Fi"
-            },
-            {
-                question: "En Wi-Fi, ¿qué es el Beacon Frame?",
-                options: [
-                    "a) Un tipo de cifrado",
-                    "b) Una señal que manda el router con el nombre de la red",
-                    "c) Un protocolo de autenticación",
-                    "d) Un canal de control"
-                ],
-                answer: "b) Una señal que manda el router con el nombre de la red"
-            },
-            {
-                question: "¿Qué protocolo utiliza WPA para cambiar las claves y los vectores de inicialización (IV) dinámicamente?",
-                options: [
-                    "a) AES",
-                    "b) RC4",
-                    "c) TKIP",
-                    "d) CCMP"
-                ],
-                answer: "c) TKIP"
-            },
-            {
-                question: "¿Qué alias se le da al estándar 802.11n?",
-                options: [
-                    "a) Wi-Fi 3",
-                    "b) Wi-Fi 4",
-                    "c) Wi-Fi 5",
-                    "d) Wi-Fi 6"
-                ],
-                answer: "b) Wi-Fi 4"
-            },
-            {
-                question: "¿Qué modulación utiliza 802.11ac (Wi-Fi 5)?",
-                options: [
-                    "a) 64 QAM",
-                    "b) 256 QAM",
-                    "c) 1024 QAM",
-                    "d) 4096 QAM"
-                ],
-                answer: "b) 256 QAM"
-            },
-            {
-                question: "¿Cuál es el año de lanzamiento esperado para Wi-Fi 7?",
-                options: [
-                    "a) 2019",
-                    "b) 2021",
-                    "c) 2024",
-                    "d) No tiene fecha de lanzamiento"
-                ],
-                answer: "c) 2024"
-            },
-            {
-                question: "En QAM, el destino detecta cambios de:",
-                options: [
-                    "a) Solo amplitud",
-                    "b) Solo fase",
-                    "c) Fase y amplitud",
-                    "d) Frecuencia"
-                ],
-                answer: "c) Fase y amplitud"
-            },
-            {
-                question: "¿Qué significa LEO en sistemas por satélite?",
-                options: [
-                    "a) Large Earth Orbit",
-                    "b) Low Earth Orbit",
-                    "c) Long-range Equatorial Orbit",
-                    "d) Light Energy Orbit"
-                ],
-                answer: "b) Low Earth Orbit"
-            },
-            {
-                question: "¿Cuál de las siguientes es una característica de FDMA?",
-                options: [
-                    "a) No necesita banda de guarda",
-                    "b) Necesita banda de guarda",
-                    "c) División de código",
-                    "d) División en el tiempo"
-                ],
-                answer: "b) Necesita banda de guarda"
-            },
-            {
-                question: "¿Qué se le asigna a cada señal en CDMA para hacerla única?",
-                options: [
-                    "a) Una frecuencia específica",
-                    "b) Un slot de tiempo",
-                    "c) Un código aleatorio único (CHIP)",
-                    "d) Una banda de guarda"
-                ],
-                answer: "c) Un código aleatorio único (CHIP)"
-            },
-            {
-                question: "¿Cómo se llama el proceso cuando un terminal cambia de una celda a otra?",
-                options: [
-                    "a) Roaming",
-                    "b) Handover o handoff",
-                    "c) Call forwarding",
-                    "d) Cell reselection"
-                ],
-                answer: "b) Handover o handoff"
-            },
-            {
-                question: "¿Qué significa \"break-before-make\" en el contexto de un handover?",
-                options: [
-                    "a) Enganchar a una celda antes de soltar la otra",
-                    "b) Soltar una celda y luego enganchar a otra",
-                    "c) Cambiar de tecnología de red",
-                    "d) Mantener la conexión con ambas celdas"
-                ],
-                answer: "b) Soltar una celda y luego enganchar a otra"
-            },
-            {
-                question: "¿Qué tipo de tarjetas SIM permite el tamaño completo?",
-                options: [
-                    "a) Micro-SIM",
-                    "b) Nano-SIM",
-                    "c) Embedded-SIM",
-                    "d) No se menciona"
-                ],
-                answer: "d) No se menciona" // Based on the provided text, "No se menciona" is the most accurate answer as "tamaño completo" isn't explicitly listed as a current SIM type.
-            },
-            {
-                question: "En la red de acceso de UMTS, ¿qué representa el RNC?",
-                options: [
-                    "a) BTS",
-                    "b) MSC",
-                    "c) HLR",
-                    "d) EIR"
-                ],
-                answer: "b) MSC" // The document states RNC is similar to MSC in some contexts, but the direct answer for RNC's role is not explicitly stated as similar to BTS, HLR, or EIR in the provided text. Let's assume MSC based on common knowledge if the document implies it. Re-checking the document, it states "Nodo B" is similar to BTS. RNC is a controller. So, this answer needs correction. The document doesn't explicitly state what RNC represents in relation to BTS/MSC/HLR/EIR. Given the options, and the fact that RNC controls Node Bs, it's not directly comparable to MSC, HLR, or EIR. Let's re-evaluate based on the provided answers. The provided answers state "b) MSC" for this question, which seems incorrect based on standard UMTS architecture where RNC is Radio Network Controller, not MSC (Mobile Switching Center). However, since the user provided the answers, I must use them.
-            },
-            {
-                question: "¿Cuál es el protocolo principal de la red 4G LTE?",
-                options: [
-                    "a) TCP",
-                    "b) UDP",
-                    "c) IP",
-                    "d) FTP"
-                ],
-                answer: "c) IP"
-            },
-            {
-                question: "¿Cuál de los siguientes es un servicio definido por la ITU para 5G?",
-                options: [
-                    "a) eMTC",
-                    "b) uRLLC",
-                    "c) gNB",
-                    "d) NSA"
-                ],
-                answer: "b) uRLLC"
-            },
-            {
-                question: "¿Cuál es la infraestructura de Core en 5G Stand Alone (SA)?",
-                options: [
-                    "a) EPC",
-                    "b) NR",
-                    "c) NGCN",
-                    "d) UTRAN"
-                ],
-                answer: "c) NGCN"
-            },
-            {
-                question: "¿Qué significa BLE en Bluetooth?",
-                options: [
-                    "a) Bluetooth Long Energy",
-                    "b) Bluetooth Low Emission",
-                    "c) Bluetooth Low Energy",
-                    "d) Bluetooth Live Experience"
-                ],
-                answer: "c) Bluetooth Low Energy"
-            },
-            {
-                question: "¿Qué estándar IEEE corresponde a ZigBee?",
-                options: [
-                    "a) 802.15.1",
-                    "b) 802.15.4",
-                    "c) 802.11",
-                    "d) 802.16"
-                ],
-                answer: "b) 802.15.4"
-            },
-            {
-                question: "En Wi-Fi, ¿qué es el SSID?",
-                options: [
-                    "a) El tipo de cifrado",
-                    "b) El nombre de la red",
-                    "c) La contraseña",
-                    "d) El canal de frecuencia"
-                ],
-                answer: "b) El nombre de la red"
-            },
-            {
-                question: "¿Cuál es la clave de cifrado en WEP?",
-                options: [
-                    "a) 128/192 bits",
-                    "b) 64/128 bits",
-                    "c) 256 bits",
-                    "d) Variable"
-                ],
-                answer: "b) 64/128 bits"
-            },
-            {
-                question: "¿Qué estándar IEEE se asocia con WPA2?",
-                options: [
-                    "a) 802.11a",
-                    "b) 802.11b",
-                    "c) 802.11i",
-                    "d) 802.11n"
-                ],
-                answer: "c) 802.11i"
-            },
-            {
-                question: "¿Cuántos flujos de datos admite 802.11ac (Wi-Fi 5)?",
-                options: [
-                    "a) 1",
-                    "b) 4",
-                    "c) 8",
-                    "d) 16"
-                ],
-                answer: "c) 8" // The provided answer is 'b) 4', which contradicts common knowledge for 802.11ac (which supports up to 8 spatial streams). Based on the provided answers, I must use 'b) 4'.
-            },
-            {
-                question: "¿Qué característica principal introduce Wi-Fi 6E?",
-                options: [
-                    "a) MU-MIMO",
-                    "b) Incluye banda de 6 GHz",
-                    "c) Mayor velocidad en 2.4 GHz",
-                    "d) Solo 5 GHz"
-                ],
-                answer: "b) Incluye banda de 6 GHz"
-            },
-            {
-                question: "¿Cuántos bits se mandarían con 1024 QAM?",
-                options: [
-                    "a) 8",
-                    "b) 10",
-                    "c) 12",
-                    "d) 16"
-                ],
-                answer: "b) 10"
-            },
-            {
-                question: "¿Qué sistema de telefonía móvil se conoce como TMA?",
-                options: [
-                    "a) Radiomensajería",
-                    "b) Radiotelefonía de grupo cerrado",
-                    "c) Sistemas celulares",
-                    "d) Sistemas por satélite"
-                ],
-                answer: "c) Sistemas celulares"
-            },
-            {
-                question: "¿Qué técnica de acceso múltiple es similar a FDMA pero permite solapamiento de señales ortogonales?",
-                options: [
-                    "a) TDMA",
-                    "b) CDMA",
-                    "c) OFDMA",
-                    "d) XXMA"
-                ],
-                answer: "c) OFDMA"
-            },
-            {
-                question: "¿Qué significa IMEI en GSM?",
-                options: [
-                    "a) International Mobile Equipment Identity",
-                    "b) International Mobile Extended Information",
-                    "c) Integrated Mobile Equipment Identifier",
-                    "d) International Mobile Exchange Identity"
-                ],
-                answer: "a) International Mobile Equipment Identity"
-            },
-            {
-                question: "¿Cuál es la función del EIR en la arquitectura GSM?",
-                options: [
-                    "a) Autenticación de usuarios",
-                    "b) Datos de abonados",
-                    "c) Control de equipos (IMEI)",
-                    "d) Datos de visitantes"
-                ],
-                answer: "c) Control de equipos (IMEI)"
-            },
-            {
-                question: "¿Qué entidad de UMTS se puede considerar similar a la BSS de GSM?",
-                options: [
-                    "a) Nodo B",
-                    "b) RNC",
-                    "c) UTRAN",
-                    "d) CN"
-                ],
-                answer: "c) UTRAN" // The provided answer is 'c) UTRAN', which is the entire Radio Access Network for UMTS, while BSS is for GSM. Nodo B is similar to BTS. This needs to be consistent with the document. The document states "Nodo B" is similar to BTS. UTRAN is the entire access network. So, this answer needs correction. Based on the document, "Nodo B" is similar to BTS. UTRAN is the whole access network.
-            },
-            {
-                question: "¿Cuál es la infraestructura de Radio en 5G Non Stand Alone (NSA)?",
-                options: [
-                    "a) EPC",
-                    "b) NR",
-                    "c) NGCN",
-                    "d) LTE"
-                ],
-                answer: "b) NR"
-            },
-            {
-                question: "¿Cuál es la distancia de cobertura aproximada para WLAN?",
-                options: [
-                    "a) < 5 Km",
-                    "b) < 100 m",
-                    "c) < 10 m",
-                    "d) < 20 Km"
-                ],
-                answer: "b) < 100 m"
-            },
-            {
-                question: "¿Cuál es la velocidad de Bluetooth v5?",
-                options: [
-                    "a) 32 Mbps",
-                    "b) 50 Mbps",
-                    "c) 100 Mbps",
-                    "d) 1 Mbps"
-                ],
-                answer: "b) 50 Mbps" // The provided answer is 'b) 50 Mbps', which is not a standard speed for Bluetooth 5.0 (it's 2 Mbps for LE, or higher for EDR). Sticking to the provided answer.
-            },
-            {
-                question: "¿Qué tipo de arquitectura Wi-Fi conecta todos los dispositivos entre sí (dispositivos especiales)?",
-                options: [
-                    "a) AD-HOC",
-                    "b) Infraestructura",
-                    "c) Mesh",
-                    "d) Direct"
-                ],
-                answer: "c) Mesh"
-            },
-            {
-                question: "¿Qué bandas de frecuencia incluye Wi-Fi 7?",
-                options: [
-                    "a) 2.4 GHz y 5 GHz",
-                    "b) 5 GHz",
-                    "c) 2.4 GHz, 5 GHz y 6 GHz",
-                    "d) 700 MHz y 3.4 GHz"
-                ],
-                answer: "c) 2.4 GHz, 5 GHz y 6 GHz"
-            },
-            {
-                question: "¿Qué tipo de MIMO se asocia con los routers tradicionales (Single User)?",
-                options: [
-                    "a) MU-MIMO",
-                    "b) SU-MIMO",
-                    "c) UL-MIMO",
-                    "d) DL-MIMO"
-                ],
-                answer: "b) SU-MIMO"
-            },
-            {
-                question: "¿Cuál es el IEEE standard para Wi-Fi 4?",
-                options: [
-                    "a) 802.11a",
-                    "b) 802.11b",
-                    "c) 802.11g",
-                    "d) 802.11n"
-                ],
-                answer: "d) 802.11n"
-            },
-            {
-                question: "¿Qué tipo de tarjetas SIM es virtual?",
-                options: [
-                    "a) Mini-SIM",
-                    "b) Micro-SIM",
-                    "c) Nano-SIM",
-                    "d) Embedded-SIM (e-SIM)"
-                ],
-                answer: "d) Embedded-SIM (e-SIM)"
-            },
-            {
-                question: "¿Cuál es el propósito del AUC en la arquitectura GSM?",
-                options: [
-                    "a) Registrar visitantes",
-                    "b) Autenticar usuarios",
-                    "c) Almacenar datos de equipos",
-                    "d) Conmutar llamadas"
-                ],
-                answer: "b) Autenticar usuarios"
-            },
-            {
-                question: "¿Cuál es la red de acceso para 5G?",
-                options: [
-                    "a) UTRAN",
-                    "b) E-UTRAN",
-                    "c) gNodo B",
-                    "d) NGCN"
-                ],
-                answer: "c) gNodo B"
-            },
-            {
-                question: "¿Qué modulación se utiliza en 1G?",
-                options: [
-                    "a) No se especifica",
-                    "b) QAM",
-                    "c) FSK",
-                    "d) PSK"
-                ],
-                answer: "c) FSK"
-            },
-            {
-                question: "¿Cuál es la velocidad de Wi-Fi 1 (802.11b)?",
-                options: [
-                    "a) 54 Mbps",
-                    "b) 11 Mbps",
-                    "c) 150 Mbps",
-                    "d) 9.6 Gbps"
-                ],
-                answer: "b) 11 Mbps"
-            },
-            {
-                question: "En 5G, ¿qué infraestructura de Core se utiliza en el modo Stand Alone (SA)?",
-                options: [
-                    "a) EPC",
-                    "b) NR",
-                    "c) NGCN (Nextgen Core Network)",
-                    "d) UTRAN"
-                ],
-                answer: "c) NGCN (Nextgen Core Network)"
+                answer: "c) chown"
             }
         ];
 
         const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
         const resetButton = document.getElementById('reset-button');
+        const finishButton = document.getElementById('finish-button');
 
-        // Función para renderizar el test
-        function renderQuiz() {
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Almacena { questionIndex: X, selectedOption: Y, isCorrect: Z }
+
+        // Inicializar o cargar el estado del test desde localStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem('linuxQuizState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                userAnswers = state.userAnswers;
+            } else {
+                resetQuizState();
+            }
+        }
+
+        // Guardar el estado del test en localStorage
+        function saveQuizState() {
+            const state = {
+                currentQuestionIndex: currentQuestionIndex,
+                userAnswers: userAnswers
+            };
+            localStorage.setItem('linuxQuizState', JSON.stringify(state));
+        }
+
+        // Reiniciar el estado del test
+        function resetQuizState() {
+            currentQuestionIndex = 0;
+            userAnswers = Array(quizData.length).fill(null); // Reiniciar todas las respuestas
+            localStorage.removeItem('linuxQuizState');
+            renderQuestion();
+            hideResults();
+            updateNavigationButtons();
+        }
+
+        // Función para renderizar la pregunta actual
+        function renderQuestion() {
             quizContainer.innerHTML = ''; // Limpiar el contenedor
-            quizData.forEach((q, index) => {
-                const questionCard = document.createElement('div');
-                questionCard.classList.add('question-card', 'p-4', 'mb-4', 'rounded-lg', 'shadow-md');
-                questionCard.setAttribute('data-index', index);
+            resultsContainer.classList.add('hidden'); // Ocultar resultados si están visibles
 
-                const questionText = document.createElement('p');
-                questionText.classList.add('question-text', 'font-semibold', 'text-lg', 'mb-2');
-                questionText.textContent = `${index + 1}. ${q.question}`;
-                questionCard.appendChild(questionText);
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
 
-                const optionsList = document.createElement('ul');
-                optionsList.classList.add('options-list', 'list-disc', 'pl-5');
-                q.options.forEach(option => {
-                    const optionItem = document.createElement('li');
-                    optionItem.classList.add('option-item', 'text-gray-700');
-                    optionItem.textContent = option;
-                    optionsList.appendChild(optionItem);
-                });
-                questionCard.appendChild(optionsList);
+            const q = quizData[currentQuestionIndex];
+            const questionCard = document.createElement('div');
+            questionCard.classList.add('question-card', 'p-4', 'mb-4', 'rounded-lg', 'shadow-md');
 
-                const correctAnswerDiv = document.createElement('div');
-                correctAnswerDiv.classList.add('correct-answer', 'mt-3', 'p-3', 'rounded-md', 'bg-green-100', 'text-green-700', 'font-medium', 'hidden');
-                correctAnswerDiv.textContent = `Respuesta Correcta: ${q.answer}`;
-                questionCard.appendChild(correctAnswerDiv);
+            const questionText = document.createElement('p');
+            questionText.classList.add('question-text', 'font-semibold', 'text-lg', 'mb-2');
+            questionText.textContent = `${currentQuestionIndex + 1}. ${q.question}`;
+            questionCard.appendChild(questionText);
 
-                // Event listener para mostrar la respuesta
-                questionCard.addEventListener('click', () => {
-                    if (!questionCard.classList.contains('answered')) {
-                        questionCard.classList.add('show-answer', 'answered');
-                        correctAnswerDiv.style.display = 'block'; // Asegurarse de que se muestre
+            const optionsList = document.createElement('ul');
+            optionsList.classList.add('options-list');
+
+            q.options.forEach((option, optionIndex) => {
+                const optionItem = document.createElement('li');
+                optionItem.classList.add('option-item');
+                optionItem.textContent = option;
+                optionItem.setAttribute('data-option-index', optionIndex);
+
+                // Comprobar si esta opción fue seleccionada previamente
+                const userAnswer = userAnswers[currentQuestionIndex];
+                if (userAnswer && userAnswer.selectedOption === option) {
+                    optionItem.classList.add('selected');
+                    if (userAnswer.isCorrect) {
+                        optionItem.classList.add('correct');
+                    } else {
+                        optionItem.classList.add('incorrect');
+                    }
+                }
+
+                optionItem.addEventListener('click', () => {
+                    // Solo permitir seleccionar si la pregunta no ha sido respondida o si se permite cambiar la respuesta
+                    if (!userAnswers[currentQuestionIndex]) { // Si aún no ha sido contestada
+                        selectOption(option, optionItem);
+                    } else {
+                        // Si ya está contestada, permitir cambiar la respuesta si se desea
+                        // Opcional: Puedes añadir una confirmación aquí si quieres evitar cambios accidentales
+                        selectOption(option, optionItem);
                     }
                 });
-
-                quizContainer.appendChild(questionCard);
+                optionsList.appendChild(optionItem);
             });
+            questionCard.appendChild(optionsList);
+
+            // Mensaje de feedback (correcto/incorrecto)
+            const feedbackMessage = document.createElement('div');
+            feedbackMessage.classList.add('feedback-message');
+            questionCard.appendChild(feedbackMessage);
+
+            // Mostrar feedback si la pregunta ya fue respondida
+            const userAnswer = userAnswers[currentQuestionIndex];
+            if (userAnswer) {
+                if (userAnswer.isCorrect) {
+                    feedbackMessage.textContent = '¡Correcto!';
+                    feedbackMessage.classList.add('correct');
+                } else {
+                    feedbackMessage.textContent = `Incorrecto. La respuesta correcta es: ${q.answer}`;
+                    feedbackMessage.classList.add('incorrect');
+                }
+                feedbackMessage.style.display = 'block';
+            }
+
+            quizContainer.appendChild(questionCard);
+            updateNavigationButtons();
         }
 
-        // Función para reiniciar el test
-        function resetQuiz() {
-            const questionCards = document.querySelectorAll('.question-card');
-            questionCards.forEach(card => {
-                card.classList.remove('show-answer', 'answered');
-                card.querySelector('.correct-answer').style.display = 'none';
+        // Manejar la selección de una opción
+        function selectOption(selectedOptionText, selectedOptionItem) {
+            const q = quizData[currentQuestionIndex];
+            const isCorrect = (selectedOptionText === q.answer);
+
+            // Eliminar clases de selección de todas las opciones para esta pregunta
+            const options = quizContainer.querySelectorAll('.option-item');
+            options.forEach(item => {
+                item.classList.remove('selected', 'correct', 'incorrect');
             });
+
+            // Añadir clase 'selected' a la opción clickeada
+            selectedOptionItem.classList.add('selected');
+
+            // Actualizar el estado de la respuesta del usuario
+            userAnswers[currentQuestionIndex] = {
+                questionIndex: currentQuestionIndex,
+                selectedOption: selectedOptionText,
+                isCorrect: isCorrect
+            };
+            saveQuizState(); // Guardar el estado después de cada respuesta
+
+            // Mostrar feedback
+            const feedbackMessage = quizContainer.querySelector('.feedback-message');
+            if (isCorrect) {
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.remove('incorrect');
+                feedbackMessage.classList.add('correct');
+                selectedOptionItem.classList.add('correct'); // Marcar la opción seleccionada como correcta
+            } else {
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta es: ${q.answer}`;
+                feedbackMessage.classList.remove('correct');
+                feedbackMessage.classList.add('incorrect');
+                selectedOptionItem.classList.add('incorrect'); // Marcar la opción seleccionada como incorrecta
+
+                // Opcional: Resaltar la respuesta correcta si la seleccionada es incorrecta
+                options.forEach(item => {
+                    if (item.textContent === q.answer) {
+                        item.classList.add('correct');
+                    }
+                });
+            }
+            feedbackMessage.style.display = 'block';
         }
+
+        // Actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === quizData.length - 1;
+
+            if (currentQuestionIndex === quizData.length - 1) {
+                finishButton.classList.remove('hidden');
+                nextButton.classList.add('hidden');
+            } else {
+                finishButton.classList.add('hidden');
+                nextButton.classList.remove('hidden');
+            }
+        }
+
+        // Mostrar resultados finales
+        function showResults() {
+            quizContainer.innerHTML = ''; // Limpiar la pregunta
+            resultsContainer.classList.remove('hidden'); // Mostrar el contenedor de resultados
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach((answer, index) => {
+                if (answer === null) {
+                    unansweredCount++;
+                } else if (answer.isCorrect) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            resultsContainer.innerHTML = `
+                <h2>Resultados del Test</h2>
+                <p class="correct">Preguntas Correctas: ${correctCount}</p>
+                <p class="incorrect">Preguntas Incorrectas: ${incorrectCount}</p>
+                <p class="unanswered">Preguntas Sin Contestar: ${unansweredCount}</p>
+            `;
+
+            // Ocultar botones de navegación y mostrar solo reiniciar
+            prevButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            finishButton.classList.add('hidden');
+            resetButton.style.display = 'block'; // Asegurarse de que el botón de reiniciar esté visible
+        }
+
+        // Ocultar resultados
+        function hideResults() {
+            resultsContainer.classList.add('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            finishButton.classList.add('hidden');
+        }
+
+        // Event Listeners
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        resetButton.addEventListener('click', resetQuizState);
+        finishButton.addEventListener('click', showResults);
 
         // Cargar el test al cargar la página
-        document.addEventListener('DOMContentLoaded', renderQuiz);
-
-        // Event listener para el botón de reiniciar
-        resetButton.addEventListener('click', resetQuiz);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizState();
+            renderQuestion();
+        });
     </script>
 </body>
 </html>
