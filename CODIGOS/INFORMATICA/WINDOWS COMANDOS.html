@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Comandos de Windows</title>
+    <title>WINDOWS COMANDOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -82,6 +82,7 @@
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            align-items: center; /* Align items vertically */
         }
         .navigation-buttons button {
             padding: 10px 20px;
@@ -134,19 +135,22 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test de Comandos de Windows</h1>
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">WINDOWS COMANDOS</h1>
         <div id="quiz-container">
             <!-- Questions will be loaded here by JavaScript -->
         </div>
         <div class="navigation-buttons">
             <button id="prev-btn" disabled>Anterior</button>
+            <button id="reset-btn">Reiniciar Test</button>
             <button id="next-btn">Siguiente</button>
         </div>
         <div id="results" class="results-summary hidden">
             <h2>Resultados del Test</h2>
-            <p>Has respondido <span id="correct-count" class="font-bold"></span> preguntas correctamente de <span id="total-questions" class="font-bold"></span>.</p>
-            <p>Tu puntuación: <span id="score-percentage" class="font-bold"></span>%</p>
-            <button id="restart-btn">Reiniciar Test</button>
+            <p>Preguntas Correctas: <span id="correct-count" class="font-bold"></span></p>
+            <p>Preguntas Incorrectas: <span id="incorrect-count" class="font-bold"></span></p>
+            <p>Preguntas Sin Contestar: <span id="unanswered-count" class="font-bold"></span></p>
+            <p>Tu Puntuación: <span id="score-percentage" class="font-bold"></span>%</p>
+            <button id="restart-from-results-btn">Reiniciar Test</button>
         </div>
     </div>
 
@@ -656,25 +660,44 @@
         ];
 
         let currentQuestionIndex = 0;
-        let score = 0;
-        const userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer for each question
+        let userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer for each question
 
         const quizContainer = document.getElementById('quiz-container');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
+        const resetBtn = document.getElementById('reset-btn'); // New reset button
         const resultsContainer = document.getElementById('results');
         const correctCountSpan = document.getElementById('correct-count');
-        const totalQuestionsSpan = document.getElementById('total-questions');
+        const incorrectCountSpan = document.getElementById('incorrect-count'); // New
+        const unansweredCountSpan = document.getElementById('unanswered-count'); // New
         const scorePercentageSpan = document.getElementById('score-percentage');
-        const restartBtn = document.getElementById('restart-btn');
+        const restartFromResultsBtn = document.getElementById('restart-from-results-btn'); // Renamed for clarity
+
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+        }
 
         // Function to render a question
         function renderQuestion() {
             // Hide results if shown
             resultsContainer.classList.add('hidden');
             quizContainer.classList.remove('hidden');
-            nextBtn.classList.remove('hidden');
-            prevBtn.classList.remove('hidden');
+            prevBtn.parentElement.classList.remove('hidden'); // Show navigation buttons
 
             const questionData = quizData[currentQuestionIndex];
             quizContainer.innerHTML = `
@@ -715,6 +738,7 @@
             }
 
             updateNavigationButtons();
+            saveQuizState(); // Save state after rendering
         }
 
         // Function to handle option click
@@ -732,11 +756,6 @@
             // Highlight correct/incorrect answer
             if (selectedOption === questionData.correctAnswer) {
                 event.target.classList.add('correct');
-                // Only increment score if this is the first time answering this question correctly
-                if (userAnswers[currentQuestionIndex] === selectedOption) {
-                    // This check is a bit redundant with the userAnswers array, but good for clarity
-                    // We'll calculate score at the end to be safe, or manage it more carefully
-                }
             } else {
                 event.target.classList.add('incorrect');
                 // Highlight the correct answer
@@ -747,6 +766,8 @@
             }
 
             showSolution(questionData.correctAnswer);
+            updateNavigationButtons(); // Update button state after answering
+            saveQuizState(); // Save state after answering
         }
 
         // Function to show the solution text
@@ -760,12 +781,49 @@
         // Function to update navigation button states
         function updateNavigationButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null; // Disable next if on last question and answered
-            if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+            // Next button is disabled only if on the last question AND it's unanswered
+            nextBtn.disabled = (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] === null);
+
+            if (currentQuestionIndex === quizData.length - 1) {
                 nextBtn.textContent = 'Ver Resultados';
             } else {
                 nextBtn.textContent = 'Siguiente';
             }
+        }
+
+        // Function to calculate and show results
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < quizData.length; i++) {
+                if (userAnswers[i] === quizData[i].correctAnswer) {
+                    correctCount++;
+                } else if (userAnswers[i] !== null) {
+                    incorrectCount++;
+                } else {
+                    unansweredCount++;
+                }
+            }
+
+            quizContainer.classList.add('hidden');
+            prevBtn.parentElement.classList.add('hidden'); // Hide navigation buttons when results are shown
+            resultsContainer.classList.remove('hidden');
+
+            correctCountSpan.textContent = correctCount;
+            incorrectCountSpan.textContent = incorrectCount;
+            unansweredCountSpan.textContent = unansweredCount;
+            scorePercentageSpan.textContent = ((correctCount / quizData.length) * 100).toFixed(2);
+        }
+
+        // Function to reset the test
+        function resetTest() {
+            currentQuestionIndex = 0;
+            userAnswers.fill(null); // Reset all answers
+            localStorage.removeItem('currentQuestionIndex'); // Clear localStorage
+            localStorage.removeItem('userAnswers'); // Clear localStorage
+            renderQuestion();
         }
 
         // Event listener for Next button
@@ -773,8 +831,8 @@
             if (currentQuestionIndex < quizData.length - 1) {
                 currentQuestionIndex++;
                 renderQuestion();
-            } else if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
-                // If on the last question and answered, show results
+            } else if (currentQuestionIndex === quizData.length - 1) {
+                // If on the last question, show results regardless of whether it's answered
                 showResults();
             }
         });
@@ -787,33 +845,14 @@
             }
         });
 
-        // Function to calculate and show results
-        function showResults() {
-            score = 0;
-            for (let i = 0; i < quizData.length; i++) {
-                if (userAnswers[i] === quizData[i].correctAnswer) {
-                    score++;
-                }
-            }
+        // Event listener for the new Reset button
+        resetBtn.addEventListener('click', resetTest);
 
-            quizContainer.classList.add('hidden');
-            navigationButtons.classList.add('hidden'); // Hide navigation buttons when results are shown
-            resultsContainer.classList.remove('hidden');
+        // Event listener for Restart button in results
+        restartFromResultsBtn.addEventListener('click', resetTest);
 
-            correctCountSpan.textContent = score;
-            totalQuestionsSpan.textContent = quizData.length;
-            scorePercentageSpan.textContent = ((score / quizData.length) * 100).toFixed(2);
-        }
-
-        // Event listener for Restart button
-        restartBtn.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.fill(null); // Reset all answers
-            renderQuestion();
-        });
-
-        // Initial render
+        // Initial load: Try to load state, then render
+        loadQuizState();
         renderQuestion();
     </script>
 </body>
