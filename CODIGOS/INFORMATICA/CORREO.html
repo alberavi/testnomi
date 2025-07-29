@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Correo Electrónico</title>
+    <title>CORREO</title> <!-- Título actualizado a "CORREO" -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,6 +25,15 @@
             width: 100%;
             max-width: 800px;
             margin-top: 20px;
+        }
+        .quiz-title {
+            font-size: 2.5rem; /* Increased font size */
+            font-weight: 700;
+            color: #1a202c; /* Darker color for emphasis */
+            text-align: center;
+            margin-bottom: 30px; /* More space below title */
+            padding-bottom: 15px; /* Padding for the line */
+            border-bottom: 3px solid #4CAF50; /* Green underline */
         }
         .question-card {
             background-color: #f9fafb;
@@ -99,6 +108,8 @@
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            gap: 10px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
         }
         .nav-button {
             padding: 12px 25px;
@@ -108,6 +119,8 @@
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            text-align: center;
         }
         .nav-button:active {
             transform: translateY(1px);
@@ -125,6 +138,13 @@
         }
         .nav-button.next:hover {
             background-color: #43A047;
+        }
+        .nav-button.restart {
+            background-color: #ff9800; /* Orange color for restart */
+            color: #ffffff;
+        }
+        .nav-button.restart:hover {
+            background-color: #fb8c00;
         }
         .nav-button:disabled {
             background-color: #cccccc;
@@ -163,14 +183,26 @@
         .quiz-summary button:hover {
             background-color: #0056b3;
         }
+
+        /* Responsive adjustments for navigation buttons */
+        @media (max-width: 600px) {
+            .navigation-buttons {
+                flex-direction: column; /* Stack buttons vertically on small screens */
+            }
+            .nav-button {
+                width: 100%; /* Full width for stacked buttons */
+            }
+        }
     </style>
 </head>
 <body>
     <div class="quiz-container" id="quizContainer">
+        <h1 class="quiz-title">CORREO</h1> <!-- Título actualizado a "CORREO" -->
         <!-- Las preguntas se cargarán aquí -->
     </div>
 
     <script>
+        // Define the quiz questions and their correct answers
         const quizData = [
             {
                 question: "¿Qué significa la sigla MUA en el contexto del correo electrónico?",
@@ -365,7 +397,7 @@
             {
                 question: "¿Qué puerto SMTP ha quedado obsoleto según el documento?",
                 options: ["A) 25", "B) 2525", "C) 587", "D) 465"],
-                correctAnswer: "D" // Corrected based on user feedback
+                correctAnswer: "D"
             },
             {
                 question: "Si se utiliza AUTH LOGIN en ESMTP, ¿cómo se envían las credenciales?",
@@ -490,7 +522,7 @@
             {
                 question: "¿Qué significa \"Origen\" en el diagrama?",
                 options: ["A) El servidor de correo del destinatario.", "B) El servidor de correo del remitente.", "C) El cliente de correo del remitente.", "D) El servidor DNS."],
-                correctAnswer: "B" // Inferred from context
+                correctAnswer: "B"
             },
             {
                 question: "¿Qué componente del correo electrónico se encarga de la trazabilidad del mensaje entre diferentes MTAs?",
@@ -515,7 +547,7 @@
             {
                 question: "¿Qué indica el campo priority en un registro SRV?",
                 options: ["A) La prioridad del servidor destino.", "B) El peso relativo para registros con la misma prioridad.", "C) El puerto del servicio.", "D) La dirección del servidor destino."],
-                correctAnswer: "A" // Inferred from general SRV knowledge
+                correctAnswer: "A"
             },
             {
                 question: "¿Qué comando POP3 se utiliza para descargar un mensaje específico?",
@@ -674,19 +706,58 @@
             }
         ];
 
+        // Initialize quiz state variables
         let currentQuestionIndex = 0;
-        let score = 0;
-        const userAnswers = new Array(quizData.length).fill(null);
+        // userAnswers will store the selected option for each question (e.g., "A", "B", "C", "D" or null if not answered)
+        let userAnswers = new Array(quizData.length).fill(null);
         const quizContainer = document.getElementById('quizContainer');
 
+        // Keys for local storage
+        const LOCAL_STORAGE_INDEX_KEY = 'quizCurrentQuestionIndex';
+        const LOCAL_STORAGE_ANSWERS_KEY = 'quizUserAnswers';
+
+        /**
+         * Loads the quiz state from local storage.
+         * If no saved state is found, initializes to the beginning of the quiz.
+         */
+        function loadStateFromLocalStorage() {
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_INDEX_KEY);
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_ANSWERS_KEY);
+
+            if (savedIndex !== null && savedAnswers !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+                userAnswers = JSON.parse(savedAnswers);
+            } else {
+                // If no saved state, start fresh
+                currentQuestionIndex = 0;
+                userAnswers = new Array(quizData.length).fill(null);
+            }
+        }
+
+        /**
+         * Saves the current quiz state to local storage.
+         */
+        function saveStateToLocalStorage() {
+            localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, currentQuestionIndex.toString());
+            localStorage.setItem(LOCAL_STORAGE_ANSWERS_KEY, JSON.stringify(userAnswers));
+        }
+
+        /**
+         * Loads and displays the current question.
+         * Handles navigation buttons and restoring previously selected answers.
+         */
         function loadQuestion() {
+            // If all questions have been answered or navigated past, show the summary
             if (currentQuestionIndex >= quizData.length) {
                 showSummary();
+                saveStateToLocalStorage(); // Save state after finishing
                 return;
             }
 
             const questionData = quizData[currentQuestionIndex];
+            // Update the quiz container with the current question and options
             quizContainer.innerHTML = `
+                <h1 class="quiz-title">CORREO</h1> <!-- Título actualizado a "CORREO" -->
                 <div class="question-card">
                     <div class="question-text">
                         ${currentQuestionIndex + 1}. ${questionData.question}
@@ -704,40 +775,62 @@
                     <button class="nav-button prev" id="prevButton" ${currentQuestionIndex === 0 ? 'disabled' : ''}>
                         Anterior
                     </button>
+                    <button class="nav-button restart" id="restartButton">
+                        Reiniciar Test
+                    </button>
                     <button class="nav-button next" id="nextButton">
                         ${currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente'}
                     </button>
                 </div>
             `;
 
+            // Add event listeners for options and navigation buttons
             const optionsContainer = document.getElementById('optionsContainer');
             optionsContainer.addEventListener('click', handleOptionClick);
 
             document.getElementById('prevButton').addEventListener('click', () => {
                 currentQuestionIndex--;
                 loadQuestion();
+                saveStateToLocalStorage(); // Save state after navigation
             });
 
             document.getElementById('nextButton').addEventListener('click', () => {
                 currentQuestionIndex++;
                 loadQuestion();
+                saveStateToLocalStorage(); // Save state after navigation
             });
 
-            // Restore previous selection if exists
+            document.getElementById('restartButton').addEventListener('click', restartQuiz);
+
+            // Restore previous selection if the user has already answered this question
             const selectedAnswer = userAnswers[currentQuestionIndex];
             if (selectedAnswer) {
                 const selectedButton = optionsContainer.querySelector(`[data-option="${selectedAnswer}"]`);
                 if (selectedButton) {
                     const isCorrect = selectedAnswer === questionData.correctAnswer;
                     selectedButton.classList.add(isCorrect ? 'correct' : 'incorrect');
-                    disableOptions();
-                    showFeedback(isCorrect);
+                    // If the answer was incorrect, also highlight the correct one
+                    if (!isCorrect) {
+                        const correctButton = optionsContainer.querySelector(`[data-option="${questionData.correctAnswer}"]`);
+                        if (correctButton) {
+                            correctButton.classList.add('correct');
+                        }
+                    }
+                    disableOptions(); // Disable options after an answer is loaded/selected
+                    showFeedback(isCorrect); // Show feedback for the loaded answer
                 }
             }
+            saveStateToLocalStorage(); // Save state after loading question
         }
 
+        /**
+         * Handles a click event on an option button.
+         * Checks the answer, updates styling, stores the answer, and shows feedback.
+         * @param {Event} event The click event.
+         */
         function handleOptionClick(event) {
             const selectedButton = event.target.closest('.option-button');
+            // Ensure a button was clicked and it's not already disabled
             if (!selectedButton || selectedButton.classList.contains('disabled')) {
                 return;
             }
@@ -748,29 +841,29 @@
 
             // Store user's answer
             userAnswers[currentQuestionIndex] = selectedOption;
+            saveStateToLocalStorage(); // Save state immediately after answer
 
-            // Apply styling
+            // Apply styling to the selected button
             selectedButton.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+            // If the selected answer is incorrect, highlight the correct answer as well
             if (!isCorrect) {
-                // Highlight the correct answer if the selected one was incorrect
                 const correctButton = document.querySelector(`[data-option="${questionData.correctAnswer}"]`);
                 if (correctButton) {
                     correctButton.classList.add('correct');
                 }
             }
 
-            // Disable all options after selection
+            // Disable all options for the current question after an answer is chosen
             disableOptions();
 
-            // Show feedback message
+            // Show feedback message (Correcto/Incorrecto)
             showFeedback(isCorrect);
-
-            // Update score if it's a new correct answer
-            if (isCorrect && userAnswers[currentQuestionIndex] === selectedOption) {
-                score++;
-            }
         }
 
+        /**
+         * Disables all option buttons for the current question.
+         */
         function disableOptions() {
             const buttons = document.querySelectorAll('.option-button');
             buttons.forEach(button => {
@@ -778,45 +871,68 @@
             });
         }
 
+        /**
+         * Displays a feedback message (correct or incorrect).
+         * @param {boolean} isCorrect True if the answer was correct, false otherwise.
+         */
         function showFeedback(isCorrect) {
             const feedbackMessage = document.getElementById('feedbackMessage');
-            feedbackMessage.style.display = 'block';
+            feedbackMessage.style.display = 'block'; // Make the feedback message visible
             if (isCorrect) {
                 feedbackMessage.textContent = "¡Correcto!";
-                feedbackMessage.className = 'feedback-message correct';
+                feedbackMessage.className = 'feedback-message correct'; // Apply correct styling
             } else {
-                feedbackMessage.textContent = "Incorrecto. La respuesta correcta es " + quizData[currentQuestionIndex].correctAnswer + ".";
-                feedbackMessage.className = 'feedback-message incorrect';
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta es ${quizData[currentQuestionIndex].correctAnswer}.`;
+                feedbackMessage.className = 'feedback-message incorrect'; // Apply incorrect styling
             }
         }
 
+        /**
+         * Calculates and displays the quiz summary (correct, incorrect, unanswered questions).
+         */
         function showSummary() {
             let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
             userAnswers.forEach((answer, index) => {
-                if (answer === quizData[index].correctAnswer) {
+                if (answer === null) {
+                    unansweredCount++;
+                } else if (answer === quizData[index].correctAnswer) {
                     correctCount++;
+                } else {
+                    incorrectCount++;
                 }
             });
 
+            // Update the quiz container with the summary results
             quizContainer.innerHTML = `
+                <h1 class="quiz-title">CORREO</h1> <!-- Título actualizado a "CORREO" -->
                 <div class="quiz-summary">
                     <h2>Test Finalizado</h2>
-                    <p>Has respondido ${userAnswers.filter(a => a !== null).length} de ${quizData.length} preguntas.</p>
-                    <p>Respuestas correctas: ${correctCount}</p>
-                    <p>Respuestas incorrectas: ${quizData.length - correctCount}</p>
+                    <p>Has respondido ${quizData.length - unansweredCount} de ${quizData.length} preguntas.</p>
+                    <p>Respuestas correctas: <span style="color: #28a745; font-weight: bold;">${correctCount}</span></p>
+                    <p>Respuestas incorrectas: <span style="color: #dc3545; font-weight: bold;">${incorrectCount}</span></p>
+                    <p>Preguntas sin contestar: <span style="color: #6c757d; font-weight: bold;">${unansweredCount}</span></p>
                     <button onclick="restartQuiz()">Reiniciar Test</button>
                 </div>
             `;
         }
 
+        /**
+         * Resets the quiz to its initial state and reloads the first question.
+         * Clears local storage.
+         */
         function restartQuiz() {
             currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.fill(null);
-            loadQuestion();
+            userAnswers.fill(null); // Reset all answers to null
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY); // Clear saved index
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Clear saved answers
+            loadQuestion(); // Load the first question
         }
 
-        // Initial load
+        // Initial load: Load state from local storage and then display the current question
+        loadStateFromLocalStorage();
         loadQuestion();
     </script>
 </body>
