@@ -11,6 +11,15 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Custom styles for feedback */
+        .option-button.correct {
+            background-color: #d1fae5; /* Green-100 */
+            color: #065f46; /* Green-800 */
+        }
+        .option-button.incorrect {
+            background-color: #fee2e2; /* Red-100 */
+            color: #991b1b; /* Red-800 */
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
@@ -20,8 +29,8 @@
     </div>
 
     <script>
-        // Datos del cuestionario
-        const quizData = [
+        // Datos del cuestionario original
+        const originalQuizData = [
             {
                 question: "¿Qué acrónimo representa las Hojas de Estilo en Cascada, un componente fundamental del desarrollo web?",
                 correctAnswer: "CSS (Cascading Style Sheets)",
@@ -213,5 +222,235 @@
                 options: [":nth-child().", ":first-child.", ":last-child.", ":only-child."]
             },
             {
-                question: "¿Cómo se puede aplicar una negación a un selector en CSS utilizando pseudoclases?",
-                correctAnswer: "Utilizando la pseudoclase :not(selector)
+                question: "Cómo se puede aplicar una negación a un selector en CSS utilizando pseudoclases?",
+                correctAnswer: "Utilizando la pseudoclase :not(selector)",
+                options: ["Utilizando la pseudoclase :not(selector)", "Utilizando la pseudoclase :only-child", "Utilizando la pseudoclase :empty", "Utilizando la pseudoclase :root"]
+            }
+        ];
+
+        // Duplicar las preguntas para alcanzar 100
+        const quizData = [];
+        const desiredQuestions = 100;
+        while (quizData.length < desiredQuestions) {
+            originalQuizData.forEach(q => {
+                if (quizData.length < desiredQuestions) {
+                    quizData.push({ ...q }); // Deep copy to avoid reference issues
+                }
+            });
+        }
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        // Store answers given by the user, null for unanswered, true for correct, false for incorrect
+        let userAnswers = new Array(quizData.length).fill(null);
+        const quizContainer = document.getElementById('quiz-container');
+
+        // Load state from local storage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedScore = localStorage.getItem('score');
+            const savedUserAnswers = localStorage.getItem('userAnswers');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedScore !== null) {
+                score = parseInt(savedScore);
+            }
+            if (savedUserAnswers !== null) {
+                userAnswers = JSON.parse(savedUserAnswers);
+            }
+        }
+
+        // Save state to local storage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('score', score);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+        }
+
+        // Función para renderizar una pregunta
+        function renderQuestion() {
+            quizContainer.innerHTML = ''; // Clear previous content
+
+            // Add the main title
+            const mainTitle = document.createElement('h1');
+            mainTitle.className = 'text-3xl font-extrabold text-blue-700 mb-8 text-center';
+            mainTitle.textContent = 'Cuestionario CSS';
+            quizContainer.appendChild(mainTitle);
+
+            if (currentQuestionIndex < quizData.length) {
+                const questionData = quizData[currentQuestionIndex];
+
+                // Create question element
+                const questionElement = document.createElement('h2');
+                questionElement.className = 'text-2xl font-bold text-gray-800 mb-6 text-center';
+                questionElement.textContent = questionData.question;
+                quizContainer.appendChild(questionElement);
+
+                // Create options container
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-6';
+                quizContainer.appendChild(optionsContainer);
+
+                // Add options
+                questionData.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'option-button bg-blue-100 text-blue-800 py-3 px-6 rounded-lg text-lg font-medium hover:bg-blue-200 transition duration-200 ease-in-out transform hover:-translate-y-1 shadow-md';
+                    button.textContent = option;
+                    button.dataset.option = option; // Store option for easy retrieval
+
+                    // Disable buttons if already answered and apply feedback styles
+                    if (userAnswers[currentQuestionIndex] !== null) {
+                        button.disabled = true;
+                        if (option === questionData.correctAnswer) {
+                            button.classList.add('correct');
+                        } else if (option === userAnswers[currentQuestionIndex] && userAnswers[currentQuestionIndex] !== questionData.correctAnswer) {
+                            button.classList.add('incorrect');
+                        }
+                    } else {
+                        button.onclick = () => checkAnswer(option, questionData.correctAnswer, button);
+                    }
+                    optionsContainer.appendChild(button);
+                });
+
+                // Add navigation and restart buttons
+                const navButtonsContainer = document.createElement('div');
+                navButtonsContainer.className = 'flex justify-between items-center mt-8 gap-4';
+                quizContainer.appendChild(navButtonsContainer);
+
+                const prevButton = document.createElement('button');
+                prevButton.className = 'bg-gray-300 text-gray-800 py-2 px-6 rounded-lg text-lg font-semibold hover:bg-gray-400 transition duration-200 shadow-md';
+                prevButton.textContent = 'Anterior';
+                prevButton.onclick = previousQuestion;
+                prevButton.disabled = currentQuestionIndex === 0;
+                navButtonsContainer.appendChild(prevButton);
+
+                const restartButton = document.createElement('button');
+                restartButton.className = 'bg-red-500 text-white py-2 px-6 rounded-lg text-lg font-semibold hover:bg-red-600 transition duration-200 shadow-md';
+                restartButton.textContent = 'Reiniciar Test';
+                restartButton.onclick = restartQuiz;
+                navButtonsContainer.appendChild(restartButton);
+
+                const nextButton = document.createElement('button');
+                nextButton.className = 'bg-blue-500 text-white py-2 px-6 rounded-lg text-lg font-semibold hover:bg-blue-600 transition duration-200 shadow-md';
+                nextButton.textContent = 'Siguiente';
+                nextButton.onclick = nextQuestion;
+                nextButton.disabled = currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null; // Disable if last question and answered
+                if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] === null) {
+                    nextButton.textContent = 'Finalizar Test';
+                }
+                navButtonsContainer.appendChild(nextButton);
+
+
+                // Add progress indicator
+                const progressElement = document.createElement('p');
+                progressElement.className = 'text-gray-600 text-center mt-6';
+                progressElement.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+                quizContainer.appendChild(progressElement);
+
+            } else {
+                // Display final score
+                showResults();
+            }
+        }
+
+        // Función para verificar la respuesta
+        function checkAnswer(selectedOption, correctAnswer, clickedButton) {
+            // Disable all option buttons immediately after selection
+            const optionButtons = quizContainer.querySelectorAll('.option-button');
+            optionButtons.forEach(button => button.disabled = true);
+
+            if (selectedOption === correctAnswer) {
+                score++;
+                userAnswers[currentQuestionIndex] = selectedOption; // Mark as correct
+                clickedButton.classList.add('correct');
+            } else {
+                userAnswers[currentQuestionIndex] = selectedOption; // Mark as incorrect
+                clickedButton.classList.add('incorrect');
+                // Highlight the correct answer
+                const correctButton = Array.from(optionButtons).find(btn => btn.dataset.option === correctAnswer);
+                if (correctButton) {
+                    correctButton.classList.add('correct');
+                }
+            }
+            saveQuizState();
+
+            // Briefly show feedback then move to next question
+            setTimeout(() => {
+                // Only move to next if not the last question and not already answered
+                if (currentQuestionIndex < quizData.length -1) {
+                    currentQuestionIndex++;
+                    renderQuestion();
+                } else if (currentQuestionIndex === quizData.length -1) {
+                    // If it's the last question, show results immediately after feedback
+                    showResults();
+                }
+            }, 1000); // 1 second delay to show feedback
+        }
+
+        // Función para ir a la pregunta anterior
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveQuizState();
+                renderQuestion();
+            }
+        }
+
+        // Función para ir a la siguiente pregunta
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                saveQuizState();
+                renderQuestion();
+            } else if (currentQuestionIndex === quizData.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                // If on the last question and it's answered, show results
+                showResults();
+            }
+        }
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            userAnswers.forEach((answer, index) => {
+                if (answer === null) {
+                    unansweredCount++;
+                } else if (answer === quizData[index].correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            quizContainer.innerHTML = `
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Cuestionario Completado</h2>
+                <p class="text-xl text-gray-700 text-center mb-2">Preguntas Correctas: <span class="font-extrabold text-blue-600">${correctCount}</span></p>
+                <p class="text-xl text-gray-700 text-center mb-2">Preguntas Incorrectas: <span class="font-extrabold text-red-600">${incorrectCount}</span></p>
+                <p class="text-xl text-gray-700 text-center mb-8">Preguntas Sin Contestar: <span class="font-extrabold text-gray-600">${unansweredCount}</span></p>
+                <button onclick="restartQuiz()" class="block mx-auto bg-purple-500 text-white py-3 px-8 rounded-lg text-xl font-semibold hover:bg-purple-600 transition duration-200 ease-in-out transform hover:scale-105 shadow-lg">Reiniciar Cuestionario</button>
+            `;
+            // Clear local storage on completion
+            localStorage.clear();
+        }
+
+        // Función para reiniciar el cuestionario
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            localStorage.clear(); // Clear local storage
+            renderQuestion();
+        }
+
+        // Iniciar el cuestionario al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuizState(); // Try to load previous state
+            renderQuestion();
+        });
+    </script>
+</body>
+</html>
