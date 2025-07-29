@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Seguridad en Redes</title>
+    <title>SEGURIDAD EN REDES - VPN</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -26,6 +26,15 @@
             max-width: 800px;
             width: 100%;
             margin-top: 20px;
+        }
+        .quiz-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #1a202c; /* gray-900 */
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
         }
         .question-card {
             background-color: #e2e8f0;
@@ -93,7 +102,9 @@
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Align items vertically */
             margin-top: 30px;
+            gap: 10px; /* Space between buttons */
         }
         .navigation-buttons button {
             padding: 10px 20px;
@@ -104,6 +115,8 @@
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
             border: none;
+            flex-grow: 1; /* Allow buttons to grow */
+            text-align: center;
         }
         .navigation-buttons button:hover {
             background-color: #3182ce; /* Tailwind blue-600 */
@@ -129,7 +142,7 @@
         .results-summary p {
             font-size: 1.2rem;
             color: #4a5568;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Reduced margin for multiple paragraphs */
         }
         .results-summary button {
             background-color: #4299e1;
@@ -140,6 +153,7 @@
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
             border: none;
+            margin-top: 20px; /* Space above restart button */
         }
         .results-summary button:hover {
             background-color: #3182ce;
@@ -149,17 +163,21 @@
 </head>
 <body>
     <div class="quiz-container">
+        <h1 class="quiz-title">SEGURIDAD EN REDES - VPN</h1>
         <div id="quiz-content">
             <!-- Questions will be loaded here by JavaScript -->
         </div>
         <div class="navigation-buttons">
             <button id="prev-btn" disabled>Anterior</button>
+            <button id="restart-quiz-btn">Reiniciar Test</button> <!-- New Restart button -->
             <button id="next-btn">Siguiente</button>
         </div>
         <div id="results-summary" class="hidden results-summary" style="display: none;">
             <h2>Test Completado!</h2>
-            <p>Has respondido <span id="correct-answers-count">0</span> de <span id="total-questions-count">0</span> preguntas correctamente.</p>
-            <button id="restart-btn">Reiniciar Test</button>
+            <p>Preguntas correctas: <span id="correct-answers-count">0</span></p>
+            <p>Preguntas incorrectas: <span id="incorrect-answers-count">0</span></p>
+            <p>Preguntas sin contestar: <span id="unanswered-questions-count">0</span></p>
+            <button id="restart-btn-summary">Reiniciar Test</button> <!-- Restart button on summary page -->
         </div>
     </div>
 
@@ -670,21 +688,53 @@
 
         let currentQuestionIndex = 0;
         let score = 0;
-        const userAnswers = new Array(questions.length).fill(null); // To store user's selected option index for each question
+        // userAnswers will store the index of the selected option for each question.
+        // null means not answered. -1 could mean answered incorrectly if we want to distinguish.
+        let userAnswers = new Array(questions.length).fill(null); 
 
         const quizContent = document.getElementById('quiz-content');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn'); // New restart button in navigation
         const resultsSummary = document.getElementById('results-summary');
         const correctAnswersCountSpan = document.getElementById('correct-answers-count');
-        const totalQuestionsCountSpan = document.getElementById('total-questions-count');
-        const restartBtn = document.getElementById('restart-btn');
+        const incorrectAnswersCountSpan = document.getElementById('incorrect-answers-count');
+        const unansweredQuestionsCountSpan = document.getElementById('unanswered-questions-count');
+        const restartBtnSummary = document.getElementById('restart-btn-summary'); // Restart button on summary page
+
+        const LOCAL_STORAGE_KEY = 'securityQuizState';
+
+        // Function to save quiz state to local storage
+        function saveQuizState() {
+            const quizState = {
+                currentQuestionIndex: currentQuestionIndex,
+                // The 'score' variable is no longer directly used for the final correct count,
+                // as correct answers are calculated dynamically in showResults().
+                // However, keeping it here for consistency if other parts of the app might use it.
+                score: score, 
+                userAnswers: userAnswers
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(quizState));
+        }
+
+        // Function to load quiz state from local storage
+        function loadQuizState() {
+            const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedState) {
+                const quizState = JSON.parse(savedState);
+                currentQuestionIndex = quizState.currentQuestionIndex;
+                score = quizState.score; // Load score, though it's recalculated in showResults
+                userAnswers = quizState.userAnswers;
+            }
+            loadQuestion();
+        }
 
         // Function to load a question
         function loadQuestion() {
             // Hide results summary if visible
             resultsSummary.style.display = 'none';
             quizContent.style.display = 'block';
+            document.querySelector('.navigation-buttons').style.display = 'flex'; // Ensure navigation buttons are visible
 
             const q = questions[currentQuestionIndex];
             quizContent.innerHTML = `
@@ -710,6 +760,7 @@
                 const selectedButton = optionButtons[userAnswers[currentQuestionIndex]];
                 const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
 
+                // Apply correct/incorrect classes to the selected button
                 if (selectedButton.textContent === q.answer) {
                     selectedButton.classList.add('correct');
                     feedbackDiv.textContent = '¡Correcto!';
@@ -738,6 +789,11 @@
             const feedbackDiv = document.getElementById(`feedback-${currentQuestionIndex}`);
             const selectedOptionIndex = parseInt(event.target.dataset.index);
 
+            // If the question has already been answered, do nothing
+            if (userAnswers[currentQuestionIndex] !== null) {
+                return;
+            }
+
             // Store the user's answer
             userAnswers[currentQuestionIndex] = selectedOptionIndex;
 
@@ -748,12 +804,8 @@
                 event.target.classList.add('correct');
                 feedbackDiv.textContent = '¡Correcto!';
                 feedbackDiv.classList.add('correct-text');
-                // Only increment score if this is the first time answering this question correctly
-                // and it was not previously answered correctly.
-                if (!event.target.dataset.answeredCorrectly) {
-                    score++;
-                    event.target.dataset.answeredCorrectly = 'true'; // Mark as answered correctly
-                }
+                // Score is now calculated at the end, so no need to increment here.
+                // This ensures score reflects only correct answers, even if user navigates back and forth.
             } else {
                 event.target.classList.add('incorrect');
                 // Highlight the correct answer
@@ -767,6 +819,8 @@
                 feedbackDiv.classList.add('incorrect-text');
             }
             feedbackDiv.style.display = 'block';
+            saveQuizState(); // Save state after each answer
+            updateNavigationButtons(); // Update navigation buttons after an answer
         }
 
         // Function to disable/enable option buttons
@@ -785,7 +839,8 @@
         // Function to update navigation button states
         function updateNavigationButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null;
+            // The "Next" button is now always enabled to allow skipping or viewing results.
+            nextBtn.disabled = false; 
 
             if (currentQuestionIndex === questions.length - 1) {
                 nextBtn.textContent = 'Ver Resultados';
@@ -794,23 +849,39 @@
             }
         }
 
+        // Function to reset the quiz
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0; // Reset score (will be recalculated)
+            userAnswers.fill(null); // Reset user answers
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear local storage
+            loadQuestion(); // Load the first question
+        }
+
         // Event listener for Previous button
         prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
                 loadQuestion();
+                saveQuizState(); // Save state after navigation
             }
         });
 
         // Event listener for Next button
         nextBtn.addEventListener('click', () => {
+            // Allow moving to the next question regardless of whether the current one is answered.
             if (currentQuestionIndex < questions.length - 1) {
                 currentQuestionIndex++;
                 loadQuestion();
-            } else if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
+                saveQuizState(); // Save state after navigation
+            } else if (currentQuestionIndex === questions.length - 1) {
+                // If on the last question, show results.
                 showResults();
             }
         });
+
+        // Event listener for the new Restart button in navigation
+        restartQuizBtn.addEventListener('click', resetQuiz);
 
         // Function to show results
         function showResults() {
@@ -818,27 +889,34 @@
             document.querySelector('.navigation-buttons').style.display = 'none';
             resultsSummary.style.display = 'block';
 
-            correctAnswersCountSpan.textContent = score;
-            totalQuestionsCountSpan.textContent = questions.length;
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] === null) {
+                    unansweredCount++;
+                } else {
+                    // Check if the stored answer matches the correct answer
+                    if (questions[i].options[userAnswers[i]] === questions[i].answer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            }
+
+            correctAnswersCountSpan.textContent = correctCount;
+            incorrectAnswersCountSpan.textContent = incorrectCount;
+            unansweredQuestionsCountSpan.textContent = unansweredCount;
         }
 
-        // Event listener for Restart button
-        restartBtn.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.fill(null); // Reset user answers
-            const allOptionButtons = document.querySelectorAll('.option-btn');
-            allOptionButtons.forEach(button => {
-                button.classList.remove('correct', 'incorrect', 'disabled');
-                delete button.dataset.answeredCorrectly;
-                button.disabled = false;
-            });
-            document.querySelector('.navigation-buttons').style.display = 'flex';
-            loadQuestion();
-        });
+        // Event listener for Restart button on summary page
+        restartBtnSummary.addEventListener('click', resetQuiz);
 
-        // Initial load
-        window.onload = loadQuestion;
+        // Initial load: Try to load state from local storage
+        window.onload = loadQuizState;
     </script>
 </body>
 </html>
+
