@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Administración de SSOO</title>
+    <title>ADMON SSOO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -114,7 +114,10 @@
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Align items vertically */
             margin-top: 30px;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
         }
         .nav-button {
             padding: 12px 25px;
@@ -124,6 +127,8 @@
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            flex-grow: 1; /* Allow buttons to grow */
+            text-align: center;
         }
         .nav-button.prev {
             background-color: #6b7280;
@@ -139,6 +144,14 @@
         }
         .nav-button.next:hover:not(:disabled) {
             background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+        .nav-button.restart-inline { /* New style for inline restart button */
+            background-color: #48bb78;
+            color: #ffffff;
+        }
+        .nav-button.restart-inline:hover:not(:disabled) {
+            background-color: #38a169;
             transform: translateY(-2px);
         }
         .nav-button:disabled {
@@ -185,11 +198,26 @@
             background-color: #38a169;
             transform: translateY(-2px);
         }
+        .results-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .results-summary p {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        .results-summary p strong {
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Test de Administración de SSOO</h1>
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">ADMON SSOO</h1>
 
         <div class="progress-bar-container">
             <div id="progressBar" class="progress-bar"></div>
@@ -201,11 +229,17 @@
 
         <div class="navigation-buttons">
             <button id="prevBtn" class="nav-button prev" disabled>Anterior</button>
+            <button id="restartInlineBtn" class="nav-button restart-inline">Reiniciar Test</button> <!-- New inline restart button -->
             <button id="nextBtn" class="nav-button next">Siguiente</button>
         </div>
 
         <div id="finalScore" class="hidden">
             <div class="score-display"></div>
+            <div class="results-summary">
+                <p><strong>Preguntas Correctas:</strong> <span id="correctCount">0</span></p>
+                <p><strong>Preguntas Incorrectas:</strong> <span id="incorrectCount">0</span></p>
+                <p><strong>Preguntas Sin Contestar:</strong> <span id="unansweredCount">0</span></p>
+            </div>
             <button id="restartBtn" class="restart-button">Reiniciar Test</button>
         </div>
     </div>
@@ -1214,16 +1248,59 @@
             }
         ];
 
+        // Constants for LocalStorage keys
+        const LOCAL_STORAGE_KEY_INDEX = 'quizCurrentQuestionIndex';
+        const LOCAL_STORAGE_KEY_ANSWERS = 'quizUserAnswers';
+        const LOCAL_STORAGE_KEY_SCORED = 'quizScoredQuestions';
+
         let currentQuestionIndex = 0;
         let score = 0;
-        const userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer index
+        let userAnswers = new Array(quizData.length).fill(null); // To store user's selected answer index
+        let scoredQuestions = new Array(quizData.length).fill(false); // To track if a question has been scored
+
         const quizContainer = document.getElementById('quizContainer');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const restartInlineBtn = document.getElementById('restartInlineBtn'); // New inline restart button
         const progressBar = document.getElementById('progressBar');
         const finalScoreDiv = document.getElementById('finalScore');
         const scoreDisplay = finalScoreDiv.querySelector('.score-display');
         const restartBtn = document.getElementById('restartBtn');
+        const correctCountSpan = document.getElementById('correctCount');
+        const incorrectCountSpan = document.getElementById('incorrectCount');
+        const unansweredCountSpan = document.getElementById('unansweredCount');
+
+        // Function to save quiz state to LocalStorage
+        function saveQuizState() {
+            localStorage.setItem(LOCAL_STORAGE_KEY_INDEX, currentQuestionIndex);
+            localStorage.setItem(LOCAL_STORAGE_KEY_ANSWERS, JSON.stringify(userAnswers));
+            localStorage.setItem(LOCAL_STORAGE_KEY_SCORED, JSON.stringify(scoredQuestions));
+        }
+
+        // Function to load quiz state from LocalStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_KEY_INDEX);
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_KEY_ANSWERS);
+            const savedScored = localStorage.getItem(LOCAL_STORAGE_KEY_SCORED);
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedScored !== null) {
+                scoredQuestions = JSON.parse(savedScored);
+            }
+
+            // Recalculate score based on loaded answers
+            score = 0;
+            userAnswers.forEach((answerIndex, index) => {
+                if (answerIndex !== null && quizData[index].options[answerIndex] === quizData[index].correctAnswer) {
+                    score++;
+                }
+            });
+        }
 
         function loadQuestion() {
             const q = quizData[currentQuestionIndex];
@@ -1254,6 +1331,7 @@
 
             updateNavigationButtons();
             updateProgressBar();
+            saveQuizState(); // Save state after loading question
         }
 
         function selectAnswer(event, questionIndex) {
@@ -1270,6 +1348,7 @@
             });
 
             const selectedOptionText = selectedButton.textContent;
+            const previousAnswerIndex = userAnswers[questionIndex];
             userAnswers[questionIndex] = parseInt(selectedButton.dataset.index); // Store the index of the selected answer
 
             const correctAnswerText = quizData[questionIndex].correctAnswer;
@@ -1287,31 +1366,28 @@
             solutionDiv.textContent = `Respuesta correcta: ${correctAnswerText}`;
             solutionDiv.classList.remove('hidden');
 
+            // Update score based on the new selection
+            if (previousAnswerIndex !== null) {
+                // If previously answered, check if the previous answer was correct
+                if (quizData[questionIndex].options[previousAnswerIndex] === quizData[questionIndex].correctAnswer) {
+                    score--; // Decrement if previous was correct
+                }
+            }
+
             if (selectedOptionText === correctAnswerText) {
                 feedbackDiv.textContent = '¡Correcto!';
                 feedbackDiv.classList.add('correct');
                 questionCard.classList.add('correct');
-                if (userAnswers[questionIndex] !== null && selectedOptionText === correctAnswerText) {
-                    // Only increment score if it's a new correct answer, not re-visiting
-                    if (!questionCard.dataset.scored) {
-                        score++;
-                        questionCard.dataset.scored = 'true'; // Mark as scored
-                    }
-                } else if (userAnswers[questionIndex] === null) { // First time answering correctly
-                    score++;
-                    questionCard.dataset.scored = 'true';
-                }
+                score++; // Increment for the new correct answer
+                scoredQuestions[questionIndex] = true;
             } else {
                 feedbackDiv.textContent = 'Incorrecto. Inténtalo de nuevo.';
                 feedbackDiv.classList.add('incorrect');
                 questionCard.classList.add('incorrect');
-                // If previously scored correctly, and now answered incorrectly, decrement score
-                if (questionCard.dataset.scored === 'true') {
-                    score--;
-                    questionCard.dataset.scored = 'false';
-                }
+                scoredQuestions[questionIndex] = true; // Mark as attempted
             }
             feedbackDiv.classList.remove('hidden');
+            saveQuizState(); // Save state after answering
         }
 
         function showSolution(questionIndex, selectedOptionIndex) {
@@ -1345,7 +1421,7 @@
                 feedbackDiv.classList.add('correct');
                 questionCard.classList.add('correct');
             } else {
-                feedbackDiv.textContent = 'Incorrecto. Inténtalo de nuevo.';
+                feedbackDiv.textContent = 'Incorrecto.'; // Simplified feedback for already answered questions
                 feedbackDiv.classList.add('incorrect');
                 questionCard.classList.add('incorrect');
             }
@@ -1355,7 +1431,7 @@
 
         function updateNavigationButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === quizData.length - 1;
+            nextBtn.disabled = false; // Next button is always enabled until the last question
 
             if (currentQuestionIndex === quizData.length - 1) {
                 nextBtn.textContent = 'Ver Resultados';
@@ -1373,25 +1449,43 @@
             quizContainer.classList.add('hidden');
             prevBtn.classList.add('hidden');
             nextBtn.classList.add('hidden');
+            restartInlineBtn.classList.add('hidden'); // Hide inline restart button
             progressBar.parentElement.classList.add('hidden'); // Hide progress bar container
             finalScoreDiv.classList.remove('hidden');
-            scoreDisplay.textContent = `Has obtenido ${score} de ${quizData.length} respuestas correctas.`;
+
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let unansweredQuestions = 0;
+
+            userAnswers.forEach((answerIndex, index) => {
+                if (answerIndex !== null) {
+                    if (quizData[index].options[answerIndex] === quizData[index].correctAnswer) {
+                        correctAnswers++;
+                    } else {
+                        incorrectAnswers++;
+                    }
+                } else {
+                    unansweredQuestions++;
+                }
+            });
+
+            scoreDisplay.textContent = `Has obtenido ${correctAnswers} de ${quizData.length} respuestas correctas.`;
+            correctCountSpan.textContent = correctAnswers;
+            incorrectCountSpan.textContent = incorrectAnswers;
+            unansweredCountSpan.textContent = unansweredQuestions;
         }
 
         function restartQuiz() {
             currentQuestionIndex = 0;
             score = 0;
             userAnswers.fill(null);
-            quizData.forEach((_, index) => {
-                const card = document.getElementById(`questionCard-${index}`);
-                if (card) {
-                    delete card.dataset.scored;
-                }
-            });
-
+            scoredQuestions.fill(false);
+            localStorage.clear(); // Clear LocalStorage
+            
             quizContainer.classList.remove('hidden');
             prevBtn.classList.remove('hidden');
             nextBtn.classList.remove('hidden');
+            restartInlineBtn.classList.remove('hidden'); // Show inline restart button
             progressBar.parentElement.classList.remove('hidden'); // Show progress bar container
             finalScoreDiv.classList.add('hidden');
             loadQuestion();
@@ -1414,9 +1508,12 @@
         });
 
         restartBtn.addEventListener('click', restartQuiz);
+        restartInlineBtn.addEventListener('click', restartQuiz); // Event listener for the new inline restart button
 
         // Initial load
+        loadQuizState(); // Load state before initial question load
         loadQuestion();
     </script>
 </body>
 </html>
+
