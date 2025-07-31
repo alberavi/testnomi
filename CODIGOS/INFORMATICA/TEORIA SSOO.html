@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test de Sistemas Operativos</title>
+    <title>TEORIA SSOO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,6 +25,12 @@
             max-width: 800px;
             width: 100%;
             text-align: center;
+        }
+        .quiz-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 25px;
         }
         .question-number {
             font-size: 1.2rem;
@@ -82,6 +88,7 @@
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            gap: 10px; /* Space between buttons */
         }
         .nav-button {
             background-color: #4299e1;
@@ -92,6 +99,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
         }
         .nav-button:hover {
             background-color: #3182ce;
@@ -141,7 +149,7 @@
         .modal-content p {
             font-size: 1.1rem;
             color: #4a5568;
-            margin-bottom: 25px;
+            margin-bottom: 10px; /* Adjusted for multiple paragraphs */
         }
         .modal-button {
             background-color: #4299e1;
@@ -152,6 +160,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            margin-top: 20px; /* Space above the button */
         }
         .modal-button:hover {
             background-color: #3182ce;
@@ -160,12 +169,14 @@
 </head>
 <body>
     <div class="quiz-container">
+        <h1 class="quiz-title">TEORIA SSOO</h1>
         <div class="question-number" id="question-number"></div>
         <div class="question-text" id="question-text"></div>
         <div class="answers-grid" id="answers-grid"></div>
         <div class="feedback-message" id="feedback-message"></div>
         <div class="navigation-buttons">
             <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="restart-button" class="nav-button">Reiniciar Test</button>
             <button id="next-button" class="nav-button">Siguiente</button>
         </div>
     </div>
@@ -173,7 +184,9 @@
     <div id="quiz-completion-modal" class="modal">
         <div class="modal-content">
             <h2>¡Test Completado!</h2>
-            <p id="final-score"></p>
+            <p id="final-score-correct"></p>
+            <p id="final-score-incorrect"></p>
+            <p id="final-score-unanswered"></p>
             <button class="modal-button" onclick="restartQuiz()">Reiniciar Test</button>
         </div>
     </div>
@@ -1185,8 +1198,10 @@
 
         let currentQuestionIndex = 0;
         let score = 0;
-        let userAnswers = new Array(questions.length).fill(null); // To store user's selected answer index for each question
-        let answeredQuestions = new Array(questions.length).fill(false); // To track if a question has been answered
+        // userAnswers will store the index of the selected option (0, 1, 2, 3) or null if not answered
+        let userAnswers = new Array(questions.length).fill(null);
+        // answeredQuestions will track if a question has been answered (true/false)
+        let answeredQuestions = new Array(questions.length).fill(false);
 
         const questionNumberElement = document.getElementById('question-number');
         const questionTextElement = document.getElementById('question-text');
@@ -1194,8 +1209,36 @@
         const feedbackMessageElement = document.getElementById('feedback-message');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button'); // New restart button
         const quizCompletionModal = document.getElementById('quiz-completion-modal');
-        const finalScoreElement = document.getElementById('final-score');
+        const finalScoreCorrectElement = document.getElementById('final-score-correct');
+        const finalScoreIncorrectElement = document.getElementById('final-score-incorrect');
+        const finalScoreUnansweredElement = document.getElementById('final-score-unanswered');
+
+        const LOCAL_STORAGE_KEY = 'quizStateSSOO'; // Unique key for localStorage
+
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            const quizState = {
+                currentQuestionIndex,
+                score,
+                userAnswers,
+                answeredQuestions
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(quizState));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedState) {
+                const quizState = JSON.parse(savedState);
+                currentQuestionIndex = quizState.currentQuestionIndex;
+                score = quizState.score;
+                userAnswers = quizState.userAnswers;
+                answeredQuestions = quizState.answeredQuestions;
+            }
+        }
 
         function loadQuestion() {
             const currentQuestion = questions[currentQuestionIndex];
@@ -1241,6 +1284,7 @@
             });
 
             updateNavigationButtons();
+            saveQuizState(); // Save state after loading question
         }
 
         function selectAnswer(selectedOption, selectedIndex) {
@@ -1273,6 +1317,8 @@
                     buttons[correctAnswerIndex].classList.add('correct');
                 }
             }
+            saveQuizState(); // Save state after answering
+            updateNavigationButtons(); // Update button state after answering
         }
 
         function disableAnswerButtons() {
@@ -1285,8 +1331,11 @@
 
         function updateNavigationButtons() {
             prevButton.disabled = currentQuestionIndex === 0;
-            nextButton.disabled = currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]; // Disable next if last question and answered
-            if (currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]) {
+            // Next button is always enabled unless it's the very last question and results are shown
+            nextButton.disabled = false; // Always allow moving next
+            feedbackMessageElement.textContent = ''; // Clear feedback message when navigating
+
+            if (currentQuestionIndex === questions.length - 1) {
                 nextButton.textContent = 'Ver Resultados';
             } else {
                 nextButton.textContent = 'Siguiente';
@@ -1302,22 +1351,40 @@
 
         nextButton.addEventListener('click', () => {
             if (currentQuestionIndex < questions.length - 1) {
-                // Ensure the current question has been answered before moving to the next
-                if (answeredQuestions[currentQuestionIndex]) {
-                    currentQuestionIndex++;
-                    loadQuestion();
-                } else {
-                    // Optionally, show a message to the user to answer the current question
-                    feedbackMessageElement.textContent = 'Por favor, selecciona una respuesta antes de avanzar.';
-                    feedbackMessageElement.style.color = '#ffc107'; // Yellow for warning
-                }
-            } else if (currentQuestionIndex === questions.length - 1 && answeredQuestions[currentQuestionIndex]) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (currentQuestionIndex === questions.length - 1) {
+                // If on the last question, show results regardless of whether it's answered
                 showResults();
             }
         });
 
+        restartButton.addEventListener('click', () => {
+            restartQuiz();
+        });
+
         function showResults() {
-            finalScoreElement.textContent = `Has respondido correctamente ${score} de ${questions.length} preguntas.`;
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (answeredQuestions[i]) {
+                    const selectedAnswerIndex = userAnswers[i];
+                    const currentQuestion = questions[i];
+                    if (currentQuestion.options[selectedAnswerIndex] === currentQuestion.correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                } else {
+                    unansweredCount++;
+                }
+            }
+
+            finalScoreCorrectElement.textContent = `Correctas: ${correctCount} de ${questions.length}`;
+            finalScoreIncorrectElement.textContent = `Incorrectas: ${incorrectCount}`;
+            finalScoreUnansweredElement.textContent = `Sin contestar: ${unansweredCount}`;
             quizCompletionModal.classList.add('show');
         }
 
@@ -1326,12 +1393,17 @@
             score = 0;
             userAnswers = new Array(questions.length).fill(null);
             answeredQuestions = new Array(questions.length).fill(false);
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear localStorage on restart
             quizCompletionModal.classList.remove('show');
             loadQuestion();
         }
 
-        // Load the first question when the page loads
-        window.onload = loadQuestion;
+        // Load the first question when the page loads, or load saved state
+        window.onload = () => {
+            loadQuizState();
+            loadQuestion();
+        };
     </script>
 </body>
 </html>
+
