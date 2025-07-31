@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORMAS NORMALES - Test</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to allow scrolling */
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            padding: 2.5rem;
+            max-width: 800px; /* Max width for readability */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .question-options label {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0; /* Light border */
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #f8fafc; /* Very light background for options */
+        }
+        .question-options label:hover {
+            background-color: #e0f2fe; /* Light blue on hover */
+            border-color: #90cdf4; /* Blue border on hover */
+        }
+        /* Styles for selected/correct/incorrect options */
+        .question-options label.selected-option {
+            background-color: #bfdbfe; /* Light blue for selected */
+            border-color: #60a5fa;
+        }
+        .question-options label.correct-option {
+            background-color: #d1fae5; /* Light green for correct */
+            border-color: #34d399;
+        }
+        .question-options label.incorrect-option {
+            background-color: #fee2e2; /* Light red for incorrect */
+            border-color: #ef4444;
+        }
+
+        .question-options input[type="radio"]:checked + span {
+            font-weight: 600;
+            color: #2563eb; /* Darker blue for checked text */
+        }
+        .question-options input[type="radio"]:checked + span::before {
+            background-color: #2563eb; /* Blue dot for checked radio */
+            border-color: #2563eb;
+        }
+        .question-options input[type="radio"] {
+            /* Hide default radio button */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #cbd5e0; /* Light gray border */
+            border-radius: 50%;
+            outline: none;
+            cursor: pointer;
+            margin-right: 0.75rem;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .question-options input[type="radio"]:checked {
+            border-color: #2563eb; /* Blue border when checked */
+        }
+        .question-options input[type="radio"]:checked::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0.625rem;
+            height: 0.625rem;
+            border-radius: 50%;
+            background-color: #2563eb; /* Blue dot */
+        }
+        .button-group button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* Slightly more rounded buttons */
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle button shadow */
+        }
+        .button-group button:hover {
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+        .button-group button:active {
+            transform: translateY(0); /* Press effect */
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb; /* Darker blue */
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* Gray */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563; /* Darker gray */
+        }
+        .btn-danger {
+            background-color: #ef4444; /* Red */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626; /* Darker red */
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-item span:first-child {
+            font-weight: 500;
+            color: #4a5568;
+        }
+        .result-item span:last-child {
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+        .correct-answer {
+            color: #10b981; /* Green for correct */
+        }
+        .incorrect-answer {
+            color: #ef4444; /* Red for incorrect */
+        }
+        .unanswered-answer {
+            color: #f59e0b; /* Orange for unanswered */
+        }
+        .quiz-title {
+            text-align: center;
+            font-size: 2.25rem; /* Larger title */
+            font-weight: 800; /* Extra bold */
+            color: #1a202c; /* Dark text */
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0; /* Separator line */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 1.5rem;
+                margin-top: 1rem;
+            }
+            .quiz-title {
+                font-size: 1.75rem;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .button-group button {
+                width: 100%;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1a202c;
+        }
+        .modal-content p {
+            margin-bottom: 1.5rem;
+            color: #4a5568;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .modal-buttons button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .modal-buttons .btn-confirm {
+            background-color: #ef4444; /* Red */
+            color: white;
+        }
+        .modal-buttons .btn-confirm:hover {
+            background-color: #dc2626;
+        }
+        .modal-buttons .btn-cancel {
+            background-color: #cbd5e0; /* Light gray */
+            color: #4a5568;
+        }
+        .modal-buttons .btn-cancel:hover {
+            background-color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="quiz-title" id="quizTitle">FORMAS NORMALES</h1>
+
+        <div id="quizContent">
+            <!-- Question and options will be rendered here -->
+            <div id="questionContainer" class="mb-6">
+                <p id="questionText" class="text-xl font-semibold text-gray-800 mb-4"></p>
+                <div id="optionsContainer" class="question-options">
+                    <!-- Options will be rendered here -->
+                </div>
+                <div id="feedbackMessage" class="text-center mt-4 text-lg font-bold"></div>
+            </div>
+
+            <div class="button-group flex justify-between items-center gap-4">
+                <button id="prevBtn" class="btn-secondary flex-1" style="display: none;">Anterior</button>
+                <button id="restartBtn" class="btn-danger flex-1">Reiniciar Test</button>
+                <button id="nextBtn" class="btn-primary flex-1">Siguiente</button>
+            </div>
+        </div>
+
+        <div id="resultsContent" class="hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Resultados del Test</h2>
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <div class="result-item">
+                    <span>Preguntas Correctas:</span>
+                    <span id="correctCount" class="correct-answer"></span>
+                </div>
+                <div class="result-item">
+                    <span>Preguntas Incorrectas:</span>
+                    <span id="incorrectCount" class="incorrect-answer"></span>
+                </div>
+                <div class="result-item">
+                    <span>Preguntas Sin Contestar:</span>
+                    <span id="unansweredCount" class="unanswered-answer"></span>
+                </div>
+            </div>
+            <div class="button-group flex justify-center mt-8">
+                <button id="restartBtnResults" class="btn-danger">Reiniciar Test</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modalTitle"></h3>
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button id="modalConfirmBtn" class="btn-confirm">Sí</button>
+                <button id="modalCancelBtn" class="btn-cancel">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos para las preguntas del test
+        const questions = [
+            {
+                question: "¿Cuál es la característica principal de la Primera Forma Normal (1FN)?",
+                options: [
+                    "No contiene dependencias transitivas.",
+                    "Todos los atributos no principales tienen dependencia funcional completa de la clave principal.",
+                    "No contiene grupos repetitivos y los valores son atómicos.",
+                    "Los únicos determinantes son claves candidatas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Si una tabla tiene una clave principal simple, ¿en qué Forma Normal se encuentra automáticamente, asumiendo que ya está en 1FN?",
+                options: [
+                    "3FN",
+                    "FNBC",
+                    "2FN",
+                    "4FN"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué tipo de dependencia se debe eliminar para alcanzar la Segunda Forma Normal (2FN)?",
+                options: [
+                    "Dependencias transitivas.",
+                    "Dependencias multivaluadas.",
+                    "Dependencias parciales.",
+                    "Dependencias de combinación."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Una relación R(A, B, C, D, E) donde {A, B} es la clave principal, y A determina D. ¿Qué acción se debe tomar para normalizar a 2FN?",
+                options: [
+                    "Eliminar D y crear una nueva relación (A, D).",
+                    "Eliminar la dependencia {A, B} -> C.",
+                    "Asegurarse de que C no determine D.",
+                    "Convertir A en una clave candidata."
+                ],
+                correctAnswerIndex: 0
+            },
+            {
+                question: "¿Qué tipo de dependencia se elimina para alcanzar la Tercera Forma Normal (3FN)?",
+                options: [
+                    "Dependencias parciales.",
+                    "Dependencias multivaluadas.",
+                    "Dependencias transitivas.",
+                    "Dependencias de combinación."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "En una relación R(A, B, C, D, E) con clave principal {A, B}. Si {A, B} determina C y C determina D. ¿Qué forma normal se viola y cómo se corrige?",
+                options: [
+                    "2FN; eliminar D y crear (A, D).",
+                    "3FN; eliminar D y crear (C, D).",
+                    "FNBC; eliminar C y crear (C, A).",
+                    "4FN; eliminar la dependencia multivaluada."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La Forma Normal de Boyce-Codd (FNBC) es un afinamiento de la:",
+                options: [
+                    "1FN",
+                    "2FN",
+                    "3FN",
+                    "4FN"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Según la FNBC, ¿cuál es la condición para que una relación esté en esta forma normal?",
+                options: [
+                    "No hay grupos repetitivos.",
+                    "Todos los atributos no principales dependen de la clave completa.",
+                    "Los únicos determinantes son claves candidatas.",
+                    "No hay dependencias multivaluadas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Si en una relación R(A, B, C), C determina A, y C no es una clave candidata, ¿qué forma normal se viola según la descripción?",
+                options: [
+                    "2FN",
+                    "3FN",
+                    "FNBC",
+                    "4FN"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Qué se hace para corregir la anomalía descrita en la pregunta anterior (R(A, B, C) donde C determina A y C no es clave candidata)?",
+                options: [
+                    "Eliminar A y crear (C, A).",
+                    "Eliminar C y crear (C, A).",
+                    "Eliminar B y crear (C, B).",
+                    "Hacer C la clave principal."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué característica define la Cuarta Forma Normal (4FN)?",
+                options: [
+                    "No hay dependencias transitivas.",
+                    "Toda dependencia multivaluada no trivial está implicada por una clave candidata.",
+                    "Los valores de los atributos son atómicos.",
+                    "No hay dependencias parciales."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Por qué se podría considerar la desnormalización de una base de datos?",
+                options: [
+                    "Para eliminar dependencias transitivas.",
+                    "Para mejorar el rendimiento.",
+                    "Para asegurar la atomicidad de los datos.",
+                    "Para reducir la redundancia de datos."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Son acumulativas las Formas Normales?",
+                options: [
+                    "No, cada forma normal es independiente.",
+                    "Sí, cada forma normal superior implica las anteriores.",
+                    "Solo hasta la 3FN.",
+                    "Solo si se utilizan claves compuestas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "La Quinta Forma Normal (5FN) se conoce también como:",
+                options: [
+                    "Forma Normal de Boyce-Codd.",
+                    "Forma Normal de Proyección-Unión.",
+                    "Forma Normal de Dependencia Multivaluada.",
+                    "Forma Normal de Clave Candidata."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué distingue a la 5FN de otras formas normales en su inferencia?",
+                options: [
+                    "Se infiere directamente de la estructura de la tabla.",
+                    "Se infiere de las dependencias funcionales.",
+                    "No se infiere de la estructura, hay que ver los datos de las tablas.",
+                    "Se infiere de la existencia de claves candidatas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuándo se da la Sexta Forma Normal (6FN)?",
+                options: [
+                    "Cuando una relación tiene una clave primaria y muchos atributos más.",
+                    "Cuando una relación tiene dependencias multivaluadas.",
+                    "Cuando una relación tiene una clave primaria y como mucho otro atributo más.",
+                    "Cuando una relación no tiene dependencias transitivas."
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Si una relación contiene grupos repetitivos, ¿qué forma normal viola?",
+                options: [
+                    "2FN",
+                    "3FN",
+                    "1FN",
+                    "FNBC"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "Un atributo no principal que depende de otro atributo no principal viola la:",
+                options: [
+                    "1FN",
+                    "2FN",
+                    "3FN",
+                    "4FN"
+                ],
+                correctAnswerIndex: 2
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones es verdadera sobre la FNBC?",
+                options: [
+                    "Es menos estricta que la 3FN.",
+                    "Resuelve una anomalía que la 3FN no cubre.",
+                    "Solo se aplica a tablas con claves simples.",
+                    "Permite dependencias transitivas."
+                ],
+                correctAnswerIndex: 1
+            },
+            {
+                question: "¿Qué forma normal es 'una situación rara, se da muy pocas veces' y depende de la semántica de los datos?",
+                options: [
+                    "4FN",
+                    "5FN",
+                    "6FN",
+                    "FNBC"
+                ],
+                correctAnswerIndex: 1
+            }
+        ];
+
+        // Elementos del DOM
+        const quizContent = document.getElementById('quizContent');
+        const resultsContent = document.getElementById('resultsContent');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const feedbackMessage = document.getElementById('feedbackMessage'); // Element for feedback message
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const restartBtnResults = document.getElementById('restartBtnResults'); // Restart button on results page
+
+        // Modal elements
+        const confirmModal = document.getElementById('confirmModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        // Estado del test
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Array para almacenar las respuestas del usuario (índice de la opción seleccionada)
+
+        // Función para mostrar el modal de confirmación
+        function showConfirmModal(title, message, onConfirmCallback) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            confirmModal.classList.remove('hidden');
+            confirmModal.classList.add('show');
+
+            // Clear previous event listeners to prevent multiple calls
+            modalConfirmBtn.onclick = null;
+            modalCancelBtn.onclick = null;
+
+            modalConfirmBtn.onclick = () => {
+                confirmModal.classList.remove('show');
+                confirmModal.classList.add('hidden');
+                onConfirmCallback(true);
+            };
+            modalCancelBtn.onclick = () => {
+                confirmModal.classList.remove('show');
+                confirmModal.classList.add('hidden');
+                onConfirmCallback(false);
+            };
+        }
+
+        // Función para guardar el estado en localStorage
+        function saveState() {
+            try {
+                localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+                localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            } catch (e) {
+                console.error("Error al guardar en localStorage:", e);
+            }
+        }
+
+        // Función para cargar el estado de localStorage
+        function loadState() {
+            try {
+                const savedIndex = localStorage.getItem('currentQuestionIndex');
+                const savedAnswers = localStorage.getItem('userAnswers');
+
+                if (savedIndex !== null) {
+                    currentQuestionIndex = parseInt(savedIndex, 10);
+                }
+                if (savedAnswers !== null) {
+                    userAnswers = JSON.parse(savedAnswers);
+                } else {
+                    // Initialize userAnswers array with nulls if no saved answers
+                    userAnswers = new Array(questions.length).fill(null);
+                }
+            } catch (e) {
+                console.error("Error al cargar de localStorage o al parsear JSON:", e);
+                // Reset state if there's an error loading
+                currentQuestionIndex = 0;
+                userAnswers = new Array(questions.length).fill(null);
+            }
+        }
+
+        // Función para renderizar la pregunta actual
+        function renderQuestion() {
+            // Asegurarse de que el contenido del test sea visible y los resultados estén ocultos
+            quizContent.classList.remove('hidden');
+            resultsContent.classList.add('hidden');
+
+            // Clear previous feedback
+            feedbackMessage.textContent = '';
+            const allLabels = optionsContainer.querySelectorAll('label');
+            allLabels.forEach(label => {
+                label.classList.remove('selected-option', 'correct-option', 'incorrect-option');
+                label.querySelector('input[type="radio"]').disabled = false; // Re-enable radio buttons
+            });
+
+
+            const question = questions[currentQuestionIndex];
+            questionText.textContent = `${currentQuestionIndex + 1}. ${question.question}`;
+            optionsContainer.innerHTML = ''; // Limpiar opciones anteriores
+
+            question.options.forEach((option, index) => {
+                const label = document.createElement('label');
+                label.className = 'block'; // Tailwind class for block display
+                label.innerHTML = `
+                    <input type="radio" name="question${currentQuestionIndex}" value="${index}" class="mr-3">
+                    <span class="text-gray-700">${option}</span>
+                `;
+                optionsContainer.appendChild(label);
+
+                // Seleccionar la opción si el usuario ya la había contestado
+                if (userAnswers[currentQuestionIndex] === index) {
+                    label.querySelector('input').checked = true;
+                    // If an answer was already selected, apply feedback immediately
+                    applyFeedback(index, question.correctAnswerIndex);
+                }
+            });
+
+            // Actualizar visibilidad de los botones de navegación
+            prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+            nextBtn.textContent = currentQuestionIndex === questions.length - 1 ? 'Finalizar Test' : 'Siguiente';
+        }
+
+        // Función para aplicar feedback visual
+        function applyFeedback(selectedIndex, correctIndex) {
+            const allLabels = optionsContainer.querySelectorAll('label');
+            allLabels.forEach((label, idx) => {
+                const radio = label.querySelector('input[type="radio"]');
+                radio.disabled = true; // Disable all radio buttons after an answer is selected
+
+                if (idx === correctIndex) {
+                    label.classList.add('correct-option');
+                } else if (idx === selectedIndex) {
+                    label.classList.add('incorrect-option');
+                }
+            });
+
+            if (selectedIndex === correctIndex) {
+                feedbackMessage.className = 'text-center mt-4 text-lg font-bold text-green-600';
+                feedbackMessage.textContent = '¡Correcto!';
+            } else {
+                feedbackMessage.className = 'text-center mt-4 text-lg font-bold text-red-600';
+                feedbackMessage.textContent = `Incorrecto. La respuesta correcta es: ${questions[currentQuestionIndex].options[correctIndex]}`;
+            }
+        }
+
+        // Función para manejar la selección de respuesta
+        function handleOptionChange(event) {
+            const selectedValue = parseInt(event.target.value, 10);
+            userAnswers[currentQuestionIndex] = selectedValue;
+            saveState(); // Guardar el estado cada vez que se selecciona una respuesta
+
+            const currentQuestion = questions[currentQuestionIndex];
+            applyFeedback(selectedValue, currentQuestion.correctAnswerIndex);
+        }
+
+        // Función para renderizar los resultados
+        function renderResults() {
+            quizContent.classList.add('hidden');
+            resultsContent.classList.remove('hidden');
+
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                if (userAnswer === null) {
+                    unansweredCount++;
+                } else if (userAnswer === question.correctAnswerIndex) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            });
+
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('incorrectCount').textContent = incorrectCount;
+            document.getElementById('unansweredCount').textContent = unansweredCount;
+        }
+
+        // Función para reiniciar el test
+        function restartQuiz() {
+            showConfirmModal("Reiniciar Test", "¿Estás seguro de que quieres reiniciar el test? Se perderán todas tus respuestas.", (confirmed) => {
+                if (confirmed) {
+                    currentQuestionIndex = 0;
+                    userAnswers = new Array(questions.length).fill(null);
+                    localStorage.removeItem('currentQuestionIndex');
+                    localStorage.removeItem('userAnswers');
+                    renderQuestion();
+                }
+            });
+        }
+
+        // Event Listeners
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                renderResults();
+            }
+            saveState(); // Save state after navigation
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+            saveState(); // Save state after navigation
+        });
+
+        restartBtn.addEventListener('click', restartQuiz);
+        restartBtnResults.addEventListener('click', restartQuiz);
+
+        // Delegación de eventos para las opciones de radio (para manejar cambios dinámicos)
+        optionsContainer.addEventListener('change', handleOptionChange);
+
+        // Inicializar el test al cargar la página
+        window.onload = () => {
+            loadState();
+            renderQuestion();
+        };
+    </script>
+</body>
+</html>
