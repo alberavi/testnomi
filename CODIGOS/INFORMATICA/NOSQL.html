@@ -29,18 +29,26 @@
             flex-direction: column;
             gap: 20px;
         }
+        .quiz-title { /* Estilo para el nuevo título visible en la página */
+            color: #003366;
+            font-family: 'Georgia', serif;
+            font-size: 3rem;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
         .question-text {
             font-size: 1.5rem;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 25px;
+            margin-bottom: 2px; /* Ajustado para subir los botones aún más */
             line-height: 1.4;
         }
         .options-container {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 8px; /* Reducido el espacio entre opciones */
+            margin-bottom: 2px; /* Ajustado para subir los botones aún más */
         }
         .option-button {
             background-color: #e2e8f0;
@@ -71,8 +79,9 @@
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 8px; /* Reducido el espacio entre botones */
+            margin-top: 0px; /* Ajustado para subir los botones al máximo */
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
         }
         .nav-button {
             background-color: #4299e1;
@@ -97,10 +106,10 @@
             cursor: not-allowed;
         }
         .result-message {
-            font-size: 1.2rem;
+            font-size: 1rem; /* Reducido el tamaño de la fuente */
             font-weight: 600;
-            margin-top: 15px;
-            min-height: 30px; /* Para evitar CLS */
+            margin-top: 10px; /* Ajustado para estar más cerca */
+            min-height: 25px; /* Para evitar CLS */
         }
         .score-display {
             font-size: 1.8rem;
@@ -114,6 +123,9 @@
             margin-top: 20px;
         }
         @media (max-width: 600px) {
+            .quiz-title {
+                font-size: 2rem;
+            }
             .question-text {
                 font-size: 1.2rem;
             }
@@ -133,316 +145,290 @@
                 width: 100%;
                 max-width: none;
             }
+            .result-message {
+                font-size: 0.9rem; /* Ajuste para pantallas pequeñas */
+            }
         }
     </style>
 </head>
 <body>
     <div class="quiz-container">
+         <h1 class="quiz-title">NoSQL</h1>
         <div class="question-text" id="question-text"></div>
         <div class="options-container" id="options-container"></div>
         <div class="result-message" id="result-message"></div>
         <div class="navigation-buttons">
             <button class="nav-button" id="prev-button" disabled>Anterior</button>
             <button class="nav-button" id="next-button">Siguiente</button>
+            <button class="nav-button" id="reset-button">Reiniciar Test</button>
         </div>
         <div class="score-display" id="score-display">Puntuación: 0/0</div>
         <div class="final-message" id="final-message" style="display: none;"></div>
     </div>
 
-    <script type="module">
-        // Importar las funciones de Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // Definición de las preguntas y respuestas directamente en el script
+        const questions = [
+            "¿Cuál es una de las ventajas de los sistemas NoSQL mencionada en el texto? A) Garantizan completamente ACID. B) Mejor ajuste que el modelo relacional. C) Falta de madurez y experiencia. D) No permiten que los esquemas cambien.",
+            "Según el documento, ¿qué característica permite que los esquemas en NoSQL cambien? A) Consistencia estricta. B) Esquemas flexibles y agregación. C) Alto volumen de datos. D) NoSQL no permite cambios de esquema.",
+            "¿Qué tipo de particionamiento de información es el \"SHARDING\" según el texto? A) Particionamiento vertical. B) Particionamiento horizontal. C) Replicación de datos. D) Agregación de datos.",
+            "Una desventaja de NoSQL mencionada es que no garantizan completamente... A) CAP. B) BASE. C) ACID. D) SQL.",
+            "¿Qué significa la \"Consistencia eventual\" en el contexto de NoSQL, según el texto? A) Todos los nodos ven la misma información instantáneamente. B) La información distribuida tarda en consolidarse. C) El sistema siempre está disponible. D) El sistema es inmune a fallos de comunicación.",
+            "¿Cuál es una de las desventajas relacionadas con la compatibilidad en NoSQL? A) Hay estándares definidos. B) Falta de madurez y experiencia. C) Se integra fácilmente con RDBMS. D) No hay necesidad de compatibilidad.",
+            "El Teorema CAP o de Brewer tiene 3 propiedades. ¿Cuáles son? A) Costo, Agilidad, Productividad. B) Consistencia, Acceso, Rendimiento. C) Consistencia, Disponibilidad, Tolerancia a Particiones. D) Centralización, Automatización, Perdurabilidad.",
+            "Según el Teorema CAP, ¿cuántas características puede asegurar un sistema simultáneamente? A) Una. B) Dos. C) Las tres. D) Ninguna.",
+            "¿Qué significa \"Consistency\" en el Teorema CAP? A) Toda petición recibe una respuesta. B) El sistema debe seguir funcionando a pesar de fallos en las comunicaciones. C) Todos los nodos ven la misma información. D) El sistema se recupera si se cae un nodo.",
+            "¿Qué significa \"Availability\" en el Teorema CAP? A) Todos los nodos ven la misma información. B) Toda petición tiene que recibir una respuesta. C) El sistema debe seguir funcionando a pesar de fallos en las comunicaciones. D) El sistema no puede caerse.",
+            "¿Qué significa \"Partition Tolerance\" en el Teorema CAP? A) Todos los nodos ven la misma información. B) Toda petición tiene que recibir una respuesta. C) El sistema debe seguir funcionando aunque haya fallos en las comunicaciones. D) La información se replica en todas las particiones.",
+            "Según la clasificación por modelo de información, ¿qué dos tipos han quedado obsoletos? A) Clave-Valor y Documentos. B) Grafos y Familia Columnas. C) Objetos y XML. D) Clave-Valor y Grafos.",
+            "¿Qué sistema NoSQL se menciona como ejemplo de base de datos de Documentos? A) Redis. B) Cassandra. C) MongoDB. D) Neo4J.",
+            "En MongoDB, ¿en qué formato se manejan las colecciones de documentos? A) XML. B) SQL. C) JSON. D) CSV.",
+            "¿Qué característica tienen los documentos en MongoDB respecto a su esquema? A) El esquema es fijo y predefinido. B) No hace falta definir un esquema. C) El esquema debe ser estrictamente relacional. D) El esquema es definido por una Primary Key.",
+            "En las bases de datos de Clave-Valor, ¿para qué se usan a menudo, según el texto? A) Para almacenar información binaria. B) Como gestor de datos de apoyo, a modo de caché de 1er nivel. C) Para análisis forense. D) Para definir esquemas complejos.",
+            "¿Qué tipo de dato de REDIS se menciona para operaciones get y set? A) Sets. B) Lists. C) Strings. D) Hashes.",
+            "¿Qué empresa se menciona que usa REDIS para montar el timeline de la página de inicio de cada usuario? A) Google. B) Facebook. C) Twitter. D) Amazon.",
+            "¿En qué se basa el sistema de las bases de datos de Grafos? A) Tablas con filas y columnas. B) Información contenida en nodos y aristas. C) Colecciones de documentos JSON. D) Pares clave-valor.",
+            "¿Qué tipo de información pueden contener tanto los nodos como las relaciones (vértices) en las bases de datos de Grafos? A) Solo IDs. B) Solo metadatos. C) Properties. D) Timestamps.",
+            "¿Qué algoritmo se menciona en las bases de datos de Grafos para medir la influencia transitiva o la conectividad? A) Dijkstra. B) A*. C) PageRank. D) Tarjan.",
+            "En las bases de datos de Familia Columnas, ¿qué tiene asociado cada columna? A) Un Row Key. B) Un timestamp. C) Una Primary Key. D) Un esquema fijo.",
+            "¿Cuántas dimensiones se mencionan para las bases de datos de Familia Columnas? A) Dos. B) Tres. C) Cuatro. D) Cinco.",
+            "¿Qué es HDFS en el contexto de Big Data? A) Un sistema de gestión de bases de datos. B) Un sistema de ficheros distribuido. C) Una herramienta de Machine Learning. D) Una capa de consulta sobre Hadoop.",
+            "¿Qué herramienta se utiliza para Machine Learning en el contexto de Big Data? A) PIG. B) HIVE. C) Mahout. D) Spark SQL.",
+            "¿Qué permite Apache Kafka según el texto? A) Gestionar el cluster. B) Sincronizar datos entre sistemas. C) Realizar consultas SQL sobre Hadoop. D) Implementar MapReduce.",
+            "¿Cuál es la principal diferencia mencionada entre MapReduce y NoSQL? A) La persistencia de los datos. B) El tiempo de respuesta. C) El volumen de datos que manejan. D) La capacidad de distribución.",
+            "¿Cuál es uno de los objetivos principales del Big Data, según el documento? A) Almacenar datos de forma centralizada. B) Reducir el volumen de datos. C) Encontrar patrones repetitivos para la toma de decisiones automáticas. D) Limitar la variedad de datos.",
+            "¿Qué se hace en cada nodo en un algoritmo de computación distribuida MapReduce? A) Un proceso de agregación. B) Una pieza MAP_REDUCE. C) Una consulta SQL. D) Una operación de inserción.",
+            "¿Qué significan las siglas BASE en el contexto de la Consistencia eventual? A) Big Applications Soft Environments. B) Basically Available Soft State Eventually Consistent. C) Broadly Accessible Simple Engines. D) Basic Atomic Secure Encrypted.",
+            "¿Qué RDBMS se menciona como ejemplo? A) MongoDB. B) Cassandra. C) Oracle. D) Redis.",
+            "Si se cae un nodo en un sistema con \"Partition Tolerance\", ¿qué sucede? A) El sistema se detiene por completo. B) El sistema puede recuperarse. C) Todos los datos se pierden. D) La consistencia se garantiza instantáneamente.",
+            "¿Qué modelo de información es el utilizado por Cassandra y Hbase? A) Documentos. B) Clave-Valor. C) Familia Columnas. D) Grafos.",
+            "¿Qué sistema NoSQL se utiliza en el ejemplo de la página para la \"Familia Columnas\"? A) MongoDB. B) Redis. C) Cassandra. D) Neo4J.",
+            "¿Cuál es el campo que se genera automáticamente al insertar un documento en MongoDB? A) name. B) age. B) id. D) status.",
+            "En el ejemplo de MongoDB, ¿qué hace el método find? A) Inserta un nuevo documento. B) Actualiza un documento existente. C) Filtra y proyecta documentos. D) Elimina documentos.",
+            "¿Qué tipo de dato de REDIS se asocia a operaciones sadd y smembers? A) Strings. B) Sets. C) Lists. D) Hashes.",
+            "¿Qué tipo de dato de REDIS se asocia a operaciones lpush y lrange? A) Strings. B) Sets. C) Lists. D) Hashes.",
+            "¿Qué tipo de dato de REDIS se asocia a operaciones hmset y hmget? A) Strings. B) Sets. C) Lists. D) Hashes.",
+            "¿Para qué se usa el algoritmo Shortest Path con Dijkstra o A* en las bases de datos de Grafos? A) Medir la influencia. B) Encontrar la ruta más corta. C) Identificar componentes conectados. D) Calcular promedios.",
+            "¿Qué se menciona que está desnormalizado en las bases de datos de Familia Columnas? A) El esquema. B) Cada fila. C) Cada columna. D) El Keyspace.",
+            "¿Qué es YARN o MESOS en el ecosistema Hadoop? A) Un sistema de ficheros. B) Un gestor de cluster. C) Una capa de consulta. D) Una herramienta de Machine Learning.",
+            "¿Qué capa se usa para hacer consultas sobre los datos en Hadoop? A) MapReduce. B) HDFS. C) Spark SQL. D) YARN.",
+            "¿Qué característica principal tienen las escrituras en NoSQL? A) Lentas. B) Rápidas. C) Interactivas. D) Solo en batch.",
+            "¿Qué característica principal tienen las lecturas en NoSQL? A) Lentas. B) Rápidas. C) Solo en batch. D) Dependientes del volumen.",
+            "¿Qué se entiende por \"Persistencia poliglota\"? A) Usar un único tipo de base de datos para todos los casos. B) Combinar diferentes tipos de bases de datos según el caso de uso. C) Almacenar datos en múltiples idiomas. D) Usar solo RDBMS para la persistencia.",
+            "¿Qué hace la función map en un proceso MapReduce? A) Calcula la suma de valores. B) Filtra los datos. C) Mapea muchos nodos al estar la información distribuida. D) Reduce la información.",
+            "¿Qué hace la función reduce en un proceso MapReduce? A) Distribuye la información. B) Trocea la información y realiza un cálculo. C) Mapea los nodos. D) Emite el ID del cliente.",
+            "¿Cuáles son las \"V\" del Big Data mencionadas en el texto? A) Velocidad, Valor, Visibilidad, Versatilidad, Verificación. B) Volumen, Variedad, Velocidad, Veracidad, Valor. C) Volumen, Veracidad, Vitalidad, Visualización, Volatilidad. D) Variedad, Velocidad, Valor, Viabilidad, Visión.",
+            "¿Cuál es el objetivo principal del Big Data mediante el análisis de gran cantidad de datos? A) Simplemente almacenar los datos. B) Encontrar patrones repetitivos para obtener información que permita la toma de decisiones. C) Limitar el acceso a la información. D) Reducir la complejidad de los datos.",
+            "En el diagrama, ¿qué representa \"Keyspace\"? A) Una tabla. B) Un esquema. C) Una fila. D) Una columna.",
+            "En el diagrama, ¿qué representa \"Column family\"? A) Una clave. B) Una tabla. C) Una fila. D) Una columna.",
+            "¿Qué se asocia a cada columna en el diagrama de \"Familia Columnas\"? A) Row Key. B) Settings. C) Timestamp. D) Column family.",
+            "¿Qué RDBMS es un ejemplo de sistemas que \"no garantizan completamente ACID\"? A) Oracle. B) MySQL. C) No se mencionan RDBMS que no garanticen ACID. D) SQL Server.",
+            "¿Cuál es una de las \"Ventajas\" de NoSQL según el texto, además de la productividad en desarrollo? A) Alta compatibilidad. B) Falta de madurez. C) Volumen de datos. D) Garantía ACID.",
+            "Si una base de datos NoSQL tiene Consistencia eventual, ¿qué implica para la información distribuida? A) Se consolida instantáneamente. B) Tarda en consolidarse. C) Nunca se consolida. D) Es siempre consistente.",
+            "¿Qué problema se menciona sobre los estándares en NoSQL? A) Hay muchos estándares. B) No hay estándares. C) Los estándares son demasiado rígidos. D) Los estándares son incompletos.",
+            "Según el Teorema CAP, ¿cuál de las tres propiedades (Consistency, Availability, Partition Tolerance) se debe sacrificar si se busca garantizar las otras dos? A) Solo una puede ser garantizada. B) Se puede garantizar cualquier combinación de dos. C) Las tres se garantizan siempre. D) El teorema no especifica qué se sacrifica.",
+            "¿Cuál de los siguientes sistemas es un ejemplo de base de datos Clave-Valor? A) MongoDB. B) Cassandra. C) REDIS. D) Neo4J.",
+            "¿Cuál de los siguientes sistemas es un ejemplo de base de datos de Grafos? A) CouchDB. B) Hbase. C) Neo4J. D) DynamoDB.",
+            "¿Cuál de los siguientes sistemas es un ejemplo de base de datos de Familia Columnas? A) REDIS. B) MongoDB. C) Cassandra. D) OrientDB.",
+            "Si en MongoDB no existe una colección facturas, ¿qué ocurre al intentar usar db.facturas? A) Da un error. B) La crea automáticamente. C) Pregunta al usuario si la quiere crear. D) Borra las colecciones existentes.",
+            "En el ejemplo de db.users.find, ¿qué hace la parte {\"name\":1, \"address\":1}? A) Filtra por nombre y dirección. B) Proyecta los campos nombre y dirección. C) Ordena por nombre y dirección. D) Elimina los campos nombre y dirección.",
+            "¿Qué operación de MongoDB se usa para actualizar un documento? A) insertOne(). B) find(). C) updateOne(). D) deleteMany().",
+            "¿Qué operación de MongoDB se usa para eliminar varios documentos? A) insertOne(). B) find(). C) updateOne(). D) deleteMany().",
+            "¿Para qué se utiliza Twitter REDIS en relación con el timeline ? A) Para almacenarlo de forma permanente. B) Para montarlo poco a poco, no en el momento de la conexión. C) Para asegurar la consistencia estricta. D) Para realizar análisis complejos de datos.",
+            "Además de las rutas de transporte, ¿en qué otro ámbito se mencionan las bases de datos de Grafos? A) Comercio electrónico. B) Análisis forense. C) Gestión de documentos. D) Almacenamiento de series temporales.",
+            "¿Qué mide el algoritmo PageRank? A) La distancia más corta entre nodos. B) La influencia transitiva o la conectividad. C) El número de propiedades. D) La consistencia de los datos.",
+            "¿Qué algoritmo se menciona para \"Strongly Connected Components\"? A) PageRank. B) Dijkstra. C) Tarjan. D) A*.",
+            "En la Familia Columnas, ¿cada fila puede tener diferentes... ? A) Keyspaces. B) Column families. C) Columnas. D) Timestamps.",
+            "¿Qué es Map_Reduce en el contexto de Big Data? A) Un sistema de ficheros. B) Un algoritmo de computación distribuida. C) Un gestor de cluster. D) Una base de datos NoSQL.",
+            "¿Dónde están distribuidos los datos en los sistemas Hadoop para la potencia de cómputo masiva? A) En un único servidor central. B) En nodos HDFS. C) En bases de datos relacionales. D) En la memoria principal.",
+            "¿Qué tipo de procesamiento se asocia a MapReduce? A) Realtime. B) Interactivo. C) Batch. D) Streaming.",
+            "¿Qué característica del Big Data se refiere a la velocidad? A) El volumen de los datos. B) La rapidez de generación y procesamiento. C) La diversidad de fuentes. D) La fiabilidad de la información.",
+            "¿Qué característica del Big Data se refiere a la variedad? A) El gran volumen. B) La rapidez de procesamiento. C) Las características heterogéneas de los datos. D) La confiabilidad.",
+            "¿Qué característica del Big Data se refiere a la veracidad? A) El valor económico de los datos. B) La calidad y fiabilidad de los datos. C) La velocidad de acceso. D) La diversidad de formatos.",
+            "¿Qué característica del Big Data se refiere al valor? A) El coste de almacenamiento. B) La información que se obtiene para la toma de decisiones. C) La cantidad de datos procesados. D) La velocidad de ingesta.",
+            "¿Qué significan las siglas RDBMS? A) Relational Big Data Management System. B) Realtime Database Management Solution. C) Relational Database Management System. D) Rapid Data Backup Management System.",
+            "¿Qué se menciona que \"se hace particionamiento horizontal de la información\" en el contexto de \"SHARDING\"? A) Se distribuyen los datos en diferentes tablas. B) Se dividen las filas de una tabla entre múltiples servidores. C) Se separan las columnas de una tabla. D) Se replica la base de datos completa.",
+            "¿Qué se menciona como \"complicado cambiar\" una vez fijado el criterio de SHARDING? A) La estructura de los datos. B) El criterio de particionamiento. C) El tipo de base de datos. D) El idioma de los datos.",
+            "¿Cuál es un ejemplo de criterio para dividir facturas en SHARDING, según el texto? A) Tipo de cliente. B) Fecha o importe. C) Número de productos. D) País de origen.",
+            "¿Qué sistemas se mencionan en la clasificación bajo \"Risk\" en relación con el Teorema CAP? A) MongoDB. B) Redis. C) Cassandra. D) Oracle.",
+            "En el contexto de \"Documentos\", ¿qué sistema se menciona junto a MongoDB? A) Redis. B) CouchDB. C) Cassandra. D) Neo4J.",
+            "¿Qué sistema se menciona como \"Clave-Valor\" además de REDIS? A) Hbase. B) Voldemort. C) OrientDB. D) DynamoDB.",
+            "¿Qué sistema se menciona como \"Grafos\" además de Neo4J? A) Cassandra. B) MongoDB. C) OrientDB. D) Redis.",
+            "¿Qué se menciona que MongoDB puede enlazarse para almacenar información binaria? A) MySQL. B) Alfresco. C) Oracle. D) Hadoop.",
+            "En el ejemplo db.users.insertOne({\"name\":\"sue\", \"age\":26, \"status\":\"pending\"}), ¿qué es users? A) Un campo. B) Un documento. C) Una colección. D) Un método.",
+            "¿Qué tipo de procesamiento se asocia a NoSQL, en contraste con MapReduce? A) Batch. B) Interactivo. C) De solo lectura. D) De solo escritura.",
+            "¿Qué significan los puntos azules con flechas rojas en el diagrama de \"Column family\"? A) Inserción de nuevas filas. B) Adición de nuevas tablas. C) Datos con timestamp. D) Relaciones entre columnas.",
+            "¿Qué representa el \"Row Key\" en el diagrama de \"Column family\"? A) El identificador de la columna. B) El identificador de la fila. C) El esquema de la tabla. D) Los ajustes de la base de datos.",
+            "¿Qué se menciona que Apache Kafka permite entre los dos sistemas (MapReduce y NoSQL)? A) Separar los datos. B) Sincronizar los datos. C) Borrar los datos. D) Analizar los datos.",
+            "¿Qué es el \"Driver\" en la arquitectura de mongoDB Client Application? A) La aplicación cliente. B) Un componente para conectar la aplicación con la base de datos. C) La base de datos. D) Un tipo de documento.",
+            "¿Qué concepto se usa para definir las propiedades de los nodos y aristas en las bases de datos de Grafos? A) JSON. B) SQL. C) Properties. D) Key-Value.",
+            "En el ámbito de Big Data, ¿qué es HIVE? A) Un sistema de ficheros distribuido. B) Una herramienta para hacer consultas sobre Hadoop. C) Un gestor de cluster. D) Una base de datos NoSQL.",
+            "Si un sistema NoSQL es \"Highly distributed\", ¿qué ventaja se desprende de ello según el texto? A) Menor volumen de datos. B) Sistemas escalables. C) Mayor madurez. D) Garantía ACID.",
+            "¿Qué se entiende por \"Desnormalizado\" en las bases de datos de Familia Columnas? A) Que los datos están repetidos. B) Que no sigue las reglas de normalización de las bases de datos relacionales. C) Que los datos están muy normalizados. D) Que solo se almacenan datos numéricos.",
+            "¿Cuál de los siguientes no es un RDBMS mencionado en el texto? A) Oracle. B) MySQL. C) Cassandra. D) PostgreSQL.",
+            "¿Qué tipo de dato se asocia con Track ID y Album ID en el diagrama de \"Products\"? A) Secondary Key. B) Primary Key. C) Partition Key. D) Sort Key.",
+            "¿Qué sistema se menciona como \"HOGE\" en el diagrama del Teorema CAP? A) Cassandra. B) MongoDB. C) Dynamo. D) Redis.",
+            "¿Qué se menciona que \"indexa todo lo que se va introduciendo de forma nativa\" en MongoDB? A) Las consultas. B) Los documentos. C) Las colecciones. D) Los esquemas."
+        ];
 
-        // Configuración de Firebase (se asume que __firebase_config está disponible globalmente)
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        const answers = [
+            "B) Mejor ajuste que el modelo relacional.",
+            "B) Esquemas flexibles y agregación.",
+            "B) Particionamiento horizontal.",
+            "C) ACID.",
+            "B) La información distribuida tarda en consolidarse.",
+            "B) Falta de madurez y experiencia.",
+            "C) Consistencia, Disponibilidad, Tolerancia a Particiones.",
+            "B) Dos.",
+            "C) Todos los nodos ven la misma información.",
+            "B) Toda petición tiene que recibir una respuesta.",
+            "C) El sistema debe seguir funcionando aunque haya fallos en las comunicaciones.",
+            "C) Objetos y XML.",
+            "C) MongoDB.",
+            "C) JSON.",
+            "B) No hace falta definir un esquema.",
+            "B) Como gestor de datos de apoyo, a modo de caché de 1er nivel.",
+            "C) Strings.",
+            "C) Twitter.",
+            "B) Información contenida en nodos y aristas.",
+            "C) Properties.",
+            "C) PageRank.",
+            "B) Un timestamp.",
+            "C) Cuatro.",
+            "B) Un sistema de ficheros distribuido.",
+            "C) Mahout.",
+            "B) Sincronizar datos entre sistemas.",
+            "B) El tiempo de respuesta.",
+            "C) Encontrar patrones repetitivos para obtener información que permita la toma de decisiones.",
+            "B) Una pieza MAP_REDUCE.",
+            "B) Basically Available Soft State Eventually Consistent.",
+            "C) Oracle.",
+            "B) El sistema puede recuperarse.",
+            "C) Familia Columnas.",
+            "C) Cassandra.",
+            "C) id.",
+            "C) Filtra y proyecta documentos.",
+            "B) Sets.",
+            "C) Lists.",
+            "D) Hashes.",
+            "B) Encontrar la ruta más corta.",
+            "B) Cada fila.",
+            "B) Un gestor de cluster.",
+            "C) Spark SQL.",
+            "B) Rápidas.",
+            "B) Rápidas.",
+            "B) Combinar diferentes tipos de bases de datos según el caso de uso.",
+            "C) Mapea muchos nodos al estar la información distribuida.",
+            "B) Trocea la información y realiza un cálculo.",
+            "B) Volumen, Variedad, Velocidad, Veracidad, Valor.",
+            "B) Encontrar patrones repetitivos para obtener información que permita la toma de decisiones.",
+            "B) Un esquema.",
+            "B) Una tabla.",
+            "C) Timestamp.",
+            "C) No se mencionan RDBMS que no garanticen ACID.",
+            "C) Volumen de datos.",
+            "B) Tarda en consolidarse.",
+            "B) No hay estándares.",
+            "B) Se puede garantizar cualquier combinación de dos.",
+            "C) REDIS.",
+            "C) Neo4J.",
+            "C) Cassandra.",
+            "B) La crea automáticamente.",
+            "B) Proyecta los campos nombre y dirección.",
+            "C) updateOne().",
+            "D) deleteMany().",
+            "B) Para montarlo poco a poco, no en el momento de la conexión.",
+            "B) Análisis forense.",
+            "B) La influencia transitiva o la conectividad.",
+            "C) Tarjan.",
+            "C) Columnas.",
+            "B) Un algoritmo de computación distribuida.",
+            "B) En nodos HDFS.",
+            "C) Batch.",
+            "B) La rapidez de generación y procesamiento.",
+            "C) Las características heterogéneas de los datos.",
+            "B) La calidad y fiabilidad de los datos.",
+            "B) La información que se obtiene para la toma de decisiones.",
+            "C) Relational Database Management System.",
+            "B) Se dividen las filas de una tabla entre múltiples servidores.",
+            "B) El criterio de particionamiento.",
+            "B) Fecha o importe.",
+            "C) Cassandra.",
+            "B) CouchDB.",
+            "B) Voldemort.",
+            "C) OrientDB.",
+            "B) Alfresco.",
+            "C) Una colección.",
+            "B) Interactivo.",
+            "C) Datos con timestamp.",
+            "B) El identificador de la fila.",
+            "B) Sincronizar los datos.",
+            "B) Un componente para conectar la aplicación con la base de datos.",
+            "C) Properties.",
+            "B) Una herramienta para hacer consultas sobre Hadoop.",
+            "B) Sistemas escalables.",
+            "B) Que no sigue las reglas de normalización de las bases de datos relacionales.",
+            "C) Cassandra.",
+            "D) Sort Key.",
+            "A) Cassandra.",
+            "B) Los documentos."
+        ];
 
-        // ID de la aplicación (se asume que __app_id está disponible globalmente)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        let userId = null;
-        let questions = [];
-        let answers = [];
-        let userAnswers = [];
+        let userAnswers = new Array(questions.length).fill(null);
         let currentQuestionIndex = 0;
         let score = 0;
 
-        // Función para cargar las preguntas y respuestas desde los archivos DOCX
-        async function loadContent() {
+        // Función para cargar el progreso desde el almacenamiento local
+        function loadProgress() {
             try {
-                // Autenticar al usuario de forma anónima o con el token inicial
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                const savedUserAnswers = localStorage.getItem('nosqlQuizUserAnswers');
+                const savedCurrentQuestionIndex = localStorage.getItem('nosqlQuizCurrentQuestionIndex');
+
+                if (savedUserAnswers && savedCurrentQuestionIndex) {
+                    userAnswers = JSON.parse(savedUserAnswers);
+                    currentQuestionIndex = parseInt(savedCurrentQuestionIndex, 10);
+                    calculateScore(); // Recalcular la puntuación basándose en las respuestas cargadas
                 } else {
-                    await signInAnonymously(auth);
+                    // Inicializar si no hay progreso guardado
+                    userAnswers = new Array(questions.length).fill(null);
+                    currentQuestionIndex = 0;
+                    score = 0;
                 }
-                userId = auth.currentUser?.uid || crypto.randomUUID();
-
-                // Referencia a los documentos en Firestore
-                const questionsDocRef = doc(db, `artifacts/${appId}/public/data/quiz_content`, 'PREGUNTAS');
-                const answersDocRef = doc(db, `artifacts/${appId}/public/data/quiz_content`, 'RESPUESTAS');
-
-                // Intentar obtener los documentos de la base de datos
-                const [questionsDocSnap, answersDocSnap] = await Promise.all([
-                    getDoc(questionsDocRef),
-                    getDoc(answersDocRef)
-                ]);
-
-                if (questionsDocSnap.exists() && answersDocSnap.exists()) {
-                    questions = JSON.parse(questionsDocSnap.data().content);
-                    answers = JSON.parse(answersDocSnap.data().content);
-                    console.log("Contenido cargado desde Firestore.");
-                } else {
-                    // Si no existen en Firestore, cargar desde los snippets y guardar
-                    console.log("Contenido no encontrado en Firestore, cargando desde snippets...");
-                    const fetchedQuestions = `¿Cuál es una de las ventajas de los sistemas NoSQL mencionada en el texto? A) Garantizan completamente ACID. B) Mejor ajuste que el modelo relacional. C) Falta de madurez y experiencia. D) No permiten que los esquemas cambien.
-Según el documento, ¿qué característica permite que los esquemas en NoSQL cambien? A) Consistencia estricta. B) Esquemas flexibles y agregación. C) Alto volumen de datos. D) NoSQL no permite cambios de esquema.
-¿Qué tipo de particionamiento de información es el "SHARDING" según el texto? A) Particionamiento vertical. B) Particionamiento horizontal. C) Replicación de datos. D) Agregación de datos.
-Una desventaja de NoSQL mencionada es que no garantizan completamente... A) CAP. B) BASE. C) ACID. D) SQL.
-¿Qué significa la "Consistencia eventual" en el contexto de NoSQL, según el texto? A) Todos los nodos ven la misma información instantáneamente. B) La información distribuida tarda en consolidarse. C) El sistema siempre está disponible. D) El sistema es inmune a fallos de comunicación.
-¿Cuál es una de las desventajas relacionadas con la compatibilidad en NoSQL? A) Hay estándares definidos. B) Falta de madurez y experiencia. C) Se integra fácilmente con RDBMS. D) No hay necesidad de compatibilidad.
-El Teorema CAP o de Brewer tiene 3 propiedades. ¿Cuáles son? A) Costo, Agilidad, Productividad. B) Consistencia, Acceso, Rendimiento. C) Consistencia, Disponibilidad, Tolerancia a Particiones. D) Centralización, Automatización, Perdurabilidad.
-Según el Teorema CAP, ¿cuántas características puede asegurar un sistema simultáneamente? A) Una. B) Dos. C) Las tres. D) Ninguna.
-¿Qué significa "Consistency" en el Teorema CAP? A) Toda petición recibe una respuesta. B) El sistema debe seguir funcionando a pesar de fallos en las comunicaciones. C) Todos los nodos ven la misma información. D) El sistema se recupera si se cae un nodo.
-¿Qué significa "Availability" en el Teorema CAP? A) Todos los nodos ven la misma información. B) Toda petición tiene que recibir una respuesta. C) El sistema debe seguir funcionando a pesar de fallos en las comunicaciones. D) El sistema no puede caerse.
-¿Qué significa "Partition Tolerance" en el Teorema CAP? A) Todos los nodos ven la misma información. B) Toda petición tiene que recibir una respuesta. C) El sistema debe seguir funcionando aunque haya fallos en las comunicaciones. D) La información se replica en todas las particiones.
-Según la clasificación por modelo de información, ¿qué dos tipos han quedado obsoletos? A) Clave-Valor y Documentos. B) Grafos y Familia Columnas. C) Objetos y XML. D) Clave-Valor y Grafos.
-¿Qué sistema NoSQL se menciona como ejemplo de base de datos de Documentos? A) Redis. B) Cassandra. C) MongoDB. D) Neo4J.
-En MongoDB, ¿en qué formato se manejan las colecciones de documentos? A) XML. B) SQL. C) JSON. D) CSV.
-¿Qué característica tienen los documentos en MongoDB respecto a su esquema? A) El esquema es fijo y predefinido. B) No hace falta definir un esquema. C) El esquema debe ser estrictamente relacional. D) El esquema es definido por una Primary Key.
-En las bases de datos de Clave-Valor, ¿para qué se usan a menudo, según el texto? A) Para almacenar información binaria. B) Como gestor de datos de apoyo, a modo de caché de 1er nivel. C) Para análisis forense. D) Para definir esquemas complejos.
-¿Qué tipo de dato de REDIS se menciona para operaciones get y set? A) Sets. B) Lists. C) Strings. D) Hashes.
-¿Qué empresa se menciona que usa REDIS para montar el timeline de la página de inicio de cada usuario? A) Google. B) Facebook. C) Twitter. D) Amazon.
-¿En qué se basa el sistema de las bases de datos de Grafos? A) Tablas con filas y columnas. B) Información contenida en nodos y aristas. C) Colecciones de documentos JSON. D) Pares clave-valor.
-¿Qué tipo de información pueden contener tanto los nodos como las relaciones (vértices) en las bases de datos de Grafos? A) Solo IDs. B) Solo metadatos. C) Properties. D) Timestamps.
-¿Qué algoritmo se menciona en las bases de datos de Grafos para medir la influencia transitiva o la conectividad? A) Dijkstra. B) A*. C) PageRank. D) Tarjan.
-En las bases de datos de Familia Columnas, ¿qué tiene asociado cada columna? A) Un Row Key. B) Un timestamp. C) Una Primary Key. D) Un esquema fijo.
-¿Cuántas dimensiones se mencionan para las bases de datos de Familia Columnas? A) Dos. B) Tres. C) Cuatro. D) Cinco.
-¿Qué es HDFS en el contexto de Big Data? A) Un sistema de gestión de bases de datos. B) Un sistema de ficheros distribuido. C) Una herramienta de Machine Learning. D) Una capa de consulta sobre Hadoop.
-¿Qué herramienta se utiliza para Machine Learning en el contexto de Big Data? A) PIG. B) HIVE. C) Mahout. D) Spark SQL.
-¿Qué permite Apache Kafka según el texto? A) Gestionar el cluster. B) Sincronizar datos entre sistemas. C) Realizar consultas SQL sobre Hadoop. D) Implementar MapReduce.
-¿Cuál es la principal diferencia mencionada entre MapReduce y NoSQL? A) La persistencia de los datos. B) El tiempo de respuesta. C) El volumen de datos que manejan. D) La capacidad de distribución.
-¿Cuál es uno de los objetivos principales del Big Data, según el documento? A) Almacenar datos de forma centralizada. B) Reducir el volumen de datos. C) Encontrar patrones repetitivos para la toma de decisiones automáticas. D) Limitar la variedad de datos.
-¿Qué se hace en cada nodo en un algoritmo de computación distribuida MapReduce? A) Un proceso de agregación. B) Una pieza MAP_REDUCE. C) Una consulta SQL. D) Una operación de inserción.
-¿Qué significan las siglas BASE en el contexto de la Consistencia eventual? A) Big Applications Soft Environments. B) Basically Available Soft State Eventually Consistent. C) Broadly Accessible Simple Engines. D) Basic Atomic Secure Encrypted.
-¿Qué RDBMS se menciona como ejemplo? A) MongoDB. B) Cassandra. C) Oracle. D) Redis.
-Si se cae un nodo en un sistema con "Partition Tolerance", ¿qué sucede? A) El sistema se detiene por completo. B) El sistema puede recuperarse. C) Todos los datos se pierden. D) La consistencia se garantiza instantáneamente.
-¿Qué modelo de información es el utilizado por Cassandra y Hbase? A) Documentos. B) Clave-Valor. C) Familia Columnas. D) Grafos.
-¿Qué sistema NoSQL se utiliza en el ejemplo de la página para la "Familia Columnas"? A) MongoDB. B) Redis. C) Cassandra. D) Neo4J.
-¿Cuál es el campo que se genera automáticamente al insertar un documento en MongoDB? A) name. B) age. C) id. D) status.
-En el ejemplo de MongoDB, ¿qué hace el método find? A) Inserta un nuevo documento. B) Actualiza un documento existente. C) Filtra y proyecta documentos. D) Elimina documentos.
-¿Qué tipo de dato de REDIS se asocia a operaciones sadd y smembers? A) Strings. B) Sets. C) Lists. D) Hashes.
-¿Qué tipo de dato de REDIS se asocia a operaciones lpush y lrange? A) Strings. B) Sets. C) Lists. D) Hashes.
-¿Qué tipo de dato de REDIS se asocia a operaciones hmset y hmget? A) Strings. B) Sets. C) Lists. D) Hashes.
-¿Para qué se usa el algoritmo Shortest Path con Dijkstra o A* en las bases de datos de Grafos? A) Medir la influencia. B) Encontrar la ruta más corta. C) Identificar componentes conectados. D) Calcular promedios.
-¿Qué se menciona que está desnormalizado en las bases de datos de Familia Columnas? A) El esquema. B) Cada fila. C) Cada columna. D) El Keyspace.
-¿Qué es YARN o MESOS en el ecosistema Hadoop? A) Un sistema de ficheros. B) Un gestor de cluster. C) Una capa de consulta. D) Una herramienta de Machine Learning.
-¿Qué capa se usa para hacer consultas sobre los datos en Hadoop? A) MapReduce. B) HDFS. C) Spark SQL. D) YARN.
-¿Qué característica principal tienen las escrituras en NoSQL? A) Lentas. B) Rápidas. C) Interactivas. D) Solo en batch.
-¿Qué característica principal tienen las lecturas en NoSQL? A) Lentas. B) Rápidas. C) Solo en batch. D) Dependientes del volumen.
-¿Qué se entiende por "Persistencia poliglota"? A) Usar un único tipo de base de datos para todos los casos. B) Combinar diferentes tipos de bases de datos según el caso de uso. C) Almacenar datos en múltiples idiomas. D) Usar solo RDBMS para la persistencia.
-¿Qué hace la función map en un proceso MapReduce? A) Calcula la suma de valores. B) Filtra los datos. C) Mapea muchos nodos al estar la información distribuida. D) Reduce la información.
-¿Qué hace la función reduce en un proceso MapReduce? A) Distribuye la información. B) Trocea la información y realiza un cálculo. C) Mapea los nodos. D) Emite el ID del cliente.
-¿Cuáles son las "V" del Big Data mencionadas en el texto? A) Velocidad, Valor, Visibilidad, Versatilidad, Verificación. B) Volumen, Variedad, Velocidad, Veracidad, Valor. C) Volumen, Veracidad, Vitalidad, Visualización, Volatilidad. D) Variedad, Velocidad, Valor, Viabilidad, Visión.
-¿Cuál es el objetivo principal del Big Data mediante el análisis de gran cantidad de datos? A) Simplemente almacenar los datos. B) Encontrar patrones repetitivos para obtener información que permita la toma de decisiones. C) Limitar el acceso a la información. D) Reducir la complejidad de los datos.
-En el diagrama, ¿qué representa "Keyspace"? A) Una tabla. B) Un esquema. C) Una fila. D) Una columna.
-En el diagrama, ¿qué representa "Column family"? A) Una clave. B) Una tabla. C) Una fila. D) Una columna.
-¿Qué se asocia a cada columna en el diagrama de "Familia Columnas"? A) Row Key. B) Settings. C) Timestamp. D) Column family.
-¿Qué RDBMS es un ejemplo de sistemas que "no garantizan completamente ACID"? A) Oracle. B) MySQL. C) No se mencionan RDBMS que no garanticen ACID. D) SQL Server.
-¿Cuál es una de las "Ventajas" de NoSQL según el texto, además de la productividad en desarrollo? A) Alta compatibilidad. B) Falta de madurez. C) Volumen de datos. D) Garantía ACID.
-Si una base de datos NoSQL tiene Consistencia eventual, ¿qué implica para la información distribuida? A) Se consolida instantáneamente. B) Tarda en consolidarse. C) Nunca se consolida. D) Es siempre consistente.
-¿Qué problema se menciona sobre los estándares en NoSQL? A) Hay muchos estándares. B) No hay estándares. C) Los estándares son demasiado rígidos. D) Los estándares son incompletos.
-Según el Teorema CAP, ¿cuál de las tres propiedades (Consistency, Availability, Partition Tolerance) se debe sacrificar si se busca garantizar las otras dos? A) Solo una puede ser garantizada. B) Se puede garantizar cualquier combinación de dos. C) Las tres se garantizan siempre. D) El teorema no especifica qué se sacrifica.
-¿Cuál de los siguientes sistemas es un ejemplo de base de datos Clave-Valor? A) MongoDB. B) Cassandra. C) REDIS. D) Neo4J.
-¿Cuál de los siguientes sistemas es un ejemplo de base de datos de Grafos? A) CouchDB. B) Hbase. C) Neo4J. D) DynamoDB.
-¿Cuál de los siguientes sistemas es un ejemplo de base de datos de Familia Columnas? A) REDIS. B) MongoDB. C) Cassandra. D) OrientDB.
-Si en MongoDB no existe una colección facturas, ¿qué ocurre al intentar usar db.facturas? A) Da un error. B) La crea automáticamente. C) Pregunta al usuario si la quiere crear. D) Borra las colecciones existentes.
-En el ejemplo de db.users.find, ¿qué hace la parte {"name":1, "address":1}? A) Filtra por nombre y dirección. B) Proyecta los campos nombre y dirección. C) Ordena por nombre y dirección. D) Elimina los campos nombre y dirección.
-¿Qué operación de MongoDB se usa para actualizar un documento? A) insertOne(). B) find(). C) updateOne(). D) deleteMany().
-¿Qué operación de MongoDB se usa para eliminar varios documentos? A) insertOne(). B) find(). C) updateOne(). D) deleteMany().
-¿Para qué se utiliza Twitter REDIS en relación con el timeline ? A) Para almacenarlo de forma permanente. B) Para montarlo poco a poco, no en el momento de la conexión. C) Para asegurar la consistencia estricta. D) Para realizar análisis complejos de datos.
-Además de las rutas de transporte, ¿en qué otro ámbito se mencionan las bases de datos de Grafos? A) Comercio electrónico. B) Análisis forense. C) Gestión de documentos. D) Almacenamiento de series temporales.
-¿Qué mide el algoritmo PageRank? A) La distancia más corta entre nodos. B) La influencia transitiva o la conectividad. C) El número de propiedades. D) La consistencia de los datos.
-¿Qué algoritmo se menciona para "Strongly Connected Components"? A) PageRank. B) Dijkstra. C) Tarjan. D) A*.
-En la Familia Columnas, ¿cada fila puede tener diferentes... ? A) Keyspaces. B) Column families. C) Columnas. D) Timestamps.
-¿Qué es Map_Reduce en el contexto de Big Data? A) Un sistema de ficheros. B) Un algoritmo de computación distribuida. C) Un gestor de cluster. D) Una base de datos NoSQL.
-¿Dónde están distribuidos los datos en los sistemas Hadoop para la potencia de cómputo masiva? A) En un único servidor central. B) En nodos HDFS. C) En bases de datos relacionales. D) En la memoria principal.
-¿Qué tipo de procesamiento se asocia a MapReduce? A) Realtime. B) Interactivo. C) Batch. D) Streaming.
-¿Qué característica del Big Data se refiere a la velocidad? A) El volumen de los datos. B) La rapidez de generación y procesamiento. C) La diversidad de fuentes. D) La fiabilidad de la información.
-¿Qué característica del Big Data se refiere a la variedad? A) El gran volumen. B) La rapidez de procesamiento. C) Las características heterogéneas de los datos. D) La confiabilidad.
-¿Qué característica del Big Data se refiere a la veracidad? A) El valor económico de los datos. B) La calidad y fiabilidad de los datos. C) La velocidad de acceso. D) La diversidad de formatos.
-¿Qué característica del Big Data se refiere al valor? A) El coste de almacenamiento. B) La información que se obtiene para la toma de decisiones. C) La cantidad de datos procesados. D) La velocidad de ingesta.
-¿Qué significan las siglas RDBMS? A) Relational Big Data Management System. B) Realtime Database Management Solution. C) Relational Database Management System. D) Rapid Data Backup Management System.
-¿Qué se menciona que "se hace particionamiento horizontal de la información" en el contexto de "SHARDING"? A) Se distribuyen los datos en diferentes tablas. B) Se dividen las filas de una tabla entre múltiples servidores. C) Se separan las columnas de una tabla. D) Se replica la base de datos completa.
-¿Qué se menciona como "complicado cambiar" una vez fijado el criterio de SHARDING? A) La estructura de los datos. B) El criterio de particionamiento. C) El tipo de base de datos. D) El idioma de los datos.
-¿Cuál es un ejemplo de criterio para dividir facturas en SHARDING, según el texto? A) Tipo de cliente. B) Fecha o importe. C) Número de productos. D) País de origen.
-¿Qué sistemas se mencionan en la clasificación bajo "Risk" en relación con el Teorema CAP? A) MongoDB. B) Redis. C) Cassandra. D) Oracle.
-En el contexto de "Documentos", ¿qué sistema se menciona junto a MongoDB? A) Redis. B) CouchDB. C) Cassandra. D) Neo4J.
-¿Qué sistema se menciona como "Clave-Valor" además de REDIS? A) Hbase. B) Voldemort. C) OrientDB. D) DynamoDB.
-¿Qué sistema se menciona como "Grafos" además de Neo4J? A) Cassandra. B) MongoDB. C) OrientDB. D) Redis.
-¿Qué se menciona que MongoDB puede enlazarse para almacenar información binaria? A) MySQL. B) Alfresco. C) Oracle. D) Hadoop.
-En el ejemplo db.users.insertOne({"name":"sue", "age":26, "status":"pending"}), ¿qué es users? A) Un campo. B) Un documento. C) Una colección. D) Un método.
-¿Qué tipo de procesamiento se asocia a NoSQL, en contraste con MapReduce? A) Batch. B) Interactivo. C) De solo lectura. D) De solo escritura.
-¿Qué significan los puntos azules con flechas rojas en el diagrama de "Column family"? A) Inserción de nuevas filas. B) Adición de nuevas tablas. C) Datos con timestamp. D) Relaciones entre columnas.
-¿Qué representa el "Row Key" en el diagrama de "Column family"? A) El identificador de la columna. B) El identificador de la fila. C) El esquema de la tabla. D) Los ajustes de la base de datos.
-¿Qué se menciona que Apache Kafka permite entre los dos sistemas (MapReduce y NoSQL)? A) Separar los datos. B) Sincronizar los datos. C) Borrar los datos. D) Analizar los datos.
-¿Qué es el "Driver" en la arquitectura de mongoDB Client Application? A) La aplicación cliente. B) Un componente para conectar la aplicación con la base de datos. C) La base de datos. D) Un tipo de documento.
-¿Qué concepto se usa para definir las propiedades de los nodos y aristas en las bases de datos de Grafos? A) JSON. B) SQL. C) Properties. D) Key-Value.
-En el ámbito de Big Data, ¿qué es HIVE? A) Un sistema de ficheros distribuido. B) Una herramienta para hacer consultas sobre Hadoop. C) Un gestor de cluster. D) Una base de datos NoSQL.
-Si un sistema NoSQL es "Highly distributed", ¿qué ventaja se desprende de ello según el texto? A) Menor volumen de datos. B) Sistemas escalables. C) Mayor madurez. D) Garantía ACID.
-¿Qué se entiende por "Desnormalizado" en las bases de datos de Familia Columnas? A) Que los datos están repetidos. B) Que no sigue las reglas de normalización de las bases de datos relacionales. C) Que los datos están muy normalizados. D) Que solo se almacenan datos numéricos.
-¿Cuál de los siguientes no es un RDBMS mencionado en el texto? A) Oracle. B) MySQL. C) Cassandra. D) PostgreSQL.
-¿Qué tipo de dato se asocia con Track ID y Album ID en el diagrama de "Products"? A) Secondary Key. B) Primary Key. C) Partition Key. D) Sort Key.
-¿Qué sistema se menciona como "HOGE" en el diagrama del Teorema CAP? A) Cassandra. B) MongoDB. C) Dynamo. D) Redis.
-¿Qué se menciona que "indexa todo lo que se va introduciendo de forma nativa" en MongoDB? A) Las consultas. B) Los documentos. C) Las colecciones. D) Los esquemas.`;
-
-                    const fetchedAnswers = `B) Mejor ajuste que el modelo relacional.
-B) Esquemas flexibles y agregación.
-B) Particionamiento horizontal.
-C) ACID.
-B) La información distribuida tarda en consolidarse.
-B) Falta de madurez y experiencia.
-C) Consistencia, Disponibilidad, Tolerancia a Particiones.
-B) Dos.
-C) Todos los nodos ven la misma información.
-B) Toda petición tiene que recibir una respuesta.
-C) El sistema debe seguir funcionando aunque haya fallos en las comunicaciones.
-C) Objetos y XML.
-C) MongoDB.
-C) JSON.
-B) No hace falta definir un esquema.
-B) Como gestor de datos de apoyo, a modo de caché de 1er nivel.
-C) Strings.
-C) Twitter.
-B) Información contenida en nodos y aristas.
-C) Properties.
-C) PageRank.
-B) Un timestamp.
-C) Cuatro.
-B) Un sistema de ficheros distribuido.
-C) Mahout.
-B) Sincronizar datos entre sistemas.
-B) El tiempo de respuesta.
-C) Encontrar patrones repetitivos para obtener información que permita la toma de decisiones.
-B) Una pieza MAP_REDUCE.
-B) Basically Available Soft State Eventually Consistent.
-C) Oracle.
-B) El sistema puede recuperarse.
-C) Familia Columnas.
-C) Cassandra.
-C) id.
-C) Filtra y proyecta documentos.
-B) Sets.
-C) Lists.
-D) Hashes.
-B) Encontrar la ruta más corta.
-B) Cada fila.
-B) Un gestor de cluster.
-C) Spark SQL.
-B) Rápidas.
-B) Rápidas.
-B) Combinar diferentes tipos de bases de datos según el caso de uso.
-C) Mapea muchos nodos al estar la información distribuida.
-B) Trocea la información y realiza un cálculo.
-B) Volumen, Variedad, Velocidad, Veracidad, Valor.
-B) Encontrar patrones repetitivos para obtener información que permita la toma de decisiones.
-B) Un esquema.
-B) Una tabla.
-C) Timestamp.
-C) No se mencionan RDBMS que no garanticen ACID.
-C) Volumen de datos.
-B) Tarda en consolidarse.
-B) No hay estándares.
-B) Se puede garantizar cualquier combinación de dos.
-C) REDIS.
-C) Neo4J.
-C) Cassandra.
-B) La crea automáticamente.
-B) Proyecta los campos nombre y dirección.
-C) updateOne().
-D) deleteMany().
-B) Para montarlo poco a poco, no en el momento de la conexión.
-B) Análisis forense.
-B) La influencia transitiva o la conectividad.
-C) Tarjan.
-C) Columnas.
-B) Un algoritmo de computación distribuida.
-B) En nodos HDFS.
-C) Batch.
-B) La rapidez de generación y procesamiento.
-C) Las características heterogéneas de los datos.
-B) La calidad y fiabilidad de los datos.
-B) La información que se obtiene para la toma de decisiones.
-C) Relational Database Management System.
-B) Se dividen las filas de una tabla entre múltiples servidores.
-B) El criterio de particionamiento.
-B) Fecha o importe.
-C) Cassandra.
-B) CouchDB.
-B) Voldemort.
-C) OrientDB.
-B) Alfresco.
-C) Una colección.
-B) Interactivo.
-C) Datos con timestamp.
-B) El identificador de la fila.
-B) Sincronizar los datos.
-B) Un componente para conectar la aplicación con la base de datos.
-C) Properties.
-B) Una herramienta para hacer consultas sobre Hadoop.
-B) Sistemas escalables.
-B) Que no sigue las reglas de normalización de las bases de datos relacionales.
-C) Cassandra.
-D) Sort Key.
-A) Cassandra.
-B) Los documentos.`;
-
-                    questions = fetchedQuestions.split('\n').filter(q => q.trim() !== '');
-                    answers = fetchedAnswers.split('\n').filter(a => a.trim() !== '');
-
-                    // Guardar en Firestore para futuras cargas
-                    await setDoc(questionsDocRef, { content: JSON.stringify(questions) });
-                    await setDoc(answersDocRef, { content: JSON.stringify(answers) });
-                    console.log("Contenido guardado en Firestore.");
-                }
-
+            } catch (e) {
+                console.error("Error al cargar el progreso del test desde el almacenamiento local:", e);
+                // Volver al estado inicial en caso de error
                 userAnswers = new Array(questions.length).fill(null);
-                displayQuestion();
-                updateScoreDisplay();
-
-                // Escuchar cambios en las respuestas del usuario en Firestore (para colaboración)
-                const userAnswersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/quiz_answers`);
-                onSnapshot(userAnswersCollectionRef, (snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === "added" || change.type === "modified") {
-                            const data = change.doc.data();
-                            const index = parseInt(change.doc.id); // El ID del documento es el índice de la pregunta
-                            if (index >= 0 && index < userAnswers.length) {
-                                userAnswers[index] = data.selectedOption;
-                                // Recalcular puntuación si la respuesta es de la pregunta actual o ya respondida
-                                if (index === currentQuestionIndex || data.selectedOption !== null) {
-                                    calculateScore();
-                                    updateScoreDisplay();
-                                    if (index === currentQuestionIndex) {
-                                        highlightSelectedOption(data.selectedOption);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                });
-
-            } catch (error) {
-                console.error("Error al cargar el contenido o autenticar:", error);
-                document.getElementById('question-text').textContent = "Error al cargar el test. Por favor, inténtalo de nuevo más tarde.";
-                document.getElementById('options-container').innerHTML = '';
-                document.getElementById('next-button').disabled = true;
-                document.getElementById('prev-button').disabled = true;
+                currentQuestionIndex = 0;
+                score = 0;
             }
+        }
+
+        // Función para guardar el progreso en el almacenamiento local
+        function saveProgress() {
+            try {
+                localStorage.setItem('nosqlQuizUserAnswers', JSON.stringify(userAnswers));
+                localStorage.setItem('nosqlQuizCurrentQuestionIndex', currentQuestionIndex.toString());
+            } catch (e) {
+                console.error("Error al guardar el progreso del test en el almacenamiento local:", e);
+            }
+        }
+
+        // Función para reiniciar el test
+        function resetQuiz() {
+            userAnswers = new Array(questions.length).fill(null);
+            currentQuestionIndex = 0;
+            score = 0;
+            localStorage.removeItem('nosqlQuizUserAnswers');
+            localStorage.removeItem('nosqlQuizCurrentQuestionIndex');
+            document.getElementById('score-display').style.display = 'block'; // Asegurarse de que la puntuación sea visible
+            loadContent(); // Re-inicializar la visualización del test
+        }
+
+        // Función para cargar el contenido (ahora usa loadProgress)
+        function loadContent() {
+            loadProgress(); // Cargar el progreso guardado
+            displayQuestion();
+            updateScoreDisplay();
         }
 
         // Función para mostrar la pregunta actual
@@ -452,8 +438,11 @@ B) Los documentos.`;
             const resultMessageElement = document.getElementById('result-message');
             const prevButton = document.getElementById('prev-button');
             const nextButton = document.getElementById('next-button');
+            const finalMessageElement = document.getElementById('final-message');
 
             resultMessageElement.textContent = ''; // Limpiar mensaje de resultado
+            finalMessageElement.style.display = 'none'; // Ocultar mensaje final
+            document.getElementById('score-display').style.display = 'block'; // Mostrar puntuación
 
             if (currentQuestionIndex < questions.length) {
                 const question = questions[currentQuestionIndex];
@@ -476,7 +465,8 @@ B) Los documentos.`;
 
                 // Habilitar/deshabilitar botones de navegación
                 prevButton.disabled = currentQuestionIndex === 0;
-                nextButton.disabled = currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] === null; // Deshabilitar si es la última y no ha respondido
+                // El botón Siguiente solo se deshabilita si es la última pregunta y no se ha respondido
+                nextButton.disabled = currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] === null;
 
                 // Resaltar la opción si ya ha sido respondida
                 if (userAnswers[currentQuestionIndex] !== null) {
@@ -486,26 +476,40 @@ B) Los documentos.`;
                 // Fin del test
                 questionTextElement.textContent = '¡Test Completado!';
                 optionsContainer.innerHTML = '';
-                resultMessageElement.textContent = '';
+                resultMessageElement.textContent = ''; // Limpiar mensaje de resultado
+                document.getElementById('score-display').style.display = 'none'; // Ocultar puntuación durante mensaje final
                 prevButton.disabled = true;
                 nextButton.disabled = true;
-                document.getElementById('final-message').style.display = 'block';
-                document.getElementById('final-message').textContent = `Tu puntuación final es: ${score} de ${questions.length}`;
+
+                // Calcular el número de respuestas correctas, incorrectas y no contestadas
+                let correctCount = 0;
+                let incorrectCount = 0;
+                let unansweredCount = 0;
+
+                for (let i = 0; i < questions.length; i++) {
+                    if (userAnswers[i] === null) {
+                        unansweredCount++;
+                    } else if (userAnswers[i].trim() === answers[i].trim()) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+
+                finalMessageElement.style.display = 'block';
+                finalMessageElement.innerHTML = `
+                    <p>Tu puntuación final es: ${score} de ${questions.length}</p>
+                    <p>Correctas: ${correctCount}</p>
+                    <p>Incorrectas: ${incorrectCount}</p>
+                    <p>No contestadas: ${unansweredCount}</p>
+                `;
             }
         }
 
         // Función para seleccionar una opción
-        async function selectOption(selectedOption) {
+        function selectOption(selectedOption) {
             userAnswers[currentQuestionIndex] = selectedOption;
-
-            // Guardar la respuesta del usuario en Firestore
-            try {
-                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/quiz_answers`, currentQuestionIndex.toString());
-                await setDoc(userDocRef, { selectedOption: selectedOption });
-            } catch (error) {
-                console.error("Error al guardar la respuesta en Firestore:", error);
-            }
-
+            saveProgress(); // Guardar progreso después de seleccionar una opción
             highlightSelectedOption(selectedOption);
             calculateScore();
             updateScoreDisplay();
@@ -537,7 +541,13 @@ B) Los documentos.`;
                 resultMessageElement.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
                 resultMessageElement.style.color = '#dc3545';
             }
-            document.getElementById('next-button').disabled = false; // Habilitar el botón Siguiente
+            // Habilitar el botón Siguiente si no es la última pregunta
+            if (currentQuestionIndex < questions.length - 1) {
+                document.getElementById('next-button').disabled = false;
+            } else {
+                // Si es la última pregunta, el botón Siguiente debe llevar a la pantalla final
+                document.getElementById('next-button').disabled = false;
+            }
         }
 
         // Función para calcular la puntuación
@@ -559,10 +569,12 @@ B) Los documentos.`;
         document.getElementById('next-button').addEventListener('click', () => {
             if (currentQuestionIndex < questions.length - 1) {
                 currentQuestionIndex++;
+                saveProgress(); // Guardar progreso después de navegar
                 displayQuestion();
-            } else if (currentQuestionIndex === questions.length - 1 && userAnswers[currentQuestionIndex] !== null) {
-                // Si es la última pregunta y ya se respondió, finalizar el test
-                currentQuestionIndex++; // Para que displayQuestion() muestre el mensaje final
+            } else if (currentQuestionIndex === questions.length - 1) {
+                // Si es la última pregunta, avanzar a la pantalla final del test
+                currentQuestionIndex++;
+                saveProgress(); // Guardar progreso al ir a la pantalla final
                 displayQuestion();
             }
         });
@@ -570,9 +582,13 @@ B) Los documentos.`;
         document.getElementById('prev-button').addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
+                saveProgress(); // Guardar progreso después de navegar
                 displayQuestion();
             }
         });
+
+        // Event listener para el botón de reinicio
+        document.getElementById('reset-button').addEventListener('click', resetQuiz);
 
         // Cargar el contenido cuando la ventana se haya cargado
         window.onload = loadContent;
@@ -580,3 +596,5 @@ B) Los documentos.`;
     </script>
 </body>
 </html>
+
+
