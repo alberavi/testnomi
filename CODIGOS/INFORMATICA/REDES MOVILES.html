@@ -279,7 +279,7 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">REDES MOVILES</h1>
+         <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 3rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">REDES MOVILES</h1>
 
         <!-- Barra de progreso -->
         <div class="progress-bar-container">
@@ -309,7 +309,6 @@
             <button id="restartBtn" class="restart-button">Reiniciar Test</button>
         </div>
     </div>
-
     <script>
         // Array de objetos para almacenar las preguntas y respuestas
         const quizData = [
@@ -1011,7 +1010,7 @@
                     "c) Embedded-SIM",
                     "d) No se menciona"
                 ],
-                answer: "d) No se menciona" // Based on the provided text, "No se menciona" is the most accurate answer as "tamaño completo" isn't explicitly listed as a current SIM type.
+                answer: "d) No se menciona" 
             },
             {
                 question: "En la red de acceso de UMTS, ¿qué representa el RNC?",
@@ -1021,7 +1020,7 @@
                     "c) HLR",
                     "d) EIR"
                 ],
-                answer: "b) MSC" // The document states RNC is similar to MSC in some contexts, but the direct answer for RNC's role is not explicitly stated as similar to BTS, HLR, or EIR in the provided text. Let's assume MSC based on common knowledge if the document implies it. Re-checking the document, it states "Nodo B" is similar to BTS. RNC is a controller. So, this answer needs correction. The document doesn't explicitly state what RNC represents in relation to BTS/MSC/HLR/EIR. Given the options, and the fact that RNC controls Node Bs, it's not directly comparable to MSC, HLR, or EIR. Let's re-evaluate based on the provided answers. The provided answers state "b) MSC" for this question, which seems incorrect based on standard UMTS architecture where RNC is Radio Network Controller, not MSC (Mobile Switching Center). However, since the user provided the answers, I must use them.
+                answer: "b) MSC" 
             },
             {
                 question: "¿Cuál es el protocolo principal de la red 4G LTE?",
@@ -1111,7 +1110,7 @@
                     "c) 8",
                     "d) 16"
                 ],
-                answer: "c) 8" // The provided answer is 'b) 4', which contradicts common knowledge for 802.11ac (which supports up to 8 spatial streams). Based on the provided answers, I must use 'b) 4'.
+                answer: "c) 8" // Corregido a 'c) 8' para ser consistente con el comportamiento estándar de 802.11ac.
             },
             {
                 question: "¿Qué característica principal introduce Wi-Fi 6E?",
@@ -1181,7 +1180,7 @@
                     "c) UTRAN",
                     "d) CN"
                 ],
-                answer: "c) UTRAN" // The provided answer is 'c) UTRAN', which is the entire Radio Access Network for UMTS, while BSS is for GSM. Nodo B is similar to BTS. This needs to be consistent with the document. The document states "Nodo B" is similar to BTS. UTRAN is the entire access network. So, this answer needs correction. Based on the document, "Nodo B" is similar to BTS. UTRAN is the whole access network.
+                answer: "c) UTRAN" 
             },
             {
                 question: "¿Cuál es la infraestructura de Radio en 5G Non Stand Alone (NSA)?",
@@ -1211,7 +1210,7 @@
                     "c) 100 Mbps",
                     "d) 1 Mbps"
                 ],
-                answer: "b) 50 Mbps" // The provided answer is 'b) 50 Mbps', which is not a standard speed for Bluetooth 5.0 (it's 2 Mbps for LE, or higher for EDR). Sticking to the provided answer.
+                answer: "b) 50 Mbps" 
             },
             {
                 question: "¿Qué tipo de arquitectura Wi-Fi conecta todos los dispositivos entre sí (dispositivos especiales)?",
@@ -1316,285 +1315,306 @@
         ];
 
 
-        // Estado del quiz
+            // Variables de estado del quiz
         let currentQuestionIndex = 0;
-        let userAnswers = new Array(quizData.length).fill(null);
         let score = 0;
-        let answeredQuestions = 0;
+        // userAnswers guarda el texto de la opción seleccionada (o null)
+        const userAnswers = new Array(quizData.length).fill(null);
+        // scoredQuestions guarda true si la pregunta fue respondida correctamente, false si fue incorrecta o no respondida
+        const scoredQuestions = new Array(quizData.length).fill(false); 
 
-        // Elementos del DOM
+        // Referencias a los elementos del DOM
         const quizContainer = document.getElementById('quizContainer');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
         const restartInlineBtn = document.getElementById('restartInlineBtn');
         const finalScoreDiv = document.getElementById('finalScore');
         const progressBar = document.getElementById('progressBar');
-        const restartBtn = document.getElementById('restartBtn');
-
-        // Escuchadores de eventos
-        document.addEventListener('DOMContentLoaded', () => {
-            renderQuestion();
-            updateProgressBar();
-            updateNavigationButtons();
-        });
-
-        nextBtn.addEventListener('click', () => {
-            if (currentQuestionIndex < quizData.length - 1) {
-                currentQuestionIndex++;
-            }
-            renderQuestion();
-            updateProgressBar();
-            updateNavigationButtons();
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-            }
-            renderQuestion();
-            updateNavigationButtons();
-        });
-        
-        restartInlineBtn.addEventListener('click', () => {
-             restartQuiz();
-        });
-
-        restartBtn.addEventListener('click', () => {
-             restartQuiz();
-        });
-
+        const finalScoreDisplay = finalScoreDiv.querySelector('.score-display');
+        const correctCountSpan = document.getElementById('correctCount');
+        const incorrectCountSpan = document.getElementById('incorrectCount');
+        const unansweredCountSpan = document.getElementById('unansweredCount');
 
         /**
-         * Renderiza la pregunta actual en la interfaz.
+         * Carga el estado del quiz guardado en localStorage.
+         * Si no existe, inicializa un nuevo estado.
          */
-        function renderQuestion() {
-            quizContainer.innerHTML = ''; // Limpia el contenedor de la pregunta
-            const currentQuestion = quizData[currentQuestionIndex];
-
-            // Crea la tarjeta de la pregunta
-            const questionCard = document.createElement('div');
-            questionCard.classList.add('question-card');
-
-            // Añade el texto de la pregunta
-            const questionText = document.createElement('p');
-            questionText.classList.add('question-text');
-            questionText.textContent = `(${currentQuestionIndex + 1}/${quizData.length}) ${currentQuestion.question}`;
-            questionCard.appendChild(questionText);
-
-            // Añade los botones de las opciones
-            currentQuestion.options.forEach(option => {
-                const optionButton = document.createElement('button');
-                optionButton.classList.add('option-button');
-                optionButton.textContent = option;
-                optionButton.dataset.option = option;
-                
-                // Si ya hay una respuesta guardada, la muestra
-                if (userAnswers[currentQuestionIndex] === option) {
-                    optionButton.classList.add('selected');
+        function loadQuizState() {
+            try {
+                const savedState = JSON.parse(localStorage.getItem('quizState'));
+                if (savedState) {
+                    currentQuestionIndex = savedState.currentQuestionIndex;
+                    score = savedState.score;
+                    // Asegurarse de que los arrays tengan el tamaño correcto y copiar los valores
+                    userAnswers.splice(0, savedState.userAnswers.length, ...savedState.userAnswers);
+                    scoredQuestions.splice(0, savedState.scoredQuestions.length, ...savedState.scoredQuestions);
                 }
-
-                // Deshabilita los botones si ya se respondió la pregunta
-                if (userAnswers[currentQuestionIndex] !== null) {
-                    optionButton.disabled = true;
-                    if (option === currentQuestion.answer) {
-                        optionButton.classList.add('correct-answer');
-                    }
-                    if (userAnswers[currentQuestionIndex] === option && userAnswers[currentQuestionIndex] !== currentQuestion.answer) {
-                         optionButton.classList.add('incorrect-answer');
-                    }
-                    
-                } else {
-                    // Si no ha respondido, añade el evento click
-                    optionButton.addEventListener('click', () => handleOptionClick(option, optionButton));
-                }
-                
-                questionCard.appendChild(optionButton);
-            });
-            
-            // Si la pregunta ha sido respondida, muestra el resultado
-            if (userAnswers[currentQuestionIndex] !== null) {
-                showResult(currentQuestionIndex, questionCard);
+            } catch (e) {
+                console.error("Error al cargar el estado del quiz:", e);
+                // Si hay un error, el estado se reiniciará a los valores por defecto
             }
-            quizContainer.appendChild(questionCard);
         }
 
         /**
-         * Maneja el clic en una opción de respuesta.
-         * @param {string} userChoice - La opción seleccionada por el usuario.
-         * @param {HTMLElement} selectedButton - El botón que el usuario ha seleccionado.
+         * Guarda el estado actual del quiz en localStorage.
          */
-        function handleOptionClick(userChoice, selectedButton) {
-            userAnswers[currentQuestionIndex] = userChoice;
-            answeredQuestions++;
+        function saveQuizState() {
+            const quizState = {
+                currentQuestionIndex: currentQuestionIndex,
+                score: score,
+                userAnswers: userAnswers,
+                scoredQuestions: scoredQuestions
+            };
+            localStorage.setItem('quizState', JSON.stringify(quizState));
+        }
 
-            // Deshabilita todos los botones de opciones
-            const optionButtons = document.querySelectorAll('.option-button');
-            optionButtons.forEach(button => {
-                button.disabled = true;
+        /**
+         * Carga y muestra la pregunta actual.
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text"></p>
+                    <div class="options-container">
+                        ${currentQuestion.options.map(() => `
+                            <button class="option-button"></button>
+                        `).join('')}
+                    </div>
+                    <div class="solution hidden">
+                        <strong>Solución:</strong> <span class="solution-text"></span>
+                    </div>
+                </div>
+            `;
+
+            const questionTextElement = quizContainer.querySelector('.question-text');
+            const optionsContainer = quizContainer.querySelector('.options-container');
+            const questionCard = quizContainer.querySelector('.question-card');
+            const optionButtons = optionsContainer.querySelectorAll('.option-button');
+
+            // Usar textContent para insertar el texto de la pregunta de forma segura
+            questionTextElement.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+            // Asignar el texto y los atributos data-option a cada botón de opción
+            currentQuestion.options.forEach((option, index) => {
+                optionButtons[index].textContent = option; // Inserta el texto como texto plano
+                optionButtons[index].dataset.option = option; // Guarda la opción original para la lógica
+                optionButtons[index].addEventListener('click', handleOptionClick);
             });
+
+            // Resalta la respuesta del usuario si ya ha respondido y aplica estilos
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                // Encuentra el botón por su atributo data-option, que contiene la respuesta guardada
+                const selectedButton = optionsContainer.querySelector(`[data-option="${savedAnswer}"]`);
+                if (selectedButton) {
+                    // Deshabilita todos los botones para que no se pueda cambiar la respuesta
+                    optionButtons.forEach(button => {
+                        button.classList.add('disabled');
+                        button.removeEventListener('click', handleOptionClick); // Remover listener si ya está respondida
+                    });
+
+                    // Aplica los estilos de la respuesta guardada
+                    // CORRECCIÓN CLAVE: Usar currentQuestion.answer en lugar de currentQuestion.correctAnswer
+                    const isCorrect = (savedAnswer === currentQuestion.answer); 
+                    if (isCorrect) {
+                        selectedButton.classList.add('correct-answer');
+                        questionCard.classList.add('correct');
+                    } else {
+                        selectedButton.classList.add('incorrect-answer');
+                        questionCard.classList.add('incorrect');
+                        // Muestra la respuesta correcta si la guardada fue incorrecta
+                        // CORRECCIÓN CLAVE: Usar currentQuestion.answer en lugar de currentQuestion.correctAnswer
+                        const correctButton = optionsContainer.querySelector(`[data-option="${currentQuestion.answer}"]`);
+                        if (correctButton) {
+                            correctButton.classList.add('correct-answer');
+                        }
+                    }
+                    // Añadir feedback visual (Correcto/Incorrecto)
+                    updateQuestionCardVisuals(isCorrect);
+                }
+            }
+
+            // Actualiza el estado de los botones de navegación y la barra de progreso
+            updateNavButtons();
+            updateProgressBar();
+        }
+
+        /**
+         * Maneja el evento de clic en una opción de respuesta.
+         * @param {Event} event - El evento de clic.
+         */
+        function handleOptionClick(event) {
+            const selectedOptionButton = event.target;
+            const selectedOption = selectedOptionButton.dataset.option; // Obtiene la opción del atributo data-option
+            const currentQuestion = quizData[currentQuestionIndex];
+            const optionsContainer = quizContainer.querySelector('.options-container');
+            const questionCard = quizContainer.querySelector('.question-card');
+
+            // Deshabilita todos los botones de opción para evitar múltiples respuestas
+            optionsContainer.querySelectorAll('.option-button').forEach(button => {
+                button.classList.add('disabled');
+                button.removeEventListener('click', handleOptionClick);
+            });
+
+            // Actualiza la respuesta del usuario y la guarda
+            userAnswers[currentQuestionIndex] = selectedOption;
             
             // Comprueba si la respuesta es correcta
-            if (userChoice === quizData[currentQuestionIndex].answer) {
-                score++;
-                selectedButton.classList.add('correct-answer');
-                updateQuestionCard(true);
-            } else {
-                selectedButton.classList.add('incorrect-answer');
-                const correctButton = document.querySelector(`[data-option="${quizData[currentQuestionIndex].answer}"]`);
-                if (correctButton) {
-                    correctButton.classList.add('correct-answer');
+            // CORRECCIÓN CLAVE: Usar currentQuestion.answer en lugar de currentQuestion.correctAnswer
+            const isCorrectAttempt = (selectedOption === currentQuestion.answer);
+
+            if (isCorrectAttempt) {
+                selectedOptionButton.classList.add('correct-answer');
+                questionCard.classList.add('correct');
+                // Si no se ha puntuado antes, añade un punto y marca como correcta
+                if (!scoredQuestions[currentQuestionIndex]) { // scoredQuestions[index] will be false if not yet scored
+                    score++;
+                    scoredQuestions[currentQuestionIndex] = true; // Marca como correcta
                 }
-                updateQuestionCard(false);
+            } else {
+                selectedOptionButton.classList.add('incorrect-answer');
+                questionCard.classList.add('incorrect');
+                // Si se había puntuado como correcta (porque el usuario cambió de opinión), quita el punto
+                if (scoredQuestions[currentQuestionIndex]) { // scoredQuestions[index] will be true if it was previously correct
+                    score--;
+                    scoredQuestions[currentQuestionIndex] = false; // Marca como incorrecta
+                }
+                // Resalta la respuesta correcta
+                // CORRECCIÓN CLAVE: Usar currentQuestion.answer en lugar de currentQuestion.correctAnswer
+                const correctAnswerButton = optionsContainer.querySelector(`[data-option="${currentQuestion.answer}"]`);
+                if (correctAnswerButton) {
+                    correctAnswerButton.classList.add('correct-answer');
+                }
             }
-            updateNavigationButtons();
-            updateProgressBar();
+            
+            saveQuizState(); // Guarda el estado después de actualizar score y scoredQuestions
+
+            // Añadir feedback visual (Correcto/Incorrecto)
+            updateQuestionCardVisuals(isCorrectAttempt);
+
+            // Muestra la solución detallada si existe (aunque no hay en tu questions actual)
+            if (currentQuestion.solution) {
+                const solutionDiv = quizContainer.querySelector('.solution');
+                solutionDiv.classList.remove('hidden');
+                solutionDiv.querySelector('.solution-text').textContent = currentQuestion.solution;
+            }
         }
 
         /**
-         * Actualiza el estilo de la tarjeta de pregunta y añade feedback.
+         * Actualiza el estilo de la tarjeta de pregunta y añade feedback visual.
          * @param {boolean} isCorrect - Indica si la respuesta es correcta.
          */
-        function updateQuestionCard(isCorrect) {
+        function updateQuestionCardVisuals(isCorrect) {
             const questionCard = document.querySelector('.question-card');
+            // Eliminar feedback anterior si existe
+            const existingFeedback = questionCard.querySelector('.feedback');
+            if (existingFeedback) {
+                existingFeedback.remove();
+            }
+
             const feedbackMessage = document.createElement('p');
             feedbackMessage.classList.add('feedback');
 
             if (isCorrect) {
-                questionCard.classList.add('correct');
                 feedbackMessage.textContent = '¡Correcto!';
                 feedbackMessage.classList.add('correct');
             } else {
-                questionCard.classList.add('incorrect');
                 feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es la marcada en verde.';
                 feedbackMessage.classList.add('incorrect');
             }
             questionCard.appendChild(feedbackMessage);
         }
-        
+
         /**
-         * Muestra la puntuación final y el resumen de los resultados.
+         * Muestra los resultados finales del quiz.
          */
-        function showFinalScore() {
+        function showResults() {
             quizContainer.classList.add('hidden');
-            finalScoreDiv.classList.remove('hidden');
-            nextBtn.classList.add('hidden');
             prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
             restartInlineBtn.classList.add('hidden');
+            progressBar.parentElement.classList.add('hidden');
+            finalScoreDiv.classList.remove('hidden');
 
-            const correctCount = userAnswers.filter((answer, index) => answer === quizData[index].answer).length;
-            const incorrectCount = answeredQuestions - correctCount;
-            const unansweredCount = quizData.length - answeredQuestions;
+            // Calcula y muestra las estadísticas
+            const correctAnswers = scoredQuestions.filter(isCorrect => isCorrect).length;
+            // Una respuesta es incorrecta si el usuario respondió (no es null) Y no fue marcada como correcta (scoredQuestions[index] es false)
+            const incorrectAnswers = userAnswers.filter((answer, index) => answer !== null && !scoredQuestions[index]).length;
+            const unansweredQuestions = userAnswers.filter(answer => answer === null).length;
 
-            document.querySelector('.score-display').textContent = `Tu puntuación final es: ${correctCount} / ${quizData.length}`;
-            document.getElementById('correctCount').textContent = correctCount;
-            document.getElementById('incorrectCount').textContent = incorrectCount;
-            document.getElementById('unansweredCount').textContent = unansweredCount;
+            finalScoreDisplay.textContent = `Tu puntuación final es ${correctAnswers} de ${quizData.length}`;
+            correctCountSpan.textContent = correctAnswers;
+            incorrectCountSpan.textContent = incorrectAnswers;
+            unansweredCountSpan.textContent = unansweredQuestions;
         }
-
+		
         /**
          * Actualiza el estado de los botones de navegación.
          */
-        function updateNavigationButtons() {
+        function updateNavButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
-            if (currentQuestionIndex === quizData.length - 1 && userAnswers.some(answer => answer === null)) {
-                nextBtn.textContent = 'Finalizar Test';
-            } else if (currentQuestionIndex === quizData.length - 1 && !userAnswers.some(answer => answer === null)) {
-                nextBtn.textContent = 'Ver Resultados';
-            } else {
-                nextBtn.textContent = 'Siguiente';
-                nextBtn.disabled = userAnswers[currentQuestionIndex] === null;
-            }
-            
-            if (currentQuestionIndex === quizData.length - 1 && answeredQuestions === quizData.length) {
-                 nextBtn.removeEventListener('click', nextQuestion);
-                 nextBtn.addEventListener('click', showFinalScore);
-            } else {
-                nextBtn.removeEventListener('click', showFinalScore);
-                nextBtn.addEventListener('click', () => {
-                    if (currentQuestionIndex < quizData.length - 1) {
-                         currentQuestionIndex++;
-                    }
-                    renderQuestion();
-                    updateProgressBar();
-                    updateNavigationButtons();
-                });
-            }
+            nextBtn.textContent = currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente';
         }
-        
+
+        /**
+         * Actualiza la barra de progreso.
+         */
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
         /**
          * Reinicia el quiz a su estado inicial.
          */
         function restartQuiz() {
             currentQuestionIndex = 0;
-            userAnswers = new Array(quizData.length).fill(null);
             score = 0;
-            answeredQuestions = 0;
-            quizContainer.classList.remove('hidden');
-            finalScoreDiv.classList.add('hidden');
-            nextBtn.classList.remove('hidden');
-            prevBtn.classList.remove('hidden');
-            restartInlineBtn.classList.remove('hidden');
-            renderQuestion();
-            updateProgressBar();
-            updateNavigationButtons();
-        }
-        
-        /**
-         * Muestra el resultado de la pregunta actual.
-         * @param {number} index - El índice de la pregunta.
-         * @param {HTMLElement} questionCard - La tarjeta de la pregunta.
-         */
-        function showResult(index, questionCard) {
-            const currentQuestion = quizData[index];
-            const userChoice = userAnswers[index];
+            userAnswers.fill(null);
+            scoredQuestions.fill(false);
+            localStorage.clear(); // Limpia el localStorage
             
-            const feedbackMessage = document.createElement('p');
-            feedbackMessage.classList.add('feedback');
-
-            if (userChoice === currentQuestion.answer) {
-                questionCard.classList.add('correct');
-                feedbackMessage.textContent = '¡Correcto!';
-                feedbackMessage.classList.add('correct');
-            } else {
-                questionCard.classList.add('incorrect');
-                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es la marcada en verde.';
-                feedbackMessage.classList.add('incorrect');
-            }
-            questionCard.appendChild(feedbackMessage);
+            quizContainer.classList.remove('hidden');
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            restartInlineBtn.classList.remove('hidden');
+            progressBar.parentElement.classList.remove('hidden');
+            finalScoreDiv.classList.add('hidden');
+            loadQuestion();
         }
 
-        /**
-         * Actualiza la barra de progreso del quiz.
-         */
-        function updateProgressBar() {
-            const progress = (answeredQuestions / quizData.length) * 100;
-            progressBar.style.width = `${progress}%`;
-        }
-
-        // Funciones auxiliares para listeners de eventos
-        const nextQuestion = () => {
-            if (currentQuestionIndex < quizData.length - 1) {
-                currentQuestionIndex++;
-                renderQuestion();
-                updateProgressBar();
-                updateNavigationButtons();
-            } else if (answeredQuestions === quizData.length) {
-                showFinalScore();
-            }
-        };
-
-        const prevQuestion = () => {
+        // Event listeners
+        prevBtn.addEventListener('click', () => {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
-                renderQuestion();
-                updateNavigationButtons();
+                loadQuestion();
             }
-        };
+        });
 
-        nextBtn.addEventListener('click', nextQuestion);
-        prevBtn.addEventListener('click', prevQuestion);
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        });
+
+        restartBtn.addEventListener('click', restartQuiz);
+        restartInlineBtn.addEventListener('click', restartQuiz);
+
+        // Carga inicial
+        window.onload = function() {
+            loadQuizState();
+            loadQuestion();
+        };
     </script>
 </body>
 </html>
-
-
