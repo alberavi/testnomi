@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AND OR XOR Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .progress-bar-container {
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease-in-out;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .option-label {
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #d1fae5;
+            border-color: #10b981;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-item span:first-child {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div id="app" class="container mx-auto p-8 bg-white card">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 3rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">AND OR XOR</h1>
+        <div id="progress-container" class="mb-6">
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+            </div>
+            <p class="text-center text-sm text-gray-500 mt-2"><span id="current-question">1</span> de <span id="total-questions">50</span></p>
+        </div>
+
+        <!-- Vista de preguntas -->
+        <div id="question-view">
+            <p id="question-text" class="text-lg font-semibold mb-4 text-gray-700"></p>
+            <div id="options-container" class="space-y-2">
+                <!-- Las opciones se generarán aquí con JavaScript -->
+            </div>
+            <div class="flex justify-between mt-6">
+                <button id="back-button" class="px-6 py-2 bg-gray-500 text-white rounded-lg shadow-md hover:bg-gray-600 transition hidden">Atrás</button>
+                <button id="reset-button" class="px-6 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition">Reiniciar Test</button>
+                <button id="next-button" class="px-6 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition">Siguiente</button>
+            </div>
+        </div>
+
+        <!-- Vista de resultados -->
+        <div id="results-view" class="hidden">
+            <h2 class="text-2xl font-bold text-center mb-4 text-gray-800">Resultados del Test</h2>
+            <div id="results-summary" class="space-y-4">
+                <div class="result-item text-green-600 p-3 bg-green-50 rounded-lg">
+                    <span>Correctas:</span>
+                    <span id="correct-count" class="font-bold"></span>
+                </div>
+                <div class="result-item text-red-600 p-3 bg-red-50 rounded-lg">
+                    <span>Incorrectas:</span>
+                    <span id="incorrect-count" class="font-bold"></span>
+                </div>
+                <div class="result-item text-gray-600 p-3 bg-gray-50 rounded-lg">
+                    <span>Sin Contestar:</span>
+                    <span id="unanswered-count" class="font-bold"></span>
+                </div>
+            </div>
+            <div class="text-center mt-6">
+                <button id="restart-test-button" class="px-6 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition">Volver a Empezar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de 50 preguntas sobre lógica booleana y operadores lógicos
+        // Cada pregunta tiene la estructura: {
+        //     question: "Texto de la pregunta",
+        //     options: { "a": "Opción A", "b": "Opción B", ... },
+        //     correctAnswer: "Letra de la opción correcta"
+        // }
+        // Se han incluido varios tipos de preguntas, como las que proporcionaste.
+        const questions = [
+            {
+                question: "Para las variables a=true, b=false. ¿Cuál es el resultado de la operación 'a AND b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para las variables a=true, b=false. ¿Cuál es el resultado de la operación 'a OR b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para las variables a=true, b=false. ¿Cuál es el resultado de la operación 'a XOR b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para las variables a=false, b=false. ¿Cuál es el resultado de la operación 'a NAND b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para las variables a=false, b=false. ¿Cuál es el resultado de la operación 'a NOR b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para las variables a=false, b=false. ¿Cuál es el resultado de la operación 'a XNOR b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Si una condición es 'false', ¿cuál es el resultado de aplicar el operador 'NOT'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Dadas las variables a=1, b=2. ¿Cuál es el resultado de la operación '(a < b) AND (b > a)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Dadas las variables a=1, b=2. ¿Cuál es el resultado de la operación '(a > b) OR (b == a)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para las variables a=1, b=2, c=3, d=1 ¿cuál es la operación lógica que da un resultado true? (a=1, b=2, c=3, d=1)",
+                options: {
+                    a: "((a > b) or (a == b))",
+                    b: "((a >= b) or (a == d) or (c > d))",
+                    c: "Not (a == c) and (c > b)",
+                    d: "Not (a >= d) and not (c >= b)"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para a=5, b=10, c=15. ¿Cuál es el resultado de '(a < b) AND (c > b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para a=5, b=10, c=15. ¿Cuál es el resultado de '(a > b) OR (c < b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para a=5, b=10, c=15. ¿Cuál es el resultado de 'NOT (a > b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Si P es 'true' y Q es 'false', ¿cuál es el resultado de 'P XOR Q'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Si P es 'true' y Q es 'true', ¿cuál es el resultado de 'P NAND Q'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Si P es 'false' y Q es 'false', ¿cuál es el resultado de 'P NOR Q'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "En una tabla de verdad, ¿cuándo es 'P AND Q' verdadero?",
+                options: {
+                    a: "Cuando P es verdadero o Q es verdadero",
+                    b: "Cuando P es falso y Q es falso",
+                    c: "Cuando P y Q son ambos verdaderos",
+                    d: "Cuando P es verdadero y Q es falso"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "En una tabla de verdad, ¿cuándo es 'P OR Q' falso?",
+                options: {
+                    a: "Cuando P es falso o Q es falso",
+                    b: "Cuando P y Q son ambos falsos",
+                    c: "Cuando P y Q son ambos verdaderos",
+                    d: "Cuando P es verdadero o Q es falso"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "El operador XOR es verdadero cuando...",
+                options: {
+                    a: "Ambos operandos son iguales",
+                    b: "Ambos operandos son falsos",
+                    c: "Los operandos son diferentes",
+                    d: "Ambos operandos son verdaderos"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "El operador XNOR es verdadero cuando...",
+                options: {
+                    a: "Ambos operandos son diferentes",
+                    b: "Ambos operandos son falsos",
+                    c: "Los operandos son diferentes",
+                    d: "Ambos operandos son iguales"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "Para a=5, b=3. ¿Cuál es el resultado de 'a > b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para a=5, b=3. ¿Cuál es el resultado de 'a < b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para a=5, b=5. ¿Cuál es el resultado de 'a == b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para a=5, b=5. ¿Cuál es el resultado de 'a != b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "El operador AND se representa con el símbolo...",
+                options: { a: "||", b: "&&", c: "!", d: "==" },
+                correctAnswer: "b"
+            },
+            {
+                question: "El operador OR se representa con el símbolo...",
+                options: { a: "||", b: "&&", c: "!", d: "==" },
+                correctAnswer: "a"
+            },
+            {
+                question: "El operador NOT se representa con el símbolo...",
+                options: { a: "||", b: "&&", c: "!", d: "==" },
+                correctAnswer: "c"
+            },
+            {
+                question: "Dadas las variables a=true, b=true. ¿Cuál es el resultado de '(a XOR b) OR (NOT a)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Dadas las variables a=false, b=true. ¿Cuál es el resultado de '(a AND b) OR (NOT a)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Dadas las variables a=false, b=false. ¿Cuál es el resultado de '(a OR b) AND (NOT b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para a=2, b=4, c=6. ¿Cuál es el resultado de '(a+b == c) AND (b-a == a)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para a=2, b=4, c=6. ¿Cuál es el resultado de '(a+b != c) OR (c > a+b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "El operador de igualdad en muchos lenguajes de programación es...",
+                options: { a: "=", b: "==", c: "===", d: "!=" },
+                correctAnswer: "b"
+            },
+            {
+                question: "El operador de desigualdad en muchos lenguajes de programación es...",
+                options: { a: "=", b: "==", c: "===", d: "!=" },
+                correctAnswer: "d"
+            },
+            {
+                question: "Para a=true, b=false. ¿Cuál es el resultado de 'a XNOR b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Si tienes 4 bits, ¿cuántas combinaciones posibles puedes tener?",
+                options: { a: "8", b: "16", c: "32", d: "64" },
+                correctAnswer: "b"
+            },
+            {
+                question: "En una tabla de verdad, 'NOT (P OR Q)' es equivalente a...",
+                options: {
+                    a: "(NOT P) OR (NOT Q)",
+                    b: "(NOT P) AND (NOT Q)",
+                    c: "(P AND Q)",
+                    d: "(NOT P) AND Q"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "En una tabla de verdad, 'NOT (P AND Q)' es equivalente a...",
+                options: {
+                    a: "(NOT P) AND (NOT Q)",
+                    b: "(NOT P) OR (NOT Q)",
+                    c: "(P OR Q)",
+                    d: "(NOT P) OR Q"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "Dadas las variables a=true, b=false. ¿Cuál es el resultado de 'NOT (a AND b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Dadas las variables a=true, b=false. ¿Cuál es el resultado de 'NOT (a OR b)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Para a=10, b=5. ¿Cuál es el resultado de 'a >= b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Para a=10, b=5. ¿Cuál es el resultado de 'a <= b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Si (3 > 5) AND (10 < 20), ¿cuál es el resultado?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Si (3 > 5) OR (10 < 20), ¿cuál es el resultado?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "a"
+            },
+            {
+                question: "Si P='false' y Q='false', ¿cuál es el resultado de '(P XOR Q) AND (NOT P)'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "El resultado de una operación booleana siempre es...",
+                options: {
+                    a: "Un número",
+                    b: "Una cadena de texto",
+                    c: "Un valor verdadero o falso",
+                    d: "Una variable"
+                },
+                correctAnswer: "c"
+            },
+            {
+                question: "El operador que invierte el valor de verdad de una proposición es...",
+                options: { a: "AND", b: "OR", c: "XOR", d: "NOT" },
+                correctAnswer: "d"
+            },
+            {
+                question: "Si a='gato' y b='perro', ¿cuál es el resultado de 'a == b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "Si a='gato' y b='gato', ¿cuál es el resultado de 'a != b'?",
+                options: { a: "true", b: "false" },
+                correctAnswer: "b"
+            },
+            {
+                question: "En lógica, el operador 'bicondicional' (si y solo si) es equivalente a...",
+                options: {
+                    a: "AND",
+                    b: "OR",
+                    c: "XOR",
+                    d: "XNOR"
+                },
+                correctAnswer: "d"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let answers = [];
+        const totalQuestions = questions.length;
+
+        // Elementos del DOM
+        const questionView = document.getElementById('question-view');
+        const resultsView = document.getElementById('results-view');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const backButton = document.getElementById('back-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-button');
+        const restartTestButton = document.getElementById('restart-test-button');
+        const progressBar = document.getElementById('progress-bar');
+        const currentQuestionSpan = document.getElementById('current-question');
+        const totalQuestionsSpan = document.getElementById('total-questions');
+
+        // Función para cargar una pregunta
+        function loadQuestion() {
+            if (currentQuestionIndex < totalQuestions) {
+                const questionData = questions[currentQuestionIndex];
+                questionText.textContent = `${currentQuestionIndex + 1}. ${questionData.question}`;
+                optionsContainer.innerHTML = '';
+                
+                for (const [key, value] of Object.entries(questionData.options)) {
+                    const optionHtml = `
+                        <div>
+                            <input type="radio" id="option-${key}" name="question-option" value="${key}" class="hidden">
+                            <label for="option-${key}" class="option-label block p-4 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg">
+                                <span class="font-medium text-gray-700">${key.toUpperCase()}) ${value}</span>
+                            </label>
+                        </div>
+                    `;
+                    optionsContainer.innerHTML += optionHtml;
+                }
+
+                // Cargar respuesta guardada si existe
+                if (answers[currentQuestionIndex]) {
+                    const savedOption = document.getElementById(`option-${answers[currentQuestionIndex]}`);
+                    if (savedOption) {
+                        savedOption.checked = true;
+                    }
+                }
+
+                updateProgress();
+            }
+        }
+
+        // Función para actualizar la barra de progreso
+        function updateProgress() {
+            const progress = (currentQuestionIndex / totalQuestions) * 100;
+            progressBar.style.width = `${progress}%`;
+            currentQuestionSpan.textContent = currentQuestionIndex + 1;
+            totalQuestionsSpan.textContent = totalQuestions;
+
+            // Mostrar u ocultar el botón de "Atrás"
+            if (currentQuestionIndex > 0) {
+                backButton.classList.remove('hidden');
+            } else {
+                backButton.classList.add('hidden');
+            }
+
+            // Cambiar el texto del botón en la última pregunta
+            if (currentQuestionIndex === totalQuestions - 1) {
+                nextButton.textContent = 'Finalizar Test';
+            } else {
+                nextButton.textContent = 'Siguiente';
+            }
+        }
+
+        // Función para mostrar los resultados
+        function showResults() {
+            questionView.classList.add('hidden');
+            resultsView.classList.remove('hidden');
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            answers.forEach((answer, index) => {
+                if (answer) {
+                    if (answer === questions[index].correctAnswer) {
+                        correct++;
+                    } else {
+                        incorrect++;
+                    }
+                } else {
+                    unanswered++;
+                }
+            });
+
+            document.getElementById('correct-count').textContent = correct;
+            document.getElementById('incorrect-count').textContent = incorrect;
+            document.getElementById('unanswered-count').textContent = unanswered;
+        }
+
+        // Función para guardar las respuestas en Local Storage
+        function saveAnswers() {
+            localStorage.setItem('andOrXorAnswers', JSON.stringify(answers));
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+        }
+
+        // Función para cargar las respuestas del Local Storage
+        function loadSavedState() {
+            const savedAnswers = localStorage.getItem('andOrXorAnswers');
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            if (savedAnswers && savedIndex !== null) {
+                answers = JSON.parse(savedAnswers);
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            } else {
+                answers = new Array(totalQuestions).fill(null);
+                currentQuestionIndex = 0;
+            }
+        }
+
+        // Función para resetear el test
+        function resetTest() {
+            localStorage.removeItem('andOrXorAnswers');
+            localStorage.removeItem('currentQuestionIndex');
+            answers = new Array(totalQuestions).fill(null);
+            currentQuestionIndex = 0;
+            resultsView.classList.add('hidden');
+            questionView.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        // Event Listeners
+        nextButton.addEventListener('click', () => {
+            const selectedOption = document.querySelector('input[name="question-option"]:checked');
+            if (selectedOption) {
+                answers[currentQuestionIndex] = selectedOption.value;
+            } else {
+                answers[currentQuestionIndex] = null;
+            }
+
+            saveAnswers();
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < totalQuestions) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        });
+
+        backButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                const selectedOption = document.querySelector('input[name="question-option"]:checked');
+                if (selectedOption) {
+                    answers[currentQuestionIndex] = selectedOption.value;
+                } else {
+                    answers[currentQuestionIndex] = null;
+                }
+                saveAnswers();
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        // Aseguramos que ambos botones de reinicio llamen a la misma función
+        resetButton.addEventListener('click', resetTest);
+        restartTestButton.addEventListener('click', resetTest);
+
+        // Inicializar la aplicación
+        window.onload = function() {
+            loadSavedState();
+            loadQuestion();
+        }
+    </script>
+</body>
+</html>
