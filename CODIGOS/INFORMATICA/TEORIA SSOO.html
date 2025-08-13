@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teoria Sistemas Operativos</title>
+    <title>HTML</title>
     <!-- Enlace a Tailwind CSS para las clases de la estructura HTML -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -279,7 +279,7 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Teoria de Sistemas Operativos</h1>
+         <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 3rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEORIA SSOO</h1>
 
         <!-- Barra de progreso -->
         <div class="progress-bar-container">
@@ -317,8 +317,8 @@
             // =================== Pega tu array de preguntas aquí en formato JSON ================================
             // ====================================================================================================
             // Array de objetos para las preguntas y respuestas
-        const questions = [
-            {
+            const questions = [
+                               {
                 question: "1. ¿Cuál es el objetivo principal de un sistema operativo?",
                 options: [
                     "a) Ejecutar programas de usuario.",
@@ -1320,213 +1320,255 @@
             }
         ];
 
-            // Variables de estado del quiz
-            let currentQuestionIndex = 0;
-            let userAnswers = []; // Almacena las respuestas del usuario
-            let quizStarted = false; // Estado para saber si el quiz ha comenzado
-
-            // Referencias a los elementos del DOM
+            // Elementos del DOM
             const quizContainer = document.getElementById('quizContainer');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
+            const restartBtn = document.getElementById('restartBtn');
             const restartInlineBtn = document.getElementById('restartInlineBtn');
-            const finalScoreContainer = document.getElementById('finalScore');
-            const scoreDisplay = finalScoreContainer.querySelector('.score-display');
+            const progressBar = document.getElementById('progressBar');
+            const finalScoreDiv = document.getElementById('finalScore');
+            const scoreDisplay = finalScoreDiv.querySelector('.score-display');
             const correctCountSpan = document.getElementById('correctCount');
             const incorrectCountSpan = document.getElementById('incorrectCount');
             const unansweredCountSpan = document.getElementById('unansweredCount');
-            const restartBtn = document.getElementById('restartBtn');
-            const progressBar = document.getElementById('progressBar');
-            
+
+            // Variables de estado
+            let currentQuestionIndex = 0;
+            let score = 0;
+            let userAnswers = Array(questions.length).fill(null);
+            let scoredQuestions = Array(questions.length).fill(false);
+
             /**
-             * Inicializa o reinicia el quiz.
+             * Guarda el estado actual del quiz en localStorage.
              */
-            function resetQuiz() {
-                currentQuestionIndex = 0;
-                userAnswers = new Array(questions.length).fill(null);
-                quizStarted = true;
-                quizContainer.classList.remove('hidden');
-                finalScoreContainer.classList.add('hidden');
-                renderQuestion();
-                updateNavigationButtons();
+            function saveQuizState() {
+                localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+                localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+                localStorage.setItem('scoredQuestions', JSON.stringify(scoredQuestions));
             }
 
             /**
-             * Renderiza la pregunta actual en la interfaz.
+             * Carga el estado del quiz desde localStorage.
              */
-            function renderQuestion() {
-                if (currentQuestionIndex < 0 || currentQuestionIndex >= questions.length) {
-                    showFinalScore();
+            function loadQuizState() {
+                const savedIndex = localStorage.getItem('currentQuestionIndex');
+                const savedAnswers = localStorage.getItem('userAnswers');
+                const savedScores = localStorage.getItem('scoredQuestions');
+
+                if (savedIndex !== null) {
+                    currentQuestionIndex = parseInt(savedIndex);
+                }
+                if (savedAnswers !== null) {
+                    userAnswers = JSON.parse(savedAnswers);
+                }
+                if (savedScores !== null) {
+                    scoredQuestions = JSON.parse(savedScores);
+                }
+            }
+
+            /**
+             * Carga la pregunta actual en la interfaz.
+             */
+            function loadQuestion() {
+                // Si ya se ha llegado al final, mostrar resultados en lugar de la pregunta
+                if (currentQuestionIndex >= questions.length) {
+                    showResults();
                     return;
                 }
-
-                const currentQuestion = questions[currentQuestionIndex];
-                const card = document.createElement('div');
-                card.classList.add('question-card');
-                card.innerHTML = `
-                    <p class="question-text">${currentQuestion.question}</p>
-                    <div class="options-container">
-                        ${currentQuestion.options.map((option, index) => `
-                            <button class="option-button" data-option="${option}">${option}</button>
-                        `).join('')}
-                    </div>
+                
+                const questionData = questions[currentQuestionIndex];
+                
+                // Construye el HTML para la pregunta y sus opciones
+                let questionHtml = `
+                    <div class="question-card">
+                        <p class="question-text">${questionData.question}</p>
+                        <div id="optionsContainer" class="options-container">
                 `;
                 
-                quizContainer.innerHTML = '';
-                quizContainer.appendChild(card);
-
-                // Añadir evento click a cada botón de opción
-                const optionButtons = card.querySelectorAll('.option-button');
-                optionButtons.forEach(button => {
-                    button.addEventListener('click', () => handleAnswer(button));
+                questionData.options.forEach((option, index) => {
+                    questionHtml += `<button class="option-button" data-index="${index}">${option}</button>`;
                 });
+                
+                questionHtml += `
+                        </div>
+                    </div>
+                `;
 
-                // Cargar la respuesta guardada si existe
+                quizContainer.innerHTML = questionHtml;
+
+                // Actualiza el progreso
+                updateProgressBar();
+
+                // Obtiene el contenedor de opciones y agrega el event listener
+                const optionsContainer = document.getElementById('optionsContainer');
+                optionsContainer.addEventListener('click', handleOptionClick);
+
+                // Si ya hay una respuesta guardada, la muestra
                 if (userAnswers[currentQuestionIndex] !== null) {
-                    showSavedAnswer();
+                    displayAnswerResult();
                 }
 
-                updateProgressBar();
+                // Habilita/deshabilita botones de navegación
+                prevBtn.disabled = currentQuestionIndex === 0;
+                // Se ha eliminado la línea que deshabilitaba el botón de siguiente
             }
 
             /**
-             * Muestra la respuesta guardada del usuario y la respuesta correcta.
+             * Actualiza el progreso de la barra y el estado de los botones de navegación.
              */
-            function showSavedAnswer() {
-                const selectedAnswer = userAnswers[currentQuestionIndex];
-                const currentQuestion = questions[currentQuestionIndex];
-                const optionButtons = document.querySelectorAll('.option-button');
+            function updateProgressBar() {
+                const progress = ((currentQuestionIndex) / questions.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                
+                // Si estamos en la última pregunta, el botón "Siguiente" debe decir "Ver Resultados"
+                if (currentQuestionIndex === questions.length - 1) {
+                    nextBtn.textContent = 'Ver Resultados';
+                } else {
+                    nextBtn.textContent = 'Siguiente';
+                }
+            }
 
-                optionButtons.forEach(button => {
+            /**
+             * Maneja la selección de una opción por parte del usuario.
+             * @param {Event} event - El evento de click.
+             */
+            function handleOptionClick(event) {
+                const clickedButton = event.target.closest('.option-button');
+                if (!clickedButton || userAnswers[currentQuestionIndex] !== null) {
+                    return; // Ignora clics si no es un botón o si ya se respondió
+                }
+
+                const selectedOption = clickedButton.textContent;
+                userAnswers[currentQuestionIndex] = selectedOption;
+                saveQuizState(); // Guarda el estado después de cada respuesta
+
+                displayAnswerResult();
+            }
+
+            /**
+             * Muestra si la respuesta seleccionada es correcta o incorrecta.
+             */
+            function displayAnswerResult() {
+                const questionData = questions[currentQuestionIndex];
+                const optionsContainer = document.getElementById('optionsContainer');
+                
+                optionsContainer.querySelectorAll('.option-button').forEach(button => {
                     button.classList.add('disabled');
-                    button.disabled = true;
+                    const isCorrect = button.textContent === questionData.correctAnswer;
+                    const isSelected = button.textContent === userAnswers[currentQuestionIndex];
 
-                    if (button.dataset.option === selectedAnswer) {
-                        button.classList.add('selected');
-                    }
-
-                    if (button.dataset.option === currentQuestion.correctAnswer) {
+                    if (isCorrect) {
                         button.classList.add('correct-answer');
                     }
-
-                    if (button.dataset.option === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswer) {
+                    if (isSelected && !isCorrect) {
                         button.classList.add('incorrect-answer');
                     }
                 });
 
-                updateQuestionCard(selectedAnswer === currentQuestion.correctAnswer);
-            }
-
-            /**
-             * Maneja la selección de una respuesta por el usuario.
-             * @param {HTMLButtonElement} selectedButton - El botón de opción seleccionado.
-             */
-            function handleAnswer(selectedButton) {
-                if (userAnswers[currentQuestionIndex] === null) {
-                    const selectedOption = selectedButton.dataset.option;
-                    userAnswers[currentQuestionIndex] = selectedOption;
-
-                    const currentQuestion = questions[currentQuestionIndex];
-                    const isCorrect = (selectedOption === currentQuestion.correctAnswer);
-
-                    // Deshabilitar todos los botones de la pregunta actual
-                    const optionButtons = document.querySelectorAll('.option-button');
-                    optionButtons.forEach(button => {
-                        button.classList.add('disabled');
-                        button.disabled = true;
-                    });
-                    
-                    // Aplicar estilos de feedback
-                    selectedButton.classList.add('selected');
-                    if (isCorrect) {
-                        selectedButton.classList.add('correct-answer');
-                        updateQuestionCard(true);
-                    } else {
-                        selectedButton.classList.add('incorrect-answer');
-                        const correctButton = document.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
-                        if (correctButton) {
-                            correctButton.classList.add('correct-answer');
-                        }
-                        updateQuestionCard(false);
-                    }
-                }
-            }
-
-            /**
-             * Actualiza el estilo de la tarjeta de pregunta y añade feedback.
-             * @param {boolean} isCorrect - Indica si la respuesta es correcta.
-             */
-            function updateQuestionCard(isCorrect) {
-                const questionCard = document.querySelector('.question-card');
-                if (isCorrect) {
+                // Añade la clase de estilo a la tarjeta de la pregunta
+                const questionCard = quizContainer.querySelector('.question-card');
+                if (userAnswers[currentQuestionIndex] === questionData.correctAnswer) {
                     questionCard.classList.add('correct');
                 } else {
                     questionCard.classList.add('incorrect');
                 }
+
+                // Evalúa la respuesta si no ha sido puntuada antes
+                if (!scoredQuestions[currentQuestionIndex]) {
+                    if (userAnswers[currentQuestionIndex] === questionData.correctAnswer) {
+                        score++;
+                    }
+                    scoredQuestions[currentQuestionIndex] = true;
+                    saveQuizState();
+                }
             }
 
-            /**
-             * Actualiza los botones de navegación (prev, next).
-             */
-            function updateNavigationButtons() {
-                prevBtn.disabled = currentQuestionIndex === 0;
-                nextBtn.disabled = currentQuestionIndex >= questions.length - 1;
-            }
 
             /**
-             * Muestra la pantalla de puntuación final.
+             * Muestra los resultados finales del quiz.
              */
-            function showFinalScore() {
-                const correctAnswers = userAnswers.filter((answer, index) => answer === questions[index].correctAnswer).length;
-                const incorrectAnswers = userAnswers.filter((answer, index) => answer !== null && answer !== questions[index].correctAnswer).length;
-                const unanswered = userAnswers.filter(answer => answer === null).length;
+            function showResults() {
+                let correctAnswers = 0;
+                let incorrectAnswers = 0;
+                let unanswered = 0;
                 
-                scoreDisplay.textContent = `Tu puntuación: ${correctAnswers} / ${questions.length}`;
+                // Recalcula el score basado en las respuestas guardadas
+                for (let i = 0; i < questions.length; i++) {
+                    if (userAnswers[i] === questions[i].correctAnswer) {
+                        correctAnswers++;
+                    } else if (userAnswers[i] !== null) {
+                        incorrectAnswers++;
+                    } else {
+                        unanswered++;
+                    }
+                }
+
+                quizContainer.classList.add('hidden');
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                restartInlineBtn.classList.add('hidden');
+                progressBar.parentElement.classList.add('hidden');
+
+                finalScoreDiv.classList.remove('hidden');
+                scoreDisplay.textContent = `Has obtenido ${correctAnswers} de ${questions.length} preguntas correctas.`;
                 correctCountSpan.textContent = correctAnswers;
                 incorrectCountSpan.textContent = incorrectAnswers;
                 unansweredCountSpan.textContent = unanswered;
-
-                quizContainer.classList.add('hidden');
-                finalScoreContainer.classList.remove('hidden');
-                updateProgressBar();
             }
 
             /**
-             * Actualiza la barra de progreso.
+             * Reinicia el quiz a su estado inicial.
              */
-            function updateProgressBar() {
-                const progress = (currentQuestionIndex / questions.length) * 100;
-                progressBar.style.width = `${progress}%`;
+            function restartQuiz() {
+                // Borra explícitamente el contenido del contenedor de preguntas
+                // Esto asegura que no queden elementos visuales de la sesión anterior.
+                quizContainer.innerHTML = '';
+            
+                currentQuestionIndex = 0;
+                score = 0;
+                userAnswers.fill(null);
+                scoredQuestions.fill(false);
+                // Borra el localStorage de manera más explícita
+                localStorage.removeItem('currentQuestionIndex');
+                localStorage.removeItem('userAnswers');
+                localStorage.removeItem('scoredQuestions');
+                
+                quizContainer.classList.remove('hidden');
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+                restartInlineBtn.classList.remove('hidden');
+                progressBar.parentElement.classList.remove('hidden');
+                finalScoreDiv.classList.add('hidden');
+                loadQuestion();
             }
 
-            // Manejadores de eventos para los botones de navegación y reinicio
-            nextBtn.addEventListener('click', () => {
-                if (currentQuestionIndex < questions.length - 1) {
-                    currentQuestionIndex++;
-                    renderQuestion();
-                    updateNavigationButtons();
-                } else {
-                    showFinalScore();
-                }
-            });
-
+            // Event listeners
             prevBtn.addEventListener('click', () => {
                 if (currentQuestionIndex > 0) {
                     currentQuestionIndex--;
-                    renderQuestion();
-                    updateNavigationButtons();
+                    saveQuizState(); // Guarda el estado antes de cambiar de pregunta
+                    loadQuestion();
                 }
             });
 
-            restartInlineBtn.addEventListener('click', () => resetQuiz());
-            restartBtn.addEventListener('click', () => resetQuiz());
+            nextBtn.addEventListener('click', () => {
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    saveQuizState(); // Guarda el estado antes de cambiar de pregunta
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            });
 
-            // Iniciar el quiz al cargar la página
-            resetQuiz();
+            restartBtn.addEventListener('click', restartQuiz);
+            restartInlineBtn.addEventListener('click', restartQuiz);
+
+            // Carga inicial
+            loadQuizState();
+            loadQuestion();
         });
     </script>
 </body>
 </html>
-
-
-
