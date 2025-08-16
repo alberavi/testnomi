@@ -11,6 +11,20 @@
         body {
             font-family: "Inter", sans-serif;
         }
+        /* Estilos adicionales para el feedback */
+        .correct {
+            border-color: #10B981; /* Verde esmeralda */
+        }
+        .incorrect {
+            border-color: #EF4444; /* Rojo */
+        }
+        .correct-answer {
+            border-color: #10B981;
+            background-color: #D1FAE5; /* Verde pálido */
+        }
+        .selected-option {
+            background-color: #E5E7EB; /* Gris claro */
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -18,8 +32,12 @@
     <div id="quiz-container" class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
         <!-- El contenido del quiz se renderizará aquí mediante JavaScript -->
     </div>
+    
+    <div id="feedback-container" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white text-gray-800 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-0 opacity-0">
+        <!-- Contenido del feedback -->
+    </div>
 
-    <script>
+     <script>
         // Datos de las preguntas y respuestas
         const quizData = [
             // PRIMERA PARTE - 85 Preguntas
@@ -1186,7 +1204,7 @@
                     c: 'Necesitaría un total de 3 cables, uno de ellos debe ser un cable cruzado (o sea, ambos extremos del cable deben cumplir el mismo estándar TIA).',
                     d: 'Necesitaría un total de 3 cables, todos ellos deben ser cables cruzados (o sea, los extremos del cable deben tener distinto estándar TIA, uno el 568-A y otro el 568-B).',
                 },
-                correctAnswer: 'd',
+                correctAnswer: 'b',
                 type: 'supuesto2',
             },
             {
@@ -1346,195 +1364,202 @@
                 type: 'supuesto2',
             },
         ];
-
-        // Variables de estado
         let currentQuestionIndex = 0;
         let userAnswers = {};
-        let feedbackTimeout; // Para limpiar el timeout del feedback
-
-        // Elemento contenedor del quiz
         const quizContainer = document.getElementById('quiz-container');
+        const feedbackContainer = document.getElementById('feedback-container');
 
-        // Función para cargar el estado del quiz desde LocalStorage
-        function loadQuizState() {
-            const savedIndex = localStorage.getItem('currentQuestionIndex');
-            const savedAnswers = localStorage.getItem('userAnswers');
-
-            if (savedIndex !== null) {
-                currentQuestionIndex = parseInt(savedIndex, 10);
-            }
-            if (savedAnswers) {
-                userAnswers = JSON.parse(savedAnswers);
-            }
-        }
-
-        // Función para guardar el estado del quiz en LocalStorage
+        // Función para guardar el estado del quiz en localStorage
         function saveQuizState() {
-            localStorage.setItem('currentQuestionIndex', currentQuestionIndex.toString());
-            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            const quizState = {
+                index: currentQuestionIndex,
+                answers: userAnswers
+            };
+            localStorage.setItem('quizState', JSON.stringify(quizState));
         }
 
-        // Función para reiniciar el test
-        function resetQuiz() {
-            localStorage.removeItem('currentQuestionIndex');
-            localStorage.removeItem('userAnswers');
-            currentQuestionIndex = 0;
-            userAnswers = {};
-            renderQuiz(); // Volver a renderizar el quiz desde el principio
+        // Función para cargar el estado del quiz desde localStorage
+        function loadQuizState() {
+            const savedState = localStorage.getItem('quizState');
+            if (savedState) {
+                const quizState = JSON.parse(savedState);
+                currentQuestionIndex = quizState.index;
+                userAnswers = quizState.answers;
+            }
         }
 
-        // Función para calcular y mostrar los resultados
-        function showResults() {
-            let correct = 0;
-            let incorrect = 0;
-            let unanswered = 0;
-
-            quizData.forEach(question => {
-                const userAnswer = userAnswers[question.id];
-                if (userAnswer) {
-                    if (userAnswer === question.correctAnswer) {
-                        correct++;
-                    } else {
-                        incorrect++;
-                    }
-                } else {
-                    unanswered++;
-                }
-            });
-
-            quizContainer.innerHTML = `
-                <div class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Resultados del Test</h2>
-                    <p class="text-lg text-gray-700 mb-2">
-                        Respuestas Correctas: <span class="font-semibold text-green-600">${correct}</span>
-                    </p>
-                    <p class="text-lg text-gray-700 mb-2">
-                        Respuestas Erróneas: <span class="font-semibold text-red-600">${incorrect}</span>
-                    </p>
-                    <p class="text-lg text-gray-700 mb-6">
-                        Preguntas sin Contestar: <span class="font-semibold text-blue-600">${unanswered}</span>
-                    </p>
-                    <button id="reset-button-results" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                        Reiniciar Test
-                    </button>
-                </div>
-            `;
-            document.getElementById('reset-button-results').addEventListener('click', resetQuiz);
-        }
-
-        // Función para mostrar el feedback de la respuesta
+        // Función para mostrar un mensaje de feedback
         function showFeedback(message, type) {
-            // Limpiar cualquier timeout anterior para evitar solapamientos
-            if (feedbackTimeout) {
-                clearTimeout(feedbackTimeout);
+            feedbackContainer.textContent = message;
+            feedbackContainer.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-100 opacity-100';
+            if (type === 'correct') {
+                feedbackContainer.classList.add('bg-green-100', 'text-green-800');
+            } else if (type === 'incorrect') {
+                feedbackContainer.classList.add('bg-red-100', 'text-red-800');
             }
-
-            let feedbackDiv = document.getElementById('feedback-message');
-            if (!feedbackDiv) {
-                feedbackDiv = document.createElement('div');
-                feedbackDiv.id = 'feedback-message';
-                quizContainer.querySelector('.space-y-4').after(feedbackDiv); // Insertar después de las opciones
-            }
-
-            feedbackDiv.className = `p-4 rounded-xl mb-6 text-center font-semibold text-lg ${type === 'correct' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`;
-            feedbackDiv.textContent = message;
-            feedbackDiv.style.display = 'block'; // Asegurarse de que sea visible
-
             // Ocultar el feedback después de 2 segundos
-            feedbackTimeout = setTimeout(() => {
-                feedbackDiv.style.display = 'none';
+            setTimeout(() => {
+                hideFeedback();
             }, 2000);
+        }
+
+        // Función para ocultar el feedback
+        function hideFeedback() {
+            feedbackContainer.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-0 opacity-0';
         }
 
         // Función para renderizar la pregunta actual
         function renderQuiz() {
-            // Si el quiz está completo, mostrar resultados
             if (currentQuestionIndex >= quizData.length) {
-                showResults();
+                renderResults();
                 return;
             }
 
             const currentQuestion = quizData[currentQuestionIndex];
+            const totalQuestions = quizData.length;
+            const progress = (currentQuestionIndex / totalQuestions) * 100;
+
             let optionsHtml = '';
             for (const key in currentQuestion.options) {
-                const value = currentQuestion.options[key];
-                const isChecked = userAnswers[currentQuestion.id] === key;
-                const feedbackClass = userAnswers[currentQuestion.id]
-                    ? (key === currentQuestion.correctAnswer && isChecked
-                        ? 'bg-green-100 border-green-500'
-                        : (key !== currentQuestion.correctAnswer && isChecked
-                            ? 'bg-red-100 border-red-500'
-                            : 'border-gray-300 hover:bg-gray-50'))
-                    : 'border-gray-300 hover:bg-gray-50';
+                const isSelected = userAnswers[currentQuestion.id] === key;
+                const isCorrect = userAnswers[currentQuestion.id] && key === currentQuestion.correctAnswer;
+                const isIncorrectAndSelected = userAnswers[currentQuestion.id] && isSelected && userAnswers[currentQuestion.id] !== currentQuestion.correctAnswer;
+
+                let classes = 'p-4 rounded-lg cursor-pointer border-2 transition-all duration-200 ease-in-out';
+                if (userAnswers[currentQuestion.id]) {
+                    // Si ya se ha respondido, deshabilitar la interacción
+                    classes += ' pointer-events-none';
+                    if (isCorrect) {
+                        classes += ' border-green-500 bg-green-100'; // Resaltar la respuesta correcta
+                    } else if (isIncorrectAndSelected) {
+                        classes += ' border-red-500 bg-red-100'; // Resaltar la respuesta incorrecta seleccionada
+                    } else if (key === currentQuestion.correctAnswer) {
+                        classes += ' border-green-500 bg-green-100'; // Resaltar la correcta después de una incorrecta
+                    } else {
+                        classes += ' bg-gray-50 border-gray-200';
+                    }
+                } else {
+                    // Si no se ha respondido aún
+                    classes += ' bg-gray-50 hover:bg-gray-100 border-gray-200';
+                }
 
                 optionsHtml += `
-                    <label class="flex items-center p-4 border rounded-xl cursor-pointer transition duration-200 ease-in-out ${feedbackClass}">
-                        <input type="radio" name="question-${currentQuestion.id}" value="${key}" ${isChecked ? 'checked' : ''} class="form-radio h-5 w-5 text-blue-600">
-                        <span class="ml-4 text-lg text-gray-800">
-                            ${key.toUpperCase()}) ${value}
-                        </span>
-                    </label>
+                    <div class="${classes}">
+                        <label class="flex items-center space-x-2 w-full cursor-pointer">
+                            <input type="radio" name="question-${currentQuestion.id}" value="${key}" class="hidden" ${isSelected ? 'checked' : ''} ${userAnswers[currentQuestion.id] ? 'disabled' : ''}>
+                            <span class="text-lg font-medium">${key.toUpperCase()})</span>
+                            <span class="flex-1 text-base">${currentQuestion.options[key]}</span>
+                        </label>
+                    </div>
                 `;
             }
 
             quizContainer.innerHTML = `
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-extrabold text-gray-800 drop-shadow-md">
-                        4 PASTILLA VERDE <span class="text-blue-600 text-xl font-semibold"> - Pregunta ${currentQuestionIndex + 1} de ${quizData.length}</span>
-                    </h1>
-                    <button id="reset-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                        Reiniciar Test
-                    </button>
+                <div class="text-center mb-6">
+                    <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 3rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">4 PASTILLA VERDE</h1>
                 </div>
-
-                <p class="text-xl text-gray-900 mb-6 leading-relaxed">${currentQuestion.text}</p>
-
-                <div class="space-y-4 mb-6">
+                <div class="mb-4 text-center">
+                    <p class="text-sm font-semibold text-gray-500">Pregunta ${currentQuestionIndex + 1} de ${totalQuestions}</p>
+                    <div class="w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                        <div class="h-full bg-blue-500" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-6 leading-relaxed">${currentQuestion.text}</h2>
+                <div class="space-y-4">
                     ${optionsHtml}
                 </div>
-
-                <div id="feedback-message" style="display: none;"></div>
-
                 <div class="flex justify-between mt-8">
-                    <button id="prev-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 ${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentQuestionIndex === 0 ? 'disabled' : ''}>
-                        Anterior
-                    </button>
-                    <button id="next-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                        ${currentQuestionIndex === quizData.length - 1 ? 'Finalizar Test' : 'Siguiente'}
+                    <button id="prev-button" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200 ${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}">Anterior</button>
+                    <button id="next-button" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200">
+                        ${currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente'}
                     </button>
                 </div>
             `;
 
-            // Añadir event listeners después de que el HTML se haya cargado
-            document.getElementById('reset-button').addEventListener('click', resetQuiz);
+            // Añadir event listeners después de renderizar el HTML
+            addEventListeners();
+        }
+
+        // Función para manejar los eventos de los botones y opciones
+        function addEventListeners() {
             document.getElementById('prev-button').addEventListener('click', () => {
-                currentQuestionIndex--;
-                saveQuizState();
-                renderQuiz();
-            });
-            document.getElementById('next-button').addEventListener('click', () => {
-                currentQuestionIndex++;
-                saveQuizState();
-                renderQuiz();
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    saveQuizState();
+                    renderQuiz();
+                }
             });
 
-            // Añadir event listeners a los radio buttons
-            document.querySelectorAll(`input[name="question-${currentQuestion.id}"]`).forEach(radio => {
+            document.getElementById('next-button').addEventListener('click', () => {
+                if (currentQuestionIndex < quizData.length - 1) {
+                    currentQuestionIndex++;
+                    saveQuizState();
+                    renderQuiz();
+                } else if (currentQuestionIndex === quizData.length - 1) {
+                    renderResults();
+                }
+            });
+
+            // Añadir event listeners a los radio buttons para capturar la respuesta
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
                 radio.addEventListener('change', (event) => {
                     const selectedOption = event.target.value;
+                    const currentQuestion = quizData[currentQuestionIndex];
                     userAnswers[currentQuestion.id] = selectedOption;
-                    saveQuizState(); // Guardar la respuesta inmediatamente
+                    saveQuizState();
 
-                    // Mostrar feedback
+                    // Mostrar feedback y la respuesta correcta si es incorrecta
                     if (selectedOption === currentQuestion.correctAnswer) {
                         showFeedback('¡Correcto!', 'correct');
                     } else {
-                        showFeedback(`Incorrecto. La respuesta correcta era: ${currentQuestion.correctAnswer.toUpperCase()}`, 'incorrect');
+                        const correctOptionText = currentQuestion.options[currentQuestion.correctAnswer];
+                        showFeedback(`Incorrecto. La respuesta correcta era: ${currentQuestion.correctAnswer.toUpperCase()}) ${correctOptionText}`, 'incorrect');
                     }
-
-                    // Re-renderizar para actualizar el estilo de la opción seleccionada
+                    
+                    // Re-renderizar para actualizar el estilo de la opción seleccionada y la correcta
                     renderQuiz();
                 });
+            });
+        }
+
+        // Función para renderizar la pantalla de resultados
+        function renderResults() {
+            const correctCount = quizData.filter(q => userAnswers[q.id] === q.correctAnswer).length;
+            const incorrectCount = quizData.filter(q => userAnswers[q.id] && userAnswers[q.id] !== q.correctAnswer).length;
+            const unansweredCount = quizData.length - (correctCount + incorrectCount);
+
+            quizContainer.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
+                    <p class="text-lg text-gray-700 mb-6">¡Has completado el cuestionario!</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="bg-green-100 p-6 rounded-xl shadow-md">
+                            <h3 class="text-xl font-bold text-green-800">Correctas</h3>
+                            <p class="text-4xl font-extrabold text-green-800 mt-2">${correctCount}</p>
+                        </div>
+                        <div class="bg-red-100 p-6 rounded-xl shadow-md">
+                            <h3 class="text-xl font-bold text-red-800">Incorrectas</h3>
+                            <p class="text-4xl font-extrabold text-red-800 mt-2">${incorrectCount}</p>
+                        </div>
+                        <div class="bg-yellow-100 p-6 rounded-xl shadow-md">
+                            <h3 class="text-xl font-bold text-yellow-800">Sin contestar</h3>
+                            <p class="text-4xl font-extrabold text-yellow-800 mt-2">${unansweredCount}</p>
+                        </div>
+                    </div>
+
+                    <button id="restart-button" class="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200">
+                        Volver a Empezar
+                    </button>
+                </div>
+            `;
+            
+            // Añadir event listener para el botón de reinicio
+            document.getElementById('restart-button').addEventListener('click', () => {
+                localStorage.removeItem('quizState');
+                currentQuestionIndex = 0;
+                userAnswers = {};
+                renderQuiz();
             });
         }
 
