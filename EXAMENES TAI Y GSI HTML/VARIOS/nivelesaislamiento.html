@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST NIVELES DE AISLAMIENTO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .option-button {
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .option-button:hover {
+            transform: translateY(-2px);
+        }
+        .option-correct {
+            background-color: #10b981 !important; /* Tailwind green-500 */
+            color: white !important;
+            border-color: #059669 !important; /* Tailwind green-600 */
+        }
+        .option-incorrect {
+            background-color: #ef4444 !important; /* Tailwind red-500 */
+            color: white !important;
+            border-color: #dc2626 !important; /* Tailwind red-600 */
+        }
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .summary-box {
+            background-color: #e5e7eb;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div id="test-container" class="container bg-white p-6 md:p-10 rounded-xl shadow-lg w-full">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEST NIVELES DE AISLAMIENTO</h1>
+        <div id="question-area"></div>
+        <div id="navigation-area" class="mt-8 flex justify-between items-center">
+            <button id="prev-button" class="nav-button bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200">Anterior</button>
+            <div id="progress-text" class="text-sm text-gray-600"></div>
+            <button id="next-button" class="nav-button bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200">Siguiente</button>
+        </div>
+        <div class="mt-4 text-center">
+            <button id="restart-button" class="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50 transition-colors duration-200">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const QUESTIONS = [
+            {
+                question: "¿Qué problema ocurre cuando una transacción lee datos que otra transacción modificó pero aún no ha confirmado, y los datos leídos pueden ser incorrectos?",
+                options: ["Lectura no repetible (Non-repeatable Read)", "Lectura sucia (Dirty Read)", "Lectura fantasma (Phantom Read)", "Bloqueo de datos (Data Locking)"],
+                answer: "Lectura sucia (Dirty Read)"
+            },
+            {
+                question: "En el nivel de aislamiento `READ UNCOMMITTED`, ¿cuáles de los siguientes problemas se permiten?",
+                options: ["Solo lectura sucia", "Lectura sucia y lectura no repetible", "Ninguno", "Lectura sucia, lectura no repetible y lectura fantasma"],
+                answer: "Lectura sucia, lectura no repetible y lectura fantasma"
+            },
+            {
+                question: "Si una transacción lee una fila y luego la lee de nuevo, pero otra transacción ya la modificó y guardó, ¿qué problema de aislamiento se ha producido?",
+                options: ["Lectura fantasma", "Lectura sucia", "Lectura no repetible", "Bloqueo muerto"],
+                answer: "Lectura no repetible"
+            },
+            {
+                question: "¿Qué nivel de aislamiento evita las 'lecturas sucias' pero permite las 'lecturas no repetibles'?",
+                options: ["SERIALIZABLE", "READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ"],
+                answer: "READ COMMITTED"
+            },
+            {
+                question: "Una transacción ejecuta una consulta `SELECT COUNT(*)` que devuelve 100 filas. Luego, otra transacción inserta 5 nuevas filas. Cuando la primera transacción vuelve a ejecutar `SELECT COUNT(*)` obtiene 105. ¿Qué problema ha ocurrido?",
+                options: ["Lectura no repetible", "Lectura sucia", "Lectura fantasma", "Bloqueo de inserción"],
+                answer: "Lectura fantasma"
+            },
+            {
+                question: "¿Qué nivel de aislamiento es el más estricto y lento, ya que evita los tres problemas de concurrencia al serializar las transacciones?",
+                options: ["READ COMMITTED", "READ UNCOMMITTED", "SERIALIZABLE", "REPEATABLE READ"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "El nivel de aislamiento `REPEATABLE READ` evita las lecturas sucias y las no repetibles. ¿Cuál de los siguientes problemas permite?",
+                options: ["Lecturas fantasmas", "Lecturas sucias", "Ambos", "Ninguno de los anteriores"],
+                answer: "Lecturas fantasmas"
+            },
+            {
+                question: "En una base de datos con nivel de aislamiento `SERIALIZABLE`, ¿cuál de los siguientes problemas de concurrencia puede ocurrir?",
+                options: ["Lecturas no repetibles", "Lecturas sucias", "Lecturas fantasmas", "Ninguno"],
+                answer: "Ninguno"
+            },
+            {
+                question: "¿Qué nivel de aislamiento es el predeterminado en la mayoría de las bases de datos SQL (como SQL Server) por su equilibrio entre rendimiento y consistencia?",
+                options: ["READ COMMITTED", "READ UNCOMMITTED", "SERIALIZABLE", "REPEATABLE READ"],
+                answer: "READ COMMITTED"
+            },
+            {
+                question: "En el escenario de la 'biblioteca', si solo puedes leer libros que ya han sido publicados, ¿qué problema estás evitando?",
+                options: ["Lectura fantasma", "Lectura sucia", "Lectura no repetible", "Bloqueo"],
+                answer: "Lectura sucia"
+            },
+            {
+                question: "Un ciberataque de tipo SQL Injection aprovecha las vulnerabilidades en las consultas SQL para manipular la base de datos. ¿Qué nivel de aislamiento podría, en teoría, mitigar (pero no prevenir) el impacto de una inyección que intenta modificar datos, al imponer bloqueos más estrictos?",
+                options: ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "Si el principal objetivo es el máximo rendimiento sin importar la consistencia de los datos, ¿qué nivel de aislamiento elegirías?",
+                options: ["SERIALIZABLE", "READ UNCOMMITTED", "REPEATABLE READ", "SNAPSHOT ISOLATION"],
+                answer: "READ UNCOMMITTED"
+            },
+            {
+                question: "En un sistema donde se realizan muchas consultas `SELECT` y las transacciones son de larga duración, pero no se modifican los datos, ¿qué problema podría surgir en un nivel de aislamiento bajo?",
+                options: ["Bloqueo mutuo", "Lectura fantasma", "Lectura sucia", "Falta de consistencia temporal"],
+                answer: "Falta de consistencia temporal"
+            },
+            {
+                question: "¿Qué nivel de aislamiento es ideal para un sistema de reportes en tiempo real donde se necesita la información más reciente, incluso si no ha sido confirmada?",
+                options: ["READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE", "READ UNCOMMITTED"],
+                answer: "READ UNCOMMITTED"
+            },
+            {
+                question: "El ataque de 'denegación de servicio' (DoS) contra una base de datos podría sobrecargarla con múltiples transacciones. Un nivel de aislamiento con muchos bloqueos, como `SERIALIZABLE`, podría empeorar este problema. ¿Qué nivel sería más resistente a este tipo de ataque por su bajo nivel de bloqueo?",
+                options: ["SERIALIZABLE", "REPEATABLE READ", "READ COMMITTED", "READ UNCOMMITTED"],
+                answer: "READ UNCOMMITTED"
+            },
+            {
+                question: "Una transacción lee una fila de la tabla `productos` con `precio > 100`. Otra transacción inserta una nueva fila que también cumple esta condición. ¿Qué nivel de aislamiento podría evitar que la primera transacción vea la nueva fila si repite la lectura?",
+                options: ["READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE", "READ UNCOMMITTED"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "El nivel `SNAPSHOT ISOLATION` evita los tres problemas de concurrencia al crear una instantánea de los datos. ¿Cuál es su principal ventaja frente a `SERIALIZABLE`?",
+                options: ["Es más lento", "Utiliza más bloqueos", "Permite mayor concurrencia", "No evita lecturas fantasmas"],
+                answer: "Permite mayor concurrencia"
+            },
+            {
+                question: "Si dos transacciones intentan actualizar la misma fila al mismo tiempo, ¿qué nivel de aislamiento podría llevar a un `deadlock` (bloqueo mutuo) con mayor probabilidad?",
+                options: ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "En el contexto de ciberseguridad, un ataque de 'ataque de carrera' (race condition) puede ocurrir cuando dos transacciones maliciosas intentan modificar el mismo dato. ¿Qué nivel de aislamiento es más efectivo para prevenir estos ataques?",
+                options: ["READ COMMITTED", "READ UNCOMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "Si un test está utilizando el nivel de aislamiento `READ UNCOMMITTED`, y una transacción actualiza el saldo de una cuenta pero luego falla y se revierte, ¿qué sucede con otra transacción que ya leyó ese saldo no confirmado?",
+                options: ["La lectura se actualiza automáticamente", "La lectura es válida", "La lectura es una 'lectura sucia' y es incorrecta", "La lectura es bloqueada"],
+                answer: "La lectura es una 'lectura sucia' y es incorrecta"
+            },
+            {
+                question: "Un analista de datos está generando un reporte mensual. La precisión no es crítica, pero la velocidad sí lo es. ¿Qué nivel de aislamiento de base de datos le recomendarías?",
+                options: ["SERIALIZABLE", "READ COMMITTED", "READ UNCOMMITTED", "REPEATABLE READ"],
+                answer: "READ UNCOMMITTED"
+            },
+            {
+                question: "En un sistema de reservas de hotel, dos transacciones intentan reservar la última habitación disponible. ¿Qué nivel de aislamiento es crucial para evitar una doble reserva?",
+                options: ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "¿Qué nivel de aislamiento se considera el más común y equilibrado, ofreciendo un buen punto medio entre rendimiento y consistencia?",
+                options: ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+                answer: "READ COMMITTED"
+            },
+            {
+                question: "Una transacción lee una fila, y después otra transacción la modifica, lo que lleva a la primera transacción a leer un dato diferente. Este problema es...",
+                options: ["Lectura sucia", "Lectura no repetible", "Lectura fantasma", "Deadlock"],
+                answer: "Lectura no repetible"
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre `SERIALIZABLE` es incorrecta?",
+                options: ["Es el nivel de aislamiento más lento", "Evita las lecturas fantasmas", "Es el nivel predeterminado en la mayoría de las bases de datos", "Actúa como si las transacciones se ejecutaran una por una"],
+                answer: "Es el nivel predeterminado en la mayoría de las bases de datos"
+            },
+            {
+                question: "Si tu aplicación necesita evitar las 'lecturas sucias' y 'lecturas no repetibles' pero las 'lecturas fantasmas' son aceptables, ¿qué nivel de aislamiento deberías usar?",
+                options: ["SERIALIZABLE", "READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ"],
+                answer: "REPEATABLE READ"
+            },
+            {
+                question: "¿Qué problema de aislamiento ocurre cuando una transacción ve una fila que no existía en su primera lectura, porque otra transacción la ha insertado?",
+                options: ["Lectura no repetible", "Lectura fantasma", "Lectura sucia", "Bloqueo mutuo"],
+                answer: "Lectura fantasma"
+            },
+            {
+                question: "En el nivel `READ UNCOMMITTED`, ¿por qué se dice que el rendimiento es alto?",
+                options: ["Porque usa muchos bloqueos", "Porque no bloquea los datos", "Porque solo lee datos confirmados", "Porque es el nivel más seguro"],
+                answer: "Porque no bloquea los datos"
+            },
+            {
+                question: "Si tu transacción realiza una operación de agregación como `AVG()` sobre un conjunto de datos, ¿qué nivel de aislamiento evitaría que el resultado cambie si otra transacción inserta o elimina datos que afectan el conjunto?",
+                options: ["READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE", "READ UNCOMMITTED"],
+                answer: "SERIALIZABLE"
+            },
+            {
+                question: "En el contexto de un sistema de votación, ¿qué nivel de aislamiento sería el más adecuado para garantizar que cada voto se contabilice una sola vez y que no haya discrepancias?",
+                options: ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+                answer: "SERIALIZABLE"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // { 0: 'a', 1: 'b' }
+        let hasAnswered = {}; // { 0: true, 1: false }
+
+        const questionArea = document.getElementById('question-area');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button');
+        const progressText = document.getElementById('progress-text');
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderQuestion();
+            updateNavigationButtons();
+        });
+
+        function saveState() {
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('hasAnswered', JSON.stringify(hasAnswered));
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+        }
+
+        function loadState() {
+            try {
+                const storedAnswers = localStorage.getItem('userAnswers');
+                if (storedAnswers) {
+                    userAnswers = JSON.parse(storedAnswers);
+                }
+
+                const storedHasAnswered = localStorage.getItem('hasAnswered');
+                if (storedHasAnswered) {
+                    hasAnswered = JSON.parse(storedHasAnswered);
+                }
+
+                const storedIndex = localStorage.getItem('currentQuestionIndex');
+                if (storedIndex) {
+                    currentQuestionIndex = parseInt(storedIndex);
+                }
+            } catch (e) {
+                console.error("Error loading from localStorage:", e);
+                resetTest();
+            }
+        }
+
+        function resetTest() {
+            localStorage.clear();
+            userAnswers = {};
+            hasAnswered = {};
+            currentQuestionIndex = 0;
+            renderQuestion();
+            updateNavigationButtons();
+        }
+
+        function renderQuestion() {
+            questionArea.innerHTML = '';
+            if (currentQuestionIndex >= QUESTIONS.length) {
+                showResults();
+                return;
+            }
+
+            const qData = QUESTIONS[currentQuestionIndex];
+            
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('text-lg', 'md:text-xl', 'font-semibold', 'text-gray-900', 'mb-6');
+            questionDiv.textContent = `${currentQuestionIndex + 1}. ${qData.question}`;
+            questionArea.appendChild(questionDiv);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.classList.add('space-y-4');
+            qData.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button', 'w-full', 'text-left', 'p-3', 'rounded-lg', 'border-2', 'border-gray-300', 'bg-gray-50', 'text-gray-700', 'hover:bg-gray-200', 'focus:outline-none');
+                
+                button.dataset.option = option;
+                button.addEventListener('click', () => handleAnswer(option));
+                optionsDiv.appendChild(button);
+            });
+            questionArea.appendChild(optionsDiv);
+
+            // Restore previous selection if exists
+            const prevAnswer = userAnswers[currentQuestionIndex];
+            if (prevAnswer) {
+                const selectedButton = optionsDiv.querySelector(`[data-option="${prevAnswer}"]`);
+                if (selectedButton) {
+                    // Visually update the button
+                    handleVisualFeedback(prevAnswer, qData.answer);
+                }
+            }
+        }
+
+        function handleAnswer(selectedOption) {
+            if (hasAnswered[currentQuestionIndex]) {
+                // Already answered, do not change
+                return;
+            }
+
+            userAnswers[currentQuestionIndex] = selectedOption;
+            hasAnswered[currentQuestionIndex] = true;
+
+            const correctAnswer = QUESTIONS[currentQuestionIndex].answer;
+            handleVisualFeedback(selectedOption, correctAnswer);
+            
+            saveState();
+        }
+
+        function handleVisualFeedback(selectedOption, correctAnswer) {
+            const buttons = questionArea.querySelectorAll('.option-button');
+            buttons.forEach(button => {
+                const option = button.dataset.option;
+                button.disabled = true; // Disable all buttons after answering
+                if (option === correctAnswer) {
+                    button.classList.add('option-correct');
+                } else if (option === selectedOption) {
+                    button.classList.add('option-incorrect');
+                }
+            });
+        }
+
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unansweredCount = 0;
+
+            for (let i = 0; i < QUESTIONS.length; i++) {
+                const userAnswer = userAnswers[i];
+                if (userAnswer === undefined) {
+                    unansweredCount++;
+                } else if (userAnswer === QUESTIONS[i].answer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            }
+
+            questionArea.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
+                    <div class="space-y-4 text-left p-6 summary-box">
+                        <p class="text-lg font-semibold text-green-700">Respuestas Correctas: <span class="font-bold">${correctCount}</span></p>
+                        <p class="text-lg font-semibold text-red-700">Respuestas Incorrectas: <span class="font-bold">${incorrectCount}</span></p>
+                        <p class="text-lg font-semibold text-gray-700">Preguntas Sin Contestar: <span class="font-bold">${unansweredCount}</span></p>
+                    </div>
+                </div>
+            `;
+            // Hide navigation buttons on results page
+            prevButton.style.display = 'none';
+            nextButton.style.display = 'none';
+            progressText.style.display = 'none';
+        }
+        
+        function updateNavigationButtons() {
+            const isLastQuestion = currentQuestionIndex >= QUESTIONS.length - 1;
+            const isFirstQuestion = currentQuestionIndex === 0;
+
+            prevButton.disabled = isFirstQuestion;
+            nextButton.textContent = isLastQuestion ? 'Finalizar' : 'Siguiente';
+            progressText.textContent = `Pregunta ${currentQuestionIndex + 1} de ${QUESTIONS.length}`;
+            
+            if (currentQuestionIndex >= QUESTIONS.length) {
+                prevButton.style.display = 'none';
+                nextButton.style.display = 'none';
+                progressText.style.display = 'none';
+            } else {
+                 prevButton.style.display = 'inline-block';
+                 nextButton.style.display = 'inline-block';
+                 progressText.style.display = 'block';
+            }
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveState();
+                renderQuestion();
+                updateNavigationButtons();
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            saveState();
+            renderQuestion();
+            updateNavigationButtons();
+        });
+
+        restartButton.addEventListener('click', resetTest);
+
+    </script>
+</body>
+</html>
