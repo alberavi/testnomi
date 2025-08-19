@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST CPDs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .question-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .answer-button {
+            border-radius: 0.75rem;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+            display: block; /* Asegura que cada botón esté en su propia línea */
+            width: 100%; /* Ocupa el 100% del ancho del contenedor */
+            margin-bottom: 0.5rem; /* Espacio entre las respuestas */
+        }
+        .answer-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .answer-button.correct {
+            background-color: #a7f3d0; /* Un verde más oscuro */
+            border-color: #10b981;
+            color: #064e3b;
+        }
+        .answer-button.incorrect {
+            background-color: #fecaca; /* Un rojo más oscuro */
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+        .answer-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+<div id="quiz-app" class="container mx-auto">
+    <header class="text-center mb-8">
+
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEST CPDs</h1>
+    </header>
+
+    <main id="quiz-container" class="space-y-6">
+        <!-- Contenedor para las preguntas -->
+    </main>
+    
+    <div id="results-container" class="hidden mt-8 text-center p-6 bg-white rounded-xl shadow-lg">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
+        <p class="text-lg text-green-600 font-semibold">Correctas: <span id="correct-count">0</span></p>
+        <p class="text-lg text-red-600 font-semibold">Incorrectas: <span id="incorrect-count">0</span></p>
+        <p class="text-lg text-gray-500 font-semibold">Sin contestar: <span id="unanswered-count">0</span></p>
+        <button id="restart-test-results" class="mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+            Reiniciar Test
+        </button>
+    </div>
+
+    <div class="flex justify-between items-center mt-6">
+        <button id="previous-question" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition-colors">
+            Pregunta Anterior
+        </button>
+        <button id="restart-test" class="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors">
+            Reiniciar Test
+        </button>
+        <button id="next-question" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+            Siguiente Pregunta
+        </button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Objeto con las preguntas y respuestas
+        const questions = [
+            {
+                question: "¿Cuál es el nombre actual de los niveles de certificación de un CPD que antes se conocían como TIER?",
+                answers: ["ISO/IEC 27001", "Norma TIA 942", "Anexo A de la ISO 27001", "La certificación TIER sigue vigente, no ha cambiado de nombre"],
+                correct: "Norma TIA 942"
+            },
+            {
+                question: "Según la norma TIA 942, ¿qué nivel de CPD no permite ninguna parada por mantenimiento al año?",
+                answers: ["Nivel I", "Nivel II", "Nivel III y IV", "Todos permiten una parada programada al año"],
+                correct: "Nivel III y IV"
+            },
+            {
+                question: "En un CPD, el término PUE se refiere a:",
+                answers: ["Una herramienta de gestión de incidencias", "La eficiencia energética de un CPD", "Un sistema de alimentación ininterrumpida (SAI)", "El sistema de seguridad física"],
+                correct: "La eficiencia energética de un CPD"
+            },
+            {
+                question: "¿Qué indicador de eficiencia de un CPD debe tender a 0?",
+                answers: ["PUE", "DCIE", "WUE", "CUE"],
+                correct: "CUE"
+            },
+            {
+                question: "Para los CPD, la alternancia de pasillos fríos y calientes es una técnica de:",
+                answers: ["Sistemas de cableado estructurado", "Control de acceso", "Refrigeración y climatización", "Distribución de energía"],
+                correct: "Refrigeración y climatización"
+            },
+            {
+                question: "La norma TIA 942 define cuatro subsistemas principales para un datacenter. ¿Cuál no es uno de ellos?",
+                answers: ["Telecomunicaciones", "Arquitectura", "Seguridad lógica", "Sistema mecánico"],
+                correct: "Seguridad lógica"
+            },
+            {
+                question: "En un CPD de Nivel IV, ¿cuál es el nivel de redundancia de los componentes según los apuntes?",
+                answers: ["N+1", "Ninguno", "2 (N+1) Todo está duplicado", "N+2"],
+                correct: "2 (N+1) Todo está duplicado"
+            },
+            {
+                question: "¿Qué herramienta se utiliza para activar la interrupción del sistema de energía de emergencia en un CPD?",
+                answers: ["PUE", "EPO", "SAI", "HVAC"],
+                correct: "EPO"
+            },
+            {
+                question: "La medida de altura de un rack o bastidor se conoce como:",
+                answers: ["Pulgada", "Centímetro", "Unidad (u)", "Pie"],
+                correct: "Unidad (u)"
+            },
+            {
+                question: "¿Cuál es la temperatura y humedad recomendadas para un CPD según los apuntes?",
+                answers: ["18ºC con 60% HR", "21ºC con 50% HR", "25ºC con 40% HR", "Temperatura ambiente y humedad baja"],
+                correct: "21ºC con 50% HR"
+            },
+            {
+                question: "¿Qué significan las siglas 'PUE'?",
+                answers: ["Power Usage Effectiveness", "Performance Under Efficiency", "Power Utility Exchange", "Physical Unit of Energy"],
+                correct: "Power Usage Effectiveness"
+            },
+            {
+                question: "Un CPD de Nivel I tiene una disponibilidad anual de:",
+                answers: ["99,995%", "99,671%", "99,982%", "99,741%"],
+                correct: "99,671%"
+            },
+            {
+                question: "¿Cuántas horas de inactividad anual tiene un CPD de Nivel IV?",
+                answers: ["28,8 h", "22 h", "1,6 h", "0,4 h"],
+                correct: "0,4 h"
+            },
+            {
+                question: "Un CPD de Nivel III tiene una distribución de energía de:",
+                answers: ["Única", "Única y con backup", "1 activa y 1 pasiva (backup)", "2 activas"],
+                correct: "1 activa y 1 pasiva (backup)"
+            },
+            {
+                question: "Según los apuntes, un CPD de Nivel II tiene 'Paradas por mantenimiento' de:",
+                answers: ["Ninguna", "2 al año de 12 h", "3 cada 2 años de 12 h", "1 cada 5 años"],
+                correct: "3 cada 2 años de 12 h"
+            },
+            {
+                question: "En el contexto de Green Computing, ¿qué significa WUE?",
+                answers: ["Waste Utilization Efficiency", "Water Usage Effectiveness", "Wind Up Efficiency", "Watt Usage Effectiveness"],
+                correct: "Water Usage Effectiveness"
+            },
+            {
+                question: "Según los apuntes, ¿qué significado tiene la sigla 'DCIE'?",
+                answers: ["Data Center Infrastructure Efficiency", "Direct Cooling Inlet Effectiveness", "Disaster Control and Incident Efficency", "Data Control and Information Encryption"],
+                correct: "Data Center Infrastructure Efficiency"
+            },
+            {
+                question: "¿Qué es el 'Green Computing'?",
+                answers: ["El uso de energías renovables", "El diseño de hardware para un menor consumo energético", "El uso eficiente de los recursos informáticos y la reducción del impacto ambiental", "La gestión de residuos electrónicos"],
+                correct: "El uso eficiente de los recursos informáticos y la reducción del impacto ambiental"
+            },
+            {
+                question: "¿Qué medida de eficiencia energética se utiliza para evaluar el aprovechamiento de la energía en un CPD?",
+                answers: ["PUE", "ERE", "CUE", "WUE"],
+                correct: "ERE"
+            },
+            {
+                question: "Según la norma TIA 942, ¿qué subsistema de un CPD se encarga de la climatización y la extinción de incendios?",
+                answers: ["Sistema de telecomunicaciones", "Arquitectura", "Sistema eléctrico", "Sistema mecánico"],
+                correct: "Sistema mecánico"
+            },
+            {
+                question: "¿Qué nivel de CPD, según la norma TIA 942, tiene una distribución de energía de '2 activas'?",
+                answers: ["Nivel I", "Nivel II", "Nivel III", "Nivel IV"],
+                correct: "Nivel IV"
+            },
+            {
+                question: "¿Qué es el 'DCIE'?",
+                answers: ["La eficiencia del centro de datos", "Data Control and Information Encryption", "Direct Cooling Inlet Effectiveness", "Disaster Control and Incident Efficiency"],
+                correct: "La eficiencia del centro de datos"
+            },
+            {
+                question: "¿Cuál es el propósito del 'EPO' en un CPD?",
+                answers: ["Monitorear el consumo eléctrico", "Proporcionar energía de emergencia", "Activar la interrupción del sistema de energía de emergencia", "Optimizar la refrigeración"],
+                correct: "Activar la interrupción del sistema de energía de emergencia"
+            },
+            {
+                question: "El indicador de eficiencia 'OCE' se refiere a:",
+                answers: ["Overall Consumption Effectiveness", "Operating Coolant Efficiency", "Overall Cabling Excellence", "Output Capacity Evaluation"],
+                correct: "Overall Consumption Effectiveness"
+            },
+            {
+                question: "¿Qué tipo de distribución de energía tiene un CPD de Nivel I?",
+                answers: ["Doble", "Con redundancia N+1", "Única", "Múltiple"],
+                correct: "Única"
+            },
+            {
+                question: "¿Cuántas horas de inactividad anual tiene un CPD de Nivel II?",
+                answers: ["0,4 h", "1,6 h", "22 h", "28,8 h"],
+                correct: "22 h"
+            },
+            {
+                question: "¿Qué nivel de CPD tiene una redundancia de componentes de N+1?",
+                answers: ["Nivel I", "Nivel II", "Nivel IV", "Nivel II y III"],
+                correct: "Nivel II y III"
+            },
+            {
+                question: "¿Qué medida de eficiencia energética se relaciona con el uso del agua en un CPD?",
+                answers: ["PUE", "ERE", "CUE", "WUE (Water Usage Effectiveness)"],
+                correct: "WUE (Water Usage Effectiveness)"
+            },
+            {
+                question: "La principal diferencia entre un CPD de Nivel III y uno de Nivel IV es...",
+                answers: ["La distribución de energía", "El número de paradas por mantenimiento", "La disponibilidad anual", "La redundancia total en el Nivel IV, con todo duplicado"],
+                correct: "La redundancia total en el Nivel IV, con todo duplicado"
+            },
+            {
+                question: "El valor de un PUE de 1.0 indica...",
+                answers: ["La máxima eficiencia energética posible", "El doble de consumo de la parte informática", "Un consumo ineficiente", "Que el sistema está apagado"],
+                correct: "La máxima eficiencia energética posible"
+            },
+            {
+                question: "En la arquitectura de un CPD, ¿qué elemento se encarga de la alimentación ininterrumpida?",
+                answers: ["El sistema de refrigeración", "El generador diesel", "El SAI (Sistema de Alimentación Ininterrumpida)", "El cableado estructurado"],
+                correct: "El SAI (Sistema de Alimentación Ininterrumpida)"
+            },
+            {
+                question: "Un CPD que soporta una parada por mantenimiento programada de 28.8h al año corresponde a un nivel...",
+                answers: ["Nivel IV", "Nivel III", "Nivel II", "Nivel I"],
+                correct: "Nivel I"
+            },
+            {
+                question: "¿Qué es el 'DCIE'?",
+                answers: ["La eficiencia del CPD. DCIE = Consumo de la parte informática / Potencia.", "La eficiencia de los consumos totales.", "La eficiencia del uso del agua.", "El aprovechamiento de la energía."],
+                correct: "La eficiencia del CPD. DCIE = Consumo de la parte informática / Potencia."
+            },
+            {
+                question: "¿Cuál de las siguientes afirmaciones sobre los CPD de Nivel I y II es correcta?",
+                answers: ["Ambos tienen una distribución de energía única.", "El Nivel II permite más tiempo de inactividad.", "Solo el Nivel I requiere paradas por mantenimiento.", "Ambos tienen redundancia completa."],
+                correct: "Ambos tienen una distribución de energía única."
+            },
+            {
+                question: "Para la refrigeración de un CPD, la clave es gestionar adecuadamente el aire...",
+                answers: ["Húmedo", "Caliente y frío, evitando su mezcla", "Seco", "En los pasillos de servicio"],
+                correct: "Caliente y frío, evitando su mezcla"
+            },
+            {
+                question: "¿Qué es la seguridad física en un CPD?",
+                answers: ["Proteger la red de ataques externos", "Proteger el hardware y el personal de acceso no autorizado", "Gestionar el acceso a los datos", "Realizar copias de seguridad de la información"],
+                correct: "Proteger el hardware y el personal de acceso no autorizado"
+            },
+            {
+                question: "En un CPD, el sistema de extinción de incendios por gas inerte (ej. FM-200, Novec 1230) se utiliza para...",
+                answers: ["Evitar daños en el equipo electrónico", "Enfriar los racks de servidores", "Generar energía en caso de fallo", "Proteger la infraestructura de telecomunicaciones"],
+                correct: "Evitar daños en el equipo electrónico"
+            },
+            {
+                question: "¿Cuál es la función principal de los generadores eléctricos en un CPD?",
+                answers: ["Reducir el consumo de energía en horas pico", "Proporcionar una fuente de energía secundaria en caso de un fallo prolongado de la red eléctrica", "Regular la tensión de la red", "Controlar la temperatura y humedad"],
+                correct: "Proporcionar una fuente de energía secundaria en caso de un fallo prolongado de la red eléctrica"
+            },
+            {
+                question: "¿Qué sistema se utiliza para monitorear y gestionar los servicios de un CPD, como el aire acondicionado y la energía, desde una ubicación centralizada?",
+                answers: ["SCADA (Supervisory Control and Data Acquisition)", "BMS (Building Management System)", "CCTV (Closed-Circuit Television)", "Firewall"],
+                correct: "BMS (Building Management System)"
+            },
+            {
+                question: "¿Cuál de los siguientes roles es responsable de la operación diaria y el mantenimiento de la infraestructura de un CPD?",
+                answers: ["Ingeniero de Software", "Administrador de Base de Datos", "Técnico de CPD o de Operaciones", "Especialista en Ciberseguridad"],
+                correct: "Técnico de CPD o de Operaciones"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let unansweredQuestions = 0;
+        let testState = {};
+
+        const quizContainer = document.getElementById('quiz-container');
+        const nextButton = document.getElementById('next-question');
+        const previousButton = document.getElementById('previous-question');
+        const restartButton = document.getElementById('restart-test');
+        const restartResultsButton = document.getElementById('restart-test-results');
+        const resultsContainer = document.getElementById('results-container');
+        const appContainer = document.getElementById('quiz-app');
+
+        // Inicializar el test y cargar el estado del localStorage
+        function initializeTest() {
+            const savedState = JSON.parse(localStorage.getItem('testState'));
+            if (savedState) {
+                testState = savedState;
+                currentQuestionIndex = testState.currentQuestionIndex;
+                correctAnswers = testState.correctAnswers;
+                incorrectAnswers = testState.incorrectAnswers;
+            } else {
+                testState = {
+                    answers: Array(questions.length).fill(null),
+                    currentQuestionIndex: 0,
+                    correctAnswers: 0,
+                    incorrectAnswers: 0
+                };
+                saveState();
+            }
+            renderQuestion();
+        }
+
+        // Guardar el estado actual del test en localStorage
+        function saveState() {
+            localStorage.setItem('testState', JSON.stringify(testState));
+        }
+
+        // Renderizar la pregunta actual
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResults();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div id="question-card" class="question-card">
+                    <div class="mb-4">
+                        <p class="text-xl font-bold text-gray-700">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</p>
+                    </div>
+                    <p class="text-2xl font-semibold text-gray-900 mb-6">${q.question}</p>
+                    <div id="answers-container" class="grid grid-cols-1 gap-4">
+                        ${q.answers.map((answer, index) => `
+                            <button 
+                                class="answer-button bg-gray-50 text-gray-800 p-4 border border-gray-200 text-left hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                data-answer="${answer}"
+                                data-index="${index}"
+                            >
+                                ${String.fromCharCode(97 + index)}) ${answer}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // Re-aplicar el estado de la respuesta si ya se ha contestado
+            const savedAnswer = testState.answers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                const buttons = document.querySelectorAll('.answer-button');
+                buttons.forEach(button => {
+                    button.disabled = true;
+                    if (button.dataset.answer === q.correct) {
+                        button.classList.add('correct');
+                    } else if (button.dataset.answer === savedAnswer) {
+                        button.classList.add('incorrect');
+                    }
+                });
+            }
+
+            // Ocultar/mostrar botón de pregunta anterior
+            if (currentQuestionIndex === 0) {
+                previousButton.style.display = 'none';
+            } else {
+                previousButton.style.display = 'block';
+            }
+
+            document.getElementById('answers-container').addEventListener('click', handleAnswerClick);
+        }
+
+        // Manejar la selección de una respuesta
+        function handleAnswerClick(event) {
+            const target = event.target.closest('button');
+            if (!target || target.disabled) return;
+
+            const selectedAnswer = target.dataset.answer;
+            const currentQuestion = questions[currentQuestionIndex];
+            
+            // Deshabilitar todos los botones para esta pregunta
+            const buttons = document.querySelectorAll('.answer-button');
+            buttons.forEach(button => button.disabled = true);
+
+            // Marcar la respuesta seleccionada y la correcta
+            const isCorrect = selectedAnswer === currentQuestion.correct;
+            if (isCorrect) {
+                target.classList.add('correct');
+                if (testState.answers[currentQuestionIndex] === null) {
+                    testState.correctAnswers++;
+                }
+            } else {
+                target.classList.add('incorrect');
+                const correctButton = Array.from(buttons).find(btn => btn.dataset.answer === currentQuestion.correct);
+                if (correctButton) {
+                    correctButton.classList.add('correct');
+                }
+                if (testState.answers[currentQuestionIndex] === null) {
+                    testState.incorrectAnswers++;
+                }
+            }
+
+            testState.answers[currentQuestionIndex] = selectedAnswer;
+            saveState();
+        }
+
+        // Mostrar los resultados finales
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            previousButton.classList.add('hidden');
+            restartButton.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            unansweredQuestions = questions.length - testState.correctAnswers - testState.incorrectAnswers;
+
+            document.getElementById('correct-count').textContent = testState.correctAnswers;
+            document.getElementById('incorrect-count').textContent = testState.incorrectAnswers;
+            document.getElementById('unanswered-count').textContent = unansweredQuestions;
+        }
+
+        // Ir a la siguiente pregunta
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            testState.currentQuestionIndex = currentQuestionIndex;
+            saveState();
+            renderQuestion();
+        });
+
+        // Ir a la pregunta anterior
+        previousButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                testState.currentQuestionIndex = currentQuestionIndex;
+                saveState();
+                renderQuestion();
+            }
+        });
+
+        // Reiniciar el test
+        function resetTest() {
+            localStorage.removeItem('testState');
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+            unansweredQuestions = 0;
+            testState = {
+                answers: Array(questions.length).fill(null),
+                currentQuestionIndex: 0,
+                correctAnswers: 0,
+                incorrectAnswers: 0
+            };
+            saveState();
+            
+            quizContainer.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            previousButton.classList.remove('hidden');
+            restartButton.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            
+            renderQuestion();
+        }
+
+        restartButton.addEventListener('click', resetTest);
+        restartResultsButton.addEventListener('click', resetTest);
+
+        // Iniciar la aplicación
+        initializeTest();
+    });
+</script>
+
+</body>
+</html>
