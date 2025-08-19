@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST COMANDOS BBDD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+        }
+        .incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+        }
+        .correct-answer-shown {
+            background-color: #d1fae5;
+            border-color: #34d399;
+        }
+        .correct-answer-shown .text-gray-700 {
+            color: #065f46;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="quiz-container" class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl text-center flex flex-col items-center">
+       
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEST COMANDOS ADMIN BBDD</h1>
+        <!-- Contenedor de la pregunta -->
+        <div id="question-card" class="w-full">
+            <div id="question-text" class="text-xl font-medium mb-6 text-gray-700"></div>
+            <div id="options-container" class="flex flex-col gap-4 mb-6"></div>
+            <div id="feedback" class="mb-4 text-sm font-semibold"></div>
+            <div id="controls" class="flex flex-wrap justify-center sm:justify-between items-center w-full gap-4">
+                <button id="restart-button-top" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Reiniciar Test</button>
+                <div class="flex gap-4">
+                    <button id="prev-button" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50" disabled>Anterior</button>
+                    <button id="next-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Siguiente</button>
+                </div>
+            </div>
+            <div id="status" class="text-gray-500 font-medium mt-4"></div>
+        </div>
+
+        <!-- Contenedor de los resultados -->
+        <div id="results-card" class="w-full hidden">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Resultados del Test</h2>
+            <div class="space-y-2 mb-6 text-left">
+                <p class="text-lg font-semibold text-green-600">Correctas: <span id="correct-count" class="font-bold"></span></p>
+                <p class="text-lg font-semibold text-red-600">Incorrectas: <span id="incorrect-count" class="font-bold"></span></p>
+                <p class="text-lg font-semibold text-gray-600">Sin contestar: <span id="unanswered-count" class="font-bold"></span></p>
+            </div>
+            <button id="restart-button-bottom" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const questions = [
+                {
+                    question: "¿Qué comando se usa en MySQL para mostrar las bases de datos disponibles en el servidor?",
+                    options: [
+                        "SHOW DATABASES;",
+                        "SELECT * FROM all_databases;",
+                        "LIST DATABASES;",
+                        "GET DATABASES;"
+                    ],
+                    correctAnswer: "SHOW DATABASES;"
+                },
+                {
+                    question: "¿Qué comando se usa en MySQL para realizar una copia de seguridad de una base de datos?",
+                    options: [
+                        "mysqlbackup --all-databases > backup.sql",
+                        "mysqldump --databases -u root -p [db_name] > backup.sql",
+                        "backupdb [db_name] > backup.sql",
+                        "dump database [db_name] to backup.sql"
+                    ],
+                    correctAnswer: "mysqldump --databases -u root -p [db_name] > backup.sql"
+                },
+                {
+                    question: "¿Qué comando se usa para restaurar un backup en MySQL?",
+                    options: [
+                        "mysql -u [usuario] -p [db_name] < fichero.sql",
+                        "restore -u [usuario] -p [db_name] < fichero.sql",
+                        "mysqlrestore -u [usuario] -p [db_name] < fichero.sql",
+                        "mysql -u [usuario] -p [db_name] --restore fichero.sql"
+                    ],
+                    correctAnswer: "mysql -u [usuario] -p [db_name] < fichero.sql"
+                },
+                {
+                    question: "¿Cuál es el puerto predeterminado de Oracle?",
+                    options: [
+                        "3306",
+                        "1433",
+                        "5432",
+                        "1521"
+                    ],
+                    correctAnswer: "1521"
+                },
+                {
+                    question: "¿Qué comando se utiliza en PostgreSQL para realizar una copia de seguridad de todas las bases de datos?",
+                    options: [
+                        "pg_dumpall > fichero.bkp",
+                        "postgresdump --all > fichero.bkp",
+                        "backupdball > fichero.bkp",
+                        "psql --all > fichero.bkp"
+                    ],
+                    correctAnswer: "pg_dumpall > fichero.bkp"
+                },
+                {
+                    question: "¿Qué comando se utiliza en PostgreSQL para restaurar un backup?",
+                    options: [
+                        "restore -d [db_name] < fichero.bkp",
+                        "pg_restore -d [db_name] < fichero.bkp",
+                        "psql [db_name] < fichero.bkp",
+                        "psql -d [db_name] < fichero.bkp"
+                    ],
+                    correctAnswer: "psql [db_name] < fichero.bkp"
+                },
+                {
+                    question: "¿Qué comando se utiliza en Oracle para crear un usuario?",
+                    options: [
+                        "CREATE USER nominas_owner;",
+                        "ADD USER nominas_owner;",
+                        "NEW USER nominas_owner;",
+                        "GRANT USER nominas_owner;"
+                    ],
+                    correctAnswer: "CREATE USER nominas_owner;"
+                },
+                {
+                    question: "¿Qué comando se utiliza para crear un tablespace en Oracle?",
+                    options: [
+                        "CREATE TABLESPACE ts_data DATAFILE '/path/to/file.dbf';",
+                        "CREATE TABLESPACE ts_data FROM DATAFILE '/path/to/file.dbf';",
+                        "NEW TABLESPACE ts_data DATAFILE '/path/to/file.dbf';",
+                        "ADD TABLESPACE ts_data DATAFILE '/path/to/file.dbf';"
+                    ],
+                    correctAnswer: "CREATE TABLESPACE ts_data DATAFILE '/path/to/file.dbf';"
+                },
+                {
+                    question: "¿Qué comando se usa en SQL Server para realizar un backup de la base de datos?",
+                    options: [
+                        "BACKUP DATABASE [db_name] TO DISK = 'C:\\backup\\file.bak';",
+                        "CREATE BACKUP [db_name] TO DISK = 'C:\\backup\\file.bak';",
+                        "DUMP DATABASE [db_name] TO 'C:\\backup\\file.bak';",
+                        "EXPORT [db_name] TO 'C:\\backup\\file.bak';"
+                    ],
+                    correctAnswer: "BACKUP DATABASE [db_name] TO DISK = 'C:\\backup\\file.bak';"
+                },
+                {
+                    question: "¿Qué comando se usa en SQL Server para restaurar un backup?",
+                    options: [
+                        "RESTORE DATABASE [db_name] FROM DISK = 'C:\\backup\\file.bak';",
+                        "RESTORE [db_name] FROM 'C:\\backup\\file.bak';",
+                        "IMPORT DATABASE [db_name] FROM 'C:\\backup\\file.bak';",
+                        "LOAD DATABASE [db_name] FROM 'C:\\backup\\file.bak';"
+                    ],
+                    correctAnswer: "RESTORE DATABASE [db_name] FROM DISK = 'C:\\backup\\file.bak';"
+                },
+                {
+                    question: "¿Qué comando se usa en PostgreSQL para limpiar y analizar una base de datos, recuperando almacenamiento de tuplas muertas?",
+                    options: [
+                        "CLEANDB;",
+                        "VACUUMDB;",
+                        "ANALYZE;",
+                        "REPAIRDB;"
+                    ],
+                    correctAnswer: "VACUUMDB;"
+                },
+                {
+                    question: "¿Qué proceso de Oracle escribe en los logs, los archivos redo log?",
+                    options: [
+                        "DBWn",
+                        "LGWR",
+                        "PGA",
+                        "SGA"
+                    ],
+                    correctAnswer: "LGWR"
+                },
+                {
+                    question: "En MySQL, ¿qué motor de almacenamiento no soporta transacciones y no asegura ACID?",
+                    options: [
+                        "InnoDB",
+                        "XtraDB",
+                        "MyISAM",
+                        "Memory"
+                    ],
+                    correctAnswer: "MyISAM"
+                },
+                {
+                    question: "¿Qué se utiliza en Oracle para agrupar segmentos/objetos y puede guardarse en uno o varios ficheros?",
+                    options: [
+                        "Segmentos",
+                        "Tablespaces",
+                        "Bloques",
+                        "Extensión"
+                    ],
+                    correctAnswer: "Tablespaces"
+                },
+                {
+                    question: "¿Cuál de los siguientes es un rol del DBA?",
+                    options: [
+                        "Creación de usuarios/roles.",
+                        "Instalación y mantenimiento del SGBD.",
+                        "Creación de políticas de backup y restauración.",
+                        "Todas las anteriores."
+                    ],
+                    correctAnswer: "Todas las anteriores."
+                },
+                {
+                    question: "¿Qué comando de MySQL muestra lo que se está ejecutando en la base de datos?",
+                    options: [
+                        "SHOW PROCESSLIST;",
+                        "SHOW CONNECTIONS;",
+                        "SHOW QUERIES;",
+                        "SHOW ACTIVE;"
+                    ],
+                    correctAnswer: "SHOW PROCESSLIST;"
+                },
+                {
+                    question: "¿Qué comando se utiliza en PostgreSQL para crear un rol con capacidad de login?",
+                    options: [
+                        "CREATE ROLE nombre LOGIN;",
+                        "CREATE USER nombre;",
+                        "ADD ROLE nombre LOGIN;",
+                        "NEW USER nombre;"
+                    ],
+                    correctAnswer: "CREATE ROLE nombre LOGIN;"
+                },
+                {
+                    question: "¿Cuál es el puerto predeterminado de SQL Server?",
+                    options: [
+                        "3306",
+                        "1433",
+                        "5432",
+                        "1521"
+                    ],
+                    correctAnswer: "1433"
+                },
+                {
+                    question: "¿Qué comando se utiliza en PostgreSQL para reindexar las tablas de la base de datos?",
+                    options: [
+                        "reindexdb;",
+                        "rebuild index;",
+                        "reindex database;",
+                        "pg_reindex;"
+                    ],
+                    correctAnswer: "reindexdb;"
+                },
+                {
+                    question: "Para realizar una copia remota de una base de datos en PostgreSQL, ¿cuál de los siguientes comandos es el correcto?",
+                    options: [
+                        "pg_dump -U user -h host -p port nombre_bd > fichero.bkp",
+                        "pg_dumpall -U user -h host -p port nombre_bd > fichero.bkp",
+                        "psql -U user -h host -p port nombre_bd > fichero.bkp",
+                        "dumpdb -U user -h host -p port nombre_bd > fichero.bkp"
+                    ],
+                    correctAnswer: "pg_dump -U user -h host -p port nombre_bd > fichero.bkp"
+                },
+                {
+                    question: "¿Qué comando se usa en PostgreSQL para iniciar o detener el servicio de la base de datos?",
+                    options: [
+                        "pg_ctl start/stop",
+                        "systemctl start/stop postgresql",
+                        "pg_control start/stop",
+                        "pg_service start/stop"
+                    ],
+                    correctAnswer: "pg_ctl systemctl start/stop postgres"
+                },
+                {
+                    question: "En Oracle, ¿qué lenguaje de procedimientos almacenados se utiliza?",
+                    options: [
+                        "Transact-SQL",
+                        "PL/SQL",
+                        "SQL/PSM",
+                        "PG/SQL"
+                    ],
+                    correctAnswer: "PL/SQL"
+                },
+                {
+                    question: "En SQL Server, ¿qué nombre recibe el lenguaje de procedimientos almacenados?",
+                    options: [
+                        "Transact-SQL",
+                        "PL/SQL",
+                        "SQL/PSM",
+                        "PG/SQL"
+                    ],
+                    correctAnswer: "Transact-SQL"
+                },
+                {
+                    question: "¿Qué fichero de configuración de PostgreSQL contiene las opciones de usuario y sus métodos de autenticación?",
+                    options: [
+                        "/etc/postgresql/9.6/main/postgresql.conf",
+                        "/etc/pg_hba.conf",
+                        "/etc/pg_config.conf",
+                        "/etc/postgresql.conf"
+                    ],
+                    correctAnswer: "/etc/pg_hba.conf"
+                },
+                {
+                    question: "En Oracle, ¿qué proceso es responsable de escribir los datos en los ficheros físicos/data files?",
+                    options: [
+                        "LGWR",
+                        "DBWn",
+                        "SGA",
+                        "PGA"
+                    ],
+                    correctAnswer: "DBWn"
+                },
+                {
+                    question: "¿Qué nombre recibe el proceso en Oracle que está constantemente escuchando las peticiones de los clientes?",
+                    options: [
+                        "SGA",
+                        "PGA",
+                        "DBWn",
+                        "Listener"
+                    ],
+                    correctAnswer: "Listener"
+                },
+                {
+                    question: "En el modelo de concurrencia avanzado MVCC de PostgreSQL, ¿qué tiene cada transacción para operar sobre los datos?",
+                    options: [
+                        "Su propio bloqueo exclusivo",
+                        "Su propia foto de los datos",
+                        "Acceso directo al fichero de datos",
+                        "Un buffer compartido"
+                    ],
+                    correctAnswer: "Su propia foto de los datos"
+                },
+                {
+                    question: "¿Qué comando se utiliza en MySQL para crear una base de datos?",
+                    options: [
+                        "CREATE DATABASE;",
+                        "CREATE DB [db_name];",
+                        "CREATE SCHEMA [db_name];",
+                        "CREATE DATABASE [db_name];"
+                    ],
+                    correctAnswer: "CREATE DATABASE [db_name];"
+                },
+                {
+                    question: "¿Qué comando se utiliza en SQL para eliminar una tabla?",
+                    options: [
+                        "DELETE TABLE [table_name];",
+                        "DROP TABLE [table_name];",
+                        "REMOVE TABLE [table_name];",
+                        "TRUNCATE TABLE [table_name];"
+                    ],
+                    correctAnswer: "DROP TABLE [table_name];"
+                },
+                {
+                    question: "¿Qué comando SQL se usa para modificar la estructura de una tabla existente?",
+                    options: [
+                        "ALTER TABLE",
+                        "UPDATE TABLE",
+                        "MODIFY TABLE",
+                        "CHANGE TABLE"
+                    ],
+                    correctAnswer: "ALTER TABLE"
+                },
+                {
+                    question: "¿Cuál de los siguientes es el puerto por defecto de PostgreSQL?",
+                    options: [
+                        "3306",
+                        "1433",
+                        "5432",
+                        "1521"
+                    ],
+                    correctAnswer: "5432"
+                },
+                {
+                    question: "En Oracle, ¿qué significa SGA?",
+                    options: [
+                        "System Global Area",
+                        "Structured Global Access",
+                        "Secure Gateway Architecture",
+                        "Service Group Account"
+                    ],
+                    correctAnswer: "System Global Area"
+                },
+                {
+                    question: "¿Qué comando se utiliza en SQL para insertar nuevos registros en una tabla?",
+                    options: [
+                        "ADD INTO",
+                        "INSERT INTO",
+                        "CREATE IN",
+                        "UPDATE INTO"
+                    ],
+                    correctAnswer: "INSERT INTO"
+                },
+                {
+                    question: "¿Qué comando se usa en SQL para seleccionar datos de una tabla?",
+                    options: [
+                        "GET FROM",
+                        "EXTRACT FROM",
+                        "SELECT FROM",
+                        "QUERY FROM"
+                    ],
+                    correctAnswer: "SELECT FROM"
+                },
+                {
+                    question: "¿Qué es el fichero .mdf en SQL Server?",
+                    options: [
+                        "El fichero de log de transacciones",
+                        "El fichero de datos secundario",
+                        "El fichero de datos primario",
+                        "El fichero de configuración"
+                    ],
+                    correctAnswer: "El fichero de datos primario"
+                },
+                {
+                    question: "¿Qué comando se utiliza en PostgreSQL para crear una base de datos?",
+                    options: [
+                        "CREATE DB [db_name];",
+                        "createdb [db_name];",
+                        "NEW DATABASE [db_name];",
+                        "MAKE DB [db_name];"
+                    ],
+                    correctAnswer: "createdb [db_name];"
+                },
+                {
+                    question: "Para realizar una copia de seguridad en MySQL que incluya solo la estructura de las tablas, ¿qué opción se usa con mysqldump?",
+                    options: [
+                        "--no-data",
+                        "--no-structure",
+                        "--dump-only-schema",
+                        "--schema-only"
+                    ],
+                    correctAnswer: "--no-data"
+                },
+                {
+                    question: "¿Qué comando se usa para verificar si el servidor de MySQL está levantado?",
+                    options: [
+                        "mysqladmin ping",
+                        "mysql --status",
+                        "check mysql",
+                        "mysqladmin -u root -p ping"
+                    ],
+                    correctAnswer: "mysqladmin -u root -p ping"
+                },
+                {
+                    question: "¿Qué herramienta se usa en PostgreSQL para un proceso de restauración similar a 'pg_restore'?",
+                    options: [
+                        "pg_dump",
+                        "psql",
+                        "pg_ctl",
+                        "reindexdb"
+                    ],
+                    correctAnswer: "psql"
+                },
+                {
+                    question: "En Oracle, ¿qué significa RAC?",
+                    options: [
+                        "Real Application Clusters",
+                        "Remote Access Control",
+                        "Relational Application Core",
+                        "Runtime Automatic Configuration"
+                    ],
+                    correctAnswer: "Real Application Clusters"
+                }
+            ];
+
+            let currentQuestionIndex = 0;
+            let answeredQuestions = [];
+            let score = { correct: 0, incorrect: 0, unanswered: 0 };
+            let hasAnsweredCurrentQuestion = false;
+
+            const quizContainer = document.getElementById('quiz-container');
+            const questionCard = document.getElementById('question-card');
+            const resultsCard = document.getElementById('results-card');
+            const questionText = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const nextButton = document.getElementById('next-button');
+            const prevButton = document.getElementById('prev-button');
+            const restartButtonTop = document.getElementById('restart-button-top');
+            const restartButtonBottom = document.getElementById('restart-button-bottom');
+            const statusText = document.getElementById('status');
+            const feedbackText = document.getElementById('feedback');
+            const correctCount = document.getElementById('correct-count');
+            const incorrectCount = document.getElementById('incorrect-count');
+            const unansweredCount = document.getElementById('unanswered-count');
+            const optionLetters = ['a', 'b', 'c', 'd'];
+
+            // Cargar estado desde localStorage
+            const savedState = localStorage.getItem('quizState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex;
+                answeredQuestions = state.answeredQuestions;
+                score = state.score;
+            }
+
+            function saveState() {
+                const state = {
+                    currentQuestionIndex,
+                    answeredQuestions,
+                    score
+                };
+                localStorage.setItem('quizState', JSON.stringify(state));
+            }
+
+            function displayQuestion() {
+                if (currentQuestionIndex >= questions.length) {
+                    showResults();
+                    return;
+                }
+
+                const question = questions[currentQuestionIndex];
+                questionText.textContent = question.question;
+                optionsContainer.innerHTML = '';
+                feedbackText.textContent = '';
+                
+                const hasBeenAnswered = answeredQuestions[currentQuestionIndex] !== undefined && answeredQuestions[currentQuestionIndex] !== null;
+                hasAnsweredCurrentQuestion = hasBeenAnswered;
+
+                question.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = `${optionLetters[index]}) ${option}`;
+                    button.className = `w-full text-left p-4 rounded-lg border-2 border-gray-300 transition-colors duration-200 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 font-medium`;
+                    button.onclick = () => selectOption(button, option);
+                    optionsContainer.appendChild(button);
+
+                    // Si ya ha sido respondida, mostrar el estado
+                    if (hasBeenAnswered) {
+                        button.disabled = true;
+                        if (option === questions[currentQuestionIndex].correctAnswer) {
+                            button.classList.add('correct-answer-shown');
+                        }
+                        if (answeredQuestions[currentQuestionIndex] === option && option !== questions[currentQuestionIndex].correctAnswer) {
+                            button.classList.add('incorrect');
+                            feedbackText.textContent = 'Respuesta incorrecta.';
+                        } else if (answeredQuestions[currentQuestionIndex] === option && option === questions[currentQuestionIndex].correctAnswer) {
+                            button.classList.add('correct');
+                            feedbackText.textContent = '¡Respuesta correcta!';
+                        }
+                    }
+                });
+
+                updateStatus();
+                updateNavigationButtons();
+            }
+
+            function selectOption(selectedButton, selectedAnswer) {
+                if (hasAnsweredCurrentQuestion) {
+                    return;
+                }
+
+                hasAnsweredCurrentQuestion = true;
+                const correctAnswer = questions[currentQuestionIndex].correctAnswer;
+                answeredQuestions[currentQuestionIndex] = selectedAnswer;
+
+                if (selectedAnswer === correctAnswer) {
+                    selectedButton.classList.add('correct');
+                    feedbackText.textContent = '¡Respuesta correcta!';
+                    if (answeredQuestions[currentQuestionIndex] !== undefined) {
+                        // Avoid double counting if the user navigates back and forth
+                        score.correct++;
+                    }
+                } else {
+                    selectedButton.classList.add('incorrect');
+                    feedbackText.textContent = 'Respuesta incorrecta.';
+                    // Destacar la respuesta correcta
+                    Array.from(optionsContainer.children).forEach(button => {
+                        if (button.textContent.substring(3) === correctAnswer) {
+                            button.classList.add('correct-answer-shown');
+                        }
+                    });
+                    if (answeredQuestions[currentQuestionIndex] !== undefined) {
+                        score.incorrect++;
+                    }
+                }
+
+                Array.from(optionsContainer.children).forEach(button => {
+                    button.disabled = true;
+                });
+                
+                saveState();
+                updateNavigationButtons();
+            }
+
+            function updateNavigationButtons() {
+                prevButton.disabled = currentQuestionIndex === 0;
+                nextButton.disabled = false;
+            }
+
+            function updateStatus() {
+                const current = currentQuestionIndex + 1;
+                const total = questions.length;
+                statusText.textContent = `Pregunta ${current} de ${total}`;
+            }
+
+            function showResults() {
+                questionCard.classList.add('hidden');
+                resultsCard.classList.remove('hidden');
+
+                const answeredCount = answeredQuestions.filter(a => a !== undefined && a !== null).length;
+                const unansweredCountValue = questions.length - answeredCount;
+
+                correctCount.textContent = score.correct;
+                incorrectCount.textContent = score.incorrect;
+                unansweredCount.textContent = unansweredCountValue;
+
+                // Limpiar localStorage al finalizar
+                localStorage.removeItem('quizState');
+            }
+
+            nextButton.addEventListener('click', () => {
+                // If the user hasn't answered and moves on, mark as unanswered
+                if (!hasAnsweredCurrentQuestion && answeredQuestions[currentQuestionIndex] === undefined) {
+                    answeredQuestions[currentQuestionIndex] = null;
+                }
+                currentQuestionIndex++;
+                saveState();
+                displayQuestion();
+            });
+
+            prevButton.addEventListener('click', () => {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    hasAnsweredCurrentQuestion = answeredQuestions[currentQuestionIndex] !== undefined && answeredQuestions[currentQuestionIndex] !== null;
+                    saveState();
+                    displayQuestion();
+                }
+            });
+
+            const restartQuiz = () => {
+                localStorage.removeItem('quizState');
+                currentQuestionIndex = 0;
+                answeredQuestions = [];
+                score = { correct: 0, incorrect: 0, unanswered: 0 };
+                resultsCard.classList.add('hidden');
+                questionCard.classList.remove('hidden');
+                displayQuestion();
+            };
+
+            restartButtonTop.addEventListener('click', restartQuiz);
+            restartButtonBottom.addEventListener('click', restartQuiz);
+
+            // Iniciar el test
+            displayQuestion();
+        });
+    </script>
+</body>
+</html>
