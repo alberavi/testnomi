@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST COMANDOS DOCKER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 80vh;
+        }
+        .correct {
+            background-color: #d1fae5;
+            border-color: #34d399;
+        }
+        .incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+        }
+        .correct-answer-shown {
+            background-color: #d1fae5 !important;
+            border-color: #34d399 !important;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: auto;
+            justify-content: space-between;
+        }
+        .answer-button {
+            transition: transform 0.2s ease-in-out;
+        }
+        .answer-button:hover {
+            transform: translateY(-2px);
+        }
+        @media (max-width: 768px) {
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEST COMANDOS DOCKER</h1>
+        <div id="quiz-container" class="flex-grow">
+            <!-- La pregunta y las opciones se renderizarán aquí -->
+        </div>
+        <div class="mt-8 flex justify-between items-center button-group">
+            <button id="restart-btn" class="px-6 py-3 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all duration-300">
+                Reiniciar Test
+            </button>
+            <div class="flex gap-4">
+                <button id="prev-btn" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-full shadow-lg hover:bg-gray-400 transition-all duration-300">
+                    Anterior
+                </button>
+                <button id="next-btn" class="px-6 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300">
+                    Siguiente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array de 40 preguntas sobre comandos de Docker. Cada objeto contiene la pregunta,
+        // las opciones de respuesta y la respuesta correcta.
+        const questions = [
+            {
+                question: "¿Qué comando se usa para mostrar información sobre el uso de Docker en el equipo?",
+                options: ["docker version", "docker info", "docker stats", "docker system"],
+                answer: "docker info"
+            },
+            {
+                question: "¿Cuál es el comando para descargar una imagen de un registro como DockerHub?",
+                options: ["docker get image", "docker download", "docker pull", "docker fetch"],
+                answer: "docker pull"
+            },
+            {
+                question: "Para listar todos los contenedores, activos e inactivos, ¿qué comando utilizarías?",
+                options: ["docker ps -a", "docker list -all", "docker containers -l", "docker show -all"],
+                answer: "docker ps -a"
+            },
+            {
+                question: "¿Qué comando se utiliza para arrancar un nuevo contenedor a partir de una imagen?",
+                options: ["docker create", "docker start", "docker new", "docker run"],
+                answer: "docker run"
+            },
+            {
+                question: "Para mapear el puerto 8080 del host al puerto 8080 del contenedor, ¿qué opción se usa en `docker run`?",
+                options: ["-p 8080:8080", "-port 8080:8080", "--publish 8080", "--map 8080:8080"],
+                answer: "-p 8080:8080"
+            },
+            {
+                question: "¿Qué comando se usa para listar todas las imágenes que tienes disponibles localmente?",
+                options: ["docker images", "docker list-images", "docker get images", "docker ls -i"],
+                answer: "docker images"
+            },
+            {
+                question: "¿Qué comando crea un contenedor pero no lo arranca?",
+                options: ["docker stop", "docker create", "docker build", "docker init"],
+                answer: "docker create"
+            },
+            {
+                question: "¿Cuál es el comando para parar un contenedor de forma inmediata, sin esperar a que finalice?",
+                options: ["docker stop", "docker kill", "docker pause", "docker freeze"],
+                answer: "docker kill"
+            },
+            {
+                question: "Para ejecutar un comando contra un contenedor que ya está en ejecución, se utiliza:",
+                options: ["docker attach", "docker run", "docker execute", "docker exec"],
+                answer: "docker exec"
+            },
+            {
+                question: "Si quieres conectarte al shell de un contenedor en ejecución de CentOS, ¿qué comando usarías?",
+                options: ["docker attach centos", "docker exec -it centos /bin/sh", "docker exec -it centos bash", "docker connect centos"],
+                answer: "docker exec -it centos bash"
+            },
+            {
+                question: "¿Qué comando se utiliza para borrar un contenedor por su ID?",
+                options: ["docker remove", "docker rmc", "docker rm", "docker delete"],
+                answer: "docker rm"
+            },
+            {
+                question: "¿Cuál es el comando para borrar una imagen de Docker por su ID?",
+                options: ["docker rmi", "docker rm-image", "docker delete-image", "docker prune image"],
+                answer: "docker rmi"
+            },
+            {
+                question: "¿Qué comando se usa para crear una imagen a partir de un fichero Dockerfile?",
+                options: ["docker build", "docker create image", "docker new image", "docker compile"],
+                answer: "docker build"
+            },
+            {
+                question: "En un Dockerfile, ¿qué instrucción define un directorio de trabajo?",
+                options: ["DIR", "PATH", "WORKDIR", "SETDIR"],
+                answer: "WORKDIR"
+            },
+            {
+                question: "En un Dockerfile, ¿qué instrucción define variables que solo se usan durante la creación de la imagen?",
+                options: ["ENV", "VAR", "ARG", "SETVAR"],
+                answer: "ARG"
+            },
+            {
+                question: "En un Dockerfile, ¿qué instrucción se utiliza para copiar archivos desde el host a la imagen?",
+                options: ["COPY", "ADD", "GET", "FETCH"],
+                answer: "COPY"
+            },
+            {
+                question: "¿Qué comando se utiliza para detener un contenedor que está en ejecución?",
+                options: ["docker halt", "docker stop", "docker pause", "docker disconnect"],
+                answer: "docker stop"
+            },
+            {
+                question: "¿Qué opción de `docker run` se usa para arrancar un contenedor en segundo plano?",
+                options: ["-i", "-b", "-d", "-t"],
+                answer: "-d"
+            },
+            {
+                question: "¿Qué comando te permite ver el historial de una imagen de Docker?",
+                options: ["docker history", "docker log", "docker inspect", "docker info image"],
+                answer: "docker history"
+            },
+            {
+                question: "Para mostrar estadísticas de uso de recursos de los contenedores en ejecución, ¿qué comando usarías?",
+                options: ["docker ps", "docker stats", "docker top", "docker inspect"],
+                answer: "docker stats"
+            },
+            {
+                question: "¿Qué comando te permite ver los logs de un contenedor?",
+                options: ["docker logs", "docker history", "docker cat", "docker tail"],
+                answer: "docker logs"
+            },
+            {
+                question: "En un Dockerfile, ¿qué instrucción define un comando+argumentos por defecto que se ejecutará al iniciar un contenedor?",
+                options: ["RUN", "CMD", "ENTRYPOINT", "EXEC"],
+                answer: "CMD"
+            },
+            {
+                question: "¿Cuál es la principal diferencia entre `CMD` y `ENTRYPOINT`?",
+                options: ["ENTRYPOINT se puede sobrescribir con `docker run`", "CMD solo puede haber uno", "CMD se puede sobrescribir con `docker run`", "ENTRYPOINT es para scripts"],
+                answer: "CMD se puede sobrescribir con `docker run`"
+            },
+            {
+                question: "Para asociar un volumen con un almacenamiento externo, ¿qué opción se usa en `docker run`?",
+                options: ["-v", "-mount", "--volume", "-a"],
+                answer: "-v"
+            },
+            {
+                question: "¿Qué comando se utiliza para crear un `tar` de un contenedor, para hacer un backup?",
+                options: ["docker export", "docker save", "docker backup", "docker archive"],
+                answer: "docker export"
+            },
+            {
+                question: "¿Qué comando se utiliza para crear una nueva imagen a partir de un contenedor en ejecución?",
+                options: ["docker build", "docker commit", "docker snapshot", "docker save"],
+                answer: "docker commit"
+            },
+            {
+                question: "En un Dockerfile, la instrucción `EXPOSE` se usa para:",
+                options: ["Exponer un puerto en el host", "Exponer un puerto en el contenedor", "Ejecutar un comando en un puerto", "Definir un volumen"],
+                answer: "Exponer un puerto en el contenedor"
+            },
+            {
+                question: "¿Qué es un 'Pod' en el contexto de Kubernetes?",
+                options: ["Un conjunto de máquinas físicas", "La unidad más pequeña desplegable", "Una imagen de Docker", "Un servicio de red"],
+                answer: "La unidad más pequeña desplegable"
+            },
+            {
+                question: "¿Qué comando de Kubernetes se usa para listar los pods que se están ejecutando?",
+                options: ["kubectl get pods", "kubectl list pods", "kubectl show pods", "kubectl running pods"],
+                answer: "kubectl get pods"
+            },
+            {
+                question: "¿Qué comando de Kubernetes permite ver información más detallada de un pod?",
+                options: ["kubectl info pod", "kubectl inspect pod", "kubectl describe pod", "kubectl show pod"],
+                answer: "kubectl describe pod"
+            },
+            {
+                question: "¿Qué comando se utiliza para ver la versión del runtime de Docker?",
+                options: ["docker info", "docker runtime", "docker version", "docker status"],
+                answer: "docker version"
+            },
+            {
+                question: "¿Qué hace el comando `docker attach`?",
+                options: ["Ejecuta un comando en el contenedor", "Se conecta al shell del contenedor", "Enlaza la salida, la entrada y el error del contenedor", "Crea un nuevo contenedor"],
+                answer: "Enlaza la salida, la entrada y el error del contenedor"
+            },
+            {
+                question: "¿Qué opción se usa en `docker run` para obtener un shell interactivo?",
+                options: ["-d", "-it", "-p", "-v"],
+                answer: "-it"
+            },
+            {
+                question: "¿Qué comando se utiliza para ver una lista de los contenedores activos del sistema?",
+                options: ["docker ps", "docker list", "docker active", "docker ls -c"],
+                answer: "docker ps"
+            },
+            {
+                question: "¿Qué instrucción de Dockerfile define un directorio cuya información será persistente?",
+                options: ["PERSIST", "VOLUME", "STORAGE", "SAVE"],
+                answer: "VOLUME"
+            },
+            {
+                question: "¿Qué instrucción de Dockerfile establece el usuario con el que se ejecutarán las acciones?",
+                options: ["USER", "RUN AS", "EXEC USER", "SET USER"],
+                answer: "USER"
+            },
+            {
+                question: "Para ejecutar un comando en un contenedor en ejecución, ¿qué comando usarías?",
+                options: ["docker run", "docker attach", "docker exec", "docker connect"],
+                answer: "docker exec"
+            },
+            {
+                question: "¿Qué comando se usa para parar un contenedor de forma elegante (gracefully)?",
+                options: ["docker kill", "docker stop", "docker pause", "docker remove"],
+                answer: "docker stop"
+            },
+            {
+                question: "¿Qué comando se usa para eliminar todas las imágenes no utilizadas?",
+                options: ["docker image rm -a", "docker rmi", "docker image prune", "docker image clean"],
+                answer: "docker image prune"
+            },
+            {
+                question: "¿Qué comando se utiliza para inspeccionar un contenedor en ejecución y ver su configuración?",
+                options: ["docker info", "docker stats", "docker top", "docker inspect"],
+                answer: "docker inspect"
+            }
+        ];
+
+        // Variables de estado del test
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Almacena las respuestas del usuario {preguntaIndex: 'respuesta'}
+        let quizCompleted = false;
+
+        // Elementos del DOM
+        const quizContainer = document.getElementById('quiz-container');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Función para cargar una pregunta del localStorage
+        function loadState() {
+            const savedState = localStorage.getItem('dockerQuizState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                userAnswers = state.userAnswers;
+                currentQuestionIndex = state.currentQuestionIndex;
+                quizCompleted = state.quizCompleted;
+            }
+        }
+
+        // Función para guardar el estado del test en localStorage
+        function saveState() {
+            const state = {
+                userAnswers: userAnswers,
+                currentQuestionIndex: currentQuestionIndex,
+                quizCompleted: quizCompleted
+            };
+            localStorage.setItem('dockerQuizState', JSON.stringify(state));
+        }
+
+        // Función para renderizar la pregunta actual
+        function renderQuestion() {
+            // Si el test ha finalizado, muestra los resultados
+            if (quizCompleted) {
+                showResults();
+                return;
+            }
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const answerByUser = userAnswers[currentQuestionIndex];
+            const isAnswered = answerByUser !== undefined;
+
+            const labels = ['a', 'b', 'c', 'd'];
+            let optionsHtml = '';
+            currentQuestion.options.forEach((option, index) => {
+                const isCorrect = option === currentQuestion.answer;
+                const isUserAnswer = option === answerByUser;
+
+                let className = "answer-button w-full text-left px-6 py-4 rounded-xl border border-gray-300 transition-all duration-200 shadow-sm";
+
+                if (isAnswered) {
+                    if (isCorrect) {
+                        className += " correct-answer-shown";
+                    } else if (isUserAnswer) {
+                        className += " incorrect";
+                    }
+                } else {
+                    className += " bg-gray-50 hover:bg-gray-100 cursor-pointer";
+                }
+
+                optionsHtml += `
+                    <button
+                        class="${className}"
+                        data-answer="${option}"
+                        ${isAnswered ? 'disabled' : ''}
+                    >
+                        ${labels[index]}. ${option}
+                    </button>
+                `;
+            });
+
+            const questionNumber = currentQuestionIndex + 1;
+            const totalQuestions = questions.length;
+
+            quizContainer.innerHTML = `
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold mb-2">Pregunta ${questionNumber} de ${totalQuestions}</h2>
+                    <p class="text-gray-700">${currentQuestion.question}</p>
+                </div>
+                <div class="flex flex-col gap-4">
+                    ${optionsHtml}
+                </div>
+            `;
+
+            // Añade los event listeners a los botones de respuesta
+            if (!isAnswered) {
+                quizContainer.querySelectorAll('.answer-button').forEach(button => {
+                    button.addEventListener('click', handleAnswerClick);
+                });
+            }
+
+            updateNavButtons();
+            saveState();
+        }
+
+        // Manejador del click en una respuesta
+        function handleAnswerClick(event) {
+            const selectedAnswer = event.target.dataset.answer;
+            const currentQuestion = questions[currentQuestionIndex];
+            const isCorrect = selectedAnswer === currentQuestion.answer;
+
+            // Almacena la respuesta del usuario
+            userAnswers[currentQuestionIndex] = selectedAnswer;
+
+            // Muestra el resultado de la respuesta
+            event.target.classList.remove('bg-gray-50', 'hover:bg-gray-100');
+            if (isCorrect) {
+                event.target.classList.add('correct');
+            } else {
+                event.target.classList.add('incorrect');
+                // Muestra la respuesta correcta
+                const correctButton = quizContainer.querySelector(`[data-answer="${currentQuestion.answer}"]`);
+                if (correctButton) {
+                    correctButton.classList.add('correct-answer-shown');
+                }
+            }
+            
+            // Deshabilita todos los botones de respuesta
+            quizContainer.querySelectorAll('.answer-button').forEach(button => {
+                button.disabled = true;
+            });
+            
+            saveState();
+        }
+
+        // Función para actualizar los botones de navegación
+        function updateNavButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finalizar Test';
+            } else {
+                nextBtn.textContent = 'Siguiente';
+            }
+        }
+
+        // Función para mostrar los resultados finales
+        function showResults() {
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let unanswered = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                const userAnswer = userAnswers[i];
+                if (userAnswer === undefined) {
+                    unanswered++;
+                } else if (userAnswer === questions[i].answer) {
+                    correctAnswers++;
+                } else {
+                    incorrectAnswers++;
+                }
+            }
+
+            quizContainer.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold mb-4">Test Finalizado</h2>
+                    <p class="text-lg mb-2">Preguntas correctas: <span class="font-bold text-green-600">${correctAnswers}</span></p>
+                    <p class="text-lg mb-2">Preguntas incorrectas: <span class="font-bold text-red-600">${incorrectAnswers}</span></p>
+                    <p class="text-lg mb-2">Preguntas sin contestar: <span class="font-bold text-gray-600">${unanswered}</span></p>
+                </div>
+            `;
+            
+            // Oculta los botones de navegación
+            nextBtn.style.display = 'none';
+            prevBtn.style.display = 'none';
+            
+            saveState();
+        }
+
+        // Navegar a la siguiente pregunta
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                quizCompleted = true;
+                showResults();
+                saveState();
+            }
+        });
+
+        // Navegar a la pregunta anterior
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+        
+        // Reiniciar el test
+        restartBtn.addEventListener('click', () => {
+            if (confirm("¿Estás seguro de que quieres reiniciar el test? Perderás tu progreso actual.")) {
+                localStorage.removeItem('dockerQuizState');
+                userAnswers = {};
+                currentQuestionIndex = 0;
+                quizCompleted = false;
+                nextBtn.style.display = 'inline-block';
+                prevBtn.style.display = 'inline-block';
+                renderQuestion();
+            }
+        });
+
+        // Inicializa el test
+        window.onload = () => {
+            loadState();
+            renderQuestion();
+        };
+
+    </script>
+</body>
+</html>
