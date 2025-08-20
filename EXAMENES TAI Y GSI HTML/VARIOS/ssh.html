@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST COMANDOS SSH - APACHE - ANSIBLE - SALT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .correct {
+            background-color: #d1fae5 !important;
+            border-color: #34d399 !important;
+        }
+        .incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        .disabled-button {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+<div class="container mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+    <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEST COMANDOS SSH - APACHE - ANSIBLE - SALT</h1>
+
+
+    <div id="quiz-container">
+        <div id="question-card" class="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">
+            <div id="question-text" class="text-xl font-semibold mb-4 text-gray-700"></div>
+            <div id="options-container" class="space-y-4"></div>
+        </div>
+
+        <div id="navigation-buttons" class="mt-6 flex justify-between items-center">
+            <button id="prev-btn" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50" disabled>
+                Anterior
+            </button>
+            <span id="progress-text" class="text-sm text-gray-600 font-medium"></span>
+            <button id="next-btn" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Siguiente
+            </button>
+        </div>
+
+        <div class="mt-6 flex justify-center">
+            <button id="restart-btn" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                Reiniciar Test
+            </button>
+        </div>
+    </div>
+
+    <div id="results-container" class="hidden text-center mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">Resultados del Test</h2>
+        <p id="correct-count" class="text-lg font-medium text-green-600"></p>
+        <p id="incorrect-count" class="text-lg font-medium text-red-600"></p>
+        <p id="unanswered-count" class="text-lg font-medium text-gray-600"></p>
+        <button id="results-restart-btn" class="mt-6 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+            Reiniciar Test
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // Definición de las preguntas del test
+    const quizQuestions = [
+        // SSH
+        {
+            question: "¿Qué comando se utiliza para generar un par de claves SSH?",
+            options: [
+                "a) ssh-copy-id",
+                "b) ssh-keygen",
+                "c) ssh-agent",
+                "d) ssh-keyscan"
+            ],
+            correctAnswer: "b) ssh-keygen",
+            topic: "SSH"
+        },
+        {
+            question: "¿Cuál es el propósito del archivo `~/.ssh/authorized_keys`?",
+            options: [
+                "a) Almacena las claves privadas del usuario.",
+                "b) Contiene las claves públicas de los servidores a los que te has conectado.",
+                "c) Guarda las claves públicas de los clientes autorizados a conectarse al servidor.",
+                "d) Es el archivo de configuración del cliente SSH."
+            ],
+            correctAnswer: "c) Guarda las claves públicas de los clientes autorizados a conectarse al servidor.",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué comando se usa para ejecutar un comando remotamente sin una sesión interactiva?",
+            options: [
+                "a) ssh username@remote_host",
+                "b) ssh -I username remote_host",
+                "c) ssh username@remote_host comando",
+                "d) ssh -p puerto username@remote_host"
+            ],
+            correctAnswer: "c) ssh username@remote_host comando",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué hace la opción `-p` en el comando `ssh`?",
+            options: [
+                "a) Permite la copia de archivos de forma recursiva.",
+                "b) Especifica un puerto diferente al 22 para la conexión.",
+                "c) Conserva los permisos y tiempos de modificación de los archivos.",
+                "d) Transmite las credenciales a otro servidor."
+            ],
+            correctAnswer: "b) Especifica un puerto diferente al 22 para la conexión.",
+            topic: "SSH"
+        },
+        {
+            question: "¿Cuál de estos comandos crea un túnel local?",
+            options: [
+                "a) ssh -R",
+                "b) ssh-keyscan",
+                "c) ssh -L",
+                "d) ssh -A"
+            ],
+            correctAnswer: "c) ssh -L",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué opción del comando `scp` se usa para la copia recursiva de directorios?",
+            options: [
+                "a) -p",
+                "b) -A",
+                "c) -r",
+                "d) -I"
+            ],
+            correctAnswer: "c) -r",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué archivo de configuración de SSH se encuentra en el servidor?",
+            options: [
+                "a) /etc/ssh/ssh_config",
+                "b) ~/.ssh/known_hosts",
+                "c) /etc/ssh/sshd_config",
+                "d) ~/.ssh/id_rsa"
+            ],
+            correctAnswer: "c) /etc/ssh/sshd_config",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué comando añade una clave privada al agente de autenticación?",
+            options: [
+                "a) ssh-agent",
+                "b) ssh-keygen",
+                "c) ssh-add",
+                "d) ssh-copy-id"
+            ],
+            correctAnswer: "c) ssh-add",
+            topic: "SSH"
+        },
+        {
+            question: "¿Cuál es el propósito del comando `ssh-keyscan`?",
+            options: [
+                "a) Copiar una clave pública a un servidor remoto.",
+                "b) Generar una nueva clave pública.",
+                "c) Recopilar claves públicas de ciertos hosts.",
+                "d) Iniciar una sesión interactiva remota."
+            ],
+            correctAnswer: "c) Recopilar claves públicas de ciertos hosts.",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué comando se utiliza para copiar la clave pública a un servidor para una conexión sin contraseña?",
+            options: [
+                "a) ssh-keygen",
+                "b) ssh-add",
+                "c) ssh-copy-id",
+                "d) scp"
+            ],
+            correctAnswer: "c) ssh-copy-id",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué opción en `ssh` permite la transmisión de credenciales para conectarse a otro servidor desde uno ya conectado?",
+            options: [
+                "a) -L",
+                "b) -p",
+                "c) -A",
+                "d) -R"
+            ],
+            correctAnswer: "c) -A",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué archivo contiene la clave privada del usuario?",
+            options: [
+                "a) ~/.ssh/id_rsa",
+                "b) ~/.ssh/id_rsa.pub",
+                "c) ~/.ssh/authorized_keys",
+                "d) ~/.ssh/known_hosts"
+            ],
+            correctAnswer: "a) ~/.ssh/id_rsa",
+            topic: "SSH"
+        },
+        {
+            question: "Para limitar el ancho de banda en `scp`, ¿qué opción se utiliza?",
+            options: [
+                "a) -p",
+                "b) -r",
+                "c) -A",
+                "d) -I"
+            ],
+            correctAnswer: "d) -I",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué puerto por defecto usa SSH?",
+            options: [
+                "a) 80",
+                "b) 443",
+                "c) 22",
+                "d) 21"
+            ],
+            correctAnswer: "c) 22",
+            topic: "SSH"
+        },
+        {
+            question: "¿Qué comando usarías para iniciar sesión de forma anónima en un servidor remoto?",
+            options: [
+                "a) ssh -A",
+                "b) ssh-keygen -p",
+                "c) ssh username@remote_host",
+                "d) scp"
+            ],
+            correctAnswer: "c) ssh username@remote_host",
+            topic: "SSH"
+        },
+        
+        // APACHE
+        {
+            question: "¿Qué comando se usa para activar un módulo de Apache?",
+            options: [
+                "a) a2ensite",
+                "b) apache2ctl -M",
+                "c) a2enmod",
+                "d) apache2ctl start"
+            ],
+            correctAnswer: "c) a2enmod",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué comando se usa para activar la configuración de un sitio web en Apache?",
+            options: [
+                "a) a2enmod",
+                "b) a2ensite",
+                "c) apache2ctl start",
+                "d) apache2ctl status"
+            ],
+            correctAnswer: "b) a2ensite",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué comando se usa para verificar la sintaxis del archivo de configuración de Apache?",
+            options: [
+                "a) apache2ctl status",
+                "b) apache2ctl -M",
+                "c) apache2ctl restart",
+                "d) apache2ctl t"
+            ],
+            correctAnswer: "d) apache2ctl t",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Cuál es el nombre del archivo de configuración principal de Apache en Debian?",
+            options: [
+                "a) /etc/httpd/conf/httpd.conf",
+                "b) /etc/apache2/apache2.conf",
+                "c) /etc/apache2/mods-available",
+                "d) /etc/apache2/sites-enabled"
+            ],
+            correctAnswer: "b) /etc/apache2/apache2.conf",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué etiqueta en un VirtualHost de Apache define el nombre de dominio principal?",
+            options: [
+                "a) DocumentRoot",
+                "b) ServerAlias",
+                "c) ServerName",
+                "d) SSLEngine"
+            ],
+            correctAnswer: "c) ServerName",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué comando mostraría todos los módulos activos de Apache?",
+            options: [
+                "a) apache2ctl status",
+                "b) a2enmod",
+                "c) apache2ctl -M",
+                "d) apache2ctl fullstatus"
+            ],
+            correctAnswer: "c) apache2ctl -M",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué comando reinicia el servicio de Apache?",
+            options: [
+                "a) apache2ctl start",
+                "b) apache2ctl restart",
+                "c) apache2ctl stop",
+                "d) apache2ctl status"
+            ],
+            correctAnswer: "b) apache2ctl restart",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Dónde se encuentran los archivos de configuración de sitios web que están listos para ser activados?",
+            options: [
+                "a) /etc/apache2/sites-enabled",
+                "b) /etc/apache2/sites-available",
+                "c) /etc/apache2/mods-available",
+                "d) /etc/apache2/apache2.conf"
+            ],
+            correctAnswer: "b) /etc/apache2/sites-available",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué directiva en un VirtualHost se usa para especificar la ruta del directorio raíz del sitio web?",
+            options: [
+                "a) ServerName",
+                "b) DocumentRoot",
+                "c) ErrorLog",
+                "d) CustomLog"
+            ],
+            correctAnswer: "b) DocumentRoot",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Cuál es el puerto estándar para una conexión HTTPS?",
+            options: [
+                "a) 80",
+                "b) 22",
+                "c) 443",
+                "d) 21"
+            ],
+            correctAnswer: "c) 443",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué comando se usa para ver el estado del servicio de Apache?",
+            options: [
+                "a) apache2ctl restart",
+                "b) apache2ctl stop",
+                "c) apache2ctl status",
+                "d) a2ensite"
+            ],
+            correctAnswer: "c) apache2ctl status",
+            topic: "APACHE"
+        },
+        {
+            question: "Para habilitar el motor SSL en un VirtualHost, ¿qué directiva se usa?",
+            options: [
+                "a) SSLCertificateFile",
+                "b) SSLEngine",
+                "c) SSLProtocol",
+                "d) SSLCertificateKeyFile"
+            ],
+            correctAnswer: "b) SSLEngine",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué comando se usa para activar el módulo SSL en Apache?",
+            options: [
+                "a) a2ensite ssl",
+                "b) a2enmod ssl",
+                "c) apache2ctl start ssl",
+                "d) apache2ctl enable ssl"
+            ],
+            correctAnswer: "b) a2enmod ssl",
+            topic: "APACHE"
+        },
+        {
+            question: "¿Qué tipo de enlace simbólico se crea al usar `a2ensite`?",
+            options: [
+                "a) De `sites-enabled` a `sites-available`",
+                "b) De `mods-available` a `mods-enabled`",
+                "c) De `sites-available` a `sites-enabled`",
+                "d) De `mods-enabled` a `sites-available`"
+            ],
+            correctAnswer: "c) De `sites-available` a `sites-enabled`",
+            topic: "APACHE"
+        },
+        {
+            question: "¿En qué directorio se encuentran los archivos de configuración para módulos disponibles en Apache?",
+            options: [
+                "a) /etc/apache2/mods-enabled",
+                "b) /etc/apache2/sites-available",
+                "c) /etc/apache2/apache2.conf",
+                "d) /etc/apache2/mods-available"
+            ],
+            correctAnswer: "d) /etc/apache2/mods-available",
+            topic: "APACHE"
+        },
+        
+        // ANSIBLE
+        {
+            question: "¿Qué comando de Ansible se usa para verificar la conectividad con todos los hosts del inventario?",
+            options: [
+                "a) ansible all -m ping",
+                "b) ansible all -a 'df -h'",
+                "c) ansible-playbook",
+                "d) ansible all -m apt"
+            ],
+            correctAnswer: "a) ansible all -m ping",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Cuál es el propósito del archivo `/etc/ansible/hosts`?",
+            options: [
+                "a) Contiene la configuración por defecto de Ansible.",
+                "b) Es el inventario de hosts a gestionar.",
+                "c) Almacena variables de grupo.",
+                "d) Define los playbooks."
+            ],
+            correctAnswer: "b) Es el inventario de hosts a gestionar.",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué comando se usa para pasar argumentos a un módulo de Ansible?",
+            options: [
+                "a) -m",
+                "b) -a",
+                "c) -b",
+                "d) -u"
+            ],
+            correctAnswer: "b) -a",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Cuál es el módulo por defecto que usa Ansible si no se especifica `-m`?",
+            options: [
+                "a) ping",
+                "b) apt",
+                "c) file",
+                "d) command"
+            ],
+            correctAnswer: "d) command",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué estado se utiliza en un playbook para asegurar que un paquete está instalado?",
+            options: [
+                "a) present",
+                "b) removed",
+                "c) absent",
+                "d) latest"
+            ],
+            correctAnswer: "a) present",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué comando se utiliza para ejecutar un playbook?",
+            options: [
+                "a) ansible-playbook",
+                "b) ansible all -m playbook",
+                "c) ansible -a 'run playbook'",
+                "d) ansible-runner"
+            ],
+            correctAnswer: "a) ansible-playbook",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "En un playbook, ¿qué directiva especifica el grupo de hosts al que se aplica la tarea?",
+            options: [
+                "a) tasks",
+                "b) user",
+                "c) hosts",
+                "d) become"
+            ],
+            correctAnswer: "c) hosts",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué opción en un playbook de Ansible se usa para elevar privilegios (ejecutar como root) en el host remoto?",
+            options: [
+                "a) user: root",
+                "b) sudo: true",
+                "c) become: true",
+                "d) privileges: admin"
+            ],
+            correctAnswer: "c) become: true",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "El comando `ansible all -m file -a 'dest=/var/www/prueba state=directory'` se usa para:",
+            options: [
+                "a) Copiar un archivo a un directorio.",
+                "b) Eliminar un directorio.",
+                "c) Crear un directorio.",
+                "d) Listar el contenido de un directorio."
+            ],
+            correctAnswer: "c) Crear un directorio.",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué archivo se utiliza para definir el usuario SSH para un grupo de servidores?",
+            options: [
+                "a) /etc/ansible/ansible.cfg",
+                "b) /etc/ansible/hosts",
+                "c) /etc/ansible/group_vars/labservers",
+                "d) /etc/ansible/host_vars"
+            ],
+            correctAnswer: "c) /etc/ansible/group_vars/labservers",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "Los playbooks de Ansible son de naturaleza...",
+            options: [
+                "a) Imperativa",
+                "b) Declarativa",
+                "c) Funcional",
+                "d) Distribuida"
+            ],
+            correctAnswer: "b) Declarativa",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué módulo se usaría para instalar un paquete como 'vim' en todos los servidores?",
+            options: [
+                "a) pkg",
+                "b) install",
+                "c) apt",
+                "d) shell"
+            ],
+            correctAnswer: "c) apt",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué es un inventario en Ansible?",
+            options: [
+                "a) Un archivo YAML que define tareas.",
+                "b) Una lista de los hosts gestionados.",
+                "c) Un módulo de Ansible.",
+                "d) Un comando para ejecutar playbooks."
+            ],
+            correctAnswer: "b) Una lista de los hosts gestionados.",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "¿Qué comando ejecuta un `df -h` en todos los nodos?",
+            options: [
+                "a) ansible all -m shell -a 'df -h'",
+                "b) ansible -m df -a 'h'",
+                "c) ansible-playbook 'df -h'",
+                "d) ansible all -a 'df -h'"
+            ],
+            correctAnswer: "a) ansible all -m shell -a 'df -h'",
+            topic: "ANSIBLE"
+        },
+        {
+            question: "Para desinstalar un paquete, ¿qué estado se usa en un playbook?",
+            options: [
+                "a) present",
+                "b) latest",
+                "c) removed",
+                "d) installed"
+            ],
+            correctAnswer: "c) removed",
+            topic: "ANSIBLE"
+        },
+
+        // SALTSTACK
+        {
+            question: "¿Qué comando se usa para listar todas las claves que maneja el Salt Master?",
+            options: [
+                "a) salt-key -A",
+                "b) salt-key -L",
+                "c) salt-call --local",
+                "d) salt '*' test.version"
+            ],
+            correctAnswer: "b) salt-key -L",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué es un 'grain' en SaltStack?",
+            options: [
+                "a) Un comando para instalar paquetes.",
+                "b) Una función para ejecutar comandos remotos.",
+                "c) Información estática sobre el minion (como el SO, modelo de CPU, etc.).",
+                "d) Un archivo de estado (.sls)."
+            ],
+            correctAnswer: "c) Información estática sobre el minion (como el SO, modelo de CPU, etc.).",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando se usa para aceptar claves pendientes en SaltStack?",
+            options: [
+                "a) salt-key -L",
+                "b) salt-key -A",
+                "c) salt-key --accept",
+                "d) salt-call"
+            ],
+            correctAnswer: "b) salt-key -A",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando ejecuta una función directamente en el minion sin contactar con el master?",
+            options: [
+                "a) salt-call --local",
+                "b) salt '*' pkg.install",
+                "c) salt '*' grains.items",
+                "d) salt-minion -d"
+            ],
+            correctAnswer: "a) salt-call --local",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿En qué formato están los ficheros SLS (Salt State) por defecto?",
+            options: [
+                "a) JSON",
+                "b) XML",
+                "c) YAML",
+                "d) BASH"
+            ],
+            correctAnswer: "c) YAML",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando se usaría para aplicar el archivo `mc.sls` a todos los equipos?",
+            options: [
+                "a) salt '*' pkg.install mc",
+                "b) salt '*' state.apply mc",
+                "c) salt-call --local mc.sls",
+                "d) salt-cp '*' mc.sls"
+            ],
+            correctAnswer: "b) salt '*' state.apply mc",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando se usa para iniciar el Salt Master en modo de depuración?",
+            options: [
+                "a) salt-master -I debug",
+                "b) systemctl start salt-master",
+                "c) salt-master -d",
+                "d) salt-master --debug"
+            ],
+            correctAnswer: "a) salt-master -I debug",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Cuál es el puerto de publicación por defecto de Salt Master?",
+            options: [
+                "a) 4505",
+                "b) 4506",
+                "c) 22",
+                "d) 8080"
+            ],
+            correctAnswer: "a) 4505",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando se usa para que todos los minions ejecuten el comando `ls -l /etc`?",
+            options: [
+                "a) salt '*' cmd.run 'ls -l /etc'",
+                "b) salt '*' shell 'ls -l /etc'",
+                "c) salt '*' grains.run 'ls -l /etc'",
+                "d) salt-call '*' cmd.run 'ls -l /etc'"
+            ],
+            correctAnswer: "a) salt '*' cmd.run 'ls -l /etc'",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando envía un archivo a todos los minions?",
+            options: [
+                "a) salt-cp '*' archivo /destino",
+                "b) salt '*' cp.get archivo /destino",
+                "c) salt '*' file.copy archivo /destino",
+                "d) salt-cp -G '*' archivo /destino"
+            ],
+            correctAnswer: "a) salt-cp '*' archivo /destino",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué tipo de cliente se configura en el archivo `minion` para el Modelo Standalone?",
+            options: [
+                "a) master: 127.0.0.1",
+                "b) file_client: local",
+                "c) file_client: master",
+                "d) file_roots: /srv/salt"
+            ],
+            correctAnswer: "b) file_client: local",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "En SaltStack, los minions preguntan al master si tienen algo para ellos. Este modelo se conoce como:",
+            options: [
+                "a) Push",
+                "b) Pull",
+                "c) Centralizado",
+                "d) Distribuido"
+            ],
+            correctAnswer: "b) Pull",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué comando se usa para obtener todos los grains de los minions?",
+            options: [
+                "a) salt '*' grains.item",
+                "b) salt '*' grains.get 'cpu_model'",
+                "c) salt '*' grains.items",
+                "d) salt '*' grains.show"
+            ],
+            correctAnswer: "c) salt '*' grains.items",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Cuál es el propósito del comando `salt '*' pkg.install vim`?",
+            options: [
+                "a) Desinstalar el paquete 'vim'.",
+                "b) Instalar el paquete 'vim' sin usar un archivo sls.",
+                "c) Comprobar si el paquete 'vim' está instalado.",
+                "d) Aplicar un estado para 'vim'."
+            ],
+            correctAnswer: "b) Instalar el paquete 'vim' sin usar un archivo sls.",
+            topic: "SALTSTACK"
+        },
+        {
+            question: "¿Qué archivo de configuración define el puerto de retorno en el master de SaltStack?",
+            options: [
+                "a) /etc/salt/minion",
+                "b) /etc/salt/master",
+                "c) /etc/salt/minion_id",
+                "d) /etc/salt/master.conf"
+            ],
+            correctAnswer: "b) /etc/salt/master",
+            topic: "SALTSTACK"
+        },
+    ];
+
+    let currentQuestionIndex = 0;
+    let userAnswers = {}; // {questionIndex: selectedOptionIndex}
+
+    const questionTextEl = document.getElementById('question-text');
+    const optionsContainerEl = document.getElementById('options-container');
+    const prevBtnEl = document.getElementById('prev-btn');
+    const nextBtnEl = document.getElementById('next-btn');
+    const restartBtnEl = document.getElementById('restart-btn');
+    const progressTextEl = document.getElementById('progress-text');
+    const quizContainerEl = document.getElementById('quiz-container');
+    const resultsContainerEl = document.getElementById('results-container');
+    const correctCountEl = document.getElementById('correct-count');
+    const incorrectCountEl = document.getElementById('incorrect-count');
+    const unansweredCountEl = document.getElementById('unanswered-count');
+    const resultsRestartBtnEl = document.getElementById('results-restart-btn');
+
+    // Inicializa el estado del test
+    function loadState() {
+        const savedState = localStorage.getItem('quizState');
+        if (savedState) {
+            try {
+                const state = JSON.parse(savedState);
+                currentQuestionIndex = state.currentQuestionIndex || 0;
+                userAnswers = state.userAnswers || {};
+            } catch (e) {
+                // Si el JSON es inválido, reinicia el estado
+                console.error("Error loading saved state, resetting.");
+                currentQuestionIndex = 0;
+                userAnswers = {};
+            }
+        } else {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+        }
+    }
+
+    // Guarda el estado del test
+    function saveState() {
+        const state = {
+            currentQuestionIndex: currentQuestionIndex,
+            userAnswers: userAnswers,
+        };
+        localStorage.setItem('quizState', JSON.stringify(state));
+    }
+    
+    // Muestra la pregunta actual
+    function showQuestion() {
+        if (currentQuestionIndex >= quizQuestions.length) {
+            showResults();
+            return;
+        }
+
+        const currentQuestion = quizQuestions[currentQuestionIndex];
+        questionTextEl.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+        optionsContainerEl.innerHTML = '';
+        
+        currentQuestion.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.classList.add('w-full', 'text-left', 'p-4', 'border', 'rounded-lg', 'shadow-sm', 'bg-white', 'hover:bg-gray-100', 'transition-colors', 'duration-200');
+            button.dataset.index = index;
+            button.onclick = () => selectOption(index);
+            optionsContainerEl.appendChild(button);
+        });
+
+        updateUI();
+    }
+
+    // Lógica para seleccionar una opción
+    function selectOption(selectedIndex) {
+        const currentQuestion = quizQuestions[currentQuestionIndex];
+        const correctIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+        const selectedButton = optionsContainerEl.querySelector(`[data-index="${selectedIndex}"]`);
+
+        // Marcar la respuesta del usuario
+        userAnswers[currentQuestionIndex] = selectedIndex;
+        saveState();
+
+        // Desactivar todos los botones de opciones para esta pregunta
+        optionsContainerEl.querySelectorAll('button').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('disabled-button');
+        });
+
+        // Mostrar feedback visual
+        if (selectedIndex === correctIndex) {
+            selectedButton.classList.add('correct');
+        } else {
+            selectedButton.classList.add('incorrect');
+        }
+        
+        // Siempre mostrar la respuesta correcta
+        const correctButton = optionsContainerEl.querySelector(`[data-index="${correctIndex}"]`);
+        if (correctButton) {
+            correctButton.classList.add('correct');
+        }
+
+        updateUI();
+    }
+    
+    // Actualiza la UI y el estado de los botones
+    function updateUI() {
+        const hasAnswered = userAnswers[currentQuestionIndex] !== undefined;
+
+        // Reiniciar estilos de los botones de opciones antes de aplicar los nuevos
+        optionsContainerEl.querySelectorAll('button').forEach((btn, index) => {
+            btn.classList.remove('correct', 'incorrect', 'disabled-button');
+            btn.disabled = false;
+        });
+
+        if (hasAnswered) {
+            const currentQuestion = quizQuestions[currentQuestionIndex];
+            const correctIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+            const selectedIndex = userAnswers[currentQuestionIndex];
+            
+            optionsContainerEl.querySelectorAll('button').forEach((btn, index) => {
+                btn.disabled = true;
+                btn.classList.add('disabled-button');
+                if (index === correctIndex) {
+                    btn.classList.add('correct');
+                }
+                if (index === selectedIndex && index !== correctIndex) {
+                    btn.classList.add('incorrect');
+                }
+            });
+        }
+        
+        // Botón Anterior
+        if (currentQuestionIndex === 0) {
+            prevBtnEl.disabled = true;
+            prevBtnEl.classList.add('disabled-button');
+        } else {
+            prevBtnEl.disabled = false;
+            prevBtnEl.classList.remove('disabled-button');
+        }
+
+        // Progreso
+        progressTextEl.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizQuestions.length}`;
+    }
+
+    // Navegar a la siguiente pregunta
+    function nextQuestion() {
+        currentQuestionIndex++;
+        saveState();
+        showQuestion();
+    }
+
+    // Navegar a la pregunta anterior
+    function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            saveState();
+            showQuestion();
+        }
+    }
+
+    // Mostrar los resultados finales
+    function showResults() {
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let unansweredCount = 0;
+
+        quizQuestions.forEach((q, index) => {
+            const selectedIndex = userAnswers[index];
+            if (selectedIndex !== undefined) {
+                if (q.options[selectedIndex] === q.correctAnswer) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+            } else {
+                unansweredCount++;
+            }
+        });
+
+        quizContainerEl.classList.add('hidden');
+        resultsContainerEl.classList.remove('hidden');
+        correctCountEl.textContent = `Respuestas Correctas: ${correctCount}`;
+        incorrectCountEl.textContent = `Respuestas Incorrectas: ${incorrectCount}`;
+        unansweredCountEl.textContent = `Preguntas sin Contestar: ${unansweredCount}`;
+    }
+
+    // Reiniciar el test
+    function restartQuiz() {
+        localStorage.removeItem('quizState');
+        currentQuestionIndex = 0;
+        userAnswers = {};
+        quizContainerEl.classList.remove('hidden');
+        resultsContainerEl.classList.add('hidden');
+        showQuestion();
+    }
+
+    // Event Listeners
+    // Nuevo y mejorado sistema de navegación
+    nextBtnEl.addEventListener('click', () => {
+        if (currentQuestionIndex === quizQuestions.length - 1) {
+            showResults();
+        } else {
+            nextQuestion();
+        }
+    });
+
+    prevBtnEl.addEventListener('click', prevQuestion);
+    restartBtnEl.addEventListener('click', restartQuiz);
+    resultsRestartBtnEl.addEventListener('click', restartQuiz);
+
+    // Iniciar el test
+    document.addEventListener('DOMContentLoaded', () => {
+        loadState();
+        showQuestion();
+    });
+
+</script>
+
+</body>
+</html>
