@@ -279,7 +279,7 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">XML</h1>
+         <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 3rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">XML</h1>
 
         <!-- Barra de progreso -->
         <div class="progress-bar-container">
@@ -310,8 +310,10 @@
         </div>
     </div>
     <script>
-        // Array de objetos para las preguntas y respuestas
         const quizData = [
+
+
+
             {
                 question: "¿De dónde deriva el estándar XML?",
                 options: ["a) HTML", "b) SGML", "c) JSON", "d) DTD"],
@@ -744,8 +746,8 @@
             },
             {
                 question: "En JSON Schema, para una propiedad, ¿qué indica \"enum\": [\"oil\", \"watercolor\"]?",
-                options: ["a) Que el valor debe ser un tipo de enumeración.", "b) Que solo se permiten los valores \"oil\" o \"watercolor\".", "c) Que el valor es una cadena de texto.", "d) Que el valor es una lista de opciones."],
-                correctAnswer: "b) Que solo se permiten los valores \"oil\" o \"watercolor\"."
+                options: ["a) Que el valor debe ser un tipo de enumeración.", "b) Que solo se permiten los valores ''oil'' o ''watercolor''.", "c) Que el valor es una cadena de texto.", "d) Que el valor es una lista de opciones."],
+                correctAnswer: "b) Que solo se permiten los valores ''oil'' o ''watercolor''."
             },
             {
                 question: "En JSON Schema, ¿qué indica \"minimum\": 1 para una propiedad numérica?",
@@ -765,7 +767,7 @@
             {
                 question: "En XPath, ¿cómo se seleccionan todos los elementos hijos directos de un elemento p?",
                 options: ["a) //p/*", "b) p>", "c) p:*", "d) //p/"],
-                correctAnswer: "d) //p/"
+                correctAnswer: "a) //p/*"
             },
             {
                 question: "En XPath, ¿cómo se selecciona un elemento con un atributo llamado title?",
@@ -814,11 +816,15 @@
             }
         ];
 
-        // Variables de estado del quiz
+                // Variables de estado del quiz
         let currentQuestionIndex = 0;
         let score = 0;
+        // userAnswers guarda el texto de la opción seleccionada (o null)
+        // Corregido: Usar quizData.length en lugar de questions.length
         const userAnswers = new Array(quizData.length).fill(null);
-        const scoredQuestions = new Array(quizData.length).fill(false);
+        // scoredQuestions guarda true si la pregunta fue respondida correctamente, false si fue incorrecta o no respondida
+        // Corregido: Usar quizData.length en lugar de questions.length
+        const scoredQuestions = new Array(quizData.length).fill(false); 
 
         // Referencias a los elementos del DOM
         const quizContainer = document.getElementById('quizContainer');
@@ -843,10 +849,8 @@
                 if (savedState) {
                     currentQuestionIndex = savedState.currentQuestionIndex;
                     score = savedState.score;
-                    // Asegurarse de que los arrays tengan el tamaño correcto
-                    userAnswers.fill(null);
+                    // Asegurarse de que los arrays tengan el tamaño correcto y copiar los valores
                     userAnswers.splice(0, savedState.userAnswers.length, ...savedState.userAnswers);
-                    scoredQuestions.fill(false);
                     scoredQuestions.splice(0, savedState.scoredQuestions.length, ...savedState.scoredQuestions);
                 }
             } catch (e) {
@@ -872,20 +876,20 @@
          * Carga y muestra la pregunta actual.
          */
         function loadQuestion() {
+            // Corregido: Usar quizData.length en lugar de questions.length
             if (currentQuestionIndex >= quizData.length) {
                 showResults();
                 return;
             }
 
+            // Corregido: Usar quizData en lugar de questions
             const currentQuestion = quizData[currentQuestionIndex];
             quizContainer.innerHTML = `
                 <div class="question-card">
-                    <p class="question-text">${currentQuestionIndex + 1}. ${currentQuestion.question}</p>
+                    <p class="question-text"></p>
                     <div class="options-container">
-                        ${currentQuestion.options.map((option, index) => `
-                            <button class="option-button" data-option="${option}" data-index="${index}">
-                                ${option}
-                            </button>
+                        ${currentQuestion.options.map(() => `
+                            <button class="option-button"></button>
                         `).join('')}
                     </div>
                     <div class="solution hidden">
@@ -894,23 +898,55 @@
                 </div>
             `;
 
-            // Resalta la respuesta del usuario si ya ha respondido
+            const questionTextElement = quizContainer.querySelector('.question-text');
+            const optionsContainer = quizContainer.querySelector('.options-container');
+            const questionCard = quizContainer.querySelector('.question-card');
+            const optionButtons = optionsContainer.querySelectorAll('.option-button');
+
+            // Usar textContent para insertar el texto de la pregunta de forma segura
+            questionTextElement.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+            // Asignar el texto y los atributos data-option a cada botón de opción
+            currentQuestion.options.forEach((option, index) => {
+                optionButtons[index].textContent = option; // Inserta el texto como texto plano
+                optionButtons[index].dataset.option = option; // Guarda la opción original para la lógica
+                optionButtons[index].addEventListener('click', handleOptionClick);
+            });
+
+            // Resalta la respuesta del usuario si ya ha respondido y aplica estilos
             const savedAnswer = userAnswers[currentQuestionIndex];
             if (savedAnswer !== null) {
-                const selectedButton = quizContainer.querySelector(`[data-index="${savedAnswer}"]`);
+                // Encuentra el botón por su atributo data-option, que contiene la respuesta guardada
+                const selectedButton = optionsContainer.querySelector(`[data-option="${savedAnswer}"]`);
                 if (selectedButton) {
-                    selectedButton.classList.add('selected');
+                    // Deshabilita todos los botones para que no se pueda cambiar la respuesta
+                    optionButtons.forEach(button => {
+                        button.classList.add('disabled');
+                        button.removeEventListener('click', handleOptionClick); // Remover listener si ya está respondida
+                    });
+
+                    // Aplica los estilos de la respuesta guardada
+                    const isCorrect = (savedAnswer === currentQuestion.correctAnswer);
+                    if (isCorrect) {
+                        selectedButton.classList.add('correct-answer');
+                        questionCard.classList.add('correct');
+                    } else {
+                        selectedButton.classList.add('incorrect-answer');
+                        questionCard.classList.add('incorrect');
+                        // Muestra la respuesta correcta si la guardada fue incorrecta
+                        const correctButton = optionsContainer.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
+                        if (correctButton) {
+                            correctButton.classList.add('correct-answer');
+                        }
+                    }
+                    // Añadir feedback visual (Correcto/Incorrecto)
+                    updateQuestionCardVisuals(isCorrect);
                 }
             }
 
             // Actualiza el estado de los botones de navegación y la barra de progreso
             updateNavButtons();
             updateProgressBar();
-            
-            // Añade el evento de clic a los botones de opción
-            quizContainer.querySelectorAll('.option-button').forEach(button => {
-                button.addEventListener('click', handleOptionClick);
-            });
         }
 
         /**
@@ -919,53 +955,83 @@
          */
         function handleOptionClick(event) {
             const selectedOptionButton = event.target;
-            const selectedOption = selectedOptionButton.dataset.option;
+            const selectedOption = selectedOptionButton.dataset.option; // Obtiene la opción del atributo data-option
+            // Corregido: Usar quizData en lugar de questions
             const currentQuestion = quizData[currentQuestionIndex];
+            const optionsContainer = quizContainer.querySelector('.options-container');
+            const questionCard = quizContainer.querySelector('.question-card');
 
             // Deshabilita todos los botones de opción para evitar múltiples respuestas
-            quizContainer.querySelectorAll('.option-button').forEach(button => {
+            optionsContainer.querySelectorAll('.option-button').forEach(button => {
                 button.classList.add('disabled');
                 button.removeEventListener('click', handleOptionClick);
             });
 
             // Actualiza la respuesta del usuario y la guarda
-            userAnswers[currentQuestionIndex] = parseInt(selectedOptionButton.dataset.index);
-            saveQuizState();
-
+            userAnswers[currentQuestionIndex] = selectedOption;
+            
             // Comprueba si la respuesta es correcta
-            if (selectedOption === currentQuestion.correctAnswer) {
-                // La pregunta es correcta
+            const isCorrectAttempt = (selectedOption === currentQuestion.correctAnswer);
+
+            if (isCorrectAttempt) {
                 selectedOptionButton.classList.add('correct-answer');
-                // Si no se ha puntuado antes, añade un punto
-                if (!scoredQuestions[currentQuestionIndex]) {
+                questionCard.classList.add('correct');
+                // Si no se ha puntuado antes, añade un punto y marca como correcta
+                if (!scoredQuestions[currentQuestionIndex]) { // scoredQuestions[index] will be false if not yet scored
                     score++;
-                    scoredQuestions[currentQuestionIndex] = true;
-                    saveQuizState();
+                    scoredQuestions[currentQuestionIndex] = true; // Marca como correcta
                 }
-                quizContainer.querySelector('.question-card').classList.add('correct');
             } else {
-                // La pregunta es incorrecta
                 selectedOptionButton.classList.add('incorrect-answer');
-                quizContainer.querySelector('.question-card').classList.add('incorrect');
-                // Si se había puntuado como correcta, quita el punto
-                if (scoredQuestions[currentQuestionIndex]) {
+                questionCard.classList.add('incorrect');
+                // Si se había puntuado como correcta (porque el usuario cambió de opinión), quita el punto
+                if (scoredQuestions[currentQuestionIndex]) { // scoredQuestions[index] will be true if it was previously correct
                     score--;
-                    scoredQuestions[currentQuestionIndex] = false;
-                    saveQuizState();
+                    scoredQuestions[currentQuestionIndex] = false; // Marca como incorrecta
                 }
                 // Resalta la respuesta correcta
-                const correctAnswerButton = quizContainer.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
+                const correctAnswerButton = optionsContainer.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
                 if (correctAnswerButton) {
                     correctAnswerButton.classList.add('correct-answer');
                 }
             }
             
-            // Muestra la solución detallada si existe
+            saveQuizState(); // Guarda el estado después de actualizar score y scoredQuestions
+
+            // Añadir feedback visual (Correcto/Incorrecto)
+            updateQuestionCardVisuals(isCorrectAttempt);
+
+            // Muestra la solución detallada si existe (aunque no hay en tu questions actual)
             if (currentQuestion.solution) {
                 const solutionDiv = quizContainer.querySelector('.solution');
                 solutionDiv.classList.remove('hidden');
                 solutionDiv.querySelector('.solution-text').textContent = currentQuestion.solution;
             }
+        }
+
+        /**
+         * Actualiza el estilo de la tarjeta de pregunta y añade feedback visual.
+         * @param {boolean} isCorrect - Indica si la respuesta es correcta.
+         */
+        function updateQuestionCardVisuals(isCorrect) {
+            const questionCard = document.querySelector('.question-card');
+            // Eliminar feedback anterior si existe
+            const existingFeedback = questionCard.querySelector('.feedback');
+            if (existingFeedback) {
+                existingFeedback.remove();
+            }
+
+            const feedbackMessage = document.createElement('p');
+            feedbackMessage.classList.add('feedback');
+
+            if (isCorrect) {
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.add('correct');
+            } else {
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es la marcada en verde.';
+                feedbackMessage.classList.add('incorrect');
+            }
+            questionCard.appendChild(feedbackMessage);
         }
 
         /**
@@ -981,22 +1047,23 @@
 
             // Calcula y muestra las estadísticas
             const correctAnswers = scoredQuestions.filter(isCorrect => isCorrect).length;
-            const incorrectAnswers = scoredQuestions.filter((isCorrect, index) => !isCorrect && userAnswers[index] !== null).length;
+            // Una respuesta es incorrecta si el usuario respondió (no es null) Y no fue marcada como correcta (scoredQuestions[index] es false)
+            const incorrectAnswers = userAnswers.filter((answer, index) => answer !== null && !scoredQuestions[index]).length;
             const unansweredQuestions = userAnswers.filter(answer => answer === null).length;
 
+            // Corregido: Usar quizData.length en lugar de questions.length
             finalScoreDisplay.textContent = `Tu puntuación final es ${correctAnswers} de ${quizData.length}`;
             correctCountSpan.textContent = correctAnswers;
             incorrectCountSpan.textContent = incorrectAnswers;
             unansweredCountSpan.textContent = unansweredQuestions;
         }
 		
-		
-
         /**
          * Actualiza el estado de los botones de navegación.
          */
         function updateNavButtons() {
             prevBtn.disabled = currentQuestionIndex === 0;
+            // Corregido: Usar quizData.length en lugar de questions.length
             nextBtn.textContent = currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente';
         }
 
@@ -1004,6 +1071,7 @@
          * Actualiza la barra de progreso.
          */
         function updateProgressBar() {
+            // Corregido: Usar quizData.length en lugar de questions.length
             const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
             progressBar.style.width = `${progress}%`;
         }
@@ -1036,6 +1104,7 @@
         });
 
         nextBtn.addEventListener('click', () => {
+            // Corregido: Usar quizData.length en lugar de questions.length
             if (currentQuestionIndex < quizData.length - 1) {
                 currentQuestionIndex++;
                 loadQuestion();
@@ -1052,129 +1121,6 @@
             loadQuizState();
             loadQuestion();
         };
-		/**
- * Carga la pregunta actual y sus opciones en la interfaz.
- */
-function loadQuestion() {
-    const currentQuestion = quizData[currentQuestionIndex];
-    quizContainer.innerHTML = `
-        <div class="question-card">
-            <p class="question-text">${currentQuestionIndex + 1}. ${currentQuestion.question}</p>
-            <div id="optionsContainer">
-                ${currentQuestion.options.map((option, index) => `
-                    <button class="option-button" data-option="${option}">${option}</button>
-                `).join('')}
-            </div>
-        </div>
-    `;
-
-    const optionsContainer = document.getElementById('optionsContainer');
-    // Esto es crucial: se adjunta el event listener para manejar el clic en las opciones.
-    optionsContainer.addEventListener('click', handleOptionClick);
-
-    updateButtons();
-    updateProgressBar();
-    
-    // Cargar respuesta previa si existe
-    const previousAnswer = userAnswers[currentQuestionIndex];
-    if (previousAnswer !== null) {
-        const selectedButton = optionsContainer.querySelector(`[data-option="${previousAnswer}"]`);
-        if (selectedButton) {
-            checkAnswer(selectedButton, true); // Pasar 'true' para no recalcular el score
-        }
-    }
-}
-
-/**
- * Maneja el clic en una opción de respuesta.
- * @param {Event} event El evento de clic.
- */
-function handleOptionClick(event) {
-    const clickedButton = event.target.closest('.option-button');
-    if (clickedButton && !clickedButton.classList.contains('disabled')) {
-        // Almacenar la respuesta del usuario
-        userAnswers[currentQuestionIndex] = clickedButton.dataset.option;
-        saveQuizState();
-        
-        checkAnswer(clickedButton, false); // Pasar 'false' para calcular el score
-    }
-}
-
-/**
- * Verifica la respuesta seleccionada por el usuario y actualiza la UI.
- * @param {HTMLElement} selectedButton - El botón de opción seleccionado por el usuario.
- * @param {boolean} isReload - Indica si la función es llamada desde el reload para no recalcular el score.
- */
-function checkAnswer(selectedButton, isReload) {
-    const currentQuestion = quizData[currentQuestionIndex];
-    const options = document.querySelectorAll('.option-button');
-
-    // Deshabilitar todas las opciones para esta pregunta
-    options.forEach(btn => {
-        btn.classList.add('disabled');
-    });
-    
-    // Comprobar si la pregunta ya ha sido calificada
-    if (!scoredQuestions[currentQuestionIndex]) {
-        if (selectedButton.dataset.option === currentQuestion.correctAnswer) {
-            if (!isReload) {
-                score++;
-            }
-            selectedButton.classList.add('correct-answer');
-            updateQuestionCard(true);
-        } else {
-            selectedButton.classList.add('incorrect-answer');
-            // Mostrar la respuesta correcta
-            const correctButton = document.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
-            if (correctButton) {
-                correctButton.classList.add('correct-answer');
-            }
-            updateQuestionCard(false);
-        }
-        scoredQuestions[currentQuestionIndex] = true;
-        saveQuizState();
-    } else {
-        // Si ya fue calificada, solo mostrar los estilos de la respuesta guardada
-        const userChoice = userAnswers[currentQuestionIndex];
-        if (userChoice === currentQuestion.correctAnswer) {
-            selectedButton.classList.add('correct-answer');
-            updateQuestionCard(true);
-        } else {
-            selectedButton.classList.add('incorrect-answer');
-            const correctButton = document.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
-            if (correctButton) {
-                correctButton.classList.add('correct-answer');
-            }
-            updateQuestionCard(false);
-        }
-    }
-}
-
-/**
- * Actualiza el estilo de la tarjeta de pregunta y añade feedback.
- * @param {boolean} isCorrect - Indica si la respuesta es correcta.
- */
-function updateQuestionCard(isCorrect) {
-    const questionCard = document.querySelector('.question-card');
-    const feedbackMessage = document.createElement('p');
-    feedbackMessage.classList.add('feedback');
-
-    if (isCorrect) {
-        questionCard.classList.add('correct');
-        feedbackMessage.textContent = '¡Correcto!';
-        feedbackMessage.classList.add('correct');
-    } else {
-        questionCard.classList.add('incorrect');
-        feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es la marcada en verde.';
-        feedbackMessage.classList.add('incorrect');
-    }
-    questionCard.appendChild(feedbackMessage);
-}
-
     </script>
 </body>
 </html>
-
-
-
-
