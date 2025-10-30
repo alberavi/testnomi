@@ -2191,280 +2191,298 @@
             // Debido a la limitación de espacio, solo se incluyen algunas preguntas como ejemplo.
             // En una implementación real, se parsearía el documento completo.
         ];
+// Función para limpiar y normalizar las respuestas
+function normalizeAnswer(answer) {
+    return answer.toLowerCase().replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+}
 
-        // Función para limpiar y normalizar las respuestas
-        function normalizeAnswer(answer) {
-            return answer.toLowerCase().replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+// Pre-normalizar todas las respuestas para facilitar la comparación
+const normalizedAnswers = allQuestions.map(q => normalizeAnswer(q.answer));
+
+// ⚠️ NOTA: Dejamos estas variables locales, pero ahora se sincronizan con quizState
+let currentQuestionIndex = 0;
+let userAnswers = []; 
+
+// El estado que se guarda en localStorage
+let quizState = {
+    currentQuestionIndex: 0,
+    userAnswers: []
+};
+
+const questionTextElement = document.getElementById('questionText');
+const optionsContainer = document.getElementById('optionsContainer');
+const feedbackMessage = document.getElementById('feedbackMessage');
+const prevButton = document.getElementById('prevButton');
+const nextButton = document.getElementById('nextButton');
+const resetButton = document.getElementById('resetTestButton');
+const restartResultsButton = document.getElementById('restartResultsButton');
+const quizArea = document.getElementById('quiz-area');
+const resultsArea = document.getElementById('results-area');
+const currentQuestionNumberSpan = document.getElementById('currentQuestionNumber');
+const totalQuestionsSpan = document.getElementById('totalQuestions');
+const progressBar = document.getElementById('progressBar');
+
+// Función para mezclar un array
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// Función para generar opciones de respuesta
+function generateOptions(questionIndex) {
+    const correctAnswer = allQuestions[questionIndex].answer;
+    let options = [correctAnswer];
+
+    // Recopilar otras respuestas para usar como distractores
+    let otherAnswers = normalizedAnswers.filter((ans, idx) => idx !== questionIndex);
+    
+    // Asegurarse de que no haya duplicados en las opciones
+    const uniqueOptions = new Set();
+    uniqueOptions.add(normalizeAnswer(correctAnswer));
+
+    while (uniqueOptions.size < 4 && otherAnswers.length > 0) {
+        const randomIndex = Math.floor(Math.random() * otherAnswers.length);
+        const randomAnswer = otherAnswers[randomIndex];
+        if (!uniqueOptions.has(randomAnswer)) {
+            uniqueOptions.add(randomAnswer);
+            options.push(randomAnswer);
         }
+        // Eliminar la respuesta usada para evitar duplicados en la selección de distractores
+        otherAnswers.splice(randomIndex, 1);
+    }
 
-        // Pre-normalizar todas las respuestas para facilitar la comparación
-        const normalizedAnswers = allQuestions.map(q => normalizeAnswer(q.answer));
+    // Si no hay suficientes respuestas únicas en el documento, rellenar con texto genérico
+    while (options.length < 4) {
+        options.push(`Opción ${options.length + 1} (Genérica)`);
+    }
 
-        let currentQuestionIndex = 0;
-        let userAnswers = []; // Array para almacenar las respuestas del usuario
-        let quizState = {
+    return shuffleArray(options);
+}
+
+// Función para renderizar la pregunta actual
+function renderQuestion() {
+    if (currentQuestionIndex >= allQuestions.length) {
+        showResults();
+        return;
+    }
+
+    const questionData = allQuestions[currentQuestionIndex];
+    questionTextElement.textContent = questionData.question;
+    optionsContainer.innerHTML = '';
+    feedbackMessage.classList.add('hidden');
+    feedbackMessage.textContent = '';
+
+    const options = generateOptions(currentQuestionIndex);
+
+    options.forEach(option => {
+        const button = document.createElement('button');
+        button.textContent = option;
+        button.classList.add('option-button');
+        button.onclick = () => selectOption(button, option, questionData.answer);
+        optionsContainer.appendChild(button);
+    });
+
+    updateNavigationButtons();
+    updateProgressBar();
+    currentQuestionNumberSpan.textContent = currentQuestionIndex + 1;
+
+    // Restaurar la selección del usuario si ya ha respondido esta pregunta
+    // NOTA: userAnswers es ahora el array sincronizado de quizState
+    if (userAnswers[currentQuestionIndex]) {
+        const selectedOption = userAnswers[currentQuestionIndex].selectedOption;
+        const isCorrect = userAnswers[currentQuestionIndex].isCorrect;
+
+        Array.from(optionsContainer.children).forEach(button => {
+            button.disabled = true; // Deshabilitar botones después de responder
+            if (normalizeAnswer(button.textContent) === normalizeAnswer(selectedOption)) {
+                button.classList.add('selected');
+                if (isCorrect) {
+                    button.classList.add('correct');
+                    feedbackMessage.textContent = '¡Correcto!';
+                    feedbackMessage.classList.remove('hidden');
+                    feedbackMessage.classList.add('correct');
+                    feedbackMessage.classList.remove('incorrect');
+                } else {
+                    button.classList.add('incorrect');
+                    feedbackMessage.textContent = 'Incorrecto. La respuesta correcta era: ' + questionData.answer;
+                    feedbackMessage.classList.remove('hidden');
+                    feedbackMessage.classList.add('incorrect');
+                    feedbackMessage.classList.remove('correct');
+                }
+            } else if (normalizeAnswer(button.textContent) === normalizeAnswer(questionData.answer)) {
+                // Resaltar la respuesta correcta si la seleccionada fue incorrecta
+                if (!isCorrect) {
+                    button.classList.add('correct');
+                }
+            }
+        });
+    }
+}
+
+// Función para manejar la selección de una opción
+function selectOption(selectedButton, selectedOptionText, correctAnswerText) {
+    // Deshabilitar todos los botones de opción después de la selección
+    Array.from(optionsContainer.children).forEach(button => {
+        button.disabled = true;
+    });
+
+    const isCorrect = normalizeAnswer(selectedOptionText) === normalizeAnswer(correctAnswerText);
+
+    selectedButton.classList.add('selected');
+    if (isCorrect) {
+        selectedButton.classList.add('correct');
+        feedbackMessage.textContent = '¡Correcto!';
+        feedbackMessage.classList.remove('hidden');
+        feedbackMessage.classList.add('correct');
+        feedbackMessage.classList.remove('incorrect');
+    } else {
+        selectedButton.classList.add('incorrect');
+        feedbackMessage.textContent = 'Incorrecto. La respuesta correcta era: ' + correctAnswerText;
+        feedbackMessage.classList.remove('hidden');
+        feedbackMessage.classList.add('incorrect');
+        feedbackMessage.classList.remove('correct');
+
+        // Resaltar la respuesta correcta
+        Array.from(optionsContainer.children).forEach(button => {
+            if (normalizeAnswer(button.textContent) === normalizeAnswer(correctAnswerText)) {
+                button.classList.add('correct');
+            }
+        });
+    }
+
+    // 🔴 CORRECCIÓN CLAVE: Usar quizState.userAnswers para guardar el dato
+    quizState.userAnswers[currentQuestionIndex] = {
+        question: allQuestions[currentQuestionIndex].question,
+        selectedOption: selectedOptionText,
+        correctAnswer: correctAnswerText,
+        isCorrect: isCorrect
+    };
+    
+    // Y sincronizar la variable local userAnswers
+    userAnswers = quizState.userAnswers;
+
+    saveQuizState();
+}
+
+// Actualizar el estado de los botones de navegación
+function updateNavigationButtons() {
+    prevButton.disabled = currentQuestionIndex === 0;
+    // userAnswers sigue apuntando a quizState.userAnswers, por lo que es seguro
+    nextButton.disabled = currentQuestionIndex === allQuestions.length - 1 && userAnswers[currentQuestionIndex] !== undefined;
+
+    if (currentQuestionIndex === allQuestions.length - 1 && userAnswers[currentQuestionIndex] !== undefined) {
+        nextButton.textContent = 'Ver Resultados';
+    } else {
+        nextButton.textContent = 'Siguiente';
+    }
+}
+
+// Navegar a la pregunta anterior
+prevButton.addEventListener('click', () => {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        // 🔴 CORRECCIÓN CLAVE: Sincronizar el índice de la pregunta en quizState
+        quizState.currentQuestionIndex = currentQuestionIndex; 
+        renderQuestion();
+        saveQuizState();
+    }
+});
+
+// Navegar a la siguiente pregunta o mostrar resultados
+nextButton.addEventListener('click', () => {
+    if (currentQuestionIndex < allQuestions.length - 1) {
+        currentQuestionIndex++;
+        // 🔴 CORRECCIÓN CLAVE: Sincronizar el índice de la pregunta en quizState
+        quizState.currentQuestionIndex = currentQuestionIndex; 
+        renderQuestion();
+        saveQuizState();
+    } else if (currentQuestionIndex === allQuestions.length - 1 && userAnswers[currentQuestionIndex] !== undefined) {
+        showResults();
+    }
+});
+
+// Función para mostrar la sección de resultados
+function showResults() {
+    quizArea.classList.add('hidden');
+    resultsArea.classList.remove('hidden');
+
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let unansweredCount = 0;
+
+    for (let i = 0; i < allQuestions.length; i++) {
+        // userAnswers ya está sincronizado con quizState.userAnswers
+        if (userAnswers[i]) {
+            if (userAnswers[i].isCorrect) {
+                correctCount++;
+            } else {
+                incorrectCount++;
+            }
+        } else {
+            unansweredCount++;
+        }
+    }
+
+    document.getElementById('correctCount').textContent = correctCount;
+    document.getElementById('incorrectCount').textContent = incorrectCount;
+    document.getElementById('unansweredCount').textContent = unansweredCount;
+}
+
+// Función para reiniciar el test
+function resetTest() {
+    if (confirm('¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.')) {
+        localStorage.removeItem('quizState');
+        
+        // Se resetean TODAS las variables al mismo tiempo
+        currentQuestionIndex = 0;
+        userAnswers = [];
+        quizState = {
             currentQuestionIndex: 0,
             userAnswers: []
         };
+        
+        quizArea.classList.remove('hidden');
+        resultsArea.classList.add('hidden');
+        renderQuestion();
+    }
+}
 
-        const questionTextElement = document.getElementById('questionText');
-        const optionsContainer = document.getElementById('optionsContainer');
-        const feedbackMessage = document.getElementById('feedbackMessage');
-        const prevButton = document.getElementById('prevButton');
-        const nextButton = document.getElementById('nextButton');
-        const resetButton = document.getElementById('resetTestButton');
-        const restartResultsButton = document.getElementById('restartResultsButton');
-        const quizArea = document.getElementById('quiz-area');
-        const resultsArea = document.getElementById('results-area');
-        const currentQuestionNumberSpan = document.getElementById('currentQuestionNumber');
-        const totalQuestionsSpan = document.getElementById('totalQuestions');
-        const progressBar = document.getElementById('progressBar');
+// Event listener para el botón de reiniciar
+resetButton.addEventListener('click', resetTest);
+restartResultsButton.addEventListener('click', resetTest);
 
-        // Función para mezclar un array
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+// Guardar el estado del quiz en localStorage
+function saveQuizState() {
+    localStorage.setItem('quizState', JSON.stringify(quizState));
+}
 
-        // Función para generar opciones de respuesta
-        function generateOptions(questionIndex) {
-            const correctAnswer = allQuestions[questionIndex].answer;
-            let options = [correctAnswer];
+// Cargar el estado del quiz desde localStorage
+function loadQuizState() {
+    const savedState = localStorage.getItem('quizState');
+    if (savedState) {
+        quizState = JSON.parse(savedState);
+        // Al cargar, actualizamos las variables locales con el estado guardado
+        currentQuestionIndex = quizState.currentQuestionIndex;
+        userAnswers = quizState.userAnswers || [];
+    }
+}
 
-            // Recopilar otras respuestas para usar como distractores
-            let otherAnswers = normalizedAnswers.filter((ans, idx) => idx !== questionIndex);
-            
-            // Asegurarse de que no haya duplicados en las opciones
-            const uniqueOptions = new Set();
-            uniqueOptions.add(normalizeAnswer(correctAnswer));
+// Actualizar la barra de progreso
+function updateProgressBar() {
+    const progress = ((currentQuestionIndex + 1) / allQuestions.length) * 100;
+    progressBar.style.width = `${progress}%`;
+}
 
-            while (uniqueOptions.size < 4 && otherAnswers.length > 0) {
-                const randomIndex = Math.floor(Math.random() * otherAnswers.length);
-                const randomAnswer = otherAnswers[randomIndex];
-                if (!uniqueOptions.has(randomAnswer)) {
-                    uniqueOptions.add(randomAnswer);
-                    options.push(randomAnswer);
-                }
-                // Eliminar la respuesta usada para evitar duplicados en la selección de distractores
-                otherAnswers.splice(randomIndex, 1);
-            }
+// Inicializar el test
+document.addEventListener('DOMContentLoaded', () => {
+    totalQuestionsSpan.textContent = allQuestions.length;
+    loadQuizState();
+    renderQuestion();
+});
 
-            // Si no hay suficientes respuestas únicas en el documento, rellenar con texto genérico
-            while (options.length < 4) {
-                options.push(`Opción ${options.length + 1} (Genérica)`);
-            }
-
-            return shuffleArray(options);
-        }
-
-        // Función para renderizar la pregunta actual
-        function renderQuestion() {
-            if (currentQuestionIndex >= allQuestions.length) {
-                showResults();
-                return;
-            }
-
-            const questionData = allQuestions[currentQuestionIndex];
-            questionTextElement.textContent = questionData.question;
-            optionsContainer.innerHTML = '';
-            feedbackMessage.classList.add('hidden');
-            feedbackMessage.textContent = '';
-
-            const options = generateOptions(currentQuestionIndex);
-
-            options.forEach(option => {
-                const button = document.createElement('button');
-                button.textContent = option;
-                button.classList.add('option-button');
-                button.onclick = () => selectOption(button, option, questionData.answer);
-                optionsContainer.appendChild(button);
-            });
-
-            updateNavigationButtons();
-            updateProgressBar();
-            currentQuestionNumberSpan.textContent = currentQuestionIndex + 1;
-
-            // Restaurar la selección del usuario si ya ha respondido esta pregunta
-            if (userAnswers[currentQuestionIndex]) {
-                const selectedOption = userAnswers[currentQuestionIndex].selectedOption;
-                const isCorrect = userAnswers[currentQuestionIndex].isCorrect;
-
-                Array.from(optionsContainer.children).forEach(button => {
-                    button.disabled = true; // Deshabilitar botones después de responder
-                    if (normalizeAnswer(button.textContent) === normalizeAnswer(selectedOption)) {
-                        button.classList.add('selected');
-                        if (isCorrect) {
-                            button.classList.add('correct');
-                            feedbackMessage.textContent = '¡Correcto!';
-                            feedbackMessage.classList.remove('hidden');
-                            feedbackMessage.classList.add('correct');
-                            feedbackMessage.classList.remove('incorrect');
-                        } else {
-                            button.classList.add('incorrect');
-                            feedbackMessage.textContent = 'Incorrecto. La respuesta correcta era: ' + questionData.answer;
-                            feedbackMessage.classList.remove('hidden');
-                            feedbackMessage.classList.add('incorrect');
-                            feedbackMessage.classList.remove('correct');
-                        }
-                    } else if (normalizeAnswer(button.textContent) === normalizeAnswer(questionData.answer)) {
-                        // Resaltar la respuesta correcta si la seleccionada fue incorrecta
-                        if (!isCorrect) {
-                            button.classList.add('correct');
-                        }
-                    }
-                });
-            }
-        }
-
-        // Función para manejar la selección de una opción
-        function selectOption(selectedButton, selectedOptionText, correctAnswerText) {
-            // Deshabilitar todos los botones de opción después de la selección
-            Array.from(optionsContainer.children).forEach(button => {
-                button.disabled = true;
-            });
-
-            const isCorrect = normalizeAnswer(selectedOptionText) === normalizeAnswer(correctAnswerText);
-
-            selectedButton.classList.add('selected');
-            if (isCorrect) {
-                selectedButton.classList.add('correct');
-                feedbackMessage.textContent = '¡Correcto!';
-                feedbackMessage.classList.remove('hidden');
-                feedbackMessage.classList.add('correct');
-                feedbackMessage.classList.remove('incorrect');
-            } else {
-                selectedButton.classList.add('incorrect');
-                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta era: ' + correctAnswerText;
-                feedbackMessage.classList.remove('hidden');
-                feedbackMessage.classList.add('incorrect');
-                feedbackMessage.classList.remove('correct');
-
-                // Resaltar la respuesta correcta
-                Array.from(optionsContainer.children).forEach(button => {
-                    if (normalizeAnswer(button.textContent) === normalizeAnswer(correctAnswerText)) {
-                        button.classList.add('correct');
-                    }
-                });
-            }
-
-            // Guardar la respuesta del usuario
-            userAnswers[currentQuestionIndex] = {
-                question: allQuestions[currentQuestionIndex].question,
-                selectedOption: selectedOptionText,
-                correctAnswer: correctAnswerText,
-                isCorrect: isCorrect
-            };
-            saveQuizState();
-        }
-
-        // Actualizar el estado de los botones de navegación
-        function updateNavigationButtons() {
-            prevButton.disabled = currentQuestionIndex === 0;
-            nextButton.disabled = currentQuestionIndex === allQuestions.length - 1 && userAnswers[currentQuestionIndex] !== undefined;
-
-            if (currentQuestionIndex === allQuestions.length - 1 && userAnswers[currentQuestionIndex] !== undefined) {
-                nextButton.textContent = 'Ver Resultados';
-            } else {
-                nextButton.textContent = 'Siguiente';
-            }
-        }
-
-        // Navegar a la pregunta anterior
-        prevButton.addEventListener('click', () => {
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-                renderQuestion();
-                saveQuizState();
-            }
-        });
-
-        // Navegar a la siguiente pregunta o mostrar resultados
-        nextButton.addEventListener('click', () => {
-            if (currentQuestionIndex < allQuestions.length - 1) {
-                currentQuestionIndex++;
-                renderQuestion();
-                saveQuizState();
-            } else if (currentQuestionIndex === allQuestions.length - 1 && userAnswers[currentQuestionIndex] !== undefined) {
-                showResults();
-            }
-        });
-
-        // Función para mostrar la sección de resultados
-        function showResults() {
-            quizArea.classList.add('hidden');
-            resultsArea.classList.remove('hidden');
-
-            let correctCount = 0;
-            let incorrectCount = 0;
-            let unansweredCount = 0;
-
-            for (let i = 0; i < allQuestions.length; i++) {
-                if (userAnswers[i]) {
-                    if (userAnswers[i].isCorrect) {
-                        correctCount++;
-                    } else {
-                        incorrectCount++;
-                    }
-                } else {
-                    unansweredCount++;
-                }
-            }
-
-            document.getElementById('correctCount').textContent = correctCount;
-            document.getElementById('incorrectCount').textContent = incorrectCount;
-            document.getElementById('unansweredCount').textContent = unansweredCount;
-        }
-
-        // Función para reiniciar el test
-        function resetTest() {
-            if (confirm('¿Estás seguro de que quieres reiniciar el test? Se perderá todo tu progreso.')) {
-                localStorage.removeItem('quizState');
-                currentQuestionIndex = 0;
-                userAnswers = [];
-                quizState = {
-                    currentQuestionIndex: 0,
-                    userAnswers: []
-                };
-                quizArea.classList.remove('hidden');
-                resultsArea.classList.add('hidden');
-                renderQuestion();
-            }
-        }
-
-        // Event listener para el botón de reiniciar
-        resetButton.addEventListener('click', resetTest);
-        restartResultsButton.addEventListener('click', resetTest);
-
-        // Guardar el estado del quiz en localStorage
-        function saveQuizState() {
-            localStorage.setItem('quizState', JSON.stringify(quizState));
-        }
-
-        // Cargar el estado del quiz desde localStorage
-        function loadQuizState() {
-            const savedState = localStorage.getItem('quizState');
-            if (savedState) {
-                quizState = JSON.parse(savedState);
-                currentQuestionIndex = quizState.currentQuestionIndex;
-                userAnswers = quizState.userAnswers || [];
-            }
-        }
-
-        // Actualizar la barra de progreso
-        function updateProgressBar() {
-            const progress = ((currentQuestionIndex + 1) / allQuestions.length) * 100;
-            progressBar.style.width = `${progress}%`;
-        }
-
-        // Inicializar el test
-        document.addEventListener('DOMContentLoaded', () => {
-            totalQuestionsSpan.textContent = allQuestions.length;
-            loadQuizState();
-            renderQuestion();
-        });
     </script>
 </body>
 </html>
