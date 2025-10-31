@@ -38,9 +38,12 @@
     </div>
 
      <script>
-        // Datos de las preguntas y respuestas
-        const quizData = [
-            // PRIMERA PARTE - 85 Preguntas
+    // ... (rest of the quizData array and initial variables)
+    const quizData = [
+        // PRIMERA PARTE - 85 Preguntas
+        // ... (Tu array quizData completo)
+        // ...
+            
             {
                 id: '1',
                 text: 'Con respecto a la sindicación, NO es correcto decir, según el artículo 28 de la Constitución Española, que...',
@@ -1364,210 +1367,220 @@
                 type: 'supuesto2',
             },
         ];
-        let currentQuestionIndex = 0;
-        let userAnswers = {};
-        const quizContainer = document.getElementById('quiz-container');
-        const feedbackContainer = document.getElementById('feedback-container');
+       let currentQuestionIndex = 0;
+    let userAnswers = {};
+    const quizContainer = document.getElementById('quiz-container');
+    const feedbackContainer = document.getElementById('feedback-container');
 
-        // Función para guardar el estado del quiz en localStorage
-        function saveQuizState() {
-            const quizState = {
-                index: currentQuestionIndex,
-                answers: userAnswers
-            };
-            localStorage.setItem('quizState', JSON.stringify(quizState));
+    // Función para guardar el estado del quiz en localStorage
+    function saveQuizState() {
+        const quizState = {
+            index: currentQuestionIndex,
+            answers: userAnswers
+        };
+        localStorage.setItem('quizState', JSON.stringify(quizState));
+    }
+
+    // Función para cargar el estado del quiz desde localStorage
+    function loadQuizState() {
+        const savedState = localStorage.getItem('quizState');
+        if (savedState) {
+            const quizState = JSON.parse(savedState);
+            currentQuestionIndex = quizState.index;
+            userAnswers = quizState.answers;
+        }
+    }
+
+    // Función para mostrar un mensaje de feedback
+    function showFeedback(message, type) {
+        feedbackContainer.textContent = message;
+        feedbackContainer.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-100 opacity-100';
+        if (type === 'correct') {
+            feedbackContainer.classList.add('bg-green-100', 'text-green-800');
+        } else if (type === 'incorrect') {
+            feedbackContainer.classList.add('bg-red-100', 'text-red-800');
+        }
+        // Ocultar el feedback después de 2 segundos
+        setTimeout(() => {
+            hideFeedback();
+        }, 2000);
+    }
+
+    // Función para ocultar el feedback
+    function hideFeedback() {
+        feedbackContainer.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-0 opacity-0';
+    }
+
+    // Función **NUEVA** para reiniciar el quiz
+    function resetQuiz() {
+        localStorage.removeItem('quizState');
+        currentQuestionIndex = 0;
+        userAnswers = {};
+        renderQuiz();
+    }
+
+    // Función para renderizar la pregunta actual
+    function renderQuiz() {
+        if (currentQuestionIndex >= quizData.length) {
+            renderResults();
+            return;
         }
 
-        // Función para cargar el estado del quiz desde localStorage
-        function loadQuizState() {
-            const savedState = localStorage.getItem('quizState');
-            if (savedState) {
-                const quizState = JSON.parse(savedState);
-                currentQuestionIndex = quizState.index;
-                userAnswers = quizState.answers;
-            }
-        }
+        const currentQuestion = quizData[currentQuestionIndex];
+        const totalQuestions = quizData.length;
+        const progress = (currentQuestionIndex / totalQuestions) * 100;
 
-        // Función para mostrar un mensaje de feedback
-        function showFeedback(message, type) {
-            feedbackContainer.textContent = message;
-            feedbackContainer.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-100 opacity-100';
-            if (type === 'correct') {
-                feedbackContainer.classList.add('bg-green-100', 'text-green-800');
-            } else if (type === 'incorrect') {
-                feedbackContainer.classList.add('bg-red-100', 'text-red-800');
-            }
-            // Ocultar el feedback después de 2 segundos
-            setTimeout(() => {
-                hideFeedback();
-            }, 2000);
-        }
+        let optionsHtml = '';
+        for (const key in currentQuestion.options) {
+            const isSelected = userAnswers[currentQuestion.id] === key;
+            const isCorrect = userAnswers[currentQuestion.id] && key === currentQuestion.correctAnswer;
+            const isIncorrectAndSelected = userAnswers[currentQuestion.id] && isSelected && userAnswers[currentQuestion.id] !== currentQuestion.correctAnswer;
 
-        // Función para ocultar el feedback
-        function hideFeedback() {
-            feedbackContainer.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg transition-all duration-300 transform scale-0 opacity-0';
-        }
-
-        // Función para renderizar la pregunta actual
-        function renderQuiz() {
-            if (currentQuestionIndex >= quizData.length) {
-                renderResults();
-                return;
-            }
-
-            const currentQuestion = quizData[currentQuestionIndex];
-            const totalQuestions = quizData.length;
-            const progress = (currentQuestionIndex / totalQuestions) * 100;
-
-            let optionsHtml = '';
-            for (const key in currentQuestion.options) {
-                const isSelected = userAnswers[currentQuestion.id] === key;
-                const isCorrect = userAnswers[currentQuestion.id] && key === currentQuestion.correctAnswer;
-                const isIncorrectAndSelected = userAnswers[currentQuestion.id] && isSelected && userAnswers[currentQuestion.id] !== currentQuestion.correctAnswer;
-
-                let classes = 'p-4 rounded-lg cursor-pointer border-2 transition-all duration-200 ease-in-out';
-                if (userAnswers[currentQuestion.id]) {
-                    // Si ya se ha respondido, deshabilitar la interacción
-                    classes += ' pointer-events-none';
-                    if (isCorrect) {
-                        classes += ' border-green-500 bg-green-100'; // Resaltar la respuesta correcta
-                    } else if (isIncorrectAndSelected) {
-                        classes += ' border-red-500 bg-red-100'; // Resaltar la respuesta incorrecta seleccionada
-                    } else if (key === currentQuestion.correctAnswer) {
-                        classes += ' border-green-500 bg-green-100'; // Resaltar la correcta después de una incorrecta
-                    } else {
-                        classes += ' bg-gray-50 border-gray-200';
-                    }
+            let classes = 'p-4 rounded-lg cursor-pointer border-2 transition-all duration-200 ease-in-out';
+            if (userAnswers[currentQuestion.id]) {
+                // Si ya se ha respondido, deshabilitar la interacción
+                classes += ' pointer-events-none';
+                if (isCorrect) {
+                    classes += ' border-green-500 bg-green-100'; // Resaltar la respuesta correcta
+                } else if (isIncorrectAndSelected) {
+                    classes += ' border-red-500 bg-red-100'; // Resaltar la respuesta incorrecta seleccionada
+                } else if (key === currentQuestion.correctAnswer) {
+                    classes += ' border-green-500 bg-green-100'; // Resaltar la correcta después de una incorrecta
                 } else {
-                    // Si no se ha respondido aún
-                    classes += ' bg-gray-50 hover:bg-gray-100 border-gray-200';
+                    classes += ' bg-gray-50 border-gray-200';
                 }
-
-                optionsHtml += `
-                    <div class="${classes}">
-                        <label class="flex items-center space-x-2 w-full cursor-pointer">
-                            <input type="radio" name="question-${currentQuestion.id}" value="${key}" class="hidden" ${isSelected ? 'checked' : ''} ${userAnswers[currentQuestion.id] ? 'disabled' : ''}>
-                            <span class="text-lg font-medium">${key.toUpperCase()})</span>
-                            <span class="flex-1 text-base">${currentQuestion.options[key]}</span>
-                        </label>
-                    </div>
-                `;
+            } else {
+                // Si no se ha respondido aún
+                classes += ' bg-gray-50 hover:bg-gray-100 border-gray-200';
             }
 
-            quizContainer.innerHTML = `
-                <div class="text-center mb-6">
-                    <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 3rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">4 PASTILLA VERDE</h1>
-                </div>
-                <div class="mb-4 text-center">
-                    <p class="text-sm font-semibold text-gray-500">Pregunta ${currentQuestionIndex + 1} de ${totalQuestions}</p>
-                    <div class="w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
-                        <div class="h-full bg-blue-500" style="width: ${progress}%"></div>
-                    </div>
-                </div>
-                <h2 class="text-xl font-bold text-gray-800 mb-6 leading-relaxed">${currentQuestion.text}</h2>
-                <div class="space-y-4">
-                    ${optionsHtml}
-                </div>
-                <div class="flex justify-between mt-8">
-                    <button id="prev-button" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200 ${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}">Anterior</button>
-                    <button id="next-button" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200">
-                        ${currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente'}
-                    </button>
+            optionsHtml += `
+                <div class="${classes}">
+                    <label class="flex items-center space-x-2 w-full cursor-pointer">
+                        <input type="radio" name="question-${currentQuestion.id}" value="${key}" class="hidden" ${isSelected ? 'checked' : ''} ${userAnswers[currentQuestion.id] ? 'disabled' : ''}>
+                        <span class="text-lg font-medium">${key.toUpperCase()})</span>
+                        <span class="flex-1 text-base">${currentQuestion.options[key]}</span>
+                    </label>
                 </div>
             `;
-
-            // Añadir event listeners después de renderizar el HTML
-            addEventListeners();
         }
 
-        // Función para manejar los eventos de los botones y opciones
-        function addEventListeners() {
-            document.getElementById('prev-button').addEventListener('click', () => {
-                if (currentQuestionIndex > 0) {
-                    currentQuestionIndex--;
-                    saveQuizState();
-                    renderQuiz();
-                }
-            });
-
-            document.getElementById('next-button').addEventListener('click', () => {
-                if (currentQuestionIndex < quizData.length - 1) {
-                    currentQuestionIndex++;
-                    saveQuizState();
-                    renderQuiz();
-                } else if (currentQuestionIndex === quizData.length - 1) {
-                    renderResults();
-                }
-            });
-
-            // Añadir event listeners a los radio buttons para capturar la respuesta
-            document.querySelectorAll('input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', (event) => {
-                    const selectedOption = event.target.value;
-                    const currentQuestion = quizData[currentQuestionIndex];
-                    userAnswers[currentQuestion.id] = selectedOption;
-                    saveQuizState();
-
-                    // Mostrar feedback y la respuesta correcta si es incorrecta
-                    if (selectedOption === currentQuestion.correctAnswer) {
-                        showFeedback('¡Correcto!', 'correct');
-                    } else {
-                        const correctOptionText = currentQuestion.options[currentQuestion.correctAnswer];
-                        showFeedback(`Incorrecto. La respuesta correcta era: ${currentQuestion.correctAnswer.toUpperCase()}) ${correctOptionText}`, 'incorrect');
-                    }
-                    
-                    // Re-renderizar para actualizar el estilo de la opción seleccionada y la correcta
-                    renderQuiz();
-                });
-            });
-        }
-
-        // Función para renderizar la pantalla de resultados
-        function renderResults() {
-            const correctCount = quizData.filter(q => userAnswers[q.id] === q.correctAnswer).length;
-            const incorrectCount = quizData.filter(q => userAnswers[q.id] && userAnswers[q.id] !== q.correctAnswer).length;
-            const unansweredCount = quizData.length - (correctCount + incorrectCount);
-
-            quizContainer.innerHTML = `
-                <div class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
-                    <p class="text-lg text-gray-700 mb-6">¡Has completado el cuestionario!</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <div class="bg-green-100 p-6 rounded-xl shadow-md">
-                            <h3 class="text-xl font-bold text-green-800">Correctas</h3>
-                            <p class="text-4xl font-extrabold text-green-800 mt-2">${correctCount}</p>
-                        </div>
-                        <div class="bg-red-100 p-6 rounded-xl shadow-md">
-                            <h3 class="text-xl font-bold text-red-800">Incorrectas</h3>
-                            <p class="text-4xl font-extrabold text-red-800 mt-2">${incorrectCount}</p>
-                        </div>
-                        <div class="bg-yellow-100 p-6 rounded-xl shadow-md">
-                            <h3 class="text-xl font-bold text-yellow-800">Sin contestar</h3>
-                            <p class="text-4xl font-extrabold text-yellow-800 mt-2">${unansweredCount}</p>
-                        </div>
-                    </div>
-
-                    <button id="restart-button" class="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200">
-                        Volver a Empezar
-                    </button>
+        quizContainer.innerHTML = `
+            <div class="text-center mb-6">
+                <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">PASTILLA VERDE</h1>
+            </div>
+            <div class="mb-4 text-center">
+                <p class="text-sm font-semibold text-gray-500">Pregunta ${currentQuestionIndex + 1} de ${totalQuestions}</p>
+                <div class="w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                    <div class="h-full bg-blue-500" style="width: ${progress}%"></div>
                 </div>
-            `;
-            
-            // Añadir event listener para el botón de reinicio
-            document.getElementById('restart-button').addEventListener('click', () => {
-                localStorage.removeItem('quizState');
-                currentQuestionIndex = 0;
-                userAnswers = {};
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-6 leading-relaxed">${currentQuestion.text}</h2>
+            <div class="space-y-4">
+                ${optionsHtml}
+            </div>
+            <div class="flex justify-between mt-8 items-center">
+                <button id="prev-button" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200 ${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}">Anterior</button>
+                <button id="restart-button-inline" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors duration-200">Reiniciar Test</button>
+                <button id="next-button" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200">
+                    ${currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente'}
+                </button>
+            </div>
+        `; // **FIN DE renderQuiz()**
+
+        // Añadir event listeners después de renderizar el HTML
+        addEventListeners();
+    }
+
+    // Función para manejar los eventos de los botones y opciones
+    function addEventListeners() {
+        document.getElementById('prev-button').addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveQuizState();
+                renderQuiz();
+            }
+        });
+
+        document.getElementById('next-button').addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                saveQuizState();
+                renderQuiz();
+            } else if (currentQuestionIndex === quizData.length - 1) {
+                renderResults();
+            }
+        });
+        
+        // **NUEVO** Event listener para el botón de reinicio en las preguntas
+        const restartButtonInline = document.getElementById('restart-button-inline');
+        if (restartButtonInline) {
+             restartButtonInline.addEventListener('click', resetQuiz);
+        }
+        
+        // Añadir event listeners a los radio buttons para capturar la respuesta
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                const selectedOption = event.target.value;
+                const currentQuestion = quizData[currentQuestionIndex];
+                userAnswers[currentQuestion.id] = selectedOption;
+                saveQuizState();
+
+                // Mostrar feedback y la respuesta correcta si es incorrecta
+                if (selectedOption === currentQuestion.correctAnswer) {
+                    showFeedback('¡Correcto!', 'correct');
+                } else {
+                    const correctOptionText = currentQuestion.options[currentQuestion.correctAnswer];
+                    showFeedback(`Incorrecto. La respuesta correcta era: ${currentQuestion.correctAnswer.toUpperCase()}) ${correctOptionText}`, 'incorrect');
+                }
+                
+                // Re-renderizar para actualizar el estilo de la opción seleccionada y la correcta
                 renderQuiz();
             });
-        }
+        });
+    }
 
-        // Cargar el estado y renderizar el quiz al cargar la página
-        window.onload = () => {
-            loadQuizState();
-            renderQuiz();
-        };
-    </script>
+    // Función para renderizar la pantalla de resultados
+    function renderResults() {
+        const correctCount = quizData.filter(q => userAnswers[q.id] === q.correctAnswer).length;
+        const incorrectCount = quizData.filter(q => userAnswers[q.id] && userAnswers[q.id] !== q.correctAnswer).length;
+        const unansweredCount = quizData.length - (correctCount + incorrectCount);
+
+        quizContainer.innerHTML = `
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultados del Test</h2>
+                <p class="text-lg text-gray-700 mb-6">¡Has completado el cuestionario!</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-green-100 p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold text-green-800">Correctas</h3>
+                        <p class="text-4xl font-extrabold text-green-800 mt-2">${correctCount}</p>
+                    </div>
+                    <div class="bg-red-100 p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold text-red-800">Incorrectas</h3>
+                        <p class="text-4xl font-extrabold text-red-800 mt-2">${incorrectCount}</p>
+                    </div>
+                    <div class="bg-yellow-100 p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold text-yellow-800">Sin contestar</h3>
+                        <p class="text-4xl font-extrabold text-yellow-800 mt-2">${unansweredCount}</p>
+                    </div>
+                </div>
+
+                <button id="restart-button-results" class="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200">
+                    Volver a Empezar
+                </button>
+            </div>
+        `;
+        
+        // Añadir event listener para el botón de reinicio en los resultados
+        document.getElementById('restart-button-results').addEventListener('click', resetQuiz);
+    }
+
+    // Cargar el estado y renderizar el quiz al cargar la página
+    window.onload = () => {
+        loadQuizState();
+        renderQuiz();
+    };
+</script>
 </body>
 </html>
