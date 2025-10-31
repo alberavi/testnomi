@@ -1,3 +1,4 @@
+<!-- CORREGIDO  REVISAR BLOQUE 4-->
 <!-- CORREGIDO -->
 <!DOCTYPE html>
 <html lang="es">
@@ -1996,6 +1997,7 @@
         ];
 
         // Custom Modal Logic
+// Custom Modal Logic
         const customModal = document.getElementById('custom-modal');
         const modalMessage = document.getElementById('modal-message');
         const modalConfirmButton = document.getElementById('modal-confirm-button');
@@ -2036,6 +2038,11 @@
         };
 
         let currentPage = 0; // Current question index
+
+        // NUEVA FUNCIÓN: Guarda el índice de la pregunta actual
+        function saveCurrentPage() {
+            localStorage.setItem('gsiTestCurrentPage', currentPage.toString());
+        }
 
         // Function to load a single question based on currentPage
         function loadQuestion(pageIndex) {
@@ -2082,6 +2089,7 @@
 
                 // Update pagination info
                 document.getElementById('pagination-info').textContent = `Pregunta ${pageIndex + 1} de ${questions.length}`;
+                document.getElementById('pagination-info').classList.remove('hidden');
 
                 loadProgressForCurrentQuestion(q.id); // Load saved answer for the current question
                 updateNavigationButtons(); // Update button visibility
@@ -2174,6 +2182,7 @@
         function goToNextQuestion() {
             if (currentPage < questions.length - 1) {
                 currentPage++;
+                saveCurrentPage(); // <-- Guardar la nueva página
                 loadQuestion(currentPage);
             }
         }
@@ -2182,25 +2191,38 @@
         function goToPreviousQuestion() {
             if (currentPage > 0) {
                 currentPage--;
+                saveCurrentPage(); // <-- Guardar la nueva página
                 loadQuestion(currentPage);
             }
         }
 
-        // Function to reset the test
+        // Función corregida: Restablece la visibilidad de la interfaz del test
         function resetTest() {
             showModal('¿Estás seguro de que quieres reiniciar el test? Se borrará todo tu progreso.', 'confirm', (confirmed) => {
                 if (confirmed) {
                     localStorage.removeItem('gsiTestAnswers');
-                    currentPage = 0; // Reset to first question
-                    loadQuestion(currentPage); // Reload the first question
-                    document.getElementById('results-summary').style.display = 'none'; // Hide results
-                    document.getElementById('submit-button').disabled = false; // Enable submit button
+                    localStorage.removeItem('gsiTestCurrentPage'); // <-- Eliminar la página guardada
+                    currentPage = 0; // Reset a la primera pregunta
+                    
+                    // Asegurar que los elementos del cuestionario vuelven a ser visibles
+                    document.getElementById('quiz-container').style.display = 'block';
+                    document.getElementById('submit-button').disabled = false; // Habilitar botón de enviar
+
+                    loadQuestion(currentPage); // Recargar la primera pregunta (que también actualiza los botones de navegación)
+                    document.getElementById('results-summary').style.display = 'none'; // Ocultar resultados
                 }
             });
         }
 
-        // Function to calculate and display results
+        // Función corregida: Oculta la interfaz del test y muestra los resultados
         function showResults() {
+            // 1. OCULTAR elementos del cuestionario
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('prev-button').classList.add('hidden');
+            document.getElementById('next-button').classList.add('hidden');
+            document.getElementById('submit-button').classList.add('hidden');
+            document.getElementById('pagination-info').classList.add('hidden');
+
             const savedAnswers = JSON.parse(localStorage.getItem('gsiTestAnswers')) || {};
             let correctCount = 0;
             let incorrectCount = 0;
@@ -2220,29 +2242,38 @@
                     unansweredCount++;
                 }
 
-                // Ensure all questions show their state (correct, incorrect, skipped)
+                // Asegurar que todas las preguntas tengan su estado (aunque el contenedor esté oculto)
                 const questionBlock = document.getElementById(`question-${q.id}`);
-                if (questionBlock) {
-                    if (!userAnswer) {
-                        questionBlock.classList.add('skipped');
-                    }
+                if (questionBlock && !userAnswer) {
+                    questionBlock.classList.add('skipped');
                 }
             });
 
+            // 2. MOSTRAR resumen de resultados
             const resultsSummary = document.getElementById('results-summary');
             resultsSummary.innerHTML = `
-                <p>Resultados del Test:</p>
-                <p>Respuestas Correctas: <span class="score">${correctCount}</span></p>
-                <p>Respuestas Incorrectas: <span class="score">${incorrectCount}</span></p>
-                <p>Preguntas Sin Contestar: <span class="score">${unansweredCount}</span></p>
+                <h2>Resumen de Resultados</h2>
+                <p>Total de Preguntas: ${questions.length}</p>
+                <p>Respuestas Correctas: <span class="score" style="color: #059669; font-weight: bold;">${correctCount}</span></p>
+                <p>Respuestas Incorrectas: <span class="score" style="color: #dc2626; font-weight: bold;">${incorrectCount}</span></p>
+                <p>Preguntas Sin Contestar: <span class="score" style="color: #64748b; font-weight: bold;">${unansweredCount}</span></p>
             `;
             resultsSummary.style.display = 'block';
-            document.getElementById('submit-button').disabled = true; // Disable submit after showing results
+            document.getElementById('submit-button').disabled = true; // Deshabilitar enviar
         }
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
-            loadQuestion(currentPage); // Load the first question on page load
+            // Lógica para cargar la última página guardada
+            const savedPage = localStorage.getItem('gsiTestCurrentPage');
+            if (savedPage !== null) {
+                const loadedPage = parseInt(savedPage, 10);
+                // Validar que el índice cargado sea un número válido y esté dentro del rango
+                if (!isNaN(loadedPage) && loadedPage >= 0 && loadedPage < questions.length) {
+                    currentPage = loadedPage;
+                }
+            }
+            loadQuestion(currentPage); // Cargar la pregunta inicial (ya sea 0 o la guardada)
         });
         document.getElementById('reset-button').addEventListener('click', resetTest);
         document.getElementById('submit-button').addEventListener('click', showResults);
@@ -2251,6 +2282,14 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 
 
