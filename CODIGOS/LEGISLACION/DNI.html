@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D.N.I</title>
+    <!-- Enlace a Tailwind CSS para las clases de la estructura HTML -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS completo para el estilo del quiz -->
+    <style>
+        /* Estilos generales del cuerpo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Contenedor principal del quiz */
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Tarjeta de la pregunta */
+        .question-card {
+            background-color: #f8fafc;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Estilo para la tarjeta de pregunta correcta */
+        .question-card.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+
+        /* Estilo para la tarjeta de pregunta incorrecta */
+        .question-card.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        /* Texto de la pregunta */
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        /* Botones de opciones */
+        .option-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background-color: #ffffff;
+            color: #4a5568;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Efecto hover para los botones de opciones */
+        .option-button:hover:not(.disabled) {
+            background-color: #e2e8f0;
+            border-color: #a0aec0;
+        }
+
+        /* Estilo para el botón de opción seleccionado */
+        .option-button.selected {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+            font-weight: 600;
+        }
+
+        /* Estilo para la respuesta correcta */
+        .option-button.correct-answer {
+            background-color: #28a745;
+            color: #ffffff;
+            border-color: #28a745;
+            font-weight: 700;
+        }
+
+        /* Estilo para la respuesta incorrecta */
+        .option-button.incorrect-answer {
+            background-color: #dc3545;
+            color: #ffffff;
+            border-color: #dc3545;
+            font-weight: 700;
+        }
+
+        /* Estilo para los botones deshabilitados */
+        .option-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* Contenedor de la solución */
+        .solution {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background-color: #e0f2f7;
+            color: #2c5282;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: 1px solid #90cdf4;
+        }
+
+        /* Contenedor del feedback (correcto/incorrecto) */
+        .feedback {
+            margin-top: 15px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        /* Estilo para feedback correcto */
+        .feedback.correct {
+            color: #28a745;
+        }
+
+        /* Estilo para feedback incorrecto */
+        .feedback.incorrect {
+            color: #dc3545;
+        }
+
+        /* Contenedor de los botones de navegación */
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Estilo base para los botones de navegación */
+        .nav-button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        /* Estilo para el botón "Anterior" */
+        .nav-button.prev {
+            background-color: #6b7280;
+            color: #ffffff;
+        }
+        .nav-button.prev:hover:not(:disabled) {
+            background-color: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        /* Estilo para el botón "Siguiente" */
+        .nav-button.next {
+            background-color: #4299e1;
+            color: #ffffff;
+        }
+        .nav-button.next:hover:not(:disabled) {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        /* Estilo para el botón de reinicio en línea */
+        .nav-button.restart-inline {
+            background-color: #f50b0b;
+            color: #ffffff;
+        }
+        .nav-button.restart-inline:hover:not(:disabled) {
+            background-color: #ac0505;
+            transform: translateY(-2px);
+        }
+
+        /* Estilo para los botones deshabilitados */
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Barra de progreso */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #4299e1;
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* Visualización de la puntuación final */
+        .score-display {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-top: 20px;
+        }
+
+        /* Resumen de resultados */
+        .results-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .results-summary p {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .results-summary p strong {
+            font-weight: 700;
+        }
+
+        /* Botón de reinicio final */
+        .restart-button {
+            display: block;
+            width: fit-content;
+            margin: 20px auto 0 auto;
+            padding: 12px 30px;
+            background-color: #48bb78;
+            color: #ffffff;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .restart-button:hover {
+            background-color: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+         <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">D.N.I</h1>
+
+        <!-- Barra de progreso -->
+        <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <!-- Contenedor principal de las preguntas -->
+        <div id="quizContainer">
+            <!-- Las preguntas se cargarán dinámicamente aquí -->
+        </div>
+
+        <!-- Botones de navegación -->
+        <div class="navigation-buttons">
+            <button id="prevBtn" class="nav-button prev" disabled>Anterior</button>
+            <button id="restartInlineBtn" class="nav-button restart-inline">Reiniciar Test</button>
+            <button id="nextBtn" class="nav-button next">Siguiente</button>
+        </div>
+
+        <!-- Contenedor de la puntuación final -->
+        <div id="finalScore" class="hidden">
+            <div class="score-display"></div>
+            <div class="results-summary">
+                <p><strong>Preguntas Correctas:</strong> <span id="correctCount">0</span></p>
+                <p><strong>Preguntas Incorrectas:</strong> <span id="incorrectCount">0</span></p>
+                <p><strong>Preguntas Sin Contestar:</strong> <span id="unansweredCount">0</span></p>
+            </div>
+            <button id="restartBtn" class="restart-button">Reiniciar Test</button>
+        </div>
+    </div>
+
+ <script>
+    // Array de preguntas y respuestas
+    const quizData = [
+            
+    {
+        question: "¿Qué organismo emite el Documento Nacional de Identidad, según el Real Decreto 1553/2005?",
+        options: ["Ministerio de Justicia", "Ministerio de Asuntos Exteriores", "Ministerio del Interior", "Dirección General de la Policía"],
+        correctAnswer: "Ministerio del Interior"
+    },
+    {
+        question: "¿A partir de qué edad es obligatoria la obtención del Documento Nacional de Identidad para los españoles residentes en España?",
+        options: ["Dieciséis años", "Dieciocho años", "Doce años", "Catorce años"],
+        correctAnswer: "Catorce años"
+    },
+    {
+        question: "¿Qué función del DNIe solo está disponible para españoles mayores de edad y que gocen de plena capacidad de obrar?",
+        options: ["Acreditación de la nacionalidad española", "Identificación electrónica del titular", "Identificación física del titular", "Realizar la firma electrónica de documentos"],
+        correctAnswer: "Realizar la firma electrónica de documentos"
+    },
+    {
+        question: "¿Cuál es la vigencia máxima de los certificados electrónicos reconocidos incorporados al DNIe?",
+        options: ["Diez años", "Dos años", "Siete años", "Cinco años"],
+        correctAnswer: "Cinco años"
+    },
+    {
+        question: "¿Cuál es la antelación máxima requerida para la Certificación literal de nacimiento a la fecha de la solicitud de expedición del DNI?",
+        options: ["Tres meses", "Doce meses", "Un mes", "Seis meses"],
+        correctAnswer: "Seis meses"
+    },
+    {
+        question: "¿Cuál es el período de validez general del DNI para un ciudadano español de 40 años de edad?",
+        options: ["2 años", "5 años", "10 años", "Permanente"],
+        correctAnswer: "10 años"
+    },
+    {
+        question: "Se considera que el Documento Nacional de Identidad está caducado cuando...",
+        options: ["El titular cumple 70 años de edad.", "Se produce una variación de los datos en él recogidos.", "Transcurre el periodo de validez que le corresponde.", "El titular pierde su plena capacidad de obrar."],
+        correctAnswer: "Transcurre el periodo de validez que le corresponde."
+    },
+    {
+        question: "En el supuesto de extravío del DNI, si al documento sustituido le restan 50 días de vigencia, ¿qué validez tendrá el duplicado expedido?",
+        options: ["La misma que si se tratara de una renovación (según la edad del titular).", "Validez de 1 año, por ser un supuesto excepcional.", "Permanente, al ser un duplicado por causa involuntaria.", "Los 50 días restantes que le quedaban al documento anterior."],
+        correctAnswer: "La misma que si se tratara de una renovación (según la edad del titular)."
+    },
+    {
+        question: "¿De qué dedo, como regla general, se recoge la plantilla de impresión dactilar que se almacena en el chip del DNIe?",
+        options: ["Dedo pulgar de la mano derecha.", "Dedo anular de la mano izquierda.", "Dedo índice de la mano izquierda.", "Dedo índice de la mano derecha."],
+        correctAnswer: "Dedo índice de la mano derecha."
+    },
+    {
+        question: "Según el Artículo 11, ¿qué dato de filiación se recoge gráficamente en el reverso del Documento Nacional de Identidad?",
+        options: ["Número personal del DNI", "Fecha de caducidad", "Nombre de los padres", "Apellidos y nombre"],
+        correctAnswer: "Nombre de los padres"
+    },
+    {
+        question: "¿Qué documento debe aportar un español residente en el extranjero para acreditar su domicilio al solicitar la expedición del DNI?",
+        options: ["Certificado de la Delegación de Gobierno más cercana.", "Volante de empadronamiento del último Ayuntamiento en España.", "Certificación de la Representación Diplomática o Consular donde estén inscritos como residentes.", "Declaración jurada de domicilio."],
+        correctAnswer: "Certificación de la Representación Diplomática o Consular donde estén inscritos como residentes."
+    },
+    {
+        question: "¿Cuál es la validez del DNI para una persona que acaba de cumplir 70 años?",
+        options: ["10 años", "5 años", "Permanente", "1 año"],
+        correctAnswer: "Permanente"
+    },
+    {
+        question: "La renovación del DNI o la expedición de duplicados del mismo implicará, a su vez:",
+        options: ["La pérdida de validez de todos los certificados electrónicos emitidos con anterioridad.", "La revocación inmediata de la clave personal y secreta (PIN) asociada al documento.", "La expedición de nuevos certificados electrónicos.", "El cambio automático del número personal del Documento Nacional de Identidad."],
+        correctAnswer: "La expedición de nuevos certificados electrónicos."
+    },
+    {
+        question: "¿Cuál es la función principal del Certificado de Firma en el DNI electrónico?",
+        options: ["Establecer un canal cifrado entre la tarjeta y los Drivers.", "Garantizar electrónicamente la identidad del ciudadano al realizar una transacción telemática, sin no repudio.", "Garantizar la integridad del Documento y el No repudio de origen.", "Permitir la identificación biométrica del titular en puntos de acceso controlados."],
+        correctAnswer: "Garantizar la integridad del Documento y el No repudio de origen."
+    },
+    {
+        question: "¿Qué certificación de seguridad (Common Criteria) posee el chip del DNI electrónico (Sistema operativo DNIe v4.0)?",
+        options: ["ISO 27001", "CC EAL5+", "FIPS 140-2", "PCI DSS"],
+        correctAnswer: "CC EAL5+"
+    },
+    {
+        question: "El DNI electrónico es un dispositivo con 'Dual Interface', lo que significa que incluye:",
+        options: ["Un chip óptico y una banda magnética.", "Interfaces con contactos y sin contactos (contactless).", "Dos chips electrónicos (uno para autenticación y otro para firma).", "Una antena NFC y un puerto USB-C."],
+        correctAnswer: "Interfaces con contactos y sin contactos (contactless)."
+    },
+    {
+        question: "En el caso de españoles menores de edad, ¿cuál de las utilidades del DNIe es la única que contiene el documento, emitiéndose con el respectivo certificado activado?",
+        options: ["Realizar la firma electrónica de documentos.", "Autenticación para trámites en el extranjero.", "La utilidad de la identificación electrónica.", "La acreditación de la nacionalidad."],
+        correctAnswer: "La utilidad de la identificación electrónica."
+    },
+    {
+        question: "¿Qué validez excepcional se otorga al DNI a las personas mayores de treinta años que acrediten la condición de gran inválido?",
+        options: ["1 año", "5 años", "10 años", "Permanente"],
+        correctAnswer: "Permanente"
+    },
+    {
+        question: "En caso de extravío o sustracción del DNIe, ¿a qué órgano se debe comunicar inmediatamente el hecho al objeto de la revocación de los certificados?",
+        options: ["El Ministerio del Interior.", "La Fábrica Nacional de Moneda y Timbre.", "La Dirección General de la Policía.", "El Ministerio de Hacienda y Administraciones Públicas."],
+        correctAnswer: "La Dirección General de la Policía."
+    },
+    {
+        question: "¿Qué requisito, además de la presencia física y el abono de la tasa, es imprescindible para solicitar la expedición del DNI?",
+        options: ["Aportar una Declaración jurada de domicilio.", "Aportar una fotografía reciente en color del rostro del solicitante, con fondo uniforme blanco y liso.", "Presentar el pasaporte en vigor.", "Un certificado de antecedentes penales."],
+        correctAnswer: "Aportar una fotografía reciente en color del rostro del solicitante, con fondo uniforme blanco y liso."
+    },
+    {
+        question: "Si no es posible obtener la impresión dactilar del dedo índice de una mano, ¿cuál es el siguiente dedo según el orden de prelación para la recogida de la impresión?",
+        options: ["Dedo pulgar", "Dedo meñique", "Dedo anular", "Dedo medio"],
+        correctAnswer: "Dedo medio"
+    },
+    {
+        question: "¿Qué tipo de claves criptográficas (pares de claves) genera y gestiona la tarjeta DNIe?",
+        options: ["Claves DES", "Claves ECC", "Claves AES", "Claves RSA"],
+        correctAnswer: "Claves RSA"
+    },
+    {
+        question: "¿Qué algoritmo de hash es capaz de utilizar la tarjeta DNIe para el hash de datos?",
+        options: ["MD5", "SHA-512", "SHA-1", "SHA-256"],
+        correctAnswer: "SHA-256"
+    },
+    {
+        question: "¿Cuál es la antelación máxima requerida para el Certificado o volante de empadronamiento a la fecha de la solicitud del DNI?",
+        options: ["Seis meses", "Un mes", "Cuatro meses", "Tres meses"],
+        correctAnswer: "Tres meses"
+    },
+    {
+        question: "En el contexto de la DNIe, ¿qué significa que la firma electrónica es 'reconocida'?",
+        options: ["Que ha sido generada con una clave de un Prestador de Servicios de Certificación.", "Que permite solo la identificación del firmante, pero no la integridad del documento.", "Que es una firma electrónica avanzada basada en un certificado reconocido y generada mediante un dispositivo seguro de creación de firma.", "Que ha sido registrada en el Registro Central de Firmas del Ministerio del Interior."],
+        correctAnswer: "Que es una firma electrónica avanzada basada en un certificado reconocido y generada mediante un dispositivo seguro de creación de firma."
+    },
+    {
+        question: "¿Qué tecnología permite al interfaz sin contactos (contactless) del DNIe incluir las mismas funcionalidades que el interfaz con contactos?",
+        options: ["Bluetooth Low Energy (BLE)", "Wi-Fi Direct", "Near Field Communication (NFC)", "Radio-Frequency Identification (RFID)"],
+        correctAnswer: "Near Field Communication (NFC)"
+    },
+    {
+        question: "¿Qué entidad, de las mencionadas, es la Autoridad de Validación que prestará sus servicios con carácter universal (ciudadanos, empresas y Administraciones Públicas)?",
+        options: ["Dirección General de la Policía", "Ministerio de Hacienda y Administraciones Públicas", "Fábrica Nacional de Moneda y Timbre - Real Casa de la Moneda", "Ministerio del Interior"],
+        correctAnswer: "Fábrica Nacional de Moneda y Timbre - Real Casa de la Moneda"
+    },
+    {
+        question: "¿Qué ocurre con el DNI anterior al entregar uno nuevo renovado?",
+        options: ["Se mantiene en el archivo de la Dirección General de la Policía como comprobante.", "Se procede a su retirada para su inutilización física, y solo puede ser destruido.", "Se devuelve inmediatamente al titular como documento de colección.", "Se procede a su retirada para su inutilización física, pero podrá ser devuelto a su titular si éste lo solicita."],
+        correctAnswer: "Se procede a su retirada para su inutilización física, pero podrá ser devuelto a su titular si éste lo solicita."
+    },
+    {
+        question: "En caso de imposibilidad manifiesta para la expedición del DNI, ¿con qué se podrá sustituir excepcionalmente el documento?",
+        options: ["Una certificación del Registro Civil con validez de cinco años.", "Certificaciones anuales en las que consten los motivos de tal imposibilidad.", "Un documento provisional con la misma validez que el DNI.", "Un certificado médico visado por el Ministerio del Interior."],
+        correctAnswer: "Certificaciones anuales en las que consten los motivos de tal imposibilidad."
+    },
+    {
+        question: "Además de por caducidad temporal, ¿en qué otro supuesto se exige proceder a la renovación obligatoria del DNI?",
+        options: ["Cambio de Comunidad Autónoma de residencia.", "Variación de los datos que se recogen en el mismo.", "Extravío o sustracción.", "Una vez transcurrido el plazo de vigencia de los certificados electrónicos."],
+        correctAnswer: "Variación de los datos que se recogen en el mismo."
+    },
+    {
+        question: "¿Qué dato de los siguientes NO se recoge gráficamente en el anverso del DNI?",
+        options: ["Número personal del Documento Nacional de Identidad.", "Apellidos y nombre.", "Lugar de nacimiento.", "Firma."],
+        correctAnswer: "Lugar de nacimiento"
+    },
+    {
+        question: "¿Qué dato de los siguientes se almacena en el chip del DNIe?",
+        options: ["Información sanitaria o fiscal del titular.", "Lugar de domicilio y Nombre de los padres.", "Imagen digitalizada de la firma manuscrita y la plantilla de la impresión dactilar.", "Clave personal y secreta (PIN) para la autenticación de usuario."],
+        correctAnswer: "Imagen digitalizada de la firma manuscrita y la plantilla de la impresión dactilar."
+    },
+    {
+        question: "En el caso de renovación, el titular del DNI está obligado a abonar la tasa correspondiente y aportar una fotografía. ¿Qué otra acción se le debe realizar obligatoriamente?",
+        options: ["La actualización de los certificados electrónicos del chip de forma remota.", "La verificación biométrica de la huella dactilar.", "La recogida de las impresiones dactilares de los dedos índices.", "Presentar el pasaporte para comprobar la identidad."],
+        correctAnswer: "La recogida de las impresiones dactilares de los dedos índices."
+    },
+    {
+        question: "Según la Descripción Funcional, el DNIe garantiza que la personalidad del firmante no es suplantada y permite proteger la información enviada. ¿A través de qué capacidad lo consigue?",
+        options: ["La capacidad de Autenticación de la Autoridad de Certificación.", "La capacidad de identificación física de su titular.", "La capacidad de firmar electrónicamente como si de una firma manuscrita se tratase.", "La capacidad de establecer un canal cifrado para el cambio de PIN."],
+        correctAnswer: "La capacidad de firmar electrónicamente como si de una firma manuscrita se tratase."
+    },
+    {
+        question: "¿Qué se incluye en el proceso de Autenticación Mutua para securizar (cifrar) todos los mensajes intercambiados posteriormente entre la tarjeta y la aplicación externa?",
+        options: ["La verificación de un código CAN (Card Access Number).", "La generación de un nuevo PIN de usuario.", "El intercambio seguro de unas claves de sesión.", "La recogida de nuevas impresiones dactilares."],
+        correctAnswer: "El intercambio seguro de unas claves de sesión."
+    },
+    {
+        question: "¿Qué datos biométricos se almacenan en el chip del DNI 4.0, además de los certificados?",
+        options: ["La imagen facial en baja resolución y una impresión dactilar.", "El iris y la voz del titular.", "Una imagen facial en alta resolución y dos impresiones dactilares.", "Únicamente la plantilla de la impresión dactilar del dedo índice derecho."],
+        correctAnswer: "Una imagen facial en alta resolución y dos impresiones dactilares."
+    },
+    {
+        question: "El DNIe tiene una estructura de datos equivalente al pasaporte electrónico. ¿Qué función adicional le permite esta característica?",
+        options: ["Obtener el visado de entrada para cualquier país sin trámite adicional.", "Actuar como documento de identidad en cualquier entidad privada española.", "Realizar funciones de Documento de Viaje y ser utilizado en los Pasos Rápidos de Frontera (ABC Systems).", "Permitir el cifrado de comunicaciones entre ciudadanos y Administraciones Públicas."],
+        correctAnswer: "Realizar funciones de Documento de Viaje y ser utilizado en los Pasos Rápidos de Frontera (ABC Systems)."
+    },
+    {
+        question: "¿Cuál es la principal mejora del DNI 4.0 en términos de seguridad criptográfica, de acuerdo con el reglamento europeo eIDAS?",
+        options: ["La sustitución de claves RSA por claves ECC (Curvas Elípticas).", "El uso exclusivo de claves de 1024 bits para autenticación.", "Cifrado de la información electrónica mediante AES-128 y SHA-256, con claves de 256 bits.", "La eliminación de la necesidad de un PIN para la firma electrónica."],
+        correctAnswer: "Cifrado de la información electrónica mediante AES-128 y SHA-256, con claves de 256 bits."
+    },
+    {
+        question: "¿Cuál es el propósito del Certificado de Autenticación, también conocido como Digital Signature?",
+        options: ["Asegurar que la comunicación electrónica se realiza con la persona que dice que es.", "Permitir la verificación de la integridad del documento firmado.", "Garantizar el no repudio de origen de una transacción electrónica.", "Autorizar la expedición de certificados reconocidos por entidades privadas."],
+        correctAnswer: "Asegurar que la comunicación electrónica se realiza con la persona que dice que es."
+    },
+    {
+        question: "¿Cuál es la longitud mínima y máxima que debe tener el código PIN del DNI electrónico?",
+        options: ["Mínimo de 4 y máximo de 8 caracteres.", "Mínimo de 6 y máximo de 10 caracteres.", "Mínimo de 12 y máximo de 16 caracteres.", "Mínimo de 8 y máximo de 12 caracteres."],
+        correctAnswer: "Mínimo de 12 y máximo de 16 caracteres."
+    },
+    {
+        question: "Si el número de intentos de presentación del PIN se agota, ¿mediante qué mecanismo es posible desbloquearlo, actuando como código de desbloqueo?",
+        options: ["La introducción del PUK (Personal Unblocking Key).", "La solicitud de un nuevo PIN en la web del Ministerio del Interior.", "Una correcta presentación de la huella dactilar del usuario.", "La clave privada de autenticación del certificado."],
+        correctAnswer: "Una correcta presentación de la huella dactilar del usuario."
+    },
+    {
+        question: "¿Cuál de los siguientes datos referentes al documento y a la tarjeta soporte NO se recogen gráficamente en el DNI?",
+        options: ["Fecha de caducidad.", "Número de soporte.", "Clave privada de autenticación.", "Caracteres OCR-B de lectura mecánica."],
+        correctAnswer: "Clave privada de autenticación."
+    },
+    {
+        question: "En el DNI 4.0, el chip de interfaz dual incorpora una memoria flash con una capacidad de:",
+        options: ["8 KB", "400 KB", "350 KB", "1 MB"],
+        correctAnswer: "350 KB"
+    },
+    {
+        question: "El DNIe tiene un periodo de validez de 5 años para personas con un rango de edad de:",
+        options: ["0 a 5 años de edad.", "5 a 30 años de edad.", "30 a 70 años de edad.", "Más de 70 años de edad."],
+        correctAnswer: "5 a 30 años de edad."
+    },
+    {
+        question: "La Declaración de Prácticas y Políticas de Certificación debe estar disponible al público de manera permanente y fácilmente accesible en:",
+        options: ["La página de Internet de la Dirección General de la Policía.", "La Sede Electrónica del Ministerio de Hacienda.", "La página de Internet de la Fábrica Nacional de Moneda y Timbre.", "La página de Internet del Ministerio del Interior."],
+        correctAnswer: "La página de Internet del Ministerio del Interior."
+    },
+    {
+        question: "¿Qué protocolo utiliza la Autoridad de Validación para suministrar información sobre la vigencia de los certificados electrónicos (revocados o no vigentes)?",
+        options: ["Secure Socket Layer (SSL)", "Transport Layer Security (TLS)", "Certificate Revocation List (CRL)", "Online Certificate Status Protocol (OCSP)"],
+        correctAnswer: "Online Certificate Status Protocol (OCSP)"
+    },
+    {
+        question: "¿Qué entidad puede utilizar el DNI electrónico como medio de identificación para la realización de un registro fuerte que permita la expedición de certificados reconocidos por parte de otras entidades?",
+        options: ["Únicamente las Administraciones Públicas.", "Entidades privadas que presten servicios de certificación a los ciudadanos.", "Solo los titulares de cuentas bancarias.", "Organismos internacionales (e.g., EU)."],
+        correctAnswer: "Entidades privadas que presten servicios de certificación a los ciudadanos."
+    },
+    {
+        question: "¿Cuál es uno de los elementos de seguridad fácilmente identificables que incorpora la tarjeta física del DNI 4.0 en su anverso?",
+        options: ["Código QR de verificación.", "Ventana transparente con grabado láser.", "Banda magnética de alta coercitividad.", "Chip de interfaz con contactos."],
+        correctAnswer: "Ventana transparente con grabado láser."
+    },
+    {
+        question: "El DNI 4.0 ofrece la posibilidad de incorporar el DNI en formato electrónico a un 'smartphone', eliminando la necesidad de usar la tarjeta física. ¿Qué requisito es necesario para acceder a esta funcionalidad?",
+        options: ["Una aplicación móvil (App) específica del DNI 4.0, aunque todavía no esté disponible.", "Un lector de tarjetas inteligente externo conectado por USB al móvil.", "La huella dactilar del titular registrada en el Registro Central de Población.", "El uso exclusivo de la interfaz con contactos."],
+        correctAnswer: "Una aplicación móvil (App) específica del DNI 4.0, aunque todavía no esté disponible."
+    },
+    {
+        question: "¿Qué principio garantiza la firma electrónica al evitar que el emisor o el receptor pueda 'repudiar' la información que se recibió de la otra parte y que inicialmente fue aceptada?",
+        options: ["La integridad de los datos.", "La confidencialidad.", "El no repudio.", "La interoperabilidad."],
+        correctAnswer: "El no repudio."
+    }
+
+        ];
+
+     
+                // Variables de estado del quiz
+        let currentQuestionIndex = 0;
+        let score = 0;
+        // userAnswers guarda el texto de la opción seleccionada (o null)
+        // Corregido: Usar quizData.length en lugar de questions.length
+        const userAnswers = new Array(quizData.length).fill(null);
+        // scoredQuestions guarda true si la pregunta fue respondida correctamente, false si fue incorrecta o no respondida
+        // Corregido: Usar quizData.length en lugar de questions.length
+        const scoredQuestions = new Array(quizData.length).fill(false); 
+
+        // Referencias a los elementos del DOM
+        const quizContainer = document.getElementById('quizContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const restartInlineBtn = document.getElementById('restartInlineBtn');
+        const finalScoreDiv = document.getElementById('finalScore');
+        const progressBar = document.getElementById('progressBar');
+        const finalScoreDisplay = finalScoreDiv.querySelector('.score-display');
+        const correctCountSpan = document.getElementById('correctCount');
+        const incorrectCountSpan = document.getElementById('incorrectCount');
+        const unansweredCountSpan = document.getElementById('unansweredCount');
+
+        /**
+         * Carga el estado del quiz guardado en localStorage.
+         * Si no existe, inicializa un nuevo estado.
+         */
+        function loadQuizState() {
+            try {
+                const savedState = JSON.parse(localStorage.getItem('quizState'));
+                if (savedState) {
+                    currentQuestionIndex = savedState.currentQuestionIndex;
+                    score = savedState.score;
+                    // Asegurarse de que los arrays tengan el tamaño correcto y copiar los valores
+                    userAnswers.splice(0, savedState.userAnswers.length, ...savedState.userAnswers);
+                    scoredQuestions.splice(0, savedState.scoredQuestions.length, ...savedState.scoredQuestions);
+                }
+            } catch (e) {
+                console.error("Error al cargar el estado del quiz:", e);
+                // Si hay un error, el estado se reiniciará a los valores por defecto
+            }
+        }
+
+        /**
+         * Guarda el estado actual del quiz en localStorage.
+         */
+        function saveQuizState() {
+            const quizState = {
+                currentQuestionIndex: currentQuestionIndex,
+                score: score,
+                userAnswers: userAnswers,
+                scoredQuestions: scoredQuestions
+            };
+            localStorage.setItem('quizState', JSON.stringify(quizState));
+        }
+
+        /**
+         * Carga y muestra la pregunta actual.
+         */
+        function loadQuestion() {
+            // Corregido: Usar quizData.length en lugar de questions.length
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
+
+            // Corregido: Usar quizData en lugar de questions
+            const currentQuestion = quizData[currentQuestionIndex];
+            quizContainer.innerHTML = `
+                <div class="question-card">
+                    <p class="question-text"></p>
+                    <div class="options-container">
+                        ${currentQuestion.options.map(() => `
+                            <button class="option-button"></button>
+                        `).join('')}
+                    </div>
+                    <div class="solution hidden">
+                        <strong>Solución:</strong> <span class="solution-text"></span>
+                    </div>
+                </div>
+            `;
+
+            const questionTextElement = quizContainer.querySelector('.question-text');
+            const optionsContainer = quizContainer.querySelector('.options-container');
+            const questionCard = quizContainer.querySelector('.question-card');
+            const optionButtons = optionsContainer.querySelectorAll('.option-button');
+
+            // Usar textContent para insertar el texto de la pregunta de forma segura
+            questionTextElement.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+            // Asignar el texto y los atributos data-option a cada botón de opción
+            currentQuestion.options.forEach((option, index) => {
+                optionButtons[index].textContent = option; // Inserta el texto como texto plano
+                optionButtons[index].dataset.option = option; // Guarda la opción original para la lógica
+                optionButtons[index].addEventListener('click', handleOptionClick);
+            });
+
+            // Resalta la respuesta del usuario si ya ha respondido y aplica estilos
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                // Encuentra el botón por su atributo data-option, que contiene la respuesta guardada
+                const selectedButton = optionsContainer.querySelector(`[data-option="${savedAnswer}"]`);
+                if (selectedButton) {
+                    // Deshabilita todos los botones para que no se pueda cambiar la respuesta
+                    optionButtons.forEach(button => {
+                        button.classList.add('disabled');
+                        button.removeEventListener('click', handleOptionClick); // Remover listener si ya está respondida
+                    });
+
+                    // Aplica los estilos de la respuesta guardada
+                    const isCorrect = (savedAnswer === currentQuestion.correctAnswer);
+                    if (isCorrect) {
+                        selectedButton.classList.add('correct-answer');
+                        questionCard.classList.add('correct');
+                    } else {
+                        selectedButton.classList.add('incorrect-answer');
+                        questionCard.classList.add('incorrect');
+                        // Muestra la respuesta correcta si la guardada fue incorrecta
+                        const correctButton = optionsContainer.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
+                        if (correctButton) {
+                            correctButton.classList.add('correct-answer');
+                        }
+                    }
+                    // Añadir feedback visual (Correcto/Incorrecto)
+                    updateQuestionCardVisuals(isCorrect);
+                }
+            }
+
+            // Actualiza el estado de los botones de navegación y la barra de progreso
+            updateNavButtons();
+            updateProgressBar();
+        }
+
+        /**
+         * Maneja el evento de clic en una opción de respuesta.
+         * @param {Event} event - El evento de clic.
+         */
+        function handleOptionClick(event) {
+            const selectedOptionButton = event.target;
+            const selectedOption = selectedOptionButton.dataset.option; // Obtiene la opción del atributo data-option
+            // Corregido: Usar quizData en lugar de questions
+            const currentQuestion = quizData[currentQuestionIndex];
+            const optionsContainer = quizContainer.querySelector('.options-container');
+            const questionCard = quizContainer.querySelector('.question-card');
+
+            // Deshabilita todos los botones de opción para evitar múltiples respuestas
+            optionsContainer.querySelectorAll('.option-button').forEach(button => {
+                button.classList.add('disabled');
+                button.removeEventListener('click', handleOptionClick);
+            });
+
+            // Actualiza la respuesta del usuario y la guarda
+            userAnswers[currentQuestionIndex] = selectedOption;
+            
+            // Comprueba si la respuesta es correcta
+            const isCorrectAttempt = (selectedOption === currentQuestion.correctAnswer);
+
+            if (isCorrectAttempt) {
+                selectedOptionButton.classList.add('correct-answer');
+                questionCard.classList.add('correct');
+                // Si no se ha puntuado antes, añade un punto y marca como correcta
+                if (!scoredQuestions[currentQuestionIndex]) { // scoredQuestions[index] will be false if not yet scored
+                    score++;
+                    scoredQuestions[currentQuestionIndex] = true; // Marca como correcta
+                }
+            } else {
+                selectedOptionButton.classList.add('incorrect-answer');
+                questionCard.classList.add('incorrect');
+                // Si se había puntuado como correcta (porque el usuario cambió de opinión), quita el punto
+                if (scoredQuestions[currentQuestionIndex]) { // scoredQuestions[index] will be true if it was previously correct
+                    score--;
+                    scoredQuestions[currentQuestionIndex] = false; // Marca como incorrecta
+                }
+                // Resalta la respuesta correcta
+                const correctAnswerButton = optionsContainer.querySelector(`[data-option="${currentQuestion.correctAnswer}"]`);
+                if (correctAnswerButton) {
+                    correctAnswerButton.classList.add('correct-answer');
+                }
+            }
+            
+            saveQuizState(); // Guarda el estado después de actualizar score y scoredQuestions
+
+            // Añadir feedback visual (Correcto/Incorrecto)
+            updateQuestionCardVisuals(isCorrectAttempt);
+
+            // Muestra la solución detallada si existe (aunque no hay en tu questions actual)
+            if (currentQuestion.solution) {
+                const solutionDiv = quizContainer.querySelector('.solution');
+                solutionDiv.classList.remove('hidden');
+                solutionDiv.querySelector('.solution-text').textContent = currentQuestion.solution;
+            }
+        }
+
+        /**
+         * Actualiza el estilo de la tarjeta de pregunta y añade feedback visual.
+         * @param {boolean} isCorrect - Indica si la respuesta es correcta.
+         */
+        function updateQuestionCardVisuals(isCorrect) {
+            const questionCard = document.querySelector('.question-card');
+            // Eliminar feedback anterior si existe
+            const existingFeedback = questionCard.querySelector('.feedback');
+            if (existingFeedback) {
+                existingFeedback.remove();
+            }
+
+            const feedbackMessage = document.createElement('p');
+            feedbackMessage.classList.add('feedback');
+
+            if (isCorrect) {
+                feedbackMessage.textContent = '¡Correcto!';
+                feedbackMessage.classList.add('correct');
+            } else {
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta es la marcada en verde.';
+                feedbackMessage.classList.add('incorrect');
+            }
+            questionCard.appendChild(feedbackMessage);
+        }
+
+        /**
+         * Muestra los resultados finales del quiz.
+         */
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            restartInlineBtn.classList.add('hidden');
+            progressBar.parentElement.classList.add('hidden');
+            finalScoreDiv.classList.remove('hidden');
+
+            // Calcula y muestra las estadísticas
+            const correctAnswers = scoredQuestions.filter(isCorrect => isCorrect).length;
+            // Una respuesta es incorrecta si el usuario respondió (no es null) Y no fue marcada como correcta (scoredQuestions[index] es false)
+            const incorrectAnswers = userAnswers.filter((answer, index) => answer !== null && !scoredQuestions[index]).length;
+            const unansweredQuestions = userAnswers.filter(answer => answer === null).length;
+
+            // Corregido: Usar quizData.length en lugar de questions.length
+            finalScoreDisplay.textContent = `Tu puntuación final es ${correctAnswers} de ${quizData.length}`;
+            correctCountSpan.textContent = correctAnswers;
+            incorrectCountSpan.textContent = incorrectAnswers;
+            unansweredCountSpan.textContent = unansweredQuestions;
+        }
+		
+        /**
+         * Actualiza el estado de los botones de navegación.
+         */
+        function updateNavButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            // Corregido: Usar quizData.length en lugar de questions.length
+            nextBtn.textContent = currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Siguiente';
+        }
+
+        /**
+         * Actualiza la barra de progreso.
+         */
+        function updateProgressBar() {
+            // Corregido: Usar quizData.length en lugar de questions.length
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        /**
+         * Reinicia el quiz a su estado inicial.
+         */
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+            scoredQuestions.fill(false);
+            localStorage.clear(); // Limpia el localStorage
+            
+            quizContainer.classList.remove('hidden');
+            prevBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            restartInlineBtn.classList.remove('hidden');
+            progressBar.parentElement.classList.remove('hidden');
+            finalScoreDiv.classList.add('hidden');
+            loadQuestion();
+        }
+
+        // Event listeners
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            // Corregido: Usar quizData.length en lugar de questions.length
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        });
+
+        restartBtn.addEventListener('click', restartQuiz);
+        restartInlineBtn.addEventListener('click', restartQuiz);
+
+        // Carga inicial
+        window.onload = function() {
+            loadQuizState();
+            loadQuestion();
+        };
+    </script>
+</body>
+</html>
