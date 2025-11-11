@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI LI 2024 A</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to allow scrolling */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Max width for the container */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Slightly different background for question card */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Subtle border */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Light blue for selected option */
+            border-color: #3b82f6; /* Blue border */
+        }
+        input[type="radio"] {
+            display: none; /* Hide native radio button */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Light green */
+            border-color: #10b981; /* Green border */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gray */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: center; /* Align items vertically in the center */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Very light green background */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.2rem; /* Slightly smaller font for individual stats */
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 8px;
+        }
+        .final-score-container .total-score {
+            font-size: 1.5rem; /* Larger font for total score */
+            font-weight: 700;
+            color: #047857;
+            margin-top: 15px;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">TEST SUPUESTO 2 IA</h1>
+        <div id="quiz-questions">
+            <!-- Questions will be loaded here -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary">Anterior</button>
+            <button id="reset-test-btn" class="button-secondary">Reiniciar Test</button> <!-- New button for full reset -->
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Aciertos: <span id="correct-answers-display" class="text-green-700"></span></p>
+            <p>Fallos: <span id="incorrect-answers-display" class="text-red-700"></span></p>
+            <p class="total-score">Has completado <span id="total-questions-answered-display"></span> de <span id="total-questions-display"></span> preguntas.</p>
+            <button id="restart-btn" class="button-primary mt-6">Revisar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+             {
+        id: "SII-1",
+        section: "Redes y Comunicaciones",
+        question: "¿Cuál es la dirección de subred (Network ID) asignada al organismo OEOF, sabiendo que la red ministerial (10.9.0.0/16) se dividió en 16 subredes iguales y a OEOF le correspondió la última (la subred número 16)?",
+        options: {
+            A: "10.9.15.0/20",
+            B: "10.9.224.0/20",
+            C: "10.9.240.0/20",
+            D: "10.9.255.0/20"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-2",
+        section: "Redes y Comunicaciones",
+        question: "Para la subred 10.9.240.0/20 asignada al OEOF, ¿cuál es la última dirección IP de host válida que se puede utilizar?",
+        options: {
+            A: "10.9.255.255",
+            B: "10.9.255.254",
+            C: "10.9.255.240",
+            D: "10.9.255.253"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-3",
+        section: "Administración de Sistemas (Linux)",
+        question: "Para capturar el tráfico que circula por la interfaz de red `eth1` en un servidor Linux (del supuesto 2022) y guardarlo en `fichero.out`, ¿cuál de las siguientes sentencias del comando `tcpdump` es la correcta?",
+        options: {
+            A: "tcpdump -i eth1 -r fichero.out",
+            B: "tcpdump -i eth1 -w fichero.out",
+            C: "tcpdump -e eth1 -w fichero.out",
+            D: "tcpdump -i eth1 -c fichero.out"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-4",
+        section: "Administración de Sistemas (Windows)",
+        question: "¿Qué comando se debe ejecutar en un PC de usuario con Windows (del supuesto 2022) para purgar la memoria caché de la resolución DNS?",
+        options: {
+            A: "ipconfig /release",
+            B: "ipconfig /renew",
+            C: "ipconfig /showdns",
+            D: "ipconfig /flushdns"
+        },
+        correctAnswer: "D"
+    },
+    {
+        id: "SII-5",
+        section: "Redes y Comunicaciones",
+        question: "Para optimizar el acceso a Internet en el supuesto 2022, se opta por instalar un servidor proxy-caché que soporte los protocolos HTTP, HTTP/2 y HTTPS. ¿Cuál de las siguientes soluciones puede realizar dicha función?",
+        options: {
+            A: "Apache HTTP Server",
+            B: "SQUID",
+            C: "Nginx",
+            D: "HAProxy"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-6",
+        section: "Seguridad y Gobernanza",
+        question: "Una vez implementado el teletrabajo mediante VPN, se le dota de mayor seguridad mediante el envío de un código por SMS al teléfono móvil del trabajador. ¿Cómo se denomina al mecanismo de seguridad que exige dos o más factores de autenticación?",
+        options: {
+            A: "Autenticación biométrica",
+            B: "Autenticación de doble factor (2FA)",
+            C: "Autorización de acceso",
+            D: "Single Sign-On (SSO)"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-7",
+        section: "Administración de Sistemas (Windows)",
+        question: "¿Qué comando muestra información del conjunto resultante de directivas (RSoP) para un usuario y equipo de destino en los equipos Windows del supuesto?",
+        options: {
+            A: "gpshow",
+            B: "gpprint",
+            C: "gpresult",
+            D: "gplist"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-8",
+        section: "Redes y Comunicaciones",
+        question: "En un switch Cisco (del supuesto 2024), se ejecuta el comando `switchport access vlan 1`. ¿Cuál es el efecto de este comando?",
+        options: {
+            A: "Eliminar el puerto de todas las VLANs.",
+            B: "Asignar un puerto a la VLAN 1, la VLAN de administración por defecto.",
+            C: "Configurar el puerto como trunk para todas las VLANs.",
+            D: "Habilitar la seguridad de puertos."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-9",
+        section: "Seguridad y Gobernanza",
+        question: "En el contexto de seguridad del CCN-CERT, si se descarga una herramienta de un sitio web y aparece un hash de comprobación, ¿qué tipo de medida de seguridad es ese hash en ese contexto?",
+        options: {
+            A: "Medida de confidencialidad, pues permite cifrar el fichero.",
+            B: "Medida de disponibilidad, pues garantiza el acceso continuo.",
+            C: "Medida de integridad, pues permite comprobar que el fichero no ha sido modificado.",
+            D: "Medida de autenticación, pues garantiza la identidad del servidor."
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-10",
+        section: "Desarrollo y Bases de Datos (Arquitectura)",
+        question: "Para mejorar la escalabilidad del sistema, se considera implantar una arquitectura de microservicios con Kubernetes. ¿Qué protocolos para servicios (Services) pueden utilizarse con Kubernetes?",
+        options: {
+            A: "Solo TCP y UDP.",
+            B: "SCTP y TCP solamente.",
+            C: "SCTP, TCP (por defecto) y UDP.",
+            D: "HTTP, HTTPS y UDP."
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-11",
+        section: "Redes y Comunicaciones",
+        question: "En el supuesto 2024, se utiliza WiFi con protocolo WPA3-Enterprise. ¿Qué se necesita utilizar en este caso para acceder a la red WiFi?",
+        options: {
+            A: "Una clave WEP precompartida.",
+            B: "Un servidor RADIUS o cualquier solución que permita EAP-TLS.",
+            C: "Solo una clave WPA3-PSK.",
+            D: "El servidor DHCP del router principal."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-12",
+        section: "Redes y Comunicaciones",
+        question: "El servicio de resolución de nombres DNS es un protocolo que, en el modelo TCP/IP, se clasifica como:",
+        options: {
+            A: "Un protocolo de aplicación.",
+            B: "Un protocolo de red.",
+            C: "Un protocolo de transporte.",
+            D: "Un protocolo de soporte o infraestructura."
+        },
+        correctAnswer: "D"
+    },
+    {
+        id: "SII-13",
+        section: "Administración de Sistemas (Movilidad)",
+        question: "¿En qué consiste la tarea de 'enrolamiento' de dispositivos móviles en un sistema MDM (Mobile Device Management) de la organización (Supuesto 2024)?",
+        options: {
+            A: "Borrar todos los datos del móvil de forma remota.",
+            B: "Emparejar, en el sistema MDM, a cada usuario con su móvil y registrar el dispositivo en la solución.",
+            C: "Instalar el sistema operativo más reciente en el móvil.",
+            D: "Bloquear físicamente el móvil para evitar robos."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-14",
+        section: "Infraestructura Física",
+        question: "¿Cuál es la razón principal por la que NO se debe utilizar una toma derivada de la climatización del resto del edificio para la nueva climatización del CPD (Supuesto 2024)?",
+        options: {
+            A: "Porque el aire acondicionado del edificio es más eficiente que el del CPD.",
+            B: "Porque los CPD tienen una densidad térmica y requisitos de redundancia y control de temperatura distintos al resto del edificio.",
+            C: "Porque los costes de la energía eléctrica son mayores.",
+            D: "Porque la normativa solo permite la refrigeración por agua en CPDs."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-15",
+        section: "Redes y Comunicaciones",
+        question: "¿Cuál es el código de respuesta HTTP que se devuelve si el usuario que hace la petición NO tiene autorización para obtener la información solicitada?",
+        options: {
+            A: "401 (Unauthorized)",
+            B: "403 (Forbidden)",
+            C: "404 (Not Found)",
+            D: "500 (Internal Server Error)"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-16",
+        section: "Redes y Comunicaciones",
+        question: "Señale cuál de las siguientes categorías de cable Ethernet tiene 10.000 Mbps (10 Gbps) como tope de velocidad de transferencia en distancias de hasta 100 metros.",
+        options: {
+            A: "Categoría 5e",
+            B: "Categoría 6",
+            C: "Categoría 6A",
+            D: "Categoría 7"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-17",
+        section: "Administración de Sistemas (Windows)",
+        question: "El comando `sfc /scannow` en un sistema operativo Windows (del supuesto) tiene como objetivo principal:",
+        options: {
+            A: "Optimizar el rendimiento del disco duro.",
+            B: "Examinar y reemplazar los archivos de sistema protegidos dañados con una copia en caché.",
+            C: "Mostrar la configuración de red avanzada.",
+            D: "Forzar la actualización del sistema operativo."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-18",
+        section: "Seguridad y Gobernanza (AGE)",
+        question: "En el supuesto 2024, se determina la integración de la aplicación con GEISER, cuyos servicios web son de naturaleza SOAP. ¿Con qué protocolo de seguridad se debe firmar digitalmente las peticiones generadas por la aplicación?",
+        options: {
+            A: "TLS (Transport Layer Security)",
+            B: "OAuth 2.0",
+            C: "WS-Security",
+            D: "JSON Web Tokens (JWT)"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-19",
+        section: "Seguridad y Gobernanza (AGE)",
+        question: "En el contexto de los servicios comunes de la AGE, ¿cuál es el propósito de la aplicación ENVIA?",
+        options: {
+            A: "Distribuir certificados digitales.",
+            B: "Hacer posible el envío de ficheros de gran volumen entre usuarios.",
+            C: "Publicar el contenido de los Boletines Oficiales.",
+            D: "Ofrecer un punto de acceso a la carpeta ciudadana."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-20",
+        section: "Seguridad y Gobernanza (AGE)",
+        question: "¿Qué estándar de seguridad se debe utilizar para asegurar que los intercambios de información entre administraciones se realicen de forma segura, como se establece en la Norma Técnica de Interoperabilidad (NTI) de Protocolos de Intermediación de Datos?",
+        options: {
+            A: "Los intercambios deben hacerse por FTP cifrado.",
+            B: "Los intercambios de información deben implementarse a través de servicios web con estándares de seguridad.",
+            C: "Es suficiente con usar certificados SSL.",
+            D: "Se debe usar siempre un bus de servicios empresarial (ESB)."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-21",
+        section: "Desarrollo y Bases de Datos",
+        question: "¿Qué nivel de aislamiento de base de datos debería configurar (en el supuesto 2024) para que NO se produzcan lecturas sucias ni lecturas no repetibles, pero SÍ lecturas fantasma (Phantom Reads)?",
+        options: {
+            A: "Read Uncommitted",
+            B: "Read Committed",
+            C: "Repeatable Read",
+            D: "Serializable"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-22",
+        section: "Desarrollo y Bases de Datos (Arquitectura)",
+        question: "¿Cuál de los siguientes es un objeto básico de la arquitectura de Kubernetes?",
+        options: {
+            A: "Hypervisor",
+            B: "Docker Machine",
+            C: "Pod",
+            D: "Lambda Function"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-23",
+        section: "Desarrollo y Bases de Datos (SQL)",
+        question: "¿Cuál de las siguientes sentencias del lenguaje SQL se utiliza para dar permisos o revocar privilegios a un usuario en la base de datos?",
+        options: {
+            A: "SELECT",
+            B: "INSERT",
+            C: "GRANT",
+            D: "ALTER"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-24",
+        section: "Desarrollo y Bases de Datos (SQL)",
+        question: "Para crear una tabla llamada `ProfesoresIngles` en MySQL (del supuesto 2024), con una clave primaria y campos de nombre y apellidos, ¿qué sentencia SQL se debe ejecutar?",
+        options: {
+            A: "CREATE ProfesoresIngles (id INT PRIMARY KEY)",
+            B: "CREATE TABLE ProfesoresIngles (id INT PRIMARY KEY, nombre VARCHAR(30))",
+            C: "CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));",
+            D: "INSERT INTO ProfesoresIngles (id, nombre, apellido) VALUES (1, 'Juan', 'Perez')"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-25",
+        section: "Desarrollo y Bases de Datos (C#/.NET)",
+        question: "En el desarrollo del `backend` con .NET y C# (Supuesto 2024), ¿cómo se puede indicar la opcionalidad (que pueda ser nulo) de un tipo de dato de valor como `int`?",
+        options: {
+            A: "Nullable<int> Telefono",
+            B: "var Telefono",
+            C: "int? Telefono",
+            D: "string Telefono"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-26",
+        section: "Desarrollo y Bases de Datos (C#/.NET)",
+        question: "¿Cuál es el significado del acrónimo POCO en el contexto de la programación y el entorno .NET?",
+        options: {
+            A: "Portable Object Component",
+            B: "Process Optimization and Control",
+            C: "Plain Old CLR Object",
+            D: "Programming Object Container"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-27",
+        section: "Desarrollo y Bases de Datos (JPA)",
+        question: "En la especificación Jakarta Persistence API (JPA), ¿qué término se utiliza para la clase que normalmente representa una tabla en una base de datos relacional, donde cada instancia corresponde a una fila?",
+        options: {
+            A: "Objeto (Object)",
+            B: "Repositorio (Repository)",
+            C: "Entidad (Entity)",
+            D: "Clase Abstracta (Abstract Class)"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-28",
+        section: "Administración de Sistemas (Linux)",
+        question: "¿Cuál es la función principal del kernel en un sistema operativo Unix/Linux (como RHEL7.4 del supuesto 2022)?",
+        options: {
+            A: "Ser la interfaz gráfica de usuario.",
+            B: "Controlar los procesos, la memoria y la administración de dispositivos de hardware.",
+            C: "Administrar solo las aplicaciones de usuario.",
+            D: "Realizar copias de seguridad de forma automática."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-29",
+        section: "Desarrollo y Bases de Datos (Java)",
+        question: "¿Cuál de los siguientes tipos de colecciones de Java SE 17 (del supuesto) no admite elementos duplicados?",
+        options: {
+            A: "List",
+            B: "Set",
+            C: "Queue",
+            D: "Array"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-30",
+        section: "Fundamentos Técnicos (Hardware)",
+        question: "La ALU (Unidad Aritmético Lógica) es una parte fundamental de:",
+        options: {
+            A: "El disco duro (HDD).",
+            B: "La memoria RAM.",
+            C: "La CPU (Unidad Central de Procesamiento).",
+            D: "La tarjeta de red (NIC)."
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-31",
+        section: "Redes y Comunicaciones",
+        question: "¿Qué protocolo utiliza el tipo de transferencia 'ASCII' en el servicio FTP (File Transfer Protocol)?",
+        options: {
+            A: "Es adecuado para transferir archivos binarios (e.g., ejecutables).",
+            B: "Es adecuado para transferir archivos de texto plano.",
+            C: "Es un modo seguro que utiliza cifrado.",
+            D: "Es el modo de transferencia pasivo."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-32",
+        section: "Fundamentos Técnicos (Hardware)",
+        question: "¿Cuál es el formato de interfaz de estado sólido (SSD) más común y moderno utilizado en la actualidad que también puede soportar el protocolo NVMe?",
+        options: {
+            A: "SATA 2.5''",
+            B: "PCIe x16",
+            C: "M.2",
+            D: "mSATA"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-33",
+        section: "Seguridad y Gobernanza",
+        question: "Según las recomendaciones del Centro Criptológico Nacional (CCN-CERT), ¿cuál es la versión mínima aceptable y la versión mínima recomendada a usar en TLS (Transport Layer Security) para un servidor web con HTTPS?",
+        options: {
+            A: "Mínima aceptable 1.0 y recomendada 1.1",
+            B: "Mínima aceptable 1.1 y recomendada 1.2",
+            C: "Mínima aceptable 1.2 y recomendada 1.3",
+            D: "Mínima aceptable 1.3 y recomendada 1.4"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-34",
+        section: "Desarrollo y Bases de Datos (JDBC)",
+        question: "¿Cuál de los siguientes tipos de controladores (drivers) JDBC utiliza Java puro para implementar un protocolo de red de proveedores del Sistema Gestor de Base de Datos (SGBD) y es más flexible?",
+        options: {
+            A: "Driver Tipo 1 (JDBC-ODBC Bridge)",
+            B: "Driver Tipo 2 (Native-API/Partially Java Driver)",
+            C: "Driver Tipo 3 (Network Protocol/All-Java Driver)",
+            D: "Driver Tipo 4 (Native Protocol/All-Java Driver)"
+        },
+        correctAnswer: "D"
+    },
+    {
+        id: "SII-35",
+        section: "Seguridad y Gobernanza (AGE)",
+        question: "¿Cuál de los siguientes NO es un compromiso del IV Plan de Gobierno Abierto de España?",
+        options: {
+            A: "Fortalecimiento de la participación ciudadana.",
+            B: "Mejora de la gobernanza de la IA.",
+            C: "Estrategias de integridad y lucha contra la corrupción.",
+            D: "Transparencia y rendición de cuentas."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-36",
+        section: "Desarrollo y Bases de Datos (Estructuras)",
+        question: "En relación con el tipo abstracto de datos (TAD) Cola (Queue), ¿cuál de las siguientes afirmaciones es la correcta?",
+        options: {
+            A: "La inserción y eliminación se realizan por el mismo extremo (LIFO).",
+            B: "Se puede implementar usando una estructura dinámica (e.g., lista enlazada).",
+            C: "Solo se puede implementar usando un array estático.",
+            D: "Los elementos se insertan por el frente y se eliminan por la parte trasera."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-37",
+        section: "Desarrollo y Bases de Datos (Estructuras)",
+        question: "¿Cuál de los siguientes tipos de árboles de búsqueda se caracteriza por tener nodos que pueden tener 2, 3 o 4 hijos (2-nodo, 3-nodo o 4-nodo)?",
+        options: {
+            A: "Árbol Binario de Búsqueda (BST)",
+            B: "Árbol AVL",
+            C: "Árbol B+",
+            D: "Árbol 2-3-4"
+        },
+        correctAnswer: "D"
+    },
+    {
+        id: "SII-38",
+        section: "Fundamentos Técnicos (Hardware)",
+        question: "¿Qué es la taxonomía de Flynn?",
+        options: {
+            A: "Un método de clasificación para los sistemas operativos.",
+            B: "Una clasificación para las computadoras con arquitectura paralela, atendiendo al flujo de datos e instrucciones en un sistema.",
+            C: "Un algoritmo de búsqueda en grafos.",
+            D: "Un estándar para la interconexión de redes de área local."
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-39",
+        section: "Seguridad y Gobernanza",
+        question: "Con respecto a las soluciones de Ciberseguridad proporcionadas por el Centro Criptológico Nacional (CCN), ¿qué herramienta está destinada a la Gestión de eventos e información de seguridad (SIEM)?",
+        options: {
+            A: "CLARA",
+            B: "GLORIA",
+            C: "LUCIA",
+            D: "MARIA"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-40",
+        section: "Desarrollo y Bases de Datos",
+        question: "¿Cuál de los siguientes es un Sistema de Gestión de Bases de Datos Orientadas a Objetos (SGDBOO)?",
+        options: {
+            A: "MySQL",
+            B: "PostgreSQL",
+            C: "Oracle",
+            D: "Matisse"
+        },
+        correctAnswer: "D"
+    },
+    {
+        id: "SII-41",
+        section: "Fundamentos Técnicos (Estándares)",
+        question: "¿Qué principio de la accesibilidad web (WCAG) exige que los componentes y la navegación de la interfaz de usuario se puedan utilizar por cualquier persona usuaria?",
+        options: {
+            A: "La Perceptibilidad (Perceivable)",
+            B: "La Operabilidad (Operable)",
+            C: "La Comprensibilidad (Understandable)",
+            D: "La Robustez (Robust)"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-42",
+        section: "Desarrollo y Bases de Datos (DevOps)",
+        question: "¿Qué herramienta de software permite automatizar la construcción, prueba y despliegue de un proyecto de software utilizando el concepto de 'pipelines' (Supuesto 2024)?",
+        options: {
+            A: "Git",
+            B: "Jenkins",
+            C: "Maven",
+            D: "Docker"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-43",
+        section: "Desarrollo y Bases de Datos (JPA)",
+        question: "En .NET, ¿cuál de los siguientes es el acrónimo para un lenguaje de consultas similar a SQL, pero orientado a objetos, utilizado en el marco de Jakarta Persistence API (JPA)?",
+        options: {
+            A: "JPQL (Jakarta Persistence Query Language)",
+            B: "DQL (Data Query Language)",
+            C: "OQL (Object Query Language)",
+            D: "HQL (Hibernate Query Language)"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-44",
+        section: "Redes y Comunicaciones",
+        question: "¿Cuál de los siguientes protocolos de Capa 3 del Modelo OSI se utiliza para la interconexión de redes (nivel de red)?",
+        options: {
+            A: "Hubs (Concentradores)",
+            B: "Enrutadores (Routers)",
+            C: "Bridges (Puentes)",
+            D: "Repetidores"
+        },
+        correctAnswer: "B"
+    },
+    {
+        id: "SII-45",
+        section: "Fundamentos Técnicos (Estándares)",
+        question: "Con respecto a los estándares PDF, ¿qué especificación proporciona las directrices para la creación, visualización e impresión de documentos digitales para la conservación a largo plazo?",
+        options: {
+            A: "PDF/X",
+            B: "PDF/UA",
+            C: "PDF/A",
+            D: "PDF/VT"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-46",
+        section: "Seguridad y Gobernanza (AGE)",
+        question: "¿Qué componente del IV Plan de Gobierno Abierto de España tiene por objeto informar sobre las regulaciones aplicadas a un trámite o servicio en la fase de elaboración de las normas?",
+        options: {
+            A: "Transparencia Activa",
+            B: "Rendición de Cuentas",
+            C: "Huella normativa",
+            D: "Portal de Gobierno Abierto"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-47",
+        section: "Redes y Comunicaciones",
+        question: "¿Cuál de los siguientes estándares NO es una tecnología LPWAN (Low-Power Wide-Area Network)?",
+        options: {
+            A: "LoRaWAN",
+            B: "NB-IoT",
+            C: "Bluetooth LE",
+            D: "Sigfox"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-48",
+        section: "Seguridad y Gobernanza",
+        question: "En el marco del Esquema Nacional de Seguridad (ENS), ¿cuál de las siguientes medidas de seguridad afecta a la dimensión de Confidencialidad?",
+        options: {
+            A: "Cifrado del disco duro.",
+            B: "Sistemas de alimentación ininterrumpida (SAI).",
+            C: "Criptografía",
+            D: "Monitorización de red."
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-49",
+        section: "Fundamentos Técnicos (Hardware)",
+        question: "¿Cuál es el nombre del conector de carga y datos creado por el fabricante Apple para el iPhone y otros dispositivos, que es mencionado en el cuestionario general?",
+        options: {
+            A: "USB-C",
+            B: "Mini-USB",
+            C: "Lightning",
+            D: "Dock Connector"
+        },
+        correctAnswer: "C"
+    },
+    {
+        id: "SII-50",
+        section: "Desarrollo y Bases de Datos (Java)",
+        question: "En Java SE 17, ¿con qué modificador de visibilidad se deben generar los atributos de una clase para tener acceso directamente desde cualquier otro objeto, sin mediación de métodos?",
+        options: {
+            A: "Se usará el modificador 'private'.",
+            B: "Se usará el modificador 'protected'.",
+            C: "Se usará el modificador 'public'.",
+            D: "Se usará el modificador 'default' (package-private)."
+        },
+        correctAnswer: "C"
+    }
+];
+
+        // Filter out questions from "Supuesto I" and "Preguntas de Reserva (Supuesto I)"
+        const questions = allQuestions.filter(q =>
+            q.section !== "Supuesto I" && q.section !== "Preguntas de Reserva (Supuesto I)"
+        );
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // To store user answers
+        let quizSubmitted = false;
+        let answeredQuestions = new Set(); // To keep track of answered questions
+
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const correctAnswersDisplay = document.getElementById('correct-answers-display'); // New element
+        const incorrectAnswersDisplay = document.getElementById('incorrect-answers-display'); // New element
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const totalQuestionsAnsweredDisplay = document.getElementById('total-questions-answered-display'); // New element
+        const restartBtn = document.getElementById('restart-btn'); // This is the "Revisar Test" button
+        const resetTestBtn = document.getElementById('reset-test-btn'); // The new "Reiniciar Test" button
+
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizSubmitted', quizSubmitted);
+            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedSubmitted = localStorage.getItem('quizSubmitted');
+            const savedAnswered = localStorage.getItem('answeredQuestions');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedSubmitted !== null) {
+                quizSubmitted = savedSubmitted === 'true';
+            }
+            if (savedAnswered !== null) {
+                answeredQuestions = new Set(JSON.parse(savedAnswered));
+            }
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizQuestionsContainer.innerHTML = ''; // Clear the container
+
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = q.section;
+            quizQuestionsContainer.appendChild(sectionTitle);
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-lg font-semibold text-gray-700 mb-4';
+            questionText.textContent = q.question;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = `options-q${currentQuestionIndex}`; // ID for the options container
+
+            for (const key in q.options) {
+                const optionId = `q${currentQuestionIndex}-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = key;
+                input.className = 'hidden'; // Hide native radio button
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.textContent = `${key}) ${q.options[key]}`;
+
+                // If an answer is already saved, mark it
+                if (userAnswers[currentQuestionIndex] === key) {
+                    input.checked = true;
+                }
+
+                // If the question has already been answered (and not in final review mode),
+                // or if the quiz has been submitted, disable options and show feedback.
+                if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                    input.disabled = true;
+                    if (key === q.correctAnswer) {
+                        label.classList.add('correct-answer');
+                    } else if (userAnswers[currentQuestionIndex] === key && userAnswers[currentQuestionIndex] !== q.correctAnswer) {
+                        label.classList.add('incorrect-answer');
+                    }
+                }
+
+                // Handle selection change
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !answeredQuestions.has(currentQuestionIndex)) {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        answeredQuestions.add(currentQuestionIndex); // Mark as answered
+                        checkAnswerAndProvideFeedback(currentQuestionIndex, event.target.value, optionsDiv);
+                        saveQuizState(); // Save state after each answer
+                    }
+                });
+
+                optionsDiv.appendChild(input);
+                optionsDiv.appendChild(label);
+            }
+            questionCard.appendChild(optionsDiv);
+
+            // If the question has already been answered or the quiz has been submitted, show individual result
+            if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                const resultMessage = document.createElement('div');
+                resultMessage.className = 'result-message';
+                if (userAnswers[currentQuestionIndex] === q.correctAnswer) {
+                    resultMessage.classList.add('correct');
+                    resultMessage.textContent = '¡Correcto!';
+                } else {
+                    resultMessage.classList.add('incorrect');
+                    resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+                }
+                questionCard.appendChild(resultMessage);
+            }
+
+            quizQuestionsContainer.appendChild(questionCard);
+            updateNavigationButtons();
+        }
+
+        function checkAnswerAndProvideFeedback(qIndex, selectedAnswer, optionsContainer) {
+            const q = questions[qIndex];
+            const radios = optionsContainer.querySelectorAll(`input[name="question-${qIndex}"]`);
+            const labels = optionsContainer.querySelectorAll('.option-label');
+
+            // Disable all options for this question
+            radios.forEach(radio => radio.disabled = true);
+
+            // Highlight the selected and correct answers
+            labels.forEach(label => {
+                const input = document.getElementById(label.htmlFor);
+                if (input.value === q.correctAnswer) {
+                    label.classList.add('correct-answer');
+                } else if (input.value === selectedAnswer && selectedAnswer !== q.correctAnswer) {
+                    label.classList.add('incorrect-answer');
+                }
+            });
+
+            // Show feedback message
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (selectedAnswer === q.correctAnswer) {
+                resultMessage.classList.add('correct');
+                resultMessage.textContent = '¡Correcto!';
+            } else {
+                resultMessage.classList.add('incorrect');
+                resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+            }
+            optionsContainer.parentNode.appendChild(resultMessage); // Add it to the question card
+        }
+
+
+        function updateNavigationButtons() {
+            // Always show "Reiniciar Test" button
+            resetTestBtn.style.display = 'inline-block';
+
+            // Logic for other buttons remains similar to before
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+            submitBtn.style.display = currentQuestionIndex === questions.length - 1 && !quizSubmitted ? 'inline-block' : 'none';
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                // When quiz is submitted, the "Reiniciar Test" button is still visible
+                // but the "Revisar Test" button on the results page is used for review.
+            }
+        }
+
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let answeredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i]) { // Check if the question was answered
+                    answeredCount++;
+                    if (userAnswers[i] === questions[i].correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            }
+
+            correctAnswersDisplay.textContent = correctCount;
+            incorrectAnswersDisplay.textContent = incorrectCount;
+            totalQuestionsAnsweredDisplay.textContent = answeredCount;
+            totalQuestionsDisplay.textContent = questions.length; // Total questions available in the test
+
+            document.getElementById('quiz-app').style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            saveQuizState(); // Save state when quiz is submitted
+            // Reload all questions to show individual results
+            currentQuestionIndex = 0; // Go back to the first question to review
+            loadQuestion(); // Load the first question with feedback
+            document.getElementById('quiz-app').style.display = 'block'; // Ensure quiz is visible
+            quizResultsDiv.style.display = 'none'; // Hide final results temporarily
+            showResults(); // Show the final summary
+        });
+
+        restartBtn.addEventListener('click', () => {
+            // This button is for reviewing the test, not a full reset
+            currentQuestionIndex = 0;
+            quizSubmitted = true; // Stay in submitted state to show feedback
+            quizResultsDiv.style.display = 'none';
+            document.getElementById('quiz-app').style.display = 'block';
+            loadQuestion();
+        });
+
+        // Event listener for the new "Reiniciar Test" button
+        resetTestBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            answeredQuestions.clear(); // Clear the record of answered questions
+            localStorage.clear(); // Clear all saved data from localStorage
+            quizResultsDiv.style.display = 'none'; // Hide results if visible
+            document.getElementById('quiz-app').style.display = 'block'; // Show quiz app
+            loadQuestion();
+        });
+
+        // Initialize the quiz
+        loadQuizState(); // Load state when the page loads
+        loadQuestion();
+    </script>
+</body>
+</html>
