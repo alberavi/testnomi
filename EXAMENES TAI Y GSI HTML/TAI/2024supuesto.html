@@ -1,0 +1,741 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI LI 2024 A</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to allow scrolling */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Max width for the container */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Slightly different background for question card */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Subtle border */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Light blue for selected option */
+            border-color: #3b82f6; /* Blue border */
+        }
+        input[type="radio"] {
+            display: none; /* Hide native radio button */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Light green */
+            border-color: #10b981; /* Green border */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gray */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: center; /* Align items vertically in the center */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Very light green background */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.2rem; /* Slightly smaller font for individual stats */
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 8px;
+        }
+        .final-score-container .total-score {
+            font-size: 1.5rem; /* Larger font for total score */
+            font-weight: 700;
+            color: #047857;
+            margin-top: 15px;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI LI 2024 - Modelo A</h1>
+        <div id="quiz-questions">
+            <!-- Questions will be loaded here -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary">Anterior</button>
+            <button id="reset-test-btn" class="button-secondary">Reiniciar Test</button> <!-- New button for full reset -->
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Aciertos: <span id="correct-answers-display" class="text-green-700"></span></p>
+            <p>Fallos: <span id="incorrect-answers-display" class="text-red-700"></span></p>
+            <p class="total-score">Has completado <span id="total-questions-answered-display"></span> de <span id="total-questions-display"></span> preguntas.</p>
+            <button id="restart-btn" class="button-primary mt-6">Revisar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+     
+            // Supuesto II
+            {
+                id: "SII-1",
+                section: "Supuesto II El Ministerio de Educación, Formación Profesional y Deportes tiene una red asignada en el Plan de Direccionamiento de la AGE 10.9.0.0/16 y ha creado un organismo para la enseñanza online de formadores, OEOF (en adelante nos referiremos en este supuesto sólo como “organismo”), al que le ha correspondido la última de las subredes de las 16 en las que se ha dividido la red ministerial.",
+                question: "1. ¿Cuántas direcciones hay disponibles para hosts en la subred del organismo?",
+                options: {
+                    A: "4094",
+                    B: "65534",
+                    C: "4096",
+                    D: "65536"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-2",
+                section: "Supuesto II",
+                question: "2. Al arrancar el servidor donde se aloja la web de profesores, aparecen errores en la partición sda8. ¿Qué comando hay que usar para reparar de forma automática los errores en el sistema de ficheros correspondiente, que no ha podido montarse?",
+                options: {
+                    A: "mount –T /dev/sda8",
+                    B: "fsck -y /dev/sda8",
+                    C: "fsck -m /dev/sda8",
+                    D: "checkdisk /dev/sda8"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-3",
+                section: "Supuesto II",
+                question: "3. Analizando la seguridad del sistema, surge la duda de si abrir o no el puerto 80 en un servidor web expuesto mediante HTTPS. El Centro Criptológico Nacional recomienda:",
+                options: {
+                    A: "Exhibir una web estática en el puerto 80 indicando que esa no es la web actual.",
+                    B: "Cambiar el puerto HTTPS al 8892.",
+                    C: "Utilizar un analizador de peticiones en las cabeceras HTTP en el puerto 80.",
+                    D: "Disponer del puerto TCP/80, configurando el servidor web para que lleve a cabo una redirección automática de HTTP a HTTPS."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SII-4",
+                section: "Supuesto II",
+                question: "4. El CPD donde está alojado el sistema tiene una puerta cuyo control de acceso es con tarjeta inteligente y PIN, que sólo conocen los operadores. Hace dos días, se supo que alguien no autorizado había entrado esperando agazapado a que alguien autorizado entrase, pasando detrás de él sin que éste advirtiera que tenía a un intruso detrás. Este incidente de ingeniería social en seguridad física se conoce con el nombre de:",
+                options: {
+                    A: "Tailgating o piggybacking.",
+                    B: "Quid pro quo.",
+                    C: "Pretexto.",
+                    D: "Disrupción."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-5",
+                section: "Supuesto II",
+                question: "5. El organismo tiene, para controlar la seguridad física del CPD, un circuito cerrado de televisión con cámaras que usa una red coaxial y se necesita interconectar esta red a la red local Ethernet para poder monitorizarlas. ¿Con qué dispositivo de red puede hacerlo?",
+                options: {
+                    A: "Un cortafuegos (firewall).",
+                    B: "Una pasarela (gateway).",
+                    C: "Un conmutador (switch).",
+                    D: "Un repetidor (repeater)."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-6",
+                section: "Supuesto II",
+                question: "6. En el sistema se utilizan los protocolos DNS y FTP seguro. De acuerdo con el modelo TCP/IP, estos protocolos se diferencian en que:",
+                options: {
+                    A: "DNS es un protocolo de usuario y FTP es un protocolo de soporte.",
+                    B: "DNS es siempre un protocolo orientado a la conexión mientras que FTP no.",
+                    C: "No existe diferencia entre ambos protocolos, ambos son protocolos de soporte.",
+                    D: "FTP es un protocolo de usuario y DNS es un protocolo de soporte."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SII-7",
+                section: "Supuesto II",
+                question: "7. En un switch Cisco que hay en la organización, se ejecuta el comando “switchport access vlan 1”. Esto permitirá:",
+                options: {
+                    A: "Asignar un puerto a la VLAN 1.",
+                    B: "Asignar el puerto 1 del switch a la VLAN donde estamos situados en la consola del switch.",
+                    C: "Visualizar todos los hosts asignados a la VLAN 1.",
+                    D: "Asignar todos los hosts conectados a cualquier puerto del switch a la VLAN 1."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-8",
+                section: "Supuesto II",
+                question: "8. La base de datos se ha corrompido y además, los usuarios no pueden acceder a la información. Se tiene toda la información de cómo se produjo el incidente y cuál es la persona que lo ha causado y por qué, pero, este incidente, ¿a qué dimensión o dimensiones de la seguridad afecta?",
+                options: {
+                    A: "A la disponibilidad porque no está accesible la base de datos y la integridad porque el fichero de la base de datos está corrupto.",
+                    B: "A la confidencialidad porque los datos, una vez dañados, pueden ser accesibles por cualquiera.",
+                    C: "Sólo a la disponibilidad porque la base de datos está temporalmente fuera de servicio hasta que se repare si es posible el fichero donde se aloja.",
+                    D: "A la trazabilidad, porque no podremos averiguar lo que ha pasado por mucho que nos esforcemos, la seguridad es así."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-9",
+                section: "Supuesto II",
+                question: "9. La red de área local está implementada con Gigabit Ethernet y, al conectar un nuevo dispositivo a la red, en su tarjeta, parpadea una luz de color naranja. ¿A qué puede deberse?",
+                options: {
+                    A: "A que está mal configurada la VLAN donde está ubicado el dispositivo.",
+                    B: "A que la tarjeta de red del dispositivo transmite a menor velocidad de la que permite la red.",
+                    C: "A que la tarjeta de red está estropeada y no hay conexión entre el dispositivo y la red.",
+                    D: "A que el cable del dispositivo es coaxial y no Ethernet."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-10",
+                section: "Supuesto II",
+                question: "10. Nos anuncian que hay una vulnerabilidad que afecta a una determinada versión del kernel de Linux Ubuntu. ¿Con qué comando podemos saber qué versión del kernel tiene nuestro sistema operativo Ubuntu?",
+                options: {
+                    A: "sudo dpkg -i linux*.deb",
+                    B: "uname -r",
+                    C: "uname -o",
+                    D: "kexec -l"
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-11",
+                section: "Supuesto II",
+                question: "11. Para descargar algunos ficheros del servidor BIBLIOTECA, los administradores están sopesando entre el uso de SFTP y FTPS. Indique, de las siguientes afirmaciones, la INCORRECTA:",
+                options: {
+                    A: "SFTP usa típicamente el puerto 22 de SSH mientras que FTPS usa el puerto en el que tengamos definido el protocolo SSL/TLS.",
+                    B: "SFTP usa autenticación con certificado (clave pública) mientras que FTPS usa autenticación con usuario y contraseña.",
+                    C: "FTPS usa dos puertos, uno para los comandos y otro para descargarse los datos mientras que SFTP usa el mismo puerto para ambas tareas.",
+                    D: "FTPS no contiene comandos estandarizados para manipular directorios o listar atributos, mientras que SFTP sí."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-12",
+                section: "Supuesto II",
+                question: "12. Para la detección de malware complejo y movimiento lateral relacionado con APTs (Advanced Persistent Threats), se ha instalado en los PC de los profesores, la solución del CCN, CLAUDIA. ¿Cómo define el Centro Criptológico Nacional una APT?",
+                options: {
+                    A: "Es un tipo de ransomware como, por ejemplo, WannaCry, que te cifra los archivos del PC y se requiere la clave de descifrado a cambio del pago de un rescate.",
+                    B: "Es un ataque de suplantación de identidad de un usuario corriente en un organismo para después mediante escalada de privilegios obtener las credenciales de un alto cargo de la empresa u organización.",
+                    C: "Es un ataque selectivo de ciberespionaje o cibersabotaje llevado a cabo bajo el auspicio o la dirección de un país u organización adversaria, por razones que van más allá de las meramente financieras/delictivas o de protesta política.",
+                    D: "Es un ataque masivo a una organización ocurrido por un fallo que no se había advertido hasta ese momento y, por tanto, no se cuenta con la salvaguarda o parche para prevenirlo."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SII-13",
+                section: "Supuesto II",
+                question: "13. Para mejorar la escalabilidad del sistema, está estudiando implantar una arquitectura de microservicios con Kubernetes. ¿Qué protocolos para servicios pueden utilizarse con Kubernetes?",
+                options: {
+                    A: "SCTP, TCP (por defecto) y UDP.",
+                    B: "HTTP (por defecto), HTTPS y FTP.",
+                    C: "SSH, SFTP (por defecto) y UDP.",
+                    D: "UDP (por defecto) y TCP."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-14",
+                section: "Supuesto II",
+                question: "14. Para poder atender las llamadas de las guardias de sistemas, se han comprado veinte móviles. Su responsable le pide realizar el enrolamiento de estos móviles, pero, ¿en qué consiste esta tarea?",
+                options: {
+                    A: "Emparejar, en el sistema MDM (Mobile Device Management) de la organización, a cada usuario con su móvil.",
+                    B: "Dar de alta en una base de datos de administración todos los dispositivos móviles.",
+                    C: "Insertar la tarjeta SIM correspondiente a cada móvil.",
+                    D: "Formatear a fábrica todos los dispositivos móviles."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SII-15",
+                section: "Supuesto II",
+                question: "15. Se ha instalado un servidor web con HTTPS y certificado SSL de servidor para proteger la conexión entre los clientes y el servidor, para lo cual la conexión usará TLS. Según las recomendaciones del Centro Criptológico Nacional, ¿cuál es la versión mínima y la recomendada a usar en TLS?",
+                options: {
+                    A: "La versión mínima aceptable es la 1.1 y se recomienda usar esa misma versión 1.1",
+                    B: "La versión mínima aceptable es la 1.0 y se recomienda usar 1.1",
+                    C: "La versión mínima aceptable es la 1.2 y se recomienda usar la 1.3",
+                    D: "La versión mínima aceptable es la 1.1 y se recomienda usar la 1.3"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SII-16",
+                section: "Supuesto II",
+                question: "16. Se ha descargado del sitio web del CCN-CERT una herramienta de antimalware y justo debajo aparece un hash de comprobación. ¿Qué tipo de medida de seguridad es este hash en este contexto?",
+                options: {
+                    A: "Una medida antimalware, pues el hash aplicado al fichero descargado nos sanitiza el fichero y ya se puede usar sin problemas, pues está limpio de malware, lo cual en una herramienta antimalware es altamente necesario.",
+                    B: "Una medida para asegurar la integridad del fichero de descarga, pues si al calcular nosotros el hash del fichero descargado no coincide con el que nos aparece en la página del CCN, el fichero descargado no sería válido para su uso.",
+                    C: "El hash es la firma del CCN como autoridad de certificación de productos que garantiza que el software descargado es apto para ser usado en sistemas categorizados como de nivel ALTO o incluso en sistemas clasificados como reservado nacional.",
+                    D: "El hash es la firma del CCN de la página web donde se presenta la herramienta que estamos intentando descargar y es una medida para evitar que los hackers puedan manipular la página y subir otro fichero en vez del que se pretende descargar."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-17",
+                section: "Supuesto II",
+                question: "17. Se ha implantado una solución VoIP que usa el protocolo SIP pero, al establecer sesiones con usuarios de fuera del organismo, la llamada se corta o congela y después, se restablece. Este problema no sucede en sesiones entre usuarios internos del organismo, ¿por qué puede ser?",
+                options: {
+                    A: "Se están usando incorrectamente los códecs.",
+                    B: "La salida a Internet está empleando NAT.",
+                    C: "El tráfico entre origen y destino está interceptado en el cortafuegos de Internet.",
+                    D: "La CPU del ordenador es insuficiente y provoca estos problemas."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "SII-18",
+                section: "Supuesto II",
+                question: "18. Se ha instalado un servidor de correo con Postfix y se está decidiendo si utilizar POP3 o IMAP en los clientes de correo. ¿Cuál de las siguientes opciones es INCORRECTA?",
+                options: {
+                    A: "Con IMAP, los mensajes se almacenan en un servidor remoto y los usuarios pueden iniciar sesión en varios clientes de correo electrónico y leer los mismos mensajes.",
+                    B: "POP3 solo admite la sincronización de correo unidireccional, lo que solo permite a los usuarios descargar correos electrónicos desde un servidor a un cliente.",
+                    C: "Con IMAP, el correo enviado y recibido se almacena en el servidor hasta que el usuario lo elimina permanentemente.",
+                    D: "Con POP3, si los usuarios organizan sus correos electrónicos en un dispositivo mediante carpetas, ya no tendrán que hacerlo en el resto de dispositivos porque se replica la organización en carpetas."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SII-19",
+                section: "Supuesto II",
+                question: "19. Se necesita saber los usuarios que acceden a la base de datos de la biblioteca y desde qué host o IP. Para averiguarlo, en la consola de administración de la base de datos, ejecutará el comando:",
+                options: {
+                    A: "SELECT * FROM all_users",
+                    B: "mysql> SELECT user FROM mysql.user",
+                    C: "mysql> SELECT user,host FROM mysql.user",
+                    D: "sudo mysql -u root -p"
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SII-20",
+                section: "Supuesto II",
+                question: "20. Se quiere aplicar políticas de seguridad al grupo de usuarios Profesores utilizando Directorio Activo y GPOs. Una buena práctica es definir primero:",
+                options: {
+                    A: "Una Unidad Organizativa (OU) para el grupo de usuarios Profesores.",
+                    B: "Las ACLs (Access Control Lists) que tendrán las GPO del grupo de usuarios Profesores.",
+                    C: "Un nuevo bosque de Directorio Activo.",
+                    D: "Relaciones de confianza entre el Directorio Activo actual y el dominio de seguridad del grupo de usuarios Profesores."
+                },
+                correctAnswer: "A"
+            },
+
+            // Preguntas de Reserva - Supuesto II
+            {
+                id: "SR2-1",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "1. Como administrador de correo, quiere cambiar el mensaje HELO que aparece cuando se establecen conexiones al servidor SMTP. Actualmente aparece el nombre del servidor, pero quiere que muestre \"CORREOBIBLIOTECA\" y además, que el cambio se aplique en todos los servidores SMTP que existan, no solo en aquel en el que está trabajando. ¿Cómo lo haría?",
+                options: {
+                    A: "Editando el parámetro $client en el fichero /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix.",
+                    B: "Accediendo al servidor SMTP y ejecutando EHLO -name CORREOBIBLIOTECA en la consola.",
+                    C: "Editando el parámetro smtp_helo en el fichero /etc/postfix/master.cf y reiniciando posteriormente el servidor Postfix.",
+                    D: "Editando el parámetro $helo_name en /etc/postfix/main.cf y reiniciando posteriormente el servidor Postfix."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "SR2-2",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "2. Como no hay suficientes tomas Ethernet en la zona física donde están los profesores, se va a instalar una red WiFi con protocolo WPA3-Enterprise. En este caso, para acceder a la red WiFi habrá que utilizar:",
+                options: {
+                    A: "Una contraseña de 64 bits.",
+                    B: "Una contraseña de 128 bits.",
+                    C: "Un servidor RADIUS o cualquier solución que permita EAP-TLS.",
+                    D: "Una contraseña de 192 bits usando el algoritmo GMCP-256."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "SR2-3",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "3. En la base de datos MySQL de Profesores, nos piden que añadamos una tabla de los profesores para el curso de INGLES BASICO, que se llamará \"ProfesoresIngles\" con sus nombres y apellidos. Para ello, y tras acceder como root a MYSQL, ingresaremos el comando:",
+                options: {
+                    A: "CREATE TABLE ProfesoresIngles (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(30), apellido1 VARCHAR(30), apellido2 VARCHAR(30));",
+                    B: "CREATE TABLE ProfesoresIngles KEY id, nombre, apellidos;",
+                    C: "CREAR TABLA ProfesoresIngles KEY apellidos, nombre;",
+                    D: "CREATE TABLE ProfesoresIngles (nombre, apellido);"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SR2-4",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "4. Ha instalado el servicio Nagios para monitorizar los servidores y servicios en su sistema y quiere monitorizar, además, la URL de profesores (https://profesores.es), pero antes quiere comprobar que este servicio está configurado correctamente. Para ello, utilizará el comando:",
+                options: {
+                    A: "nagios –v /usr/local/nagios/etc/nagios.cfg",
+                    B: "/mnt/nagios –check",
+                    C: "systemctl status nagios",
+                    D: "https://profesores.es nagios"
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "SR2-5",
+                section: "Preguntas de Reserva (Supuesto II)",
+                question: "5. Se ha instalado un servidor web con HTTPS y certificado SSL de servidor para proteger la conexión entre los clientes y el servidor, para lo cual la conexión usará TLS. Según las recomendaciones del Centro Criptológico Nacional, ¿cuál es la versión mínima y la recomendada a usar en TLS?",
+                options: {
+                    A: "La versión mínima aceptable es la 1.1 y se recomienda usar esa misma versión 1.1",
+                    B: "La versión mínima aceptable es la 1.0 y se recomienda usar 1.1",
+                    C: "La versión mínima aceptable es la 1.2 y se recomienda usar la 1.3",
+                    D: "La versión mínima aceptable es la 1.1 y se recomienda usar la 1.3"
+                },
+                correctAnswer: "C"
+                }
+        ];
+
+        // Filter out questions from "Supuesto I" and "Preguntas de Reserva (Supuesto I)"
+        const questions = allQuestions.filter(q =>
+            q.section !== "Supuesto I" && q.section !== "Preguntas de Reserva (Supuesto I)"
+        );
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // To store user answers
+        let quizSubmitted = false;
+        let answeredQuestions = new Set(); // To keep track of answered questions
+
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const correctAnswersDisplay = document.getElementById('correct-answers-display'); // New element
+        const incorrectAnswersDisplay = document.getElementById('incorrect-answers-display'); // New element
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const totalQuestionsAnsweredDisplay = document.getElementById('total-questions-answered-display'); // New element
+        const restartBtn = document.getElementById('restart-btn'); // This is the "Revisar Test" button
+        const resetTestBtn = document.getElementById('reset-test-btn'); // The new "Reiniciar Test" button
+
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizSubmitted', quizSubmitted);
+            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedSubmitted = localStorage.getItem('quizSubmitted');
+            const savedAnswered = localStorage.getItem('answeredQuestions');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedSubmitted !== null) {
+                quizSubmitted = savedSubmitted === 'true';
+            }
+            if (savedAnswered !== null) {
+                answeredQuestions = new Set(JSON.parse(savedAnswered));
+            }
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizQuestionsContainer.innerHTML = ''; // Clear the container
+
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = q.section;
+            quizQuestionsContainer.appendChild(sectionTitle);
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-lg font-semibold text-gray-700 mb-4';
+            questionText.textContent = q.question;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = `options-q${currentQuestionIndex}`; // ID for the options container
+
+            for (const key in q.options) {
+                const optionId = `q${currentQuestionIndex}-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = key;
+                input.className = 'hidden'; // Hide native radio button
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.textContent = `${key}) ${q.options[key]}`;
+
+                // If an answer is already saved, mark it
+                if (userAnswers[currentQuestionIndex] === key) {
+                    input.checked = true;
+                }
+
+                // If the question has already been answered (and not in final review mode),
+                // or if the quiz has been submitted, disable options and show feedback.
+                if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                    input.disabled = true;
+                    if (key === q.correctAnswer) {
+                        label.classList.add('correct-answer');
+                    } else if (userAnswers[currentQuestionIndex] === key && userAnswers[currentQuestionIndex] !== q.correctAnswer) {
+                        label.classList.add('incorrect-answer');
+                    }
+                }
+
+                // Handle selection change
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !answeredQuestions.has(currentQuestionIndex)) {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        answeredQuestions.add(currentQuestionIndex); // Mark as answered
+                        checkAnswerAndProvideFeedback(currentQuestionIndex, event.target.value, optionsDiv);
+                        saveQuizState(); // Save state after each answer
+                    }
+                });
+
+                optionsDiv.appendChild(input);
+                optionsDiv.appendChild(label);
+            }
+            questionCard.appendChild(optionsDiv);
+
+            // If the question has already been answered or the quiz has been submitted, show individual result
+            if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                const resultMessage = document.createElement('div');
+                resultMessage.className = 'result-message';
+                if (userAnswers[currentQuestionIndex] === q.correctAnswer) {
+                    resultMessage.classList.add('correct');
+                    resultMessage.textContent = '¡Correcto!';
+                } else {
+                    resultMessage.classList.add('incorrect');
+                    resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+                }
+                questionCard.appendChild(resultMessage);
+            }
+
+            quizQuestionsContainer.appendChild(questionCard);
+            updateNavigationButtons();
+        }
+
+        function checkAnswerAndProvideFeedback(qIndex, selectedAnswer, optionsContainer) {
+            const q = questions[qIndex];
+            const radios = optionsContainer.querySelectorAll(`input[name="question-${qIndex}"]`);
+            const labels = optionsContainer.querySelectorAll('.option-label');
+
+            // Disable all options for this question
+            radios.forEach(radio => radio.disabled = true);
+
+            // Highlight the selected and correct answers
+            labels.forEach(label => {
+                const input = document.getElementById(label.htmlFor);
+                if (input.value === q.correctAnswer) {
+                    label.classList.add('correct-answer');
+                } else if (input.value === selectedAnswer && selectedAnswer !== q.correctAnswer) {
+                    label.classList.add('incorrect-answer');
+                }
+            });
+
+            // Show feedback message
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (selectedAnswer === q.correctAnswer) {
+                resultMessage.classList.add('correct');
+                resultMessage.textContent = '¡Correcto!';
+            } else {
+                resultMessage.classList.add('incorrect');
+                resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+            }
+            optionsContainer.parentNode.appendChild(resultMessage); // Add it to the question card
+        }
+
+
+        function updateNavigationButtons() {
+            // Always show "Reiniciar Test" button
+            resetTestBtn.style.display = 'inline-block';
+
+            // Logic for other buttons remains similar to before
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+            submitBtn.style.display = currentQuestionIndex === questions.length - 1 && !quizSubmitted ? 'inline-block' : 'none';
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                // When quiz is submitted, the "Reiniciar Test" button is still visible
+                // but the "Revisar Test" button on the results page is used for review.
+            }
+        }
+
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let answeredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i]) { // Check if the question was answered
+                    answeredCount++;
+                    if (userAnswers[i] === questions[i].correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            }
+
+            correctAnswersDisplay.textContent = correctCount;
+            incorrectAnswersDisplay.textContent = incorrectCount;
+            totalQuestionsAnsweredDisplay.textContent = answeredCount;
+            totalQuestionsDisplay.textContent = questions.length; // Total questions available in the test
+
+            document.getElementById('quiz-app').style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            saveQuizState(); // Save state when quiz is submitted
+            // Reload all questions to show individual results
+            currentQuestionIndex = 0; // Go back to the first question to review
+            loadQuestion(); // Load the first question with feedback
+            document.getElementById('quiz-app').style.display = 'block'; // Ensure quiz is visible
+            quizResultsDiv.style.display = 'none'; // Hide final results temporarily
+            showResults(); // Show the final summary
+        });
+
+        restartBtn.addEventListener('click', () => {
+            // This button is for reviewing the test, not a full reset
+            currentQuestionIndex = 0;
+            quizSubmitted = true; // Stay in submitted state to show feedback
+            quizResultsDiv.style.display = 'none';
+            document.getElementById('quiz-app').style.display = 'block';
+            loadQuestion();
+        });
+
+        // Event listener for the new "Reiniciar Test" button
+        resetTestBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            answeredQuestions.clear(); // Clear the record of answered questions
+            localStorage.clear(); // Clear all saved data from localStorage
+            quizResultsDiv.style.display = 'none'; // Hide results if visible
+            document.getElementById('quiz-app').style.display = 'block'; // Show quiz app
+            loadQuestion();
+        });
+
+        // Initialize the quiz
+        loadQuizState(); // Load state when the page loads
+        loadQuestion();
+    </script>
+</body>
+</html>
+
