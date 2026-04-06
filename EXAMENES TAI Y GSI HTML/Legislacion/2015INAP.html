@@ -1,0 +1,670 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI 2015 - Primer Ejercicio Modificado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinea al inicio */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px; /* Margen superior */
+        }
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .question-block:last-child {
+            border-bottom: none;
+        }
+        .question-text {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .option-label:hover {
+            background-color: #f5f5f5;
+        }
+        .option-input {
+            margin-right: 12px;
+            margin-top: 4px; /* Alinea el botón de radio con el texto */
+            flex-shrink: 0;
+        }
+        .option-text {
+            font-size: 1rem; /* text-base */
+            color: #555;
+            line-height: 1.4;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none; /* Oculto por defecto */
+        }
+        .feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .feedback.show {
+            display: block;
+        }
+        .correct-answer {
+            margin-top: 10px;
+            font-weight: normal;
+            color: #333;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px; /* Espacio entre botones */
+            flex-wrap: wrap; /* Permite el ajuste en pantallas pequeñas */
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            flex-grow: 1; /* Permite que los botones crezcan */
+            min-width: 120px; /* Ancho mínimo para botones */
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* Indigo 700 */
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* Gray 500 */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563; /* Gray 700 */
+        }
+        .btn-reset {
+            background-color: #dc2626; /* Red 600 */
+            color: white;
+        }
+        .btn-reset:hover {
+            background-color: #b91c1c; /* Red 700 */
+        }
+
+        .results-container {
+            background-color: #e2e8f0; /* Gray 200 */
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2d3748; /* Gray 800 */
+            display: none; /* Oculto por defecto */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .results-container.show {
+            display: block;
+        }
+        .results-container p {
+            margin-bottom: 10px;
+        }
+        .results-container .correct-count {
+            color: #10b981; /* Green 500 */
+        }
+        .results-container .incorrect-count {
+            color: #ef4444; /* Red 500 */
+        }
+
+
+        /* Ajustes responsivos */
+        @media (max-width: 640px) {
+            .button-group {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI 2015 - Primer Ejercicio</h1>
+        <div id="question-container" class="question-block">
+            <p id="question-number" class="text-sm text-gray-500 mb-2"></p>
+            <p id="question-text" class="question-text"></p>
+            <div id="options-container">
+                <!-- Las opciones se cargarán aquí mediante JavaScript -->
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <div id="results-container" class="results-container">
+            <!-- Los resultados se mostrarán aquí -->
+        </div>
+
+        <div class="button-group">
+            <button id="prev-btn" class="btn btn-secondary" disabled>Anterior</button>
+            <button id="next-btn" class="btn btn-primary">Siguiente</button>
+            <button id="reset-btn" class="btn btn-reset">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Definición de las preguntas del test
+        const questions = [
+            // BLOQUE I
+            {
+                block: "Bloque I",
+                question: "La Constitución Española reconoce el derecho de reunión:",
+                options: [
+                    "Pacífica y sin armas pero con necesidad de autorización previa.",
+                    "En lugares de tránsito público previa autorización de la autoridad.",
+                    "En los casos de reuniones en lugares de tránsito público y manifestaciones se dará comunicación previa a la autoridad.",
+                    "No es preciso realizar ninguna actuación."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque I",
+                question: "Según la Constitución Española, la cuestión de confianza planteada por el Presidente del Gobierno, se entenderá otorgada cuando vote a su favor la mayoría:",
+                options: [
+                    "absoluta de las Cortes Generales.",
+                    "absoluta del Congreso de los Diputados.",
+                    "simple de las Cortes Generales.",
+                    "simple del Congreso de los Diputados."
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque I",
+                question: "De conformidad con la Constitución Española de 1978 ¿cuál de los siguientes derechos y libertades es susceptible de tutela a través del recurso de amparo ante el Tribunal Constitucional?",
+                options: [
+                    "El derecho a la propiedad privada.",
+                    "El derecho de asociación.",
+                    "El derecho de fundación.",
+                    "El derecho de negociación colectiva."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Según el artículo 159 de la Constitución Española, los miembros del Tribunal Constitucional serán designados por un período de:",
+                options: [
+                    "seis años y se renovarán por terceras partes cada tres.",
+                    "nueve años y se renovarán por terceras partes cada tres.",
+                    "ocho años y se renovarán por terceras partes cada dos.",
+                    "cuatro años y se renovarán por terceras partes cada dos."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Según el artículo 115 de la Constitución Española, el Presidente del Gobierno, previa deliberación del Consejo de Ministros, y bajo su responsabilidad, podrá proponer la disolución de:",
+                options: [
+                    "El Congreso, del Senado o las Cortes Generales.",
+                    "Solamente el Congreso.",
+                    "El Congreso, pero sólo mediante la tramitación de una moción de censura.",
+                    "El Congreso y el Senado mediante Referéndum."
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque I",
+                question: "El artículo 152 de la Constitución española se refiere a la organización institucional básica de cada Comunidad Autónoma, la cual se basará en:",
+                options: [
+                    "una Consellería legislativa, una Delegación de Gobierno, un Presidente y un Tribunal Superior de Justicia.",
+                    "una Asamblea legislativa, un Presidente, un Delegado de Gobierno y un Comité Superior del Poder Judicial.",
+                    "una Asamblea legislativa, un Consejo de Gobierno, un Presidente y un Tribunal Superior de Justicia.",
+                    "un Consejo legislativo, una Delegación de Gobierno, un Presidente y un Tribunal Supremo."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque I",
+                question: "¿Qué es lo que caracteriza a un decreto-ley?",
+                options: [
+                    "No puede afectar al ordenamiento de las instituciones básicas del Estado.",
+                    "Es dictado por las Cortes Generales en casos de urgente necesidad.",
+                    "Es dictado por el Presidente del Gobierno en casos de extraordinaria y urgente necesidad.",
+                    "Es dictado por el Gobierno por encargo de las Cortes Generales."
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque I",
+                question: "¿Qué tipo de ley aprueba los estatutos de autonomía?",
+                options: [
+                    "una ley ordinaria.",
+                    "una ley orgánica.",
+                    "una ley de bases.",
+                    "una ley de transferencia."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Entre las prestaciones de la acción protectora que menciona el artículo 8.1 del Real Decreto Legislativo 1/2013 por el que se aprueba el Texto Refundido de la Ley General de derechos de las personas con discapacidad y de su inclusión social, se encuentran:",
+                options: [
+                    "el subsidio mínimo.",
+                    "la asistencia social y prestación farmacológica.",
+                    "el subsidio profesional y compensación por gastos de transporte.",
+                    "la recuperación profesional."
+                ],
+                correctAnswer: "d"
+            },
+            // Pregunta 10 del Bloque I fue ANULADA en el documento de respuestas, por lo tanto, se omite.
+            {
+                block: "Bloque I",
+                question: "Según la Ley 59/2003, de firma electrónica, el certificado electrónico es un documento:",
+                options: [
+                    "generado electrónicamente por un prestador de servicios de certificación que vincula unos datos de verificación de firma a un firmante y confirma su identidad.",
+                    "firmado electrónicamente por un prestador de servicios de certificación que vincula unos datos de verificación de firma a un firmante y confirma su identidad.",
+                    "generado electrónicamente por un prestador de servicios de certificación que no vincula los datos de verificación de firma a un firmante y confirma su identidad.",
+                    "firmado electrónicamente por un prestador de servicios de certificación que no vincula los datos de verificación de firma a un firmante y no necesita confirmar su identidad."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Según el artículo 10 de la Ley 34/2002 de servicios de la Sociedad de la Información y de comercio electrónico, expone qué información está obligado el prestador de servicios de la sociedad de la información a poner a disposición por medios electrónicos, señale la FALSA entre las siguientes:",
+                options: [
+                    "Los prestadores de servicios de intermediación que presten colaboración con la entidad.",
+                    "Los datos de su inscripción en el Registro Mercantil o el registro público en el que haya adquirido personalidad jurídica.",
+                    "El número de identificación fiscal que le corresponda.",
+                    "Su dirección de correo electrónico."
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque I",
+                question: "La ley 15/1999, de Protección de Datos de carácter personal (LOPD), establece que el responsable del tratamiento tendrá la obligación de hacer efectivo el derecho de rectificación o cancelación del interesado en el plazo de:",
+                options: [
+                    "Sesenta días.",
+                    "Treinta días.",
+                    "Quince días.",
+                    "Diez días."
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque I",
+                question: "Según la Ley 59/2003, de firma electrónica, los certificados electrónicos de personas jurídicas:",
+                options: [
+                    "Podrán afectar al régimen de representación orgánica o voluntaria regulado por la legislación civil o mercantil aplicable a cada persona jurídica.",
+                    "Siempre deben incluir una identificación de persona física.",
+                    "No pueden incluir límites de uso por cuantía.",
+                    "No pueden incluir límites de uso por materia."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Indique cuál es la respuesta FALSA. Según el Real Decreto 1720/2007 de desarrollo de la LOPD, los derechos de acceso, rectificación, cancelación y oposición son personalísimos y serán ejercidos por el afectado. Tales derechos se ejercitarán:",
+                options: [
+                    "a través de un representante voluntario, expresamente designado para el ejercicio del derecho.",
+                    "por el afectado, acreditando su identidad.",
+                    "por un representante legal, cuando el afectado se encuentre en situación de incapacidad o minoría de edad que le imposibilite el ejercicio personal de estos derechos, en cuyo caso será necesario que acredite tal condición.",
+                    "por el afectado, y si no es posible por incapacidad o minoría de edad, sólo los podrá ejercitar un funcionario en nombre del afectado."
+                ],
+                correctAnswer: "d"
+            },
+            // La pregunta 15 del Bloque I fue ANULADA en el documento de respuestas original, por lo tanto, se omite.
+            {
+                block: "Bloque I",
+                question: "Cuál de estos miembros NO forma parte del Consejo Consultivo de la Agencia de Protección de Datos:",
+                options: [
+                    "Un miembro de la Real Academia de la Historia.",
+                    "Un representante del Consejo General del Poder Judicial.",
+                    "Un representante de los usuarios y consumidores.",
+                    "Un representante de la Administración Local."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Según indica el Real Decreto 1671/2009, por el que se desarrolla parcialmente la Ley 11/2007, la orden o resolución de creación de las sedes electrónicas deberá publicarse en el BOE, con el siguiente contenido mínimo:",
+                options: [
+                    "Ámbito de aplicación de la sede, que podrá ser la totalidad del Ministerio u organismo público, o uno o varios de sus órganos con rango, al menos, de Dirección General.",
+                    "Identificación de la dirección electrónica de referencia de la sede del Ministerio.",
+                    "Identificación de su webmaster.",
+                    "Medios disponibles para la formulación de encuestas."
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque I",
+                question: "Cuál de las siguientes definiciones NO es uno de los roles de la Plataforma de Intermediación, según la Norma Técnica de Interoperabilidad de Protocolos de intermediación de datos:",
+                options: [
+                    "Mantendrá un portal web informativo con toda la documentación relativa a la Plataforma.",
+                    "Almacenará información personal del ciudadano derivada de la transacción de intercambio de datos, asegurando para ello la confidencialidad e integridad de la misma a través de los mecanismos correspondientes.",
+                    "Mantendrá un centro de atención a usuarios e integradores que canalice todas las incidencias relativas al sistema.",
+                    "Mantendrá un portal web informativo con toda la documentación relativa a la Plataforma."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "¿Cuál de los siguientes datos NO es obligatorio que figure en la realización de una inscripción en el Registro Electrónico de Apoderamientos?",
+                options: [
+                    "Nombre y apellidos, denominación o razón social y NIF del poderdante.",
+                    "Periodo de vigencia de los trámites objeto de apoderamiento.",
+                    "Fecha de otorgamiento.",
+                    "Número de referencia del alta y fecha de alta en el Registro."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque I",
+                question: "Señale cuál de las siguientes afirmaciones sobre el Punto de Acceso General de la Administración General del Estado (PAG) es INCORRECTA:",
+                options: [
+                    "Garantizará el acceso a los servicios del Portal de la Transparencia.",
+                    "Contendrá información administrativa de ayudas y becas.",
+                    "Proporcionará información sobre los procedimientos y servicios correspondientes a otras Administraciones Públicas.",
+                    "Garantizará el acceso a los servicios de todos los portales de los Departamentos ministeriales y Organismos públicos."
+                ],
+                correctAnswer: "d"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null); // Para almacenar las respuestas seleccionadas por el usuario
+        let testFinished = false; // Nuevo estado para controlar si el test ha finalizado
+
+        const questionContainer = document.getElementById('question-container');
+        const questionNumberElem = document.getElementById('question-number');
+        const questionTextElem = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackElem = document.getElementById('feedback');
+        const resultsContainer = document.getElementById('results-container'); // Nuevo contenedor de resultados
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Carga el estado del test desde LocalStorage
+        function loadState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedTestFinished = localStorage.getItem('testFinished');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedTestFinished !== null) {
+                testFinished = JSON.parse(savedTestFinished);
+            }
+        }
+
+        // Guarda el estado actual del test en LocalStorage
+        function saveState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('testFinished', JSON.stringify(testFinished));
+        }
+
+        /**
+         * Habilita o deshabilita todas las opciones de radio.
+         * @param {boolean} enable - True para habilitar, false para deshabilitar.
+         */
+        function enableAllOptions(enable) {
+            const radios = optionsContainer.querySelectorAll('input[type="radio"]');
+            radios.forEach(radio => {
+                radio.disabled = !enable;
+                const label = radio.closest('.option-label');
+                if (label) {
+                    label.style.cursor = enable ? 'pointer' : 'default';
+                }
+            });
+        }
+
+        /**
+         * Carga y muestra la pregunta actual y sus opciones.
+         */
+        function loadQuestion() {
+            // Si el test ha finalizado, muestra los resultados en lugar de las preguntas
+            if (testFinished) {
+                showResults();
+                return;
+            }
+
+            // Limpia el feedback anterior
+            feedbackElem.classList.remove('show', 'correct', 'incorrect');
+            feedbackElem.textContent = '';
+            optionsContainer.innerHTML = ''; // Limpia las opciones anteriores
+            resultsContainer.classList.remove('show'); // Oculta los resultados si se vuelve a una pregunta
+
+            // Habilita todas las opciones al cargar una nueva pregunta
+            enableAllOptions(true); 
+
+            const questionData = questions[currentQuestionIndex];
+            questionNumberElem.textContent = `Bloque: ${questionData.block} - Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionTextElem.textContent = questionData.question;
+
+            const optionLetters = ['a', 'b', 'c', 'd'];
+
+            questionData.options.forEach((option, index) => {
+                const optionId = optionLetters[index];
+                const optionLabel = document.createElement('label');
+                optionLabel.className = 'option-label';
+                optionLabel.innerHTML = `
+                    <input type="radio" name="question-${currentQuestionIndex}" value="${optionId}" class="option-input">
+                    <span class="option-text">${optionId.toUpperCase()}. ${option}</span>
+                `;
+                optionsContainer.appendChild(optionLabel);
+
+                const radioInput = optionLabel.querySelector('input');
+                // Si la opción fue seleccionada previamente por el usuario, la marca y muestra el feedback
+                if (userAnswers[currentQuestionIndex] === optionId) {
+                    radioInput.checked = true;
+                    checkAnswer(radioInput); // Muestra el feedback inmediatamente y deshabilita las opciones
+                }
+
+                // Añade el event listener para el feedback inmediato al cambiar la selección
+                radioInput.addEventListener('change', () => checkAnswer(radioInput));
+            });
+
+            updateNavigationButtons();
+            saveState(); // Guarda el estado después de cargar la pregunta
+        }
+
+        /**
+         * Comprueba la respuesta seleccionada y proporciona feedback.
+         * @param {HTMLInputElement} selectedInput - El elemento de entrada de radio que fue seleccionado.
+         */
+        function checkAnswer(selectedInput) {
+            const selectedOption = selectedInput.value;
+            const currentQuestion = questions[currentQuestionIndex];
+
+            // Guarda la respuesta del usuario
+            userAnswers[currentQuestionIndex] = selectedOption;
+            saveState(); // Guarda el estado inmediatamente después de elegir una respuesta
+
+            feedbackElem.classList.add('show');
+            feedbackElem.classList.remove('correct', 'incorrect'); // Limpia las clases de feedback anteriores
+
+            // Deshabilita todas las opciones después de la selección
+            enableAllOptions(false);
+
+            if (selectedOption === currentQuestion.correctAnswer) {
+                feedbackElem.textContent = '¡Correcto!';
+                feedbackElem.classList.add('correct');
+            } else {
+                const correctAnswerText = currentQuestion.options[getOptionIndex(currentQuestion.correctAnswer)];
+                feedbackElem.innerHTML = `¡Incorrecto! La respuesta correcta era: <br> <strong>${currentQuestion.correctAnswer.toUpperCase()}. ${correctAnswerText}</strong>`;
+                feedbackElem.classList.add('incorrect');
+            }
+        }
+
+        // Función auxiliar para obtener el índice de la opción a partir de su letra ('a', 'b', 'c', 'd')
+        function getOptionIndex(optionChar) {
+            return optionChar.charCodeAt(0) - 'a'.charCodeAt(0);
+        }
+
+        /**
+         * Actualiza el estado de los botones de navegación (Anterior, Siguiente).
+         */
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finalizar Test';
+                nextBtn.classList.remove('btn-primary');
+                nextBtn.classList.add('btn-reset'); // Cambia a color rojo para finalizar
+            } else {
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.classList.remove('btn-reset');
+                nextBtn.classList.add('btn-primary');
+                nextBtn.disabled = false; // Asegura que el botón Siguiente esté habilitado
+            }
+        }
+
+        /**
+         * Maneja el clic en el botón "Siguiente" o "Finalizar Test".
+         * Avanza a la siguiente pregunta o muestra los resultados.
+         */
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                // Si es la última pregunta, finaliza el test y muestra los resultados
+                testFinished = true;
+                saveState();
+                showResults();
+            }
+        }
+
+        /**
+         * Maneja el clic en el botón "Anterior".
+         * Retrocede a la pregunta anterior.
+         */
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                testFinished = false; // Si vuelve atrás, el test ya no está "finalizado"
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        /**
+         * Calcula y muestra los resultados finales del test.
+         */
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+
+            questions.forEach((question, index) => {
+                if (userAnswers[index] !== null) { // Solo cuenta las preguntas respondidas
+                    if (userAnswers[index] === question.correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            });
+
+            // Oculta el contenedor de preguntas y muestra el de resultados
+            questionContainer.style.display = 'none';
+            resultsContainer.classList.add('show');
+            resultsContainer.innerHTML = `
+                <p>¡Test Finalizado!</p>
+                <p class="correct-count">Aciertos: ${correctCount}</p>
+                <p class="incorrect-count">Fallos: ${incorrectCount}</p>
+                <p>Preguntas sin responder: ${questions.length - (correctCount + incorrectCount)}</p>
+            `;
+
+            // Deshabilita los botones de navegación y solo deja el de reiniciar
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            resetBtn.style.display = 'block'; // Asegura que Reiniciar Test esté visible
+        }
+
+        /**
+         * Reinicia el test a su estado inicial.
+         */
+        function resetTest() {
+            currentQuestionIndex = 0;
+            userAnswers.fill(null); // Borra todas las respuestas del usuario
+            testFinished = false; // Reinicia el estado de finalización del test
+            localStorage.removeItem('currentQuestionIndex'); // Elimina el índice guardado
+            localStorage.removeItem('userAnswers'); // Elimina las respuestas guardadas
+            localStorage.removeItem('testFinished'); // Elimina el estado de finalización
+
+            // Vuelve a mostrar el contenedor de preguntas y oculta el de resultados
+            questionContainer.style.display = 'block';
+            resultsContainer.classList.remove('show');
+            
+            // Restaura la visibilidad y texto de los botones
+            prevBtn.style.display = 'block';
+            nextBtn.style.display = 'block';
+            nextBtn.textContent = 'Siguiente';
+            nextBtn.classList.remove('btn-reset');
+            nextBtn.classList.add('btn-primary');
+
+            loadQuestion(); // Recarga la primera pregunta
+        }
+
+        // Event Listeners
+        nextBtn.addEventListener('click', nextQuestion);
+        prevBtn.addEventListener('click', prevQuestion);
+        resetBtn.addEventListener('click', resetTest);
+
+        // Carga inicial del test cuando el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState(); // Carga el estado guardado
+            loadQuestion(); // Carga la pregunta correspondiente
+        });
+    </script>
+</body>
+</html>
+
+
+
