@@ -1,0 +1,607 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI-L Interactivo 2018</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+        .options label:hover:not(.disabled-option) {
+            background-color: #eef2ff;
+            border-color: #818cf8;
+        }
+        .options input[type="radio"] {
+            display: none;
+        }
+        .options input[type="radio"] + span {
+            display: block;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Estilo para la respuesta correcta seleccionada */
+        .options input[type="radio"]:checked + span.correct-option-feedback {
+            background-color: #10b981; /* Verde */
+            color: #fff;
+            border-color: #10b981;
+        }
+        /* Estilo para la respuesta incorrecta seleccionada */
+        .options input[type="radio"]:checked + span.wrong-option-feedback {
+            background-color: #ef4444; /* Rojo */
+            color: #fff;
+            border-color: #ef4444;
+        }
+        /* Estilo para la respuesta correcta cuando se eligió una incorrecta */
+        .options .correct-highlight {
+            background-color: #d1fae5; /* Verde claro para resaltar la respuesta correcta */
+            border-color: #10b981;
+            color: #1f2937;
+        }
+        .disabled-option {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .submit-button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+        }
+        .submit-button:hover {
+            background-color: #4338ca;
+        }
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f4f8;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+        }
+        .result-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e7ff;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .correct-answer {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .wrong-answer {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .feedback-text {
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .correct-feedback-text {
+            color: #10b981;
+        }
+        .wrong-feedback-text {
+            color: #ef4444;
+        }
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background-color: #6b7280;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+        .nav-button:hover {
+            background-color: #4b5563;
+        }
+        .nav-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+        .reset-button {
+            background-color: #dc2626; /* Color rojo para el botón de reinicio */
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+            margin-top: 10px; /* Espacio encima del botón de reinicio */
+        }
+        .reset-button:hover {
+            background-color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI-L 2018</h1>
+
+        <div id="test-container"></div>
+
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+
+        <button id="submit-test" class="submit-button mt-6 hidden">Finalizar Test</button>
+        <button id="full-reset-test" class="reset-button mt-4">Reiniciar Test Completamente</button>
+
+
+        <div id="results" class="results-section hidden">
+            <h2 class="section-title">Resultados del Test</h2>
+            <div id="results-content"></div>
+            <button id="retake-test" class="submit-button mt-6">Volver a Intentar</button>
+        </div>
+    </div>
+
+    <script>
+        // Preguntas y opciones del test de 2018
+        const allQuestions = [
+            {
+                id: 'P1',
+                question: '¿Cuál de los siguientes es uno de los derechos fundamentales y libertades públicas de la Sección 1ª del Capítulo II del Título I de la Constitución?',
+                options: {a: 'El derecho de reunión pacífica y sin armas.', b: 'El derecho de defender a España.', c: 'El derecho a la propiedad privada y a la herencia.', d: 'El derecho al trabajo.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P2',
+                question: 'En relación al artículo 64 de la Constitución, señale la correcta:',
+                options: {a: 'Con carácter general los actos del Rey serán refrendados por el Presidente del Congreso y, en su caso, por los Ministros competentes.', b: 'El Presidente del Gobierno no puede refrendar los actos del Rey.', c: 'La propuesta y nombramiento del Presidente del Gobierno, y la disolución prevista en el artículo 99 serán refrendados por el Presidente del Congreso.', d: 'El Rey será directamente responsable de los actos refrendados.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P3',
+                question: 'Señale la respuesta correcta según lo establecido en el artículo 161 de la Constitución:',
+                options: {a: 'El Tribunal Constitucional es competente para conocer del recurso de amparo contra leyes y disposiciones normativas con rango de ley.', b: 'El Tribunal Supremo es competente para conocer del recurso de amparo contra leyes y disposiciones normativas con rango de ley.', c: 'El Tribunal Constitucional es competente para conocer del recurso de inconstitucionalidad contra leyes y disposiciones normativas con rango de ley.', d: 'El Tribunal Supremo es competente para conocer del recurso de inconstitucionalidad contra leyes y disposiciones normativas con rango de ley.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P4',
+                question: 'Según lo establecido en el artículo 98 de la Constitución:',
+                options: {a: 'El Gobierno se compone del Presidente, de los Vicepresidentes, en su caso, de los Ministros y de los Secretarios de Estado y de los demás miembros que establezca la ley.', b: 'El Gobierno se compone del Presidente, de los Vicepresidentes, de los Ministros, de los Secretarios de Estado y de los demás miembros que establezca la ley.', c: 'El Gobierno se compone del Presidente, de los de los Ministros, de los Secretarios de Estado y de los demás miembros que establezca la ley.', d: 'El Gobierno se compone del Presidente, de los Vicepresidentes, en su caso, de los Ministros y de los demás miembros que establezca la ley.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P5',
+                question: 'Señale cuál de las siguientes NO es una causa de cese del Gobierno conforme al artículo 101 de la Constitución:',
+                options: {a: 'Tras la celebración de elecciones generales.', b: 'En los casos de pérdida de la confianza parlamentaria previstos en la Constitución.', c: 'Por presentación de una moción de censura.', d: 'Por dimisión o fallecimiento de su Presidente.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P6',
+                question: '¿En qué año se aprobó la Agenda 2030 para el desarrollo sostenible?',
+                options: {a: '2015', b: '2016', c: '2017', d: '2018'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P7',
+                question: 'El cumplimiento por la Administración General del Estado de las obligaciones de publicidad activa contenidas en el capítulo II de la Ley 19/2013, de transparencia, acceso a la información pública y buen gobierno, será objeto de control por parte de:',
+                options: {a: 'El Ministerio de Política Territorial y Función Pública.', b: 'La Secretaría de Estado de Función Pública.', c: 'El Consejo de Transparencia y Buen Gobierno.', d: 'La Subdirección General de Transparencia y Atención al Ciudadano.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P8',
+                question: 'Según la Ley 40/2015, de Régimen Jurídico del Sector Público, ¿cuál de los siguientes NO tiene la condición de alto cargo?',
+                options: {a: 'Un Ministro.', b: 'Un Subdirector general.', c: 'Un Subsecretario.', d: 'Un Secretario general técnico.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P9',
+                question: 'Conforme a lo establecido en el Texto refundido del Estatuto Básico del Empleado Público, los empleados públicos se clasifican en:',
+                options: {a: 'Funcionarios de carrera, funcionarios interinos, personal laboral ya sea fijo, por tiempo indefinido o temporal - y personal eventual.', b: 'Funcionarios de carrera, funcionarios interinos y personal laboral fijo o por tiempo indefinido.', c: 'Funcionarios de carrera y personal laboral fijo.', d: 'Funcionarios de carrera, funcionarios interinos y personal eventual.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P10',
+                question: 'La celebración de un tratado internacional que contenga estipulaciones contrarias a la Constitución:',
+                options: {a: 'Es nula.', b: 'Exigirá la previa revisión constitucional.', c: 'Exigirá al Tribunal Supremo la previa declaración de la contradicción, que será solicitada por el Presidente del Gobierno.', d: 'Exigirá al Tribunal Constitucional la previa declaración de la contradicción, que será solicitada por el Presidente del Gobierno.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P11',
+                question: 'Conforme a lo establecido en el artículo 81 de la Constitución, la aprobación, modificación o derogación de las leyes orgánicas exigirá:',
+                options: {a: 'Mayoría absoluta del Congreso e igual mayoría del Senado, en una votación final sobre el conjunto de las enmiendas.', b: 'Mayoría absoluta del Congreso, en una votación final sobre el conjunto del proyecto.', c: 'Mayoría absoluta del Congreso únicamente en los casos en que exista veto establecido por mayoría simple del Senado.', d: 'Mayoría simple del Congreso, en una votación final sobre el conjunto del proyecto.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P12',
+                question: 'A los efectos de lo dispuesto en la Ley Orgánica 3/2007, para la igualdad efectiva de mujeres y hombres, se entenderá por composición equilibrada:',
+                options: {a: 'La presencia de mujeres y hombres de forma que, en el conjunto a que se refiera, haya un cincuenta por ciento de cada sexo.', b: 'La presencia de mujeres y hombres de forma que, en el conjunto a que se refiera, las personas de cada sexo no superen el ochenta por ciento ni sean menos del veinte por ciento.', c: 'La presencia de mujeres y hombres de forma que, en el conjunto a que se refiera, ambos sexos estén suficientemente representados.', d: 'La presencia de mujeres y hombres de forma que, en el conjunto a que se refiera, las personas de cada sexo no superen el sesenta por ciento ni sean menos del cuarenta por ciento.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P13',
+                question: 'En relación a la firma electrónica, indique el formato de firma que añade los certificados y la información de revocación de los mismos, para su validación a largo plazo:',
+                options: {a: 'AdES-C', b: 'AdES-X', c: 'AdES-XL', d: 'AdES-A'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P14',
+                question: '¿Cómo se llama el middleware que permite gestionar la conexión NFC entre dispositivos móviles Android y el DNIe?',
+                options: {a: 'DNIeNFConnect.', b: 'DNIeApp.', c: 'MiddleDNIe.', d: 'DNle Droid.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P15',
+                question: 'Según el Reglamento (UE) 2016/679, Reglamento General de Protección de Datos, el derecho a recibir los datos personales que incumban al interesado, que haya facilitado a un responsable del tratamiento, en un formato estructurado, de uso común y lectura mecánica, y a transmitirlos a otro responsable del tratamiento, se denomina:',
+                options: {a: 'Derecho de acceso.', b: 'Derecho a la portabilidad de los datos.', c: 'Derecho a la transferencia de los datos.', d: 'Derecho a la custodia de los datos.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P16',
+                question: 'De acuerdo con lo establecido en la Ley 40/2015, de Régimen Jurídico del Sector Público, podemos definir el Esquema Nacional de Interoperabilidad como:',
+                options: {a: 'El conjunto de obligaciones aplicables a todas las Administraciones Públicas para la toma de decisiones tecnológicas que garanticen la reutilización de la información tratada.', b: 'El conjunto de principios básicos y requisitos mínimos que garanticen adecuadamente la seguridad de la información tratada y que tiene por objeto establecer la política de seguridad en la utilización de medios electrónicos.', c: 'El conjunto de criterios y recomendaciones en materia de seguridad, conservación y normalización de la información, de los formatos y de las aplicaciones que deberán ser tenidos en cuenta por las Administraciones Públicas para la toma de decisiones tecnológicas que garanticen la interoperabilidad.', d: 'El conjunto de criterios y recomendaciones que garanticen que las aplicaciones cuya propiedad intelectual pertenezca a una Administración Pública sean declaradas como de fuentes abiertas.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P17',
+                question: 'Conforme a la Ley 39/2015, del Procedimiento Administrativo Común de las Administraciones Públicas, las personas físicas que no estén obligadas a relacionarse a través de medios electrónicos con las Administraciones Públicas:',
+                options: {a: 'Podrán elegir al principio de un procedimiento si desean comunicarse con las Administraciones Públicas para el ejercicio de sus derechos y obligaciones a través de medios electrónicos o no, y dicha opción se mantendrá necesariamente hasta el final del procedimiento.', b: 'Deberán comunicarse en todo caso con las Administraciones Públicas para el ejercicio de sus derechos y obligaciones a través de medios no electrónicos.', c: 'Podrán elegir en todo momento si se comunican con las Administraciones Públicas para el ejercicio de sus derechos y obligaciones a través de medios electrónicos o no, y modificar el medio elegido en cualquier momento del procedimiento.', d: 'No podrán comunicarse con las Administraciones Públicas para el ejercicio de sus derechos y obligaciones a través de medios electrónicos salvo que reglamentariamente se declare que pertenecen a un colectivo de personas físicas que por razón de su capacidad económica, técnica, dedicación profesional u otros motivos quede acreditado que tienen acceso y disponibilidad de los medios electrónicos necesarios.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P18',
+                question: 'Atendiendo a lo que establece el Esquema Nacional de Interoperabilidad en su Disposición Adicional Primera, señale cuál NO es una Norma Técnica de Interoperabilidad:',
+                options: {a: 'Catálogo de estándares.', b: 'Política de Firma Electrónica y de certificados de la Administración.', c: 'Política de Reutilización de Formatos utilizados por Gestores Documentales.', d: 'Reutilización de recursos de información.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P19',
+                question: 'Indique cuál es la solución que proporciona un inventario unificado y común de las unidades orgánicas y oficinas asociadas de las Administraciones públicas:',
+                options: {a: 'DIR3', b: 'ORVE', c: 'SICRES', d: 'Autentica'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P20',
+                question: 'Con respecto a la solución horizontal Port@firmas AGE, señale la INCORRECTA:',
+                options: {a: 'Permite incorporar la firma electrónica en los flujos de trabajo de una organización.', b: 'Admite distintos formatos de firma, entre ellos CADES, XADES y PADES.', c: 'Puede integrarse con los Sistemas de Información del Organismo a través de Servicios Web.', d: 'La versión para clientes o aplicaciones móviles estará disponible a principios de 2020.'},
+                correctAnswer: 'd'
+            }
+          
+        ];
+
+        const questions = allQuestions; // Se incluyen todas las preguntas ahora.
+
+        let userAnswers = {};
+        let currentQuestionIndex = 0;
+
+        const testContainer = document.getElementById('test-container');
+        const submitButton = document.getElementById('submit-test');
+        const resultsSection = document.getElementById('results');
+        const resultsContent = document.getElementById('results-content');
+        const retakeTestButton = document.getElementById('retake-test');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const fullResetTestButton = document.getElementById('full-reset-test'); // Nuevo botón de reinicio
+
+        // Claves para LocalStorage
+        const LOCAL_STORAGE_ANSWERS_KEY = 'taiTestUserAnswers';
+        const LOCAL_STORAGE_INDEX_KEY = 'taiTestCurrentQuestionIndex';
+
+        // Función para guardar el estado en LocalStorage
+        function saveState() {
+            localStorage.setItem(LOCAL_STORAGE_ANSWERS_KEY, JSON.stringify(userAnswers));
+            localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, currentQuestionIndex);
+        }
+
+        // Función para cargar el estado desde LocalStorage
+        function loadState() {
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_ANSWERS_KEY);
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_INDEX_KEY);
+
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+        }
+
+        // Función para verificar la respuesta seleccionada y proporcionar retroalimentación inmediata
+        function checkAnswer(questionId, selectedValue) {
+            const questionData = questions.find(q => q.id === questionId);
+            if (!questionData) return;
+
+            userAnswers[questionId] = selectedValue; // Almacenar la respuesta del usuario
+            saveState(); // Guardar el estado después de cada respuesta
+
+            const optionsDiv = document.querySelector(`#test-container .question-card .options`);
+            const allRadios = optionsDiv.querySelectorAll('input[type="radio"]');
+            const allSpans = optionsDiv.querySelectorAll('label span');
+
+            // Deshabilitar todos los botones de radio para esta pregunta
+            allRadios.forEach(radio => radio.disabled = true);
+            allSpans.forEach(span => span.parentElement.classList.add('disabled-option'));
+
+            const selectedSpan = optionsDiv.querySelector(`input[value="${selectedValue}"] + span`);
+
+            if (selectedValue === questionData.correctAnswer) {
+                selectedSpan.classList.add('correct-option-feedback');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text correct-feedback-text';
+                feedbackMessage.textContent = '¡Correcto!';
+                optionsDiv.appendChild(feedbackMessage);
+            } else {
+                selectedSpan.classList.add('wrong-option-feedback');
+                // Resaltar la respuesta correcta
+                const correctSpan = optionsDiv.querySelector(`input[value="${questionData.correctAnswer}"] + span`);
+                correctSpan.classList.add('correct-highlight');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text wrong-feedback-text';
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+        }
+
+        // Función para renderizar una pregunta
+        function renderQuestion(index) {
+            testContainer.innerHTML = ''; // Limpiar el contenedor
+            const questionData = questions[index];
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `<strong>${index + 1}.</strong> ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options';
+
+            const hasAnswered = userAnswers.hasOwnProperty(questionData.id);
+
+            for (const key in questionData.options) {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${questionData.id}`;
+                input.value = key;
+                input.disabled = hasAnswered; // Deshabilitar si ya se ha respondido
+                input.onclick = (e) => checkAnswer(questionData.id, e.target.value); // Usar onclick para retroalimentación inmediata
+
+                const span = document.createElement('span');
+                span.textContent = `${key}) ${questionData.options[key]}`;
+
+                label.appendChild(input);
+                label.appendChild(span);
+                optionsDiv.appendChild(label);
+
+                // Si el usuario ya ha respondido a esta pregunta, preseleccionar su respuesta
+                if (userAnswers[questionData.id] === key) {
+                    input.checked = true;
+                }
+
+                // Aplicar estilos de retroalimentación si ya se ha respondido
+                if (hasAnswered) {
+                    label.classList.add('disabled-option');
+                    if (userAnswers[questionData.id] === key) {
+                        if (key === questionData.correctAnswer) {
+                            span.classList.add('correct-option-feedback');
+                        } else {
+                            span.classList.add('wrong-option-feedback');
+                        }
+                    } else if (key === questionData.correctAnswer) {
+                        span.classList.add('correct-highlight');
+                    }
+                }
+            }
+            questionCard.appendChild(optionsDiv);
+            testContainer.appendChild(questionCard);
+
+            // Si ya se ha respondido, añadir el mensaje de retroalimentación
+            if (hasAnswered) {
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = `feedback-text ${userAnswers[questionData.id] === questionData.correctAnswer ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedbackMessage.textContent = userAnswers[questionData.id] === questionData.correctAnswer ? '¡Correcto!' : 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+
+            updateNavigationButtons();
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1) {
+                submitButton.classList.remove('hidden');
+            } else {
+                submitButton.classList.add('hidden');
+            }
+        }
+
+        // Event listeners para los botones de navegación
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveState(); // Guardar el estado al navegar
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                saveState(); // Guardar el estado al navegar
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Función para enviar el test y mostrar resultados
+        submitButton.addEventListener('click', () => {
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let unansweredQuestions = 0;
+
+            resultsContent.innerHTML = ''; // Limpiar el contenido de los resultados
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[q.id];
+                const isCorrect = userAnswer === q.correctAnswer;
+
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const questionTitle = document.createElement('p');
+                questionTitle.innerHTML = `<strong>${index + 1}. ${q.question}</strong>`;
+                resultItem.appendChild(questionTitle);
+
+                const userAnswerText = document.createElement('p');
+                userAnswerText.innerHTML = `Tu respuesta: <span class="${isCorrect ? 'correct-answer' : 'wrong-answer'}">${userAnswer ? `${userAnswers[q.id]}) ${q.options[userAnswer]}` : 'Sin responder'}</span>`;
+                resultItem.appendChild(userAnswerText);
+
+                const correctAnswerText = document.createElement('p');
+                correctAnswerText.innerHTML = `Respuesta correcta: <span class="correct-answer">${q.correctAnswer}) ${q.options[q.correctAnswer]}</span>`;
+                resultItem.appendChild(correctAnswerText);
+
+                const feedback = document.createElement('p');
+                feedback.className = `feedback-text ${isCorrect ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedback.textContent = isCorrect ? '¡Correcto!' : 'Incorrecto.';
+                resultItem.appendChild(feedback);
+
+                resultsContent.appendChild(resultItem);
+
+                if (userAnswer) { // Si hay una respuesta (correcta o incorrecta)
+                    if (isCorrect) {
+                        correctAnswers++;
+                    } else {
+                        incorrectAnswers++;
+                    }
+                } else {
+                    unansweredQuestions++;
+                }
+            });
+
+            // Mostrar el resumen de aciertos y fallos
+            const totalQuestions = questions.length;
+            const finalScore = document.createElement('h3');
+            finalScore.className = 'section-title mt-4';
+            finalScore.textContent = `Puntuación final: ${correctAnswers} de ${totalQuestions}`;
+            resultsContent.prepend(finalScore); // Añadir la puntuación al principio
+
+            const correctCount = document.createElement('p');
+            correctCount.className = 'text-lg font-semibold text-green-600';
+            correctCount.textContent = `Aciertos: ${correctAnswers}`;
+            resultsContent.insertBefore(correctCount, finalScore.nextSibling);
+
+            const incorrectCount = document.createElement('p');
+            incorrectCount.className = 'text-lg font-semibold text-red-600';
+            incorrectCount.textContent = `Fallos: ${incorrectAnswers}`;
+            resultsContent.insertBefore(incorrectCount, correctCount.nextSibling);
+
+            const unansweredCount = document.createElement('p');
+            unansweredCount.className = 'text-lg font-semibold text-gray-600';
+            unansweredCount.textContent = `Preguntas sin responder: ${unansweredQuestions}`;
+            resultsContent.insertBefore(unansweredCount, incorrectCount.nextSibling);
+
+
+            testContainer.classList.add('hidden');
+            submitButton.classList.add('hidden');
+            prevButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            fullResetTestButton.classList.add('hidden'); // Ocultar el botón de reinicio completo cuando se muestran los resultados
+            resultsSection.classList.remove('hidden');
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar respuestas al enviar
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY); // Limpiar índice al enviar
+        });
+
+        // Función para reiniciar el test (volver a intentar)
+        retakeTestButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar respuestas al reintentar
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY); // Limpiar índice al reintentar
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            fullResetTestButton.classList.remove('hidden'); // Mostrar el botón de reinicio completo
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Event listener para el nuevo botón "Reiniciar Test Completamente"
+        fullResetTestButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.clear(); // Limpiar todo el localStorage para este dominio
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            submitButton.classList.add('hidden'); // Ocultar el botón de enviar si no está al final
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Inicializar el test
+        loadState(); // Cargar el estado cuando la página se carga
+        renderQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>
+
