@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo - Bloque IV Tema 06</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-orange-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold uppercase tracking-tight">TEST BLOQUE IV - TEMA 06</h1>
+            <p class="text-orange-100 mt-2 font-medium">Medios de Transmisión y Sistemas de Comunicación</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-orange-400 h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="p-6">
+            <!-- Quiz UI -->
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-6 text-sm font-bold text-slate-500 uppercase tracking-widest">
+                    <span id="question-number">Pregunta 1 de 30</span>
+                    <span id="score-live">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-lg font-semibold text-slate-800 mb-6 leading-relaxed"></div>
+
+                <div id="options-container" class="space-y-3"></div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="px-6 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition-colors">
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="px-6 py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50 transition-all shadow-md active:transform active:scale-95">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results UI -->
+            <div id="results-ui" class="hidden text-center py-8">
+                <h2 class="text-3xl font-black text-slate-900 mb-2">RESULTADOS</h2>
+                <p class="text-slate-500 mb-8 font-medium">Evaluación de Medios de Transmisión</p>
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-green-50 rounded-xl border border-green-100 shadow-sm">
+                        <div id="res-correct" class="text-3xl font-black text-green-600">0</div>
+                        <div class="text-[10px] text-green-700 uppercase font-black tracking-tighter">Correctas</div>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-xl border border-red-100 shadow-sm">
+                        <div id="res-incorrect" class="text-3xl font-black text-red-600">0</div>
+                        <div class="text-[10px] text-red-700 uppercase font-black tracking-tighter">Incorrectas</div>
+                    </div>
+                    <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 shadow-sm">
+                        <div id="res-empty" class="text-3xl font-black text-amber-600">0</div>
+                        <div class="text-[10px] text-amber-700 uppercase font-black tracking-tighter">Omitidas</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black hover:bg-black transition-all shadow-lg uppercase tracking-widest">
+                    Reiniciar Evaluación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. Si queremos diseñar un enlace de 10Gbps, ¿qué medio de transmisión nos permite la máxima longitud del enlace?", a: ["Fibra óptica multimodo tipo OM3.", "Fibra óptica monomodo tipo OS2.", "Cableado cobre categoría 7.", "Fibra óptica monomodo tipo OS1."], c: 1 },
+            { q: "2. Consiste en un par de hilos de cobre conductores cruzados entre sí, con el objetivo de reducir el ruido de diafonía:", a: ["Par Trenzado.", "Fibra Óptica.", "Microondas.", "Cable Coaxial."], c: 0 },
+            { q: "3. Los Medios no guiados:", a: ["Se transmiten por medio de ondas electromagnéticas a través de antenas sin usar cables físicos.", "La señal es siempre alámbrica.", "Conducen las ondas a través de un camino físico limitado.", "La señal se transmite obligatoriamente por hilos de cobre."], c: 0 },
+            { q: "4. ¿Cómo se denomina la arquitectura de las redes de cable donde se combina la fibra óptica y el cable coaxial?", a: ["FTTH.", "HFC.", "DOCSIS.", "Wifi."], c: 1 },
+            { q: "5. La tecnología xDSL provee acceso a Internet de banda ancha a través de:", a: ["Fibra óptica.", "Satélite.", "Cables de pares de cobre.", "Cables coaxiales."], c: 2 },
+            { q: "6. ¿Cuál es el protocolo utilizado en el modo de conmutación de paquetes sin conexión?", a: ["TCP.", "Datagramas.", "RTB.", "UDP."], c: 1 },
+            { q: "7. Respecto a la fibra óptica monomodo:", a: ["El núcleo es de mayor diámetro que la multimodo.", "Permite varios modos de propagación de la luz.", "Se utiliza fundamentalmente para distancias cortas.", "Permite mayores distancias que la multimodo."], c: 3 },
+            { q: "8. El estándar de cableado que define las categorías 5e, 6 y 6a es:", a: ["TIA/EIA-568.", "ISO 9001.", "IEEE 802.11.", "RFC 1918."], c: 0 },
+            { q: "9. ¿Qué tipo de conmutación reserva un camino físico dedicado entre el emisor y el receptor?", a: ["Conmutación de paquetes.", "Conmutación de mensajes.", "Conmutación de circuitos.", "Conmutación de celdas."], c: 2 },
+            { q: "10. ¿Cuál es la unidad básica de transmisión en la conmutación de paquetes?", a: ["Circuito virtual.", "Mensaje completo.", "Datagrama o paquete.", "Bit individual."], c: 2 },
+            { q: "11. En un cable de par trenzado UTP, la 'U' significa:", a: ["Universal.", "Unshielded (No blindado).", "Ultra.", "Underground."], c: 1 },
+            { q: "12. ¿Qué ventaja principal ofrece la fibra óptica frente al cobre?", a: ["Es más barata.", "Fácil de instalar con herramientas comunes.", "Inmunidad a interferencias electromagnéticas.", "Permite alimentar dispositivos eléctricamente (PoE)."], c: 2 },
+            { q: "13. La técnica que permite enviar varios canales de datos por una misma fibra óptica usando diferentes colores de luz es:", a: ["TDM.", "WDM (Wavelength Division Multiplexing).", "FDM.", "PCM."], c: 1 },
+            { q: "14. ¿Qué categoría de cable de par trenzado se requiere como mínimo para alcanzar 10 Gbps a 100 metros?", a: ["Categoría 5e.", "Categoría 6.", "Categoría 6a.", "Categoría 3."], c: 2 },
+            { q: "15. ¿Qué componente de la fibra óptica se encarga de reflejar la luz hacia el núcleo?", a: ["Revestimiento (Cladding).", "Cubierta exterior.", "Fibras de aramida.", "Conector ST."], c: 0 },
+            { q: "16. En la conmutación de circuitos, ¿qué sucede si no hay recursos disponibles al intentar la conexión?", a: ["El mensaje se guarda en el nodo.", "Se envía por otro camino automáticamente.", "Se produce un bloqueo de llamada.", "Se divide en paquetes."], c: 2 },
+            { q: "17. El medio de transmisión 'guiado' que utiliza un conductor central y una malla exterior es:", a: ["Par trenzado.", "Cable coaxial.", "Guía de ondas.", "Infrarrojos."], c: 1 },
+            { q: "18. ¿Qué tipo de satélites se encuentran a unos 35.786 km de altura y parecen fijos en el cielo?", a: ["Satélites GEO (Geoestacionarios).", "Satélites LEO.", "Satélites MEO.", "Satélites polares."], c: 0 },
+            { q: "19. ¿Cuál de los siguientes es un medio de transmisión NO guiado?", a: ["Par trenzado.", "Fibra óptica.", "Microondas terrestres.", "Cable coaxial."], c: 2 },
+            { q: "20. ¿Qué conector es el estándar para redes Ethernet sobre par trenzado?", a: ["BNC.", "SC.", "RJ-45.", "LC."], c: 2 },
+            { q: "21. El desvanecimiento de la señal a medida que viaja por el medio se denomina:", a: ["Ruido.", "Atenuación.", "Distorsión.", "Interferencia."], c: 1 },
+            { q: "22. En la conmutación de paquetes, el modo 'Circuito Virtual' se caracteriza por:", a: ["No requiere establecimiento previo.", "Cada paquete puede seguir una ruta distinta.", "Todos los paquetes de una sesión siguen la misma ruta establecida previamente.", "Es idéntico a la conmutación de circuitos física."], c: 2 },
+            { q: "23. ¿Qué tipo de fibra óptica utiliza LEDs como fuente de luz normalmente?", a: ["Monomodo.", "Multimodo.", "Ambas.", "Ninguna."], c: 1 },
+            { q: "24. El 'Ancho de Banda' de un canal se mide habitualmente en:", a: ["Metros.", "Segundos.", "Hercios (Hz) o bits por segundo (bps).", "Voltios."], c: 2 },
+            { q: "25. ¿Qué fenómeno limita la distancia en fibras multimodo debido a que los rayos de luz siguen caminos de distinta longitud?", a: ["Dispersión modal.", "Atenuación por absorción.", "Refracción negativa.", "Interferencia electromagnética."], c: 0 },
+            { q: "26. Los cables de fibra óptica monomodo permiten alcanzar mayores distancias que los multimodos porque:", a: ["Tienen menos interferencias electromagnéticas.", "Prácticamente eliminan la dispersión modal al tener un solo camino de luz.", "El cable es de metal.", "Pueden curvarse 360 grados."], c: 1 },
+            { q: "27. Respecto a un cable de fibra óptica holgado, cuál es CORRECTA:", a: ["Está formado por varias fibras de vidrio.", "Todas las fibras tienen un revestimiento común.", "Cada una de las fibras tiene su propio revestimiento.", "Las respuestas a y b son correctas."], c: 3 },
+            { q: "28. Un correo electrónico se puede considerar un tipo de comunicación:", a: ["Asíncrona.", "Síncrona.", "Distribuida.", "Full-Duplex."], c: 0 },
+            { q: "29. Los conectores ST y SC se utilizan para conexiones de:", a: ["Fibra óptica.", "Cable coaxial.", "Cable de par trenzado.", "Conexión directa entre ordenadores."], c: 0 },
+            { q: "30. Indique la respuesta CORRECTA, en un sistema de comunicaciones basado en conmutación de:", a: ["Circuitos: no existe establecimiento de llamada.", "Paquetes: el establecimiento de llamada es siempre requerido.", "Circuitos: los paquetes (la información) llegan en orden.", "Paquetes: los paquetes llegan siempre en orden."], c: 2 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_T6')) || {};
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('question-number').innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            document.getElementById('question-text').innerText = data.q;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-xl border-2 border-slate-200 option-transition hover:border-orange-400 hover:bg-orange-50 font-medium text-slate-700';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) btn.classList.add('correct');
+                    else if (i === answers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? "Ver Resultados" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_T6', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            document.getElementById('score-live').innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) showResults();
+            else if (currentIdx < 0) currentIdx = 0;
+            else loadQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_T6');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        document.getElementById('prev-btn').onclick = () => changeQuestion(-1);
+        document.getElementById('next-btn').onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>
