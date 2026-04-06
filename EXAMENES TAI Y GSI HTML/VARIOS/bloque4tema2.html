@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo - Bloque IV Tema 02</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-indigo-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold uppercase">TEST BLOQUE IV - TEMA 02</h1>
+            <p class="text-indigo-100 mt-2">Almacenamiento, Virtualización y Bases de Datos</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-indigo-400 h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="p-6">
+            <!-- Question Section -->
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-6 text-sm font-medium text-slate-500">
+                    <span id="question-number">Pregunta 1 de 30</span>
+                    <span id="score-live">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-lg font-semibold text-slate-800 mb-6">
+                    <!-- Cargando... -->
+                </div>
+
+                <div id="options-container" class="space-y-3">
+                    <!-- Opciones aquí -->
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="px-6 py-2 rounded-lg font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-30">
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-ui" class="hidden text-center py-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-4">¡Test Finalizado!</h2>
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div id="res-correct" class="text-2xl font-bold text-green-600">0</div>
+                        <div class="text-xs text-green-700 uppercase font-bold">Correctas</div>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <div id="res-incorrect" class="text-2xl font-bold text-red-600">0</div>
+                        <div class="text-xs text-red-700 uppercase font-bold">Incorrectas</div>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <div id="res-empty" class="text-2xl font-bold text-yellow-600">0</div>
+                        <div class="text-xs text-yellow-700 uppercase font-bold">Sin Responder</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors">
+                    Reiniciar Test
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. Si un sistema de almacenamiento es remoto y utiliza tecnologías Fibre-Channel hablamos de un sistema:", a: ["DAS.", "NAS.", "AWS.", "SAN."], c: 3 },
+            { q: "2. En una Base de Datos Oracle, cuando un proceso de usuario falla, que proceso se encarga de limpiar la caché y liberar los recursos que utilizaba:", a: ["PFAIL.", "PMON.", "SMON.", "PCLEAN."], c: 1 },
+            { q: "3. En el ámbito de las bases de datos, ¿Cuál es la función del motor de persistencia?", a: ["El motor de persistencia es un tipo de implementación de un ORM.", "Traduce entre los dos formatos de datos: de registros a objetos y de objetos a registros, cuando se trabaja con un lenguaje de comandos tipo SQL y una base de datos relacional.", "Traduce entre los dos formatos de datos: de registros a objetos y de objetos a registros, cuando se trabaja con un lenguaje orientado a objetos y una base de datos relacional.", "El motor de persistencia no es un concepto relacionado con las bases de datos."], c: 2 },
+            { q: "4. Se desea establecer un sistema de salvaguarda de información (back-up) que asegure una pérdida potencial máxima de 24 horas. Indicar medida válida:", a: ["No se puede efectuar un sistema basado en cinta para un sistema distribuido si las estaciones no poseen cinta.", "Obligar a cada usuario a realizar su copia manualmente al terminar el día.", "Copiar inmediatamente en cinta todas las modificaciones según se producen.", "Realizar salvaguardas al final de cada día de toda la información mediante procedimiento automático."], c: 3 },
+            { q: "5. Cuando hablamos de computación en la Nube (Cloud Computing) existen:", a: ["2 Modelos de servicios: Datawarehouse y visualización.", "3 Modelos de servicios: SaaS, PaaS e IaaS.", "4 Modelos de servicios: SaaS, PaaS, IaaS y Microservicios.", "3 Modelos de servicios: Datawarehouse, Datamart y visualización."], c: 1 },
+            { q: "6. ¿Cuál de las siguientes es una solución de virtualización para empresas de Microsoft?", a: ["Hyper-V", "Citrix", "Nutanix", "Vmware"], c: 0 },
+            { q: "7. En una instancia de BD Oracle existen 2 estructuras de memoria básicas:", a: ["UGA y PGA.", "SGA y TGA.", "UGA y SGA.", "SGA y PGA."], c: 3 },
+            { q: "8. ¿Qué sistema de almacenamiento remoto utiliza protocolos estándar de comunicaciones como TCP/IP?", a: ["SAN y DAS.", "DAS", "SAN.", "NAS."], c: 3 },
+            { q: "9. La política de respaldo que consiste en salvaguardar sólo los archivos modificados desde el último backup NO completo se denomina:", a: ["Duplicado", "Diferencial", "Mensual", "Completa"], c: 1 },
+            { q: "10. El Virtual Desktop Infrastructure (VDI) es una tecnología de virtualización:", a: ["Es el sistema operativo mediante el cual se realizan configuraciones de un PaaS.", "De escritorio que almacena un sistema Linux en un servidor centralizado.", "De Servidor que almacena un sistema en clúster de máquinas distribuido.", "De escritorio que almacena un sistema en un servidor centralizado de un centro de datos."], c: 3 },
+            { q: "11. ¿Cuál de las siguientes respuestas está íntegramente formada por soluciones de virtualización?", a: ["Vmware, PowerVM, Citrix, Roundcube.", "Vmware, PowerVM, Citrix, Mandrake.", "Vmware, Nutanix, Citrix, Hyper-V.", "Vmware, PowerVM, Citrix, Mint."], c: 2 },
+            { q: "12. En relación a la virtualización de escritorio, ¿Qué opción NO es correcta?", a: ["VDI en modo no persistente cada usuario tiene su propia imagen que mantiene configuración al cerrar.", "Permite el acceso a un escritorio alojado en un servicio remoto.", "Es una copia del escritorio que incluye SO, aplicaciones y datos.", "Implementa el escritorio como un servicio."], c: 0 },
+            { q: "13. ¿Cuáles son los protocolos que pueden usarse para compartir archivos en un dispositivo NAS?", a: ["EXT3 y NTFS", "NTFS y RFID", "NTFS y FAT", "NFS y CIFS"], c: 3 },
+            { q: "14. Señale la respuesta INCORRECTA sobre RAID 1:", a: ["Utiliza la paridad para recuperar los datos", "Duplica todos los datos de la primera unidad de forma sincronizada.", "Es conocido como 'espejo' o 'mirroring'", "Utiliza 2 discos."], c: 0 },
+            { q: "15. ¿Cuál de las afirmaciones sobre los procesos background de ORACLE es FALSA?", a: ["BLCK es el proceso de bloqueo asociado al servidor en paralelo.", "ARCH gestiona el contenido de los ficheros redo log.", "DBWR gestiona buffers de datos y caché del diccionario.", "PMON restaura transacciones no validadas de procesos abortados."], c: 0 },
+            { q: "16. ¿Cuál de las siguientes afirmaciones es VERDADERA?", a: ["Un pool de conexiones mantiene conexiones permanentemente abiertas para eficiencia.", "Ninguna es correcta.", "Un pool de conexiones es apropiado para aplicaciones multitarea.", "Un pool de conexiones permite gestionar conexiones para ser utilizadas por aplicaciones web."], c: 3 },
+            { q: "17. ¿Cuál es el mecanismo de protección ante fallos de disco implementado por ORACLE?", a: ["WAL Archiving.", "ARCHIVELOG.", "Checkpoint", "REDO LOG."], c: 1 },
+            { q: "18. De las siguientes, ¿cuál es una solución de virtualización?", a: ["Mattermost", "SlackVM", "RoundcubeVM", "PowerVM"], c: 3 },
+            { q: "19. ¿Cuál de las afirmaciones sobre tecnología VDI es FALSA?", a: ["VDI permite mayor eficiencia y beneficios de computación virtualizada.", "Los ordenadores de usuarios no tienen que ser potentes al estar todo en servidor.", "La principal ventaja es que las compañías ahorran costes de almacenamiento en servidor.", "En VDI persistente las modificaciones se guardan."], c: 2 },
+            { q: "20. En un servidor VMWare con varias máquinas virtuales:", a: ["Ninguna es correcta.", "El reinicio de una VM solo ocurre reiniciando el servidor físico.", "El reinicio de una VM produce el reinicio de todas las demás.", "El reinicio de una VM no tiene ningún efecto sobre el resto."], c: 3 },
+            { q: "21. ¿Cuál de las siguientes NO es un tipo de Virtualización de almacenamiento?", a: ["Todas son correctas.", "Sistema de archivos.", "Host.", "Matrices."], c: 0 },
+            { q: "22. En relación a las estrategias de backup, señale la CORRECTA:", a: ["Incremental copia lo que cambió desde último completo, pero no desde incremental.", "Diferencial copia lo que cambió desde el último incremental.", "Diferencial copia lo que cambió desde el último backup, sea incremental o diferencial.", "Incremental copia lo que cambió desde el último backup, sea completo o incremental."], c: 3 },
+            { q: "23. ¿Cuál de las siguientes NO es una función del administrador de base de datos?", a: ["Diseñar los diferentes diagramas UML de los sistemas corporativos.", "Implementar, dar soporte y gestionar bases de datos corporativas.", "Definir la información que contendrán las bases de datos.", "Asesorar durante el proceso de adquisición del SGBD."], c: 0 },
+            { q: "24. ¿Cuál de las siguientes afirmaciones sobre un DBA es FALSA?", a: ["Debe definir estándares para respaldar y recuperar información.", "La política de mantenimiento y seguridad es responsabilidad del Arquitecto software.", "Los datos que se deben almacenar es responsabilidad del DBA.", "Proporcionará asesoría técnica a analistas y programadores."], c: 1 },
+            { q: "25. En el entorno VMWARE, un datastore es:", a: ["Un espacio físico donde se almacenan diferentes máquinas virtuales.", "Un dispositivo de almacenamiento físico.", "Es un servidor exclusivo de datos para virtualización.", "Un espacio de almacenamiento independiente que centraliza los datos físicos de una VM."], c: 3 },
+            { q: "26. Señale la respuesta INCORRECTA con respecto a los sistemas RAID:", a: ["RAID 1 duplica la información.", "RAID 5 distribuye la información de paridad.", "RAID 3 precisa al menos tres discos.", "RAID 0 es tolerante a fallos."], c: 3 },
+            { q: "27. ¿Cuál de las afirmaciones sobre tipos de BACKUP es cierta?", a: ["En incremental se hace un respaldo completo de todos los archivos.", "Diferencial hace copia de archivos modificados respecto a una fecha por parámetro.", "Completa únicamente contiene archivos que han cambiado desde la última vez.", "Backup tipo espejo es una copia completa del disco duro sin comprimir ni proteger."], c: 3 },
+            { q: "28. ¿Cuál es una solución nube con infraestructura hiperconvergente y Data store único?", a: ["Vmware", "Zimbra", "Roundcube", "Nutanix"], c: 3 },
+            { q: "29. En Oracle, ¿proceso que escribe en ficheros de control puntos de sincronización?", a: ["PMON", "LGWR", "DBWR", "CKPT"], c: 3 },
+            { q: "30. ¿Herramienta para sincronizar ficheros minimizando transferencia de datos?", a: ["TSYNC", "Transfer file Sync", "RSYNC", "FTPSync"], c: 2 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_T2')) || {};
+
+        const qText = document.getElementById('question-text');
+        const optionsBox = document.getElementById('options-container');
+        const qNum = document.getElementById('question-number');
+        const liveScore = document.getElementById('score-live');
+        const progressBar = document.getElementById('progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            qNum.innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            qText.innerText = data.q;
+            progressBar.style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            optionsBox.innerHTML = '';
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-lg border-2 border-slate-200 option-transition hover:border-indigo-300 hover:bg-indigo-50 font-medium';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) btn.classList.add('correct');
+                    else if (i === answers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                
+                optionsBox.appendChild(btn);
+            });
+
+            prevBtn.disabled = currentIdx === 0;
+            nextBtn.innerText = currentIdx === quizData.length - 1 ? "Ver Resultados" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_T2', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            liveScore.innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) {
+                showResults();
+            } else if (currentIdx < 0) {
+                currentIdx = 0;
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_T2');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        prevBtn.onclick = () => changeQuestion(-1);
+        nextBtn.onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>
