@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo - Bloque IV Tema 04</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-sky-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold uppercase">TEST BLOQUE IV - TEMA 04 REDES Y MOVILES</h1>
+            <p class="text-sky-100 mt-2">Gestión de Redes (SNMP) y Dispositivos Móviles (MDM)</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-sky-400 h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="p-6">
+            <!-- Quiz UI -->
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-6 text-sm font-medium text-slate-500">
+                    <span id="question-number">Pregunta 1 de 30</span>
+                    <span id="score-live">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-lg font-semibold text-slate-800 mb-6"></div>
+
+                <div id="options-container" class="space-y-3"></div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="px-6 py-2 rounded-lg font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-30">
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="px-6 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 disabled:opacity-50">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results UI -->
+            <div id="results-ui" class="hidden text-center py-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-4">¡Test Finalizado!</h2>
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div id="res-correct" class="text-2xl font-bold text-green-600">0</div>
+                        <div class="text-xs text-green-700 uppercase font-bold">Correctas</div>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <div id="res-incorrect" class="text-2xl font-bold text-red-600">0</div>
+                        <div class="text-xs text-red-700 uppercase font-bold">Incorrectas</div>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <div id="res-empty" class="text-2xl font-bold text-yellow-600">0</div>
+                        <div class="text-xs text-yellow-700 uppercase font-bold">Sin Responder</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors">
+                    Reiniciar Test
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. Las siglas SNMP identifican el denominado:", a: ["Protocolo simple de gestión de red.", "Interfaz de gestión de escritorio.", "Protocolo de información común de gestión.", "Software de representación gráfica."], c: 0 },
+            { q: "2. ¿Qué puerto se usa en SNMP para una comunicación síncrona?", a: ["163", "161", "162", "160"], c: 1 },
+            { q: "3. SNMP es el protocolo de gestión de redes más usado. ¿Qué relación tiene con el protocolo UDP?", a: ["SNMP es un protocolo en desuso, UDP es el nuevo estándar.", "Nada, son independientes.", "SNMP trabaja sobre UDP: aplicación y transporte respectivamente.", "UDP necesita de SNMP para realizar su trabajo."], c: 2 },
+            { q: "4. Indique la respuesta INCORRECTA sobre soluciones MDM:", a: ["Permite monitorizar dispositivos móviles y no móviles.", "OTA es el modelo de comunicación entre servidor y dispositivo.", "Mantiene una base de datos centralizada con el estado de cada dispositivo.", "Permite la gestión de aplicaciones instaladas."], c: 0 },
+            { q: "5. ¿Qué mecanismo de seguridad incorpora SNMPv3?", a: ["UCM", "USM", "KSM", "UMM"], c: 1 },
+            { q: "6. ¿A qué capa del modelo OSI pertenece el protocolo SNMP?", a: ["Presentación", "Aplicación", "Enlace de datos", "Sesión"], c: 1 },
+            { q: "7. ¿Qué es una MIB en el contexto de SNMP?", a: ["Un mensaje de error.", "Un tipo de agente.", "Una base de datos de objetos jerárquica.", "Un dispositivo administrador."], c: 2 },
+            { q: "8. ¿Qué puerto utiliza SNMP para recibir 'traps'?", a: ["161", "162", "160", "443"], c: 1 },
+            { q: "9. ¿Cuál de estas operaciones permite al gestor SNMP modificar el valor de un objeto?", a: ["Get", "GetNext", "Set", "Trap"], c: 2 },
+            { q: "10. La versión SNMPv2 introdujo una operación para pedir múltiples variables a la vez, llamada:", a: ["GetBulk", "GetMultiple", "GetMany", "GetAll"], c: 0 },
+            { q: "11. El modelo de seguridad USM de SNMPv3 proporciona:", a: ["Solo autenticación.", "Solo cifrado.", "Autenticación y privacidad (cifrado).", "Ninguna de las anteriores."], c: 2 },
+            { q: "12. ¿Qué componente de SNMP se ejecuta en el dispositivo que queremos monitorizar?", a: ["NMS", "Manager", "Agente", "MIB Browser"], c: 2 },
+            { q: "13. Las soluciones MDM (Mobile Device Management) suelen utilizar qué tecnología para configurar dispositivos remotamente?", a: ["VLAN", "OTA (Over-the-Air)", "NFC", "Bluetooth"], c: 1 },
+            { q: "14. ¿Cuál de los siguientes NO es un componente básico de la arquitectura SNMP?", a: ["Manager (NMS)", "Agente", "MIB", "Hub"], c: 3 },
+            { q: "15. En SNMP, ¿qué es un OID?", a: ["Un identificador de objeto único en la MIB.", "Un comando de lectura.", "Un tipo de cifrado.", "La contraseña de la comunidad."], c: 0 },
+            { q: "16. ¿Qué comando usa el Agente para informar de un evento de forma asíncrona al Manager?", a: ["Get", "Response", "Trap", "Inform"], c: 2 },
+            { q: "17. La principal diferencia entre un Trap y un Inform es:", a: ["El Trap requiere confirmación.", "El Inform requiere confirmación del Manager.", "El Inform es solo para SNMPv1.", "No hay diferencia."], c: 1 },
+            { q: "18. ¿Cómo se llama la 'contraseña' o identificador de grupo en SNMPv1 y v2c?", a: ["Password", "Token", "Comunidad", "Secret"], c: 2 },
+            { q: "19. ¿Cuál es el puerto por defecto para SNMP sobre TLS (SNMP over DTLS)?", a: ["161", "10161", "162", "10162"], c: 1 },
+            { q: "20. En SNMP, ¿cuál es la operación para recuperar información de una instancia específica?", a: ["Get", "Set", "getBulk", "getNext"], c: 0 },
+            { q: "21. ¿Cómo se llama el paquete utilizado en el datagrama del SNMP que contiene la unidad de los datos del protocolo?", a: ["OID", "Comunidad", "PDU", "Versión"], c: 2 },
+            { q: "22. Cuáles son los componentes básicos de SNMP:", a: ["Dispositivos administradores [MD], agentes, Controlador de Dominio", "Dispositivos administrados [MD], agentes, dispositivos administradores [NMS]", "Agentes, NMS, Servidor de Nombres de Dominio", "MIB y OID"], c: 1 },
+            { q: "23. Cuáles son los segmentos que componen un datagrama SNMP:", a: ["Versión, comunidad, PDU", "Versión, Comunidad, PDU, IP origen, IP destino, Checksum", "Versión, Comunidad, PDU, IP origen, IP destino", "Versión, Comunidad, PDU, IP origen, IP destino, DATA"], c: 0 },
+            { q: "24. ¿A partir de qué versión de SNMP se introdujeron las Operaciones Getbulk e Inform?", a: ["SNMPv3", "SNMPv2", "SNMPv1.1", "SNMPv1"], c: 1 },
+            { q: "25. Los traps en SNMP son:", a: ["Alertas sobre lo que se está supervisando", "Trampas para intrusos", "El software del agente", "El software del administrador"], c: 0 },
+            { q: "26. SMI (Structure of Management Information) se encarga de:", a: ["Enviar los paquetes", "Definir las reglas para nombrar y definir tipos de objetos", "Cifrar la información", "Gestionar los puertos UDP"], c: 1 },
+            { q: "27. ¿Qué nivel de seguridad de SNMPv3 utiliza autenticación (MD5/SHA) pero NO cifrado?", a: ["noAuthNoPriv", "authNoPriv", "authPriv", "allSecurity"], c: 1 },
+            { q: "28. ¿Cuál es la raíz (root) del árbol de la MIB administrada por la ISO/ITU?", a: ["iso(1)", "root(0)", "mib(1)", "internet(1)"], c: 0 },
+            { q: "29. Las soluciones MAM (Mobile Application Management) se diferencian de MDM en que:", a: ["Gestionan todo el hardware.", "Se centran exclusivamente en la gestión de las aplicaciones.", "No requieren internet.", "Son solo para ordenadores."], c: 1 },
+            { q: "30. ¿Qué puerto se utiliza para recibir Traps en SNMP sobre DTLS?", a: ["161", "162", "10161", "10162"], c: 3 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_T4')) || {};
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('question-number').innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            document.getElementById('question-text').innerText = data.q;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-lg border-2 border-slate-200 option-transition hover:border-sky-300 hover:bg-sky-50 font-medium';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) btn.classList.add('correct');
+                    else if (i === answers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? "Ver Resultados" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_T4', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            document.getElementById('score-live').innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) showResults();
+            else if (currentIdx < 0) currentIdx = 0;
+            else loadQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_T4');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        document.getElementById('prev-btn').onclick = () => changeQuestion(-1);
+        document.getElementById('next-btn').onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>
