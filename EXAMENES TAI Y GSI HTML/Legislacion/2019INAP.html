@@ -1,0 +1,544 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI-L Interactivo 2019</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+        .options label:hover:not(.disabled-option) {
+            background-color: #eef2ff;
+            border-color: #818cf8;
+        }
+        .options input[type="radio"] {
+            display: none;
+        }
+        .options input[type="radio"] + span {
+            display: block;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Style for selected correct answer */
+        .options input[type="radio"]:checked + span.correct-option-feedback {
+            background-color: #10b981; /* Green */
+            color: #fff;
+            border-color: #10b981;
+        }
+        /* Style for selected wrong answer */
+        .options input[type="radio"]:checked + span.wrong-option-feedback {
+            background-color: #ef4444; /* Red */
+            color: #fff;
+            border-color: #ef4444;
+        }
+        /* Style for correct answer when a wrong one was chosen */
+        .options .correct-highlight {
+            background-color: #d1fae5; /* Light green for correct answer highlight */
+            border-color: #10b981;
+            color: #1f2937;
+        }
+        .disabled-option {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .submit-button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+        }
+        .submit-button:hover {
+            background-color: #4338ca;
+        }
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f4f8;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+        }
+        .result-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e7ff;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .correct-answer {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .wrong-answer {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .feedback-text {
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .correct-feedback-text {
+            color: #10b981;
+        }
+        .wrong-feedback-text {
+            color: #ef4444;
+        }
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background-color: #6b7280;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+        .nav-button:hover {
+            background-color: #4b5563;
+        }
+        .nav-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI-L 2019</h1>
+
+        <div id="test-container"></div>
+
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+
+        <button id="submit-test" class="submit-button mt-6 hidden">Finalizar Test</button>
+        <!-- Botón de reiniciar test movido aquí para que esté siempre visible -->
+        <button id="reset-test" class="submit-button mt-6" style="background-color: #dc2626;">Reiniciar Test</button>
+
+        <div id="results" class="results-section hidden">
+            <h2 class="section-title">Resultados del Test</h2>
+            <div id="summary-results" class="mb-4 text-center"></div> <!-- New div for summary -->
+            <div id="results-content"></div>
+            <div class="flex justify-between gap-4 mt-6">
+                <button id="retake-test" class="submit-button">Volver a Intentar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Preguntas y opciones del test
+        const allQuestions = [
+            // Primera Parte (2019) - Ya existentes
+            {
+                id: 'P1-2019',
+                question: 'En relación a los derechos y deberes de los ciudadanos, el artículo 30 de la Constitución Española indica que:',
+                options: {
+                    a: 'Mediante ley podrán ser de obligado cumplimiento los deberes de los ciudadanos en los casos de grave riesgo, catástrofe o calamidad pública.',
+                    b: 'Mediante Real Decreto podrán ser de obligado cumplimiento los deberes de los ciudadanos en los casos de grave riesgo, catástrofe o calamidad pública.',
+                    c: 'Mediante ley podrán eliminarse los deberes de los ciudadanos en los casos de grave riesgo, catástrofe o calamidad pública.',
+                    d: 'Mediante ley podrán regularse los deberes de los ciudadanos en los casos de grave riesgo, catástrofe o calamidad pública.'
+                },
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P2-2019',
+                question: 'Según el artículo 62 de la Constitución Española, ¿a quién corresponde expedir los decretos acordados en el Consejo de Ministros?',
+                options: {
+                    a: 'Al Rey.',
+                    b: 'Al Presidente del Gobierno.',
+                    c: 'Al titular del Ministerio de la Presidencia.',
+                    d: 'Al Presidente de la Mesa del Congreso.'
+                },
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P3-2019',
+                question: 'Según el artículo 159 de la Constitución Española, el Tribunal Constitucional se compone de:',
+                options: {
+                    a: 'Doce miembros nombrados por el Rey; de ellos, tres serán a propuesta del Congreso por mayoría de tres quintos de sus miembros.',
+                    b: 'Doce miembros nombrados por el Rey; de ellos, cuatro serán a propuesta del Congreso por mayoría de tres quintos de sus miembros.',
+                    c: 'Dieciséis miembros nombrados por el Rey; de ellos, cuatro serán a propuesta del Congreso por mayoría de tres quintos de sus miembros.',
+                    d: 'Dieciséis miembros nombrados por el Rey; de ellos, tres serán a propuesta del Congreso por mayoría de tres quintos de sus miembros.'
+                },
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P4-2019',
+                question: 'Según el artículo 68 de la Constitución Española, indique de cuántos diputados se compone el Congreso:',
+                options: {
+                    a: 'De un mínimo de 250 y de un máximo de 350.',
+                    b: 'De un mínimo de 300 y de un máximo de 400.',
+                    c: 'De un mínimo de 300 y de un máximo de 350.',
+                    d: 'De un mínimo de 350 y de un máximo de 400.'
+                },
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P5-2019',
+                question: 'Según se expone en el artículo 113 de la Constitución Española, la moción de censura deberá ser propuesta por:',
+                options: {
+                    a: 'Al menos la décima parte de los Diputados.',
+                    b: 'Al menos un veinte por ciento de los Diputados.',
+                    c: 'Al menos la décima parte de cada una de las Cámaras.',
+                    d: 'Al menos 20 Diputados y 20 Senadores.'
+                },
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P6-2019',
+                question: '¿Cuál de los siguientes NO es uno de los 17 Objetivos de Desarrollo Sostenibles de la Agenda 2030?',
+                options: {
+                    a: 'Hambre cero.',
+                    b: 'Educación de calidad.',
+                    c: 'Aguas residuales y saneamiento.',
+                    d: 'Trabajo decente y crecimiento económico.'
+                },
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P7-2019',
+                question: 'Según la Ley 19/2013, de transparencia, acceso a la información pública y buen gobierno, ¿cuál de los siguientes NO es miembro de la Comisión de Transparencia y Buen Gobierno?',
+                options: {
+                    a: 'Un Diputado.',
+                    b: 'Un representante de la Subsecretaria de Estado de Administraciones Públicas.',
+                    c: 'Un representante del Defensor del Pueblo.',
+                    d: 'Un representante de la Autoridad Independiente de Responsabilidad Fiscal.'
+                },
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P8-2019',
+                question: 'Indique cuál es el Título de la Constitución Española relativo a la Organización Territorial del Estado:',
+                options: {
+                    a: 'Título IV.',
+                    b: 'Título VI.',
+                    c: 'Título VIII.',
+                    d: 'Título X.'
+                },
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P9-2019',
+                question: 'De acuerdo con el artículo 103.1 de la Constitución Española, la Administración Pública sirve con objetividad los intereses generales y actúa de acuerdo con los principios de:',
+                options: {
+                    a: 'Eficacia, eficiencia, descentralización, desconcentración y cooperación, con sometimiento pleno a la Ley y al Derecho.',
+                    b: 'Eficacia, jerarquía, descentralización, desconcentración y coordinación, con sometimiento pleno a la ley y al Derecho.',
+                    c: 'Eficacia, jerarquía, descentralización, concentración y coordinación, con sometimiento pleno al ordenamiento jurídico.',
+                    d: 'Eficacia, jerarquía, descentralización, desconcentración y cooperación, con sometimiento pleno a la Ley y al Derecho.'
+                },
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P10-2019',
+                question: 'Según lo establecido en el artículo 82 de la Constitución Española, cuando se trate de refundir varios textos legales en uno solo, la delegación legislativa de las Cortes Generales en el Gobierno deberá otorgarse mediante:',
+                options: {
+                    a: 'Una Ley de Bases.',
+                    b: 'Una Ley Orgánica.',
+                    c: 'Una Ley Ordinaria.',
+                    d: 'Un Decreto Legislativo.'
+                },
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P11-2019',
+                question: 'En el artículo 51 de la Ley Orgánica 3/2007, para la igualdad efectiva de mujeres y hombres, se definen criterios de actuación de las Administraciones públicas. ¿Cuál de los siguientes es uno de ellos?',
+                options: {
+                    a: 'Facilitar la conciliación de la vida familiar y laboral, sin menoscabo de la formación profesional y acción social.',
+                    b: 'Fomentar la participación en igualdad, tanto en el acceso al empleo público como a lo largo de la carrera profesional.',
+                    c: 'Establecer medidas cautelares de protección frente al acoso sexual.',
+                    d: 'Establecer medidas efectivas para eliminar cualquier discriminación retributiva, directa o indirecta, por razón de sexo.'
+                },
+                correctAnswer: 'd'
+            },
+            {
+                id: 'P12-2019',
+                question: 'Según el artículo 8 de la Ley Orgánica 3/2007, para la igualdad efectiva de mujeres y hombres, todo trato desfavorable a las mujeres relacionado con el embarazo o la maternidad constituye:',
+                options: {
+                    a: 'Discriminación indirecta por razón de sexo.',
+                    b: 'Discriminación directa por razón de sexo.',
+                    c: 'Discriminación maternal por razón de sexo.',
+                    d: 'Discriminación por asociación en razón de sexo.'
+                },
+                correctAnswer: 'b'
+            },
+            {
+                id: 'P13-2019',
+                question: 'Según el artículo 26 de la Ley 39/2006, de Promoción de la Autonomía Personal y Atención a las personas en situación de dependencia, señale la opción correcta en relación a la clasificación de los grados de dependencia:',
+                options: {
+                    a: 'Grado I. Dependencia moderada: cuando la persona necesita ayuda para realizar varias actividades básicas de la vida diaria, al menos una vez al día o tiene necesidades de apoyo intermitente o limitado para su autonomía personal.',
+                    b: 'Grado II. Gran dependencia: cuando la persona necesita ayuda para realizar varias actividades básicas de la vida diaria una o dos veces al día, pero no quiere el apoyo permanente de un cuidador o tiene necesidades de apoyo extenso para su autonomía personal.',
+                    c: 'Grado III. Dependencia total: cuando la persona necesita ayuda para realizar varias actividades básicas de la vida diaria varias veces al día y, por su pérdida total de autonomía necesita el apoyo indispensable y continuo de otra persona o tiene necesidades de apoyo generalizado para su autonomía personal.',
+                    d: 'Grado IV. Dependencia máxima: cuando la persona necesita constantemente ayuda para realizar cualquier actividad básica de la vida diaria.'
+                },
+                correctAnswer: 'a'
+            },
+            {
+                id: 'P14-2019',
+                question: 'En relación al DNIe v3.0, indique la respuesta correcta:',
+                options: {
+                    a: 'Contiene dos certificados electrónicos de componentes: uno de Autenticación y otro de Firma.',
+                    b: 'Actualmente, los certificados electrónicos de Autenticación y de Firma Electrónica que contiene tienen un plazo de validez de 24 meses.',
+                    c: 'La renovación de los certificados incluidos en la tarjeta del DNI electrónico puede realizarse en los Puntos de Actualización del DNIe y a través de Internet.',
+                    d: 'EI PIN debe tener un mínimo de 8 caracteres y un máximo de 12.'
+                },
+                correctAnswer: 'c'
+            },
+            {
+                id: 'P15-2019',
+                question: 'La nueva Agenda Digital "España Digital 2025" recoge un conjunto de medidas, reformas e inversiones. ¿En cuántos ejes se articulan estas medidas?',
+                options: {
+                    a: '6',
+                    b: '9',
+                    c: '12',
+                    d: '10'
+                },
+                correctAnswer: 'd'
+            }  
+        ];
+
+        // Referencias a elementos del DOM
+        const testContainer = document.getElementById('test-container');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const submitTestButton = document.getElementById('submit-test');
+        const resultsSection = document.getElementById('results');
+        const resultsContentDiv = document.getElementById('results-content');
+        const retakeTestButton = document.getElementById('retake-test');
+        const resetTestButton = document.getElementById('reset-test');
+        const summaryResultsDiv = document.getElementById('summary-results'); // New reference for summary
+
+        // Estado del test
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Almacena las respuestas del usuario { questionId: selectedOption }
+
+        // Constantes para LocalStorage
+        const LOCAL_STORAGE_KEY_ANSWERS = 'testUserAnswers';
+        const LOCAL_STORAGE_KEY_INDEX = 'testCurrentQuestionIndex';
+
+        // Función para guardar el estado en LocalStorage
+        function saveState() {
+            localStorage.setItem(LOCAL_STORAGE_KEY_ANSWERS, JSON.stringify(userAnswers));
+            localStorage.setItem(LOCAL_STORAGE_KEY_INDEX, currentQuestionIndex);
+        }
+
+        // Función para cargar el estado de LocalStorage
+        function loadState() {
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_KEY_ANSWERS);
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_KEY_INDEX);
+
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+        }
+
+        // Función para renderizar la pregunta actual
+        function renderQuestion(index) {
+            testContainer.innerHTML = ''; // Limpiar contenedor
+            const questionData = allQuestions[index];
+            if (!questionData) return; // Si no hay pregunta, salir
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+            questionCard.innerHTML = `
+                <p class="question-text">${index + 1}. ${questionData.question}</p>
+                <div class="options" id="options-${questionData.id}">
+                    ${Object.keys(questionData.options).map(key => `
+                        <label class="${userAnswers[questionData.id] ? 'disabled-option' : ''}">
+                            <input type="radio" name="question-${questionData.id}" value="${key}" ${userAnswers[questionData.id] === key ? 'checked' : ''} ${userAnswers[questionData.id] ? 'disabled' : ''}>
+                            <span class="
+                                ${userAnswers[questionData.id] === key && key === questionData.correctAnswer ? 'correct-option-feedback' : ''}
+                                ${userAnswers[questionData.id] === key && key !== questionData.correctAnswer ? 'wrong-option-feedback' : ''}
+                                ${userAnswers[questionData.id] && key === questionData.correctAnswer && userAnswers[questionData.id] !== key ? 'correct-highlight' : ''}
+                            ">
+                                <strong>${key.toUpperCase()}.</strong> ${questionData.options[key]}
+                            </span>
+                        </label>
+                    `).join('')}
+                </div>
+            `;
+            testContainer.appendChild(questionCard);
+
+            // Añadir evento para guardar respuesta cuando se selecciona una opción
+            const optionsDiv = document.getElementById(`options-${questionData.id}`);
+            optionsDiv.addEventListener('change', (event) => {
+                const selectedOption = event.target.value;
+                userAnswers[questionData.id] = selectedOption;
+                saveState(); // Guardar el estado después de cada respuesta
+                renderQuestion(currentQuestionIndex); // Volver a renderizar para mostrar feedback
+            });
+
+            updateNavigationButtons();
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === allQuestions.length - 1;
+
+            if (currentQuestionIndex === allQuestions.length - 1) {
+                submitTestButton.classList.remove('hidden');
+            } else {
+                submitTestButton.classList.add('hidden');
+            }
+        }
+
+        // Función para mostrar los resultados
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            resultsContentDiv.innerHTML = ''; // Limpiar resultados anteriores
+            summaryResultsDiv.innerHTML = ''; // Clear summary before adding new
+
+            allQuestions.forEach(question => {
+                const userAnswer = userAnswers[question.id];
+                const isCorrect = userAnswer === question.correctAnswer;
+
+                if (isCorrect) {
+                    correctCount++;
+                } else {
+                    incorrectCount++;
+                }
+
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.innerHTML = `
+                    <p class="question-text">${question.question}</p>
+                    <p>Tu respuesta: <strong>${userAnswer ? userAnswer.toUpperCase() : 'No respondida'}</strong></p>
+                    <p>Respuesta correcta: <strong class="correct-answer">${question.correctAnswer.toUpperCase()}</strong></p>
+                    <p class="feedback-text ${isCorrect ? 'correct-feedback-text' : 'wrong-feedback-text'}">
+                        ${isCorrect ? '¡Correcto!' : 'Incorrecto.'}
+                    </p>
+                `;
+                resultsContentDiv.appendChild(resultItem);
+            });
+
+            // Display overall results
+            summaryResultsDiv.innerHTML = `
+                <p class="text-xl font-bold text-green-600">Aciertos: ${correctCount}</p>
+                <p class="text-xl font-bold text-red-600">Fallos: ${incorrectCount}</p>
+                <p class="text-xl font-bold text-blue-600">Total de preguntas: ${allQuestions.length}</p>
+            `;
+
+
+            testContainer.classList.add('hidden');
+            submitTestButton.classList.add('hidden');
+            prevButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+        }
+
+        // Event Listeners para botones de navegación
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveState(); // Guardar el estado al cambiar de pregunta
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < allQuestions.length - 1) {
+                currentQuestionIndex++;
+                saveState(); // Guardar el estado al cambiar de pregunta
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        submitTestButton.addEventListener('click', () => {
+            showResults();
+        });
+
+        // Función para volver a intentar el test (mantiene las respuestas)
+        retakeTestButton.addEventListener('click', () => {
+            // No se borran userAnswers, solo se resetea el índice y se vuelve a mostrar el test
+            currentQuestionIndex = 0;
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            saveState(); // Guardar el estado reseteado
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Función para reiniciar el test completamente (borra respuestas y progreso)
+        resetTestButton.addEventListener('click', () => {
+            userAnswers = {}; // Borrar todas las respuestas
+            currentQuestionIndex = 0; // Volver al inicio
+            localStorage.removeItem(LOCAL_STORAGE_KEY_ANSWERS); // Borrar de LocalStorage
+            localStorage.removeItem(LOCAL_STORAGE_KEY_INDEX); // Borrar de LocalStorage
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Inicializar el test
+        loadState(); // Cargar el estado al inicio
+        renderQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>
+
