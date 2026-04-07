@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI-L Interactivo 2018</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+        .options label:hover:not(.disabled-option) {
+            background-color: #eef2ff;
+            border-color: #818cf8;
+        }
+        .options input[type="radio"] {
+            display: none;
+        }
+        .options input[type="radio"] + span {
+            display: block;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Estilo para la respuesta correcta seleccionada */
+        .options input[type="radio"]:checked + span.correct-option-feedback {
+            background-color: #10b981; /* Verde */
+            color: #fff;
+            border-color: #10b981;
+        }
+        /* Estilo para la respuesta incorrecta seleccionada */
+        .options input[type="radio"]:checked + span.wrong-option-feedback {
+            background-color: #ef4444; /* Rojo */
+            color: #fff;
+            border-color: #ef4444;
+        }
+        /* Estilo para la respuesta correcta cuando se eligió una incorrecta */
+        .options .correct-highlight {
+            background-color: #d1fae5; /* Verde claro para resaltar la respuesta correcta */
+            border-color: #10b981;
+            color: #1f2937;
+        }
+        .disabled-option {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .submit-button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+        }
+        .submit-button:hover {
+            background-color: #4338ca;
+        }
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f4f8;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+        }
+        .result-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e7ff;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .correct-answer {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .wrong-answer {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .feedback-text {
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .correct-feedback-text {
+            color: #10b981;
+        }
+        .wrong-feedback-text {
+            color: #ef4444;
+        }
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background-color: #6b7280;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+        .nav-button:hover {
+            background-color: #4b5563;
+        }
+        .nav-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+        .reset-button {
+            background-color: #dc2626; /* Color rojo para el botón de reinicio */
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+            margin-top: 10px; /* Espacio encima del botón de reinicio */
+        }
+        .reset-button:hover {
+            background-color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI-L 2018</h1>
+
+        <div id="test-container"></div>
+
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+
+        <button id="submit-test" class="submit-button mt-6 hidden">Finalizar Test</button>
+        <button id="full-reset-test" class="reset-button mt-4">Reiniciar Test Completamente</button>
+
+
+        <div id="results" class="results-section hidden">
+            <h2 class="section-title">Resultados del Test</h2>
+            <div id="results-content"></div>
+            <button id="retake-test" class="submit-button mt-6">Volver a Intentar</button>
+        </div>
+    </div>
+
+    <script>
+        // Preguntas y opciones del test de 2018
+        const allQuestions = [
+  
+            // BLOQUE IV (2018)
+            {
+                id: 'B4-P1',
+                question: 'En lo que respecta a la red "RED001", 172.30.23.0/20, ¿a qué clase de red pertenece?',
+                options: {a: 'Clase A', b: 'Clase B', c: 'Clase C', d: 'Clase D'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P2',
+                question: 'Le piden saber cuántos host están disponibles para su uso en la red "RED001", 172.30.23.0/20',
+                options: {a: '1022', b: '2048', c: '2046', d: '4094'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P3',
+                question: '¿Cuál es la dirección de broadcast de la red "RED001", 172.30.23.0/20?',
+                options: {a: '172.30.31.255', b: '172.30.255.255', c: '172.30.23.255', d: '172.30.14.255'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P4',
+                question: 'Le han pedido como técnico realizar un cableado Ethernet en los nuevos despachos. Debe ser de una velocidad de hasta 10 Gbps, a una distancia máxima de 100 metros y frecuencia de hasta 500 MHz. Según el estándar ANSI/EIA/TIA-568-C, ¿qué categoría de cable UTP recomendaría?',
+                options: {a: 'Cat 5', b: 'Cat 5e', c: 'Cat 6', d: 'Cat 6a'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P5',
+                question: 'Debe comprobar si se está ejecutando "systemd", para ello decide obtener su ID de proceso en ejecución. Desde la línea de comandos en el servidor Debian GNU/Linux, ¿qué comando usaría?',
+                options: {a: 'pidof systemd', b: 'pid systemd', c: 'getpid systemd', d: 'apt-get-pid systemd'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P6',
+                question: 'Le piden el nombre de la máquina Linux a la que está conectado, ¿cuál sería el comando para obtenerlo?',
+                options: {a: 'servername', b: 'hostname', c: 'sysname', d: 'giveservername'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P7',
+                question: 'Le piden obtener de forma remota la información de los usuarios conectados a la máquina llamada s1, siendo "u" un usuario válido en el sistema y con permisos de acceso remoto. ¿Cómo lo haría?',
+                options: {a: 'ssh u@s1 \'who\'', b: 'ssh u:s1 \'who\'', c: 'ssh s1-login u \'who\'', d: 'ssh-user=u-command=\'who\' s1'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P8',
+                question: 'Necesita conocer la ip del servidor en el que está conectado, pero descubre que el comando ifconfig ya no viene instalado por defecto y en su lugar debe usar otra opción. ¿Qué debe ejecutar para obtener la ip del servidor?',
+                options: {a: 'if', b: 'systemctl interfaces', c: 'interfaces', d: 'ip address'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P9',
+                question: 'Si quisiera usar en Debian el comando ifconfig, debería instalar el paquete net-tools, actualmente no instalado. Con los permisos adecuados, ¿cómo lo haría?',
+                options: {a: 'apt-get update net-tools', b: 'apt install net-tools', c: 'apt-cache install net-tools', d: 'dpkg -install net-tools'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P10',
+                question: 'En Linux, indique como buscar los paquetes disponibles de salt:',
+                options: {a: 'apt-cache search salt', b: 'apt find salt', c: 'dpkg-give salt', d: 'apt-mark find salt'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P11',
+                question: 'En el servidor que hace de rol de master de Salt está la instalación de los paquetes, salt-master, salt-ssh y salt-doc y en los servidores que hacen los roles de minion está instalado el paquete salt-minion. Desde el servidor con rol master, y mediante el uso de comandos de Salt, ¿cómo podría copiar un archivo que está en la ruta actual llamado "fichero.txt", a la carpeta "/tmp" de todos los minions del sistema?',
+                options: {a: 'salt-cp fichero.txt /tmp', b: 'salt-copy fichero.txt tmp', c: 'salt--disk.copy fichero.txt all:/tmp', d: 'salt --all disk.copy fichero.txt /tmp'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P12',
+                question: 'Mediante el uso de comandos de Salt, ¿cómo podría obtener el uso de disco de todos los minions del sistema?',
+                options: {a: 'salt disk.usage', b: 'salt --all disk.usage', c: 'salt--disk.usage all', d: 'salt-query """ disk.info'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P13',
+                question: 'Ha detectado que uno de los servidores no tiene instalado salt-minion, desde el propio servidor debe comprobar de forma manual cuál es la versión del paquete nginx instalado. ¿Cuál sería la orden a ejecutar para obtener dicha versión?',
+                options: {a: 'dpkg--show nginx', b: 'apt-cache show nginx | grep Version', c: 'dpkg-get-selections | grep nginx', d: 'apt show nginx -v'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P14',
+                question: 'En la instalación de Docker se ha creado un grupo llamado "docker", con usuarios que necesiten ejecutar comandos de Docker. Siendo "udocker" un usuario ya creado, ¿cómo añadiría este usuario a dicho grupo?',
+                options: {a: 'usermod-a-G docker udocker', b: 'useradd -G docker udocker', c: 'Editando el fichero /var/group y añadiendo ":udocker" al final de la línea donde está el grupo "docker".', d: 'Editando el fichero /etc/passwd y añadiendo ":udocker" al final de la línea donde está el grupo "docker".'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P15',
+                question: 'Le piden chequear el funcionamiento de Docker, para ello debe listar todos los contenedores en ejecución. ¿Qué debe ejecutar?',
+                options: {a: 'docker --list', b: 'docker list', c: 'docker containers Is', d: 'docker ps'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P16',
+                question: 'Dado el identificador de contenedor "4d78338ee766" y que está en ejecución, ¿qué orden de Docker necesita ejecutar para detenerlo?',
+                options: {a: 'docker stop 4d78338ee766', b: 'docker shutdown 4d78338ee766', c: 'docker rm 4d78338ee766', d: 'docker undeploy 4d78338ee766'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P17',
+                question: 'Desde Docker se le pide buscar una imagen de Jenkins contenida en "Docker Hub". ¿Qué comando usaría?',
+                options: {a: 'docker find jenkins', b: 'docker show jenkins', c: 'docker search jenkins', d: 'docker-find jenkins'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P18',
+                question: 'En la web de CCN-CERT hay un aviso de vulnerabilidad que afecta a algunas distribuciones Debian, y necesita saber si está afectado o no. De entre las siguientes opciones elija la afirmación verdadera:',
+                options: {a: 'La distribución estable es Debian 10 "etch" y la antigua estable es Debian 9 "lenny".', b: 'La distribución estable es Debian 10 "woody", y la antigua estable es Debian 9 "sarge".', c: 'La distribución estable es Debian 10 "jessie" y la antigua estable es Debian 9 "potato".', d: 'La distribución estable es Debian 10 "buster" y la antigua estable es Debian 9 "stretch".'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P19',
+                question: 'También ha habido una notificación de una amenaza llamada Defacement o Deface (Desfiguración/Desfigurar), ¿a qué hace referencia?',
+                options: {a: 'Ataque que busca modificar cuentas de una red social.', b: 'Ataque que busca obtener información personal o confidencial de los usuarios para poder cambiarla.', c: 'Ataque sobre un servidor web como consecuencia del cual se cambia su apariencia.', d: 'Ataque sobre el archivo del servidor de nombres de dominio cambiando la dirección IP legítima.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P20',
+                question: 'Se van a necesitar redes privadas virtuales y uno de los factores claves debido a la sensibilidad de los datos es la confidencialidad. ¿Cómo puede garantizarla?',
+                options: {a: 'Mediante una correcta gestión de usuarios.', b: 'Mediante funciones HASH.', c: 'No se puede garantizar.', d: 'Mediante un algoritmo de cifrado como AES.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P21',
+                question: 'Le piden configurar la recepción de los correos electrónicos. De entre los siguientes, escoja el tipo de registro DNS necesario para ello:',
+                options: {a: 'A', b: 'MX', c: 'CNAME', d: 'TXT'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P22',
+                question: 'El departamento de seguridad necesita conocer los puertos por defecto que usan diferentes gestores de base de datos. Indique cuál es una afirmación correcta.',
+                options: {a: 'El puerto por defecto que usa Postgresql es 1521.', b: 'El puerto por defecto que usa Sql Server es 1433.', c: 'El puerto por defecto que usa MongoDB es 9042', d: 'El puerto por defecto que usa Oracle es el 5432.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P23',
+                question: 'Se está definiendo un plan de continuidad, y en la estrategia para la recuperación ante desastres y sus mecanismos de respaldo, se le pregunta qué es el "RTO":',
+                options: {a: 'Establece un tiempo máximo de pérdida de información.', b: 'Establece un tiempo mínimo de pérdida de información.', c: 'Establece el nivel de servicio que un cliente espera de su proveedor.', d: 'Establece el tiempo máximo que un servicio puede permanecer interrumpido.'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P24',
+                question: 'Referente a la plataforma VMWARE, ¿qué solución le permite realizar backups de las máquinas virtuales?',
+                options: {a: 'Veeam Backup & Replication.', b: 'Oracle Acronis Director.', c: 'Hadoop Recover.', d: 'ReactiveX.'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P25',
+                question: 'Se está estudiando la posibilidad de implantar una solución MDM (Mobile Device Management) que permita la administración de dispositivos móviles. Indique cuál de las siguientes es una posible solución a evaluar:',
+                options: {a: 'Panda Security Rollback.', b: 'NBSecurity', c: 'Mobilelron', d: 'Symantec Endpoint Mobile.'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P26',
+                question: 'En el puesto cliente Windows 10 mediante Windows PowerShell, ¿cuál es el comando (cmdlet) para obtener información acerca de los procesos del equipo local?',
+                options: {a: 'Get-List-Process', b: 'Get-Process', c: 'Get-Item', d: 'Get-Commands'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P27',
+                question: 'También mediante Windows PowerShell, es necesario copiar una carpeta y su contenido, llamada "carpeta", a un directorio vacío y existente, llamado "destino". Considerando que ambas carpetas están en la ruta actual, ¿cuál sería el comando que ejecutaría?',
+                options: {a: 'Copy-Item "carpeta" -Destination "destino" -Recurse', b: 'Copy-Directory "carpeta" -Destination "destino"', c: 'Copy-Contents "carpeta" -Destination "destino"', d: 'Copy "carpeta" "destino" -Recursive'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P28',
+                question: 'En la carpeta actual, en el mismo equipo Windows 10, se ha encontrado con ficheros con extensión incorrecta. Desde el símbolo del sistema (cmd) debe renombrar todo fichero con extensión "gz" a extensión "rar". ¿Cuál opción de las siguientes sería la correcta?',
+                options: {a: 'change*.gz *.rar', b: 'move.gz*.rar', c: 'convert ".gz *.rar', d: 'ren *.gz *.rar'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P29',
+                question: 'Respecto a la seguridad en el puesto cliente macOS, ¿qué tecnología proporciona capacidades de cifrado para la totalidad del sistema de almacenamiento principal o disco duro del equipo?',
+                options: {a: 'FileVault', b: 'Trello', c: 'Finder', d: 'Gatekeeper'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P30',
+                question: 'De entre los siguientes, ¿qué protocolo permite realizar la validación de certificados digitales?',
+                options: {a: 'Online Certificate Status Protocol (OCSP).', b: 'Certificate Reject List Protocol (CRLP).', c: 'Domain Name System Security Certificate Protocol (DNSSECP).', d: 'Hash-based Message Authentication Certificate Protocol (HMACP).'},
+                correctAnswer: 'a'
+            },
+            // Preguntas de reserva (BLOQUE IV)
+            {
+                id: 'B4-PR1',
+                question: '¿Qué red es un conjunto de infraestructuras de comunicaciones y servicios básicos que conecta las redes de las Administraciones Públicas Españolas e Instituciones Europeas facilitando el intercambio de información y el acceso a los servicios?',
+                options: {a: 'STORK', b: 'DIR3', c: 'SARA', d: 'ORVE'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-PR2',
+                question: '¿Cuál sería la primera IP disponible para asignar a un host en la red "RED001", 172.30.23.0/20 ?',
+                options: {a: '172.30.8.0', b: '172.30.14.1', c: '172.30.16.1', d: '172.30.23.1'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-PR3',
+                question: '¿Cómo podría ver en "Docker Hub" las imágenes disponibles?',
+                options: {a: 'docker show images', b: 'docker images', c: 'docker list', d: 'docker list-images'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-PR4',
+                question: 'En un equipo con Windows 10, y mediante el uso del símbolo del sistema (cmd), ¿cómo obtendría la lista de procesos que se están ejecutando en un equipo local o remoto?',
+                options: {a: 'tasklist', b: 'Sólo es posible obtener la información de procesos en ejecución para equipos remotos mediante PowerShell.', c: 'pslist', d: 'tree'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-PR5',
+                question: 'En el contexto de los servidores SMTP de una organización. ¿Qué medida, de entre las siguientes, sería la más adecuada para protegerse frente a ciberataques?',
+                options: {a: 'SPF', b: 'Grafana', c: 'XiaoBa', d: 'Emotet'},
+                correctAnswer: 'a'
+            }
+        ];
+
+        const questions = allQuestions; // Se incluyen todas las preguntas ahora.
+
+        let userAnswers = {};
+        let currentQuestionIndex = 0;
+
+        const testContainer = document.getElementById('test-container');
+        const submitButton = document.getElementById('submit-test');
+        const resultsSection = document.getElementById('results');
+        const resultsContent = document.getElementById('results-content');
+        const retakeTestButton = document.getElementById('retake-test');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const fullResetTestButton = document.getElementById('full-reset-test'); // Nuevo botón de reinicio
+
+        // Claves para LocalStorage
+        const LOCAL_STORAGE_ANSWERS_KEY = 'taiTestUserAnswers';
+        const LOCAL_STORAGE_INDEX_KEY = 'taiTestCurrentQuestionIndex';
+
+        // Función para guardar el estado en LocalStorage
+        function saveState() {
+            localStorage.setItem(LOCAL_STORAGE_ANSWERS_KEY, JSON.stringify(userAnswers));
+            localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, currentQuestionIndex);
+        }
+
+        // Función para cargar el estado desde LocalStorage
+        function loadState() {
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_ANSWERS_KEY);
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_INDEX_KEY);
+
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+        }
+
+        // Función para verificar la respuesta seleccionada y proporcionar retroalimentación inmediata
+        function checkAnswer(questionId, selectedValue) {
+            const questionData = questions.find(q => q.id === questionId);
+            if (!questionData) return;
+
+            userAnswers[questionId] = selectedValue; // Almacenar la respuesta del usuario
+            saveState(); // Guardar el estado después de cada respuesta
+
+            const optionsDiv = document.querySelector(`#test-container .question-card .options`);
+            const allRadios = optionsDiv.querySelectorAll('input[type="radio"]');
+            const allSpans = optionsDiv.querySelectorAll('label span');
+
+            // Deshabilitar todos los botones de radio para esta pregunta
+            allRadios.forEach(radio => radio.disabled = true);
+            allSpans.forEach(span => span.parentElement.classList.add('disabled-option'));
+
+            const selectedSpan = optionsDiv.querySelector(`input[value="${selectedValue}"] + span`);
+
+            if (selectedValue === questionData.correctAnswer) {
+                selectedSpan.classList.add('correct-option-feedback');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text correct-feedback-text';
+                feedbackMessage.textContent = '¡Correcto!';
+                optionsDiv.appendChild(feedbackMessage);
+            } else {
+                selectedSpan.classList.add('wrong-option-feedback');
+                // Resaltar la respuesta correcta
+                const correctSpan = optionsDiv.querySelector(`input[value="${questionData.correctAnswer}"] + span`);
+                correctSpan.classList.add('correct-highlight');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text wrong-feedback-text';
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+        }
+
+        // Función para renderizar una pregunta
+        function renderQuestion(index) {
+            testContainer.innerHTML = ''; // Limpiar el contenedor
+            const questionData = questions[index];
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `<strong>${index + 1}.</strong> ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options';
+
+            const hasAnswered = userAnswers.hasOwnProperty(questionData.id);
+
+            for (const key in questionData.options) {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${questionData.id}`;
+                input.value = key;
+                input.disabled = hasAnswered; // Deshabilitar si ya se ha respondido
+                input.onclick = (e) => checkAnswer(questionData.id, e.target.value); // Usar onclick para retroalimentación inmediata
+
+                const span = document.createElement('span');
+                span.textContent = `${key}) ${questionData.options[key]}`;
+
+                label.appendChild(input);
+                label.appendChild(span);
+                optionsDiv.appendChild(label);
+
+                // Si el usuario ya ha respondido a esta pregunta, preseleccionar su respuesta
+                if (userAnswers[questionData.id] === key) {
+                    input.checked = true;
+                }
+
+                // Aplicar estilos de retroalimentación si ya se ha respondido
+                if (hasAnswered) {
+                    label.classList.add('disabled-option');
+                    if (userAnswers[questionData.id] === key) {
+                        if (key === questionData.correctAnswer) {
+                            span.classList.add('correct-option-feedback');
+                        } else {
+                            span.classList.add('wrong-option-feedback');
+                        }
+                    } else if (key === questionData.correctAnswer) {
+                        span.classList.add('correct-highlight');
+                    }
+                }
+            }
+            questionCard.appendChild(optionsDiv);
+            testContainer.appendChild(questionCard);
+
+            // Si ya se ha respondido, añadir el mensaje de retroalimentación
+            if (hasAnswered) {
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = `feedback-text ${userAnswers[questionData.id] === questionData.correctAnswer ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedbackMessage.textContent = userAnswers[questionData.id] === questionData.correctAnswer ? '¡Correcto!' : 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+
+            updateNavigationButtons();
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1) {
+                submitButton.classList.remove('hidden');
+            } else {
+                submitButton.classList.add('hidden');
+            }
+        }
+
+        // Event listeners para los botones de navegación
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveState(); // Guardar el estado al navegar
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                saveState(); // Guardar el estado al navegar
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Función para enviar el test y mostrar resultados
+        submitButton.addEventListener('click', () => {
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let unansweredQuestions = 0;
+
+            resultsContent.innerHTML = ''; // Limpiar el contenido de los resultados
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[q.id];
+                const isCorrect = userAnswer === q.correctAnswer;
+
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const questionTitle = document.createElement('p');
+                questionTitle.innerHTML = `<strong>${index + 1}. ${q.question}</strong>`;
+                resultItem.appendChild(questionTitle);
+
+                const userAnswerText = document.createElement('p');
+                userAnswerText.innerHTML = `Tu respuesta: <span class="${isCorrect ? 'correct-answer' : 'wrong-answer'}">${userAnswer ? `${userAnswers[q.id]}) ${q.options[userAnswer]}` : 'Sin responder'}</span>`;
+                resultItem.appendChild(userAnswerText);
+
+                const correctAnswerText = document.createElement('p');
+                correctAnswerText.innerHTML = `Respuesta correcta: <span class="correct-answer">${q.correctAnswer}) ${q.options[q.correctAnswer]}</span>`;
+                resultItem.appendChild(correctAnswerText);
+
+                const feedback = document.createElement('p');
+                feedback.className = `feedback-text ${isCorrect ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedback.textContent = isCorrect ? '¡Correcto!' : 'Incorrecto.';
+                resultItem.appendChild(feedback);
+
+                resultsContent.appendChild(resultItem);
+
+                if (userAnswer) { // Si hay una respuesta (correcta o incorrecta)
+                    if (isCorrect) {
+                        correctAnswers++;
+                    } else {
+                        incorrectAnswers++;
+                    }
+                } else {
+                    unansweredQuestions++;
+                }
+            });
+
+            // Mostrar el resumen de aciertos y fallos
+            const totalQuestions = questions.length;
+            const finalScore = document.createElement('h3');
+            finalScore.className = 'section-title mt-4';
+            finalScore.textContent = `Puntuación final: ${correctAnswers} de ${totalQuestions}`;
+            resultsContent.prepend(finalScore); // Añadir la puntuación al principio
+
+            const correctCount = document.createElement('p');
+            correctCount.className = 'text-lg font-semibold text-green-600';
+            correctCount.textContent = `Aciertos: ${correctAnswers}`;
+            resultsContent.insertBefore(correctCount, finalScore.nextSibling);
+
+            const incorrectCount = document.createElement('p');
+            incorrectCount.className = 'text-lg font-semibold text-red-600';
+            incorrectCount.textContent = `Fallos: ${incorrectAnswers}`;
+            resultsContent.insertBefore(incorrectCount, correctCount.nextSibling);
+
+            const unansweredCount = document.createElement('p');
+            unansweredCount.className = 'text-lg font-semibold text-gray-600';
+            unansweredCount.textContent = `Preguntas sin responder: ${unansweredQuestions}`;
+            resultsContent.insertBefore(unansweredCount, incorrectCount.nextSibling);
+
+
+            testContainer.classList.add('hidden');
+            submitButton.classList.add('hidden');
+            prevButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            fullResetTestButton.classList.add('hidden'); // Ocultar el botón de reinicio completo cuando se muestran los resultados
+            resultsSection.classList.remove('hidden');
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar respuestas al enviar
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY); // Limpiar índice al enviar
+        });
+
+        // Función para reiniciar el test (volver a intentar)
+        retakeTestButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar respuestas al reintentar
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY); // Limpiar índice al reintentar
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            fullResetTestButton.classList.remove('hidden'); // Mostrar el botón de reinicio completo
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Event listener para el nuevo botón "Reiniciar Test Completamente"
+        fullResetTestButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.clear(); // Limpiar todo el localStorage para este dominio
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            submitButton.classList.add('hidden'); // Ocultar el botón de enviar si no está al final
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Inicializar el test
+        loadState(); // Cargar el estado cuando la página se carga
+        renderQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>

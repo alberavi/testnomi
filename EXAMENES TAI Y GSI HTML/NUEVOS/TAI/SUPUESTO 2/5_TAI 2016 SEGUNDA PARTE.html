@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI 2016 - Segunda Parte</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to the top */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px; /* Add some margin from the top */
+        }
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .question-block:last-child {
+            border-bottom: none;
+        }
+        .question-text {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .option-label:hover {
+            background-color: #f5f5f5;
+        }
+        .option-input {
+            margin-right: 12px;
+            margin-top: 4px; /* Align radio button with text */
+            flex-shrink: 0;
+        }
+        .option-text {
+            font-size: 1rem; /* text-base */
+            color: #555;
+            line-height: 1.4;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none; /* Hidden by default */
+        }
+        .feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .feedback.show {
+            display: block;
+        }
+        .correct-answer {
+            margin-top: 10px;
+            font-weight: normal;
+            color: #333;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            flex-grow: 1; /* Allow buttons to grow */
+            min-width: 120px; /* Minimum width for buttons */
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* Indigo 700 */
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* Gray 500 */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563; /* Gray 700 */
+        }
+        .btn-reset {
+            background-color: #dc2626; /* Red 600 */
+            color: white;
+        }
+        .btn-reset:hover {
+            background-color: #b91c1c; /* Red 700 */
+        }
+
+        /* Styles for results container */
+        .results-container {
+            background-color: #e0f2fe; /* Light blue */
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: none; /* Hidden by default */
+        }
+        .results-container.show {
+            display: block;
+        }
+        .results-container h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0c4a6e; /* Darker blue */
+            margin-bottom: 15px;
+        }
+        .results-container p {
+            font-size: 1.2rem;
+            color: #1e40af; /* Medium blue */
+            margin-bottom: 10px;
+        }
+        .results-container .correct-count {
+            color: #16a34a; /* Green */
+            font-weight: 700;
+        }
+        .results-container .incorrect-count {
+            color: #dc2626; /* Red */
+            font-weight: 700;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .button-group {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI 2016 - Segunda Parte</h1>
+        <div id="question-container" class="question-block">
+            <p id="question-number" class="text-sm text-gray-500 mb-2"></p>
+            <p id="question-text" class="question-text"></p>
+            <div id="options-container">
+                <!-- Options will be loaded here by JavaScript -->
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <div id="results-container" class="results-container">
+            <h2>Resultados del Test</h2>
+            <p>Aciertos: <span id="correct-count" class="correct-count">0</span></p>
+            <p>Fallos: <span id="incorrect-count" class="incorrect-count">0</span></p>
+        </div>
+
+        <div class="button-group">
+            <button id="prev-btn" class="btn btn-secondary" disabled>Anterior</button>
+            <button id="next-btn" class="btn btn-primary">Siguiente</button>
+            <button id="reset-test-btn" class="btn btn-reset">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of objects containing all questions, options, and correct answers.
+        const allQuestions = [
+            // BLOQUE IV
+            {
+                block: "Bloque IV",
+                question: "De cara a las pertinentes configuraciones de firewall, de los siguientes, ¿cuál es un puerto utilizado, por defecto, por Salt?",
+                options: [
+                    "4505",
+                    "389",
+                    "445",
+                    "3389"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "En Linux, si fuese necesario eliminar un paquete instalado, eliminando además su fichero de configuración. Qué opción es la que debería usar del comando apt-get:",
+                options: [
+                    "cleanup",
+                    "uninstall",
+                    "purge",
+                    "auto-remove"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se debe conocer cuál es el sistema de ficheros correspondiente a un punto de montaje. ¿Con qué comando averiguaría cual es el correspondiente al punto de montaje /home?",
+                options: [
+                    "df -h | grep /home",
+                    "mount | grep /home",
+                    "du-sh | grep /home",
+                    "discover -v | grep /home"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "En Debian 8.7, ¿cuál es la ruta absoluta del fichero de log dónde podemos encontrar mensajes como el siguiente \"Mar 13 15:01:01 ofelia sshd[1496]: Invalid user mengano from 192.168.2.15\", que advierten que un usuario inválido ha intentado conectarse por SSH?",
+                options: [
+                    "/var/auth/ssh.log",
+                    "/var/log/ssh_auth.log",
+                    "/var/log/users.log",
+                    "/var/log/auth.log"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "En Linux, qué comando permite visualizar la información de los grupos de volúmenes disponibles de LVM?",
+                options: [
+                    "vgdisplay",
+                    "lvmdisplay",
+                    "lvm-show volume-group",
+                    "cat /proc/lvminfo"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Cuál de las siguientes afirmaciones es cierta acerca de la ejecución del siguiente comando en la máquina Linux: dd if=/dev/zero of=/tmp/testfile bs=512 count=1000?",
+                options: [
+                    "El fichero/tmp/testfile será de 512 bytes.",
+                    "Dará error, porque /tmp/testfile debe existir antes de la ejecución.",
+                    "El fichero/tmp/testfile será de 512000 bytes.",
+                    "Dará error, porque no existe el parámetro \"count\"."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "Indique cómo podría llegar a obtener la información de la versión del servidor local de MySql, considerando un usuario \"u_acme\" con contraseña \"p_acme\":",
+                options: [
+                    "mysqldump -v",
+                    "mysqladmin version -u u_acme -pp_acme",
+                    "mysql version -u u_acme -pp_acme",
+                    "dpkg-get-selections | grep mysql"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Cómo podría, en Debian, obtener la información acerca de la memoria disponible?",
+                options: [
+                    "memory --show",
+                    "free -h",
+                    "cat /var/meminfo",
+                    "cat /proc/memory"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "En el servidor de dominio con Windows 2012 R2, ¿cuál es el cmdlet de Powershell que muestra información de ayuda acerca de otros cmdlets ?",
+                options: [
+                    "cmdlet-Help",
+                    "Get-Help",
+                    "Get-Info",
+                    "Get-ExtendedHelp"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "Indique qué parámetro de \"expdp\" debemos utilizar para que un proceso de exportación de datos en Oracle 11g sea consistente en el tiempo:",
+                options: [
+                    "consistent-mode",
+                    "flashback_time",
+                    "consistent-backup",
+                    "swift-mode"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "En uno de los servidores Linux, para optimizar el acceso a Internet, está funcionando un servidor proxy HTTP, indique, cuál de las siguientes soluciones, realiza dicha función:",
+                options: [
+                    "WSUS",
+                    "Cacti",
+                    "Squid",
+                    "Xalan"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "En Linux, para poder visualizar periódicamente los ficheros que se han creado por el usuario \"www-data\" en la ruta \"/var/www\", ¿qué comando lo permitiría?",
+                options: [
+                    "search -l-R/var/www/ | fgrep www-data",
+                    "find -l-R/var/www/-u www-data",
+                    "grep -l-R/var/www/--user www-data",
+                    "watch-d 'ls -l -R/var/www/ | fgrep www-data'"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se necesita conocer más información acerca del paquete \"tzdata\". ¿Qué comando ejecutaría, en Debian, para obtener información sobre dicho paquete?",
+                options: [
+                    "apt-get show tzdata",
+                    "apt info tzdata",
+                    "dpkg -info -r tzdata",
+                    "apt-cache show tzdata"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se necesita conocer si Tomcat ha sido instalado. ¿Cuál es la orden que ejecutaría para obtener dicha información en los servidores Linux?",
+                options: [
+                    "dpkg --get-selections | grep tomcat",
+                    "man --version tomcat",
+                    "cat/etc/tomcat_version",
+                    "vi/proc/tomcat"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "Una de las recomendaciones para la vulnerabilidad de Struts, es revisar la creación y modificación de ficheros en los días que ha durado el ataque, qué comando emplearía para la búsqueda de los 3 últimos días:",
+                options: [
+                    "find/-type f -mtime -3",
+                    "find/-type f -ntime -3",
+                    "find/-type f-modify-time -3",
+                    "find/-type f --3 d"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se ha detectado, realizando una búsqueda con Salt, que uno de los servidores Linux tiene Struts instalado, teniendo en cuenta que el interfaz de red de la máquina se llama \"eth1\" y el puerto por el que se escuchan las peticiones es el puerto estándar de HTTPS, ¿Cuál sería la línea de iptables (en su versión 1.4.21) que debería construir para bloquear el tráfico en dicha interfaz al puerto estándar de HTTPS?",
+                options: [
+                    "iptables -A INPUT -i eth1 -p tcp --dport 80 -j DROP",
+                    "iptables -A INPUT -i eth1 -p tcp --dport 443 -j DROP",
+                    "iptables -A INPUT -i eth1 -p tcp --dport https -j DISABLE",
+                    "iptables -A INPUT -i eth0 -p tcp --dport http -j FAIL"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "En el servidor Linux, ¿qué comando ejecutaría para borrar todas las reglas de iptables?",
+                options: [
+                    "iptables --flush",
+                    "No existe, hay que ir eliminando una a una.",
+                    "iptables --delete-all-rules",
+                    "iptables--clear"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se ha detectado que no ha asignado caducidad a las contraseñas en uno de los servidores Debian. Indique el fichero en donde se puede cambiar el valor de \"PASS_MAX_DAYS\" para forzar el cambio de contraseñas cada 180 días para cada nuevo usuario que se cree a partir de dicho cambio:",
+                options: [
+                    "/etc/passpreferences.conf",
+                    "/etc/global_prefs",
+                    "/etc/users.config",
+                    "/etc/login.defs"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "Cuál es el comando que permite averiguar cuándo se ha realizado el último cambio de contraseña de un usuario dado:",
+                options: [
+                    "update-preferences login",
+                    "chage",
+                    "modify_login",
+                    "dpkg-reconfigure userpass"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "La guía CCN-STIC-612 sugiere que no se deben disponer de ficheros con permisos de escritura globales, dado un fichero/home/fichero, indique como corregiría el permiso:",
+                options: [
+                    "chown o-w/home/fichero",
+                    "chmod -c o-w/home/fichero",
+                    "chmod 646/home/fichero",
+                    "chmod -r o+w/home/fichero"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "En los sistemas Linux, indique cómo haría para buscar en el punto de montaje \"/home\" todos aquellos directorios que sean modificables por todos los usuarios:",
+                options: [
+                    "find/home -xdev -fstype d-perm-0002-print",
+                    "find/home-xdev -fstype f-perm-0020-print",
+                    "find/home -xdev -type d-perm-0002 -print",
+                    "find/home-xdev -type f-perm-0002 -print"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "De cara a poder configurar protecciones contra desbordamientos de buffer, necesita conocer información acerca del procesador en el que se está ejecutando la máquina con el sistema operativo Debian recién instalado, indique el comando que le permite obtener dicha información:",
+                options: [
+                    "getcpu",
+                    "cat/proc/cpuinfo",
+                    "cat /etc/processor",
+                    "scancpu"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "En el servidor Linux, ¿cuál es el comando usado para concatenar archivos y mostrar en salida estándar?",
+                options: [
+                    "concatenate",
+                    "concat",
+                    "cat",
+                    "join"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Qué comando se usa en entornos Linux para borrar los trabajos pendientes de la cola de impresión?",
+                options: [
+                    "lpr",
+                    "lprx",
+                    "lprm",
+                    "lpqx"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "Tiene que revisar de forma periódica los eventos del sistema en Windows 10, para ello tras pulsar la combinación de teclas \"Windows + R\", ¿qué es lo que debe escribir a continuación para arrancar el visor de eventos?",
+                options: [
+                    "eventvwr",
+                    "eventviewer",
+                    "services.msc",
+                    "eventsrv"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Qué herramienta, desarrollada por el CCN-CERT, es una plataforma avanzada de sandboxing qué está dedicada al análisis automatizado de múltiples tipos de ficheros que podrían tener algún tipo de comportamiento malicioso?",
+                options: [
+                    "CLARA",
+                    "MARTA",
+                    "PILAR",
+                    "STIC"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Qué herramienta desarrollada por el CCN-CERT, agiliza la labor de análisis de ciberincidentes y permite compartir información de ciberamenazas?",
+                options: [
+                    "LUCIA",
+                    "REYES",
+                    "CLARA",
+                    "MARIA"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se le solicita que estudie qué posibilidades hay, para los puestos Windows existentes, de una solución para poder gestionar las contraseñas de la cuenta local de los equipos unidos al dominio. ¿Qué herramienta podría servir para esta función?",
+                options: [
+                    "SRM",
+                    "LAPS",
+                    "APTICRON",
+                    "TRUECRYPT"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "El 27 de febrero de 2017, CCN-CERT informa que se ha realizado con éxito el primer ataque a SHA-1, ¿qué es SHA-1?",
+                options: [
+                    "Una función hash.",
+                    "Un algoritmo de clave asimétrica.",
+                    "Un proxy a nivel de capa 7.",
+                    "Un algoritmo de clave simétrica."
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "Para preservar la información y poder recuperarla ante un posible borrado generado por un ataque, debe comprar un sistema de copia de seguridad en cintas, para ello se le pide que elija una librería de cintas en la que cada cinta guarde más de 1TB. ¿Cuál de las siguientes es la que cumple la premisa?",
+                options: [
+                    "DLT8000",
+                    "Superdisk LS-120",
+                    "LTO generación 7",
+                    "DDS-4"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Cuántos host son posibles para la red 172.17.8.0/21?",
+                options: [
+                    "2048",
+                    "1022",
+                    "2046",
+                    "4098"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿A qué clase de red pertenece la red 172.17.8.0/21?",
+                options: [
+                    "Clase D",
+                    "Clase A",
+                    "Clase E",
+                    "Clase B"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Cuál es la primera IP disponible para asignar a un host en la red 172.17.8.0/21?",
+                options: [
+                    "172.17.8.1",
+                    "172.17.14.1",
+                    "172.17.8.0",
+                    "172.16.0.1"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "La dirección de broadcast para la red 172.17.8.0/21 es:",
+                options: [
+                    "172.17.14.255",
+                    "172.16.255.255",
+                    "172.17.15.255",
+                    "172.17.8.255"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Qué dirección de host pertenece a la red 172.17.8.0/21?",
+                options: [
+                    "172.17.16.1",
+                    "172.17.7.1",
+                    "172.17.19.143",
+                    "172.17.15.254"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Cuál es, en binario, el valor correspondiente a la IP 172.17.14.2?",
+                options: [
+                    "10101100.00010001.00001110.00000100",
+                    "10101100.00010001.00001110.00000110",
+                    "10101100.00010011.00001110.00000010",
+                    "10101100.00010001.00001110.00000010"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV",
+                question: "Para una red de clase B dada, 172.17.8.0/21, se requiere crear 16 subredes con 126 hosts por subred. ¿Qué máscara de subred sería la correcta para dichas subredes?",
+                options: [
+                    "255.255.255.0",
+                    "255.255.255.128",
+                    "255.255.255.192",
+                    "255.255.255.223"
+                ],
+                correctAnswer: "b"
+            },
+            {
+                block: "Bloque IV",
+                question: "¿Cómo se conoce al mecanismo, que mediante el uso de túneles automáticos de IPv6 sobre IPv4 permite conectar islas IPv6?",
+                options: [
+                    "poxmox",
+                    "taredo",
+                    "6to4",
+                    "nuxeo"
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV",
+                question: "En DHCPv6 (definido en RFC 3315), ¿cuál de los siguientes es un puerto UDP en el que escuchan los servidores y agentes de retransmisión?",
+                options: [
+                    "547",
+                    "995",
+                    "631",
+                    "1521"
+                ],
+                correctAnswer: "a"
+            },
+            {
+                block: "Bloque IV",
+                question: "Se van a reemplazar unos routers existentes por otros más modernos, y proponen usar un protocolo de enrutamiento de estado de enlace. ¿Cuál de los siguientes protocolos es el adecuado?",
+                options: [
+                    "OSPF",
+                    "RIP",
+                    "RIP v2",
+                    "SPF"
+                ],
+                correctAnswer: "a"
+            },
+            // Preguntas de Reserva (Bloque IV)
+            {
+                block: "Bloque IV (Reserva)",
+                question: "En el servidor de dominio con Windows 2012 R2, ¿cuál es el comando de Powershell que muestra el valor de SID de un usuario llamado \"usuario\"?",
+                options: [
+                    "Get-Username usuario -property SID",
+                    "Get-SIDUser -username usuario",
+                    "Get-ADUser -Identity usuario",
+                    "Get-Users -Filter \"usuario\""
+                ],
+                correctAnswer: "c"
+            },
+            {
+                block: "Bloque IV (Reserva)",
+                question: "Se le recomienda que revise qué aplicaciones \"Appx\" tiene instaladas en los puestos Windows 10, para ello, en la consola de Powershell, con permisos de administración, ¿cuál es la sintaxis para listar las aplicaciones \"Appx\" instaladas?",
+                options: [
+                    "Get-PackageAppx -i --AllUsers",
+                    "Get-Package-Appx -AllUsers",
+                    "Get-PackageAppx -AllUsers",
+                    "Get-AppxPackage -AllUsers"
+                ],
+                correctAnswer: "d"
+            },
+            {
+                block: "Bloque IV (Reserva)",
+                question: "¿A partir de qué versión de Windows 10, incluye la posibilidad de configurar las políticas de AppLocker con directivas de grupo?",
+                options: [
+                    "Windows 10 Home.",
+                    "Ninguna lo permite sin software de terceros.",
+                    "Windows 10 Pro.",
+                    "Windows 10 Enterprise."
+                ],
+                correctAnswer: "d"
+            }
+        ];
+
+        // Filter out questions from "Bloque III" and "Bloque III (Reserva)"
+        // This filter now correctly includes only "Bloque IV" and "Bloque IV (Reserva)"
+        const questions = allQuestions.filter(q => q.block.startsWith("Bloque IV"));
+
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null); // To store user's selected answers
+
+        const questionContainerElem = document.getElementById('question-container');
+        const questionNumberElem = document.getElementById('question-number');
+        const questionTextElem = document.getElementById('question-text');
+        const optionsContainerElem = document.getElementById('options-container');
+        const feedbackElem = document.getElementById('feedback');
+        const resultsContainerElem = document.getElementById('results-container');
+        const correctCountElem = document.getElementById('correct-count');
+        const incorrectCountElem = document.getElementById('incorrect-count');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const resetTestBtn = document.getElementById('reset-test-btn');
+
+        const LOCAL_STORAGE_KEY_INDEX = 'testTai2016CurrentIndex';
+        const LOCAL_STORAGE_KEY_ANSWERS = 'testTai2016UserAnswers';
+        const optionLetters = ['a', 'b', 'c', 'd']; // Helper to get option letter index
+
+        /**
+         * Saves the current test state to LocalStorage.
+         */
+        function saveState() {
+            localStorage.setItem(LOCAL_STORAGE_KEY_INDEX, currentQuestionIndex);
+            localStorage.setItem(LOCAL_STORAGE_KEY_ANSWERS, JSON.stringify(userAnswers));
+        }
+
+        /**
+         * Loads the test state from LocalStorage.
+         */
+        function loadState() {
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_KEY_INDEX);
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_KEY_ANSWERS);
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+        }
+
+        /**
+         * Loads and displays the current question and its options.
+         */
+        function loadQuestion() {
+            // Hide results container if visible
+            resultsContainerElem.classList.remove('show');
+            questionContainerElem.style.display = 'block'; // Show question container
+
+            const q = questions[currentQuestionIndex];
+            questionNumberElem.textContent = `Bloque: ${q.block} - Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionTextElem.textContent = q.question;
+            optionsContainerElem.innerHTML = ''; // Clear previous options
+            feedbackElem.classList.remove('show', 'correct', 'incorrect');
+            feedbackElem.textContent = '';
+
+            q.options.forEach((option, index) => {
+                const optionId = `q${currentQuestionIndex}-option${index}`;
+                const radioHtml = `
+                    <label for="${optionId}" class="option-label">
+                        <input type="radio" id="${optionId}" name="question${currentQuestionIndex}" value="${optionLetters[index]}" class="option-input">
+                        <span class="option-text">${optionLetters[index]}) ${option}</span>
+                    </label>
+                `;
+                optionsContainerElem.insertAdjacentHTML('beforeend', radioHtml);
+            });
+
+            // Add event listeners to radio buttons for immediate feedback
+            optionsContainerElem.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', checkAnswer);
+            });
+
+            // Restore user's previous selection if exists
+            if (userAnswers[currentQuestionIndex]) {
+                const selectedRadio = document.querySelector(`input[name="question${currentQuestionIndex}"][value="${userAnswers[currentQuestionIndex]}"]`);
+                if (selectedRadio) {
+                    selectedRadio.checked = true;
+                    // Automatically show feedback if an answer was already selected
+                    checkAnswer();
+                }
+            }
+
+            updateNavigationButtons();
+            enableOptions(true); // Enable options for new question
+            saveState(); // Save state after loading question
+        }
+
+        /**
+         * Updates the state of the navigation buttons (Previous, Next).
+         */
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finalizar Test';
+                nextBtn.classList.remove('btn-primary');
+                nextBtn.classList.add('btn-secondary'); // Change color to indicate final action
+            } else {
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.classList.remove('btn-secondary');
+                nextBtn.classList.add('btn-primary');
+            }
+        }
+
+        /**
+         * Enables or disables the radio button options.
+         * @param {boolean} enable - True to enable, false to disable.
+         */
+        function enableOptions(enable) {
+            const radios = optionsContainerElem.querySelectorAll('input[type="radio"]');
+            radios.forEach(radio => {
+                radio.disabled = !enable;
+            });
+        }
+
+        /**
+         * Handles the selection of an option.
+         * Checks the user's selected answer against the correct answer and provides feedback.
+         */
+        function checkAnswer() {
+            const selectedOption = document.querySelector(`input[name="question${currentQuestionIndex}"]:checked`);
+            const q = questions[currentQuestionIndex];
+            feedbackElem.classList.add('show');
+            enableOptions(false); // Disable options after checking
+
+            if (selectedOption) {
+                userAnswers[currentQuestionIndex] = selectedOption.value; // Store user's answer
+                if (selectedOption.value === q.correctAnswer) {
+                    feedbackElem.classList.remove('incorrect');
+                    feedbackElem.classList.add('correct');
+                    feedbackElem.textContent = '¡Correcto!';
+                } else {
+                    feedbackElem.classList.remove('correct');
+                    feedbackElem.classList.add('incorrect');
+                    feedbackElem.innerHTML = `Incorrecto. La respuesta correcta es: <span class="correct-answer">${q.correctAnswer.toUpperCase()}) ${q.options[optionLetters.indexOf(q.correctAnswer)]}</span>`;
+                }
+            } else {
+                // This case should ideally not happen with 'change' event on radio buttons
+                feedbackElem.classList.remove('correct', 'incorrect');
+                feedbackElem.textContent = 'Por favor, selecciona una opción.';
+            }
+            saveState(); // Save state after checking answer
+        }
+
+        /**
+         * Handles the "Siguiente" (Next) button click.
+         * Moves to the next question or finishes the test.
+         */
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                // Test finished, show results
+                showResults();
+            }
+        }
+
+        /**
+         * Handles the "Anterior" (Previous) button click.
+         * Moves to the previous question.
+         */
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        /**
+         * Resets the test to its initial state and clears LocalStorage.
+         */
+        function resetTest() {
+            currentQuestionIndex = 0;
+            userAnswers.fill(null);
+            localStorage.removeItem(LOCAL_STORAGE_KEY_INDEX);
+            localStorage.removeItem(LOCAL_STORAGE_KEY_ANSWERS);
+            loadQuestion();
+        }
+
+        /**
+         * Calculates and displays the test results (correct and incorrect answers).
+         */
+        function showResults() {
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+
+            questions.forEach((q, index) => {
+                if (userAnswers[index] !== null) {
+                    if (userAnswers[index] === q.correctAnswer) {
+                        correctAnswers++;
+                    } else {
+                        incorrectAnswers++;
+                    }
+                }
+            });
+
+            // Hide question container and show results container
+            questionContainerElem.style.display = 'none';
+            resultsContainerElem.classList.add('show');
+
+            correctCountElem.textContent = correctAnswers;
+            incorrectCountElem.textContent = incorrectAnswers;
+
+            // Disable navigation buttons when results are shown, only reset is active
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            nextBtn.textContent = 'Siguiente'; // Reset button text
+            nextBtn.classList.remove('btn-secondary');
+            nextBtn.classList.add('btn-primary');
+        }
+
+        // Event Listeners
+        nextBtn.addEventListener('click', nextQuestion);
+        prevBtn.addEventListener('click', prevQuestion);
+        resetTestBtn.addEventListener('click', resetTest);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState(); // Load state before initial question load
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>
+
+

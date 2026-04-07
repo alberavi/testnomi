@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI-L Interactivo 2017</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .question-card {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+        .options label:hover:not(.disabled-option) {
+            background-color: #eef2ff;
+            border-color: #818cf8;
+        }
+        .options input[type="radio"] {
+            display: none;
+        }
+        .options input[type="radio"] + span {
+            display: block;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Style for selected correct answer */
+        .options input[type="radio"]:checked + span.correct-option-feedback {
+            background-color: #10b981; /* Green */
+            color: #fff;
+            border-color: #10b981;
+        }
+        /* Style for selected wrong answer */
+        .options input[type="radio"]:checked + span.wrong-option-feedback {
+            background-color: #ef4444; /* Red */
+            color: #fff;
+            border-color: #ef4444;
+        }
+        /* Style for correct answer when a wrong one was chosen */
+        .options .correct-highlight {
+            background-color: #d1fae5; /* Light green for correct answer highlight */
+            border-color: #10b981;
+            color: #1f2937;
+        }
+        .disabled-option {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .submit-button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            border: none;
+        }
+        .submit-button:hover {
+            background-color: #4338ca;
+        }
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f4f8;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+        }
+        .result-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e7ff;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .correct-answer {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .wrong-answer {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .feedback-text {
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .correct-feedback-text {
+            color: #10b981;
+        }
+        .wrong-feedback-text {
+            color: #ef4444;
+        }
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background-color: #6b7280;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+        .nav-button:hover {
+            background-color: #4b5563;
+        }
+        .nav-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI-L 2017</h1>
+
+        <div id="test-container"></div>
+
+        <div class="navigation-buttons">
+            <button id="prev-button" class="nav-button" disabled>Anterior</button>
+            <button id="next-button" class="nav-button">Siguiente</button>
+        </div>
+
+        <button id="submit-test" class="submit-button mt-6 hidden">Finalizar Test</button>
+        <button id="reset-test" class="submit-button mt-6 bg-red-500 hover:bg-red-600">Reiniciar Test</button>
+
+
+        <div id="results" class="results-section hidden">
+            <h2 class="section-title">Resultados del Test</h2>
+            <div id="results-content"></div>
+            <button id="retake-test" class="submit-button mt-6">Volver a Intentar</button>
+        </div>
+    </div>
+
+    <script>
+        // Preguntas y opciones del test de 2017 (Primera Parte)
+        const allQuestions = [
+            // BLOQUE IV (2017)
+            {
+                id: 'B4-P1',
+                question: 'Necesita saber si en el servidor Linux, que está actualmente en funcionamiento, está instalado el paquete que envía anónimamente estadísticas a los desarrolladores sobre los paquetes que más se usan en el servidor. ¿Cuál es el nombre del paquete para poder localizarlo?',
+                options: {a: 'installed-pkg', b: 'popularity-contest', c: 'debian-poll', d: 'debian-comunity'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P2',
+                question: 'En la nueva máquina Linux, recién instalada, le indican que NO está instalado el servidor de SSH. Indique el comando para proceder a su instalación:',
+                options: {a: 'apt-get install ssh', b: 'apt install sshd', c: 'aptitude openssh-server', d: 'dpkg -U ssh-server'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P3',
+                question: '¿Qué paquete en Linux, equivalente al htop que muestra el uso de CPU, permite mostrar información de E/S del disco?',
+                options: {a: 'disk-status', b: 'iotop', c: 'zzuf', d: 'uisp'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P4',
+                question: 'Tras instalar postgreSQL en el nuevo servidor Linux, usando el paquete "postgresql-all". ¿Qué comando le permitirá comprobar que el servidor postgres está ejecutándose, usando el usuario postgres?',
+                options: {a: 'ps -ef postgres', b: 'ps -v server', c: 'ps -U postgres -u postgres u', d: 'ps--process=postgres'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P5',
+                question: 'Para establecer las reglas de firewall oportunas, necesitamos conocer el puerto por defecto en el que escucha por defecto el servidor de postgreSQL, ¿cuál de los siguientes es?',
+                options: {a: '80', b: '5432', c: '563', d: '8080'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P6',
+                question: 'El comando del sistema, desde el usuario postgres, que se puede usar para crear usuarios en postgreSQL es:',
+                options: {a: 'createuser', b: 'admin-postgresql', c: 'su-u postgres-add', d: 'posgresql-accounts'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P7',
+                question: 'Para realizar un backup de todas las bases de datos que están en el servidor antiguo, desde el usuario postgres, es el comando:',
+                options: {a: 'pg_dumpall > ficherosalida', b: 'postgres-backup-output=ficherosalida', c: 'db-backup -O ficherosalida', d: 'export-db ficherosalida'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P8',
+                question: 'Se le ha solicitado configurar un RAID 5, ¿cuál es el número mínimo de discos requerido para ser implementada esta configuración?',
+                options: {a: '2', b: '1', c: '4', d: '3'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P9',
+                question: 'Le solicitan que recomiende una solución que proporcione un entorno de virtualización. ¿Cuál de las siguientes propuestas elegiría?',
+                options: {a: 'Cassandra', b: 'Proxmox VE', c: 'Gkrellm', d: 'Hadoop'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P10',
+                question: 'Se ha seleccionado Zabbix para monitorizar los elementos de la red. Como requisito para Zabbix, se necesita instalar mariaDB en la máquina Linux. Una vez ha instalado el paquete con la orden apt correspondiente, ¿qué comando debe ejecutar para lanzar el script de securización de mariaDB?',
+                options: {a: 'mysql_secure_installation', b: 'mariadb-secure-script', c: 'dpkg--configure --security mariadb', d: '/etc/init.d/mariadb-security-server start'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P11',
+                question: '¿Con qué comando reiniciaría el agente de Zabbix, con los privilegios adecuados?',
+                options: {a: 'start-stop-daemon zabbix-agent --restart', b: '/etc/init/zabbix-agent restart', c: 'systemctl restart zabbix-agent', d: '/usr/bin/zabbix-agent restart'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P12',
+                question: 'Necesita verificar que en el servidor de Zabbix, su base de datos está escuchando por el puerto de mysql. ¿Qué opción de las siguientes le permitiría obtener esta información?',
+                options: {a: 'ifconfig --list --port=3306', b: 'ss -1 | grep mysql', c: 'netstat -g | grep 3306', d: 'netstat -i | grep mysql'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P13',
+                question: 'En el shell Bash del servidor Linux, ¿qué variable interna permite mostrar el directorio actual de trabajo?',
+                options: {a: '$BashPID', b: '$PWD', c: '$$', d: 'No existe, hay que capturar la salida de un comando.'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P14',
+                question: 'A las medidas para prevenir el abuso de datos de identificación y autenticación, impidiendo que alguien se haga pasar por quien no es, se les denomina:',
+                options: {a: 'Anti-spam', b: 'Anti-spoof', c: 'Eavesdropping', d: 'Anti-spyware'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P15',
+                question: '¿Cómo podríamos localizar los ficheros binarios, fuentes o páginas de manual para un comando dado, por ejemplo, para el comando llamado zabbix?',
+                options: {a: 'dpkg --get-selections --find zabbix', b: 'apropos zabbix', c: 'findmnt zabbix', d: 'whereis zabbix'},
+                correctAnswer: 'd'
+            },
+            {
+                id: 'B4-P16',
+                question: 'Durante la instalación del nuevo servidor de bases de datos en Linux, se necesita sincronizar de forma periódica ciertas carpetas del servidor antiguo en el nuevo hasta que se haga el cambio. ¿Qué comando de Linux debería ejecutarse?',
+                options: {a: 'robocopy', b: 'rsync', c: 'rtar', d: 'xcp'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P17',
+                question: 'Dada la siguiente dirección IP, 10.31.93.128/29, indique cuál es su dirección de broadcast:',
+                options: {a: '10.31.93.129', b: '10.31.93.135', c: '10.31.93.128', d: '10.31.93.255'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P18',
+                question: '¿Cuál es, en binario, la primera IP disponible para asignar en la red 10.31.93.128/29?',
+                options: {a: '00001010.00011110.01011101.10000000', b: '00001010.00001111.01011101.10010110', c: '00001010.00011111.01011101.10000001', d: '00011010.00011111.01011101.10010101'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P19',
+                question: '¿A qué red pertenece el equipo 10.31.93.25/29?',
+                options: {a: '10.31.93.24/29', b: '10.31.93.31/29', c: '10.31.93.30/29', d: '10.31.93.21/29'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P20',
+                question: 'Entre los comandos que podemos ejecutar desde Linux y que nos muestran la versión del sistema operativo NO se encontraría por tener otra finalidad el siguiente:',
+                options: {a: 'lsb_release -a', b: 'uname -n', c: 'cat /etc/*release', d: 'cat/etc/issue'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P21',
+                question: 'SSH permite restringir el acceso a un conjunto de usuarios, o a un determinado grupo, utilizando determinadas directivas desde su fichero de configuración. ¿Cuál de los siguientes comandos, le permite conocer que usuarios pertenecen a un grupo llamado usuarios_ssh?',
+                options: {a: 'cat/etc/group | grep usuarios_ssh', b: 'sysadmin-check-group usuarios_ssh', c: 'groupadd --list | grep usuarios_ssh', d: 'grep usuarios_ssh /etc/* -R-S'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P22',
+                question: 'En la máquina Linux, ¿cómo eliminaría al usuario denominado "u" de un grupo de usuarios denominado "usuarios_ssh"?',
+                options: {a: 'deluser u usuarios_ssh', b: 'groupdel -u u usuarios_ssh', c: 'groupmod --delete u usuarios_ssh', d: 'gpasswd u usuarios_ssh'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P23',
+                question: 'En el servidor Linux, ¿qué fichero permite comprobar el acceso a hosts concretos al sistema?',
+                options: {a: '/etc/hosts.allow', b: '/etc/sshd/sshd.conf', c: '/etc/remote.conf', d: '/etc/hosts'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P24',
+                question: '¿Con qué comando se puede crear un nuevo grupo de volumen de LVM en el servidor Linux?',
+                options: {a: 'vgcreate', b: 'volume-add', c: 'lvm-add-volume', d: 'pvcreate'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P25',
+                question: 'En el servidor Linux en LVM, ¿con qué comando podemos crear un volumen lógico?',
+                options: {a: 'pvcreate -I', b: 'lvm-add-logical', c: 'lvcreate', d: 'lvadd'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P26',
+                question: 'En el puesto Windows de usuario final, usando Powershell, se quiere obtener un listado del software instalado con Windows Installer en cada uno de los puestos cliente que están usando Windows 7. ¿Cómo podría obtener esta información?',
+                options: {a: 'Get-PackageProvider --list', b: 'Get-Object installed-software', c: 'Get-WmiObject win32_product', d: 'Get-InstalledSoftware'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P27',
+                question: 'En el puesto Windows de usuario final, ¿qué comando de Powershell nos permitirá obtener el historial de comandos introducidos?',
+                options: {a: 'Get-Last', b: 'Get-History', c: '!last', d: 'Get-Cmdlet'},
+                correctAnswer: 'b'
+            },
+            {
+                id: 'B4-P28',
+                question: 'En el puesto Windows de usuario final, usando Powershell, ¿cuál sería el comando para poder obtener el listado de servicios en el puesto?',
+                options: {a: 'Get-Service', b: 'Get-InstalledServices', c: 'Get-Object Service', d: 'Set-Command Services.msc'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-P29',
+                question: 'Es una herramienta desarrollada por el CCN-CERT para la gestión de ciberincidentes en las entidades del ámbito de aplicación del ENS, con ella se pretende mejorar la coordinación entre el CERT y los distintos organismos y organizaciones con las que colabora:',
+                options: {a: 'VANESA', b: 'CARMEN', c: 'LUCIA', d: 'PILAR'},
+                correctAnswer: 'c'
+            },
+            {
+                id: 'B4-P30',
+                question: 'En postgreSQL, ¿qué comando permite desde consola, en la máquina Linux y con el usuario postgres, crear una base de datos?',
+                options: {a: 'createdb', b: 'db_create', c: 'ps-create-database', d: 'psql-create'},
+                correctAnswer: 'a'
+            },
+            // Preguntas de reserva (Bloque IV)
+            {
+                id: 'B4-PR1',
+                question: 'Siendo "acceda" el nombre del backup realizado, y "acceda" el nombre de la base de datos en la que se quiere hacer una restauración de una copia previa. Indique cuál es el comando para realizar dicha restauración de una copia previa. Indique cuál es el comando para realizar dicha restauración:',
+                options: {a: 'psql acceda < acceda', b: 'restore acceda -input=acceda', c: 'pg_rescue -input=acceda', d: 'db_restore <acceda'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-PR2',
+                question: 'En Linux, ¿que comando debería usar añadir un volumen físco ya inicializado a un grupo de volúmenes existente en LVM?',
+                options: {a: 'vgextend', b: 'volume-extend', c: 'lvm--extend-volume', d: 'pvadd'},
+                correctAnswer: 'a'
+            },
+            {
+                id: 'B4-PR3',
+                question: 'Si la versión del sistema operativo de los macOS de la unidad administrativa es "Product Version:10.13.4". ¿Con qué nombre de versión, entre las que siguen, se corresponde?',
+                options: {a: 'El Capitán', b: 'Maveriks', c: 'Yosemite', d: 'High Sierra'},
+                correctAnswer: 'd'
+            }
+        ];
+
+        const questions = allQuestions; // Se incluyen todas las preguntas ahora.
+
+        let userAnswers = {};
+        let currentQuestionIndex = 0;
+
+        const testContainer = document.getElementById('test-container');
+        const submitButton = document.getElementById('submit-test');
+        const resultsSection = document.getElementById('results');
+        const resultsContent = document.getElementById('results-content');
+        const retakeTestButton = document.getElementById('retake-test');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const resetButton = document.getElementById('reset-test'); // Nuevo botón de reinicio
+
+        // Claves para LocalStorage
+        const LOCAL_STORAGE_ANSWERS_KEY = 'taiTestAnswers';
+        const LOCAL_STORAGE_INDEX_KEY = 'taiTestCurrentIndex';
+
+        // Función para guardar el estado en LocalStorage
+        function saveState() {
+            localStorage.setItem(LOCAL_STORAGE_ANSWERS_KEY, JSON.stringify(userAnswers));
+            localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, currentQuestionIndex);
+        }
+
+        // Función para cargar el estado desde LocalStorage
+        function loadState() {
+            const savedAnswers = localStorage.getItem(LOCAL_STORAGE_ANSWERS_KEY);
+            const savedIndex = localStorage.getItem(LOCAL_STORAGE_INDEX_KEY);
+
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex, 10);
+            }
+        }
+
+        // Función para verificar la respuesta seleccionada y proporcionar retroalimentación inmediata
+        function checkAnswer(questionId, selectedValue) {
+            const questionData = questions.find(q => q.id === questionId);
+            if (!questionData) return;
+
+            userAnswers[questionId] = selectedValue; // Almacenar la respuesta del usuario
+            saveState(); // Guardar el estado después de cada respuesta
+
+            const optionsDiv = document.querySelector(`#test-container .question-card .options`);
+            const allRadios = optionsDiv.querySelectorAll('input[type="radio"]');
+            const allSpans = optionsDiv.querySelectorAll('label span');
+
+            // Deshabilitar todos los botones de radio para esta pregunta
+            allRadios.forEach(radio => radio.disabled = true);
+            allSpans.forEach(span => span.parentElement.classList.add('disabled-option'));
+
+            const selectedSpan = optionsDiv.querySelector(`input[value="${selectedValue}"] + span`);
+
+            if (selectedValue === questionData.correctAnswer) {
+                selectedSpan.classList.add('correct-option-feedback');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text correct-feedback-text';
+                feedbackMessage.textContent = '¡Correcto!';
+                optionsDiv.appendChild(feedbackMessage);
+            } else {
+                selectedSpan.classList.add('wrong-option-feedback');
+                // Resaltar la respuesta correcta
+                const correctSpan = optionsDiv.querySelector(`input[value="${questionData.correctAnswer}"] + span`);
+                correctSpan.classList.add('correct-highlight');
+                // Añadir un mensaje de retroalimentación
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = 'feedback-text wrong-feedback-text';
+                feedbackMessage.textContent = 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+        }
+
+        // Función para renderizar una pregunta
+        function renderQuestion(index) {
+            testContainer.innerHTML = ''; // Limpiar el contenedor
+            const questionData = questions[index];
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `<strong>${index + 1}.</strong> ${questionData.question}`;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options';
+
+            const hasAnswered = userAnswers.hasOwnProperty(questionData.id);
+
+            for (const key in questionData.options) {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `question-${questionData.id}`;
+                input.value = key;
+                input.disabled = hasAnswered; // Deshabilitar si ya ha sido respondida
+                input.onclick = (e) => checkAnswer(questionData.id, e.target.value); // Usar onclick para retroalimentación inmediata
+
+                const span = document.createElement('span');
+                span.textContent = `${key}) ${questionData.options[key]}`;
+
+                label.appendChild(input);
+                label.appendChild(span);
+                optionsDiv.appendChild(label);
+
+                // Si ya se ha respondido, seleccionar la opción del usuario y aplicar estilos de feedback
+                if (hasAnswered) {
+                    label.classList.add('disabled-option');
+                    if (userAnswers[questionData.id] === key) {
+                        input.checked = true; // Seleccionar la respuesta del usuario
+                        if (key === questionData.correctAnswer) {
+                            span.classList.add('correct-option-feedback');
+                        } else {
+                            span.classList.add('wrong-option-feedback');
+                        }
+                    } else if (key === questionData.correctAnswer) {
+                        span.classList.add('correct-highlight');
+                    }
+                }
+            }
+            questionCard.appendChild(optionsDiv);
+            testContainer.appendChild(questionCard);
+
+            // Si ya se ha respondido, añadir el mensaje de feedback
+            if (hasAnswered) {
+                const feedbackMessage = document.createElement('p');
+                feedbackMessage.className = `feedback-text ${userAnswers[questionData.id] === questionData.correctAnswer ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedbackMessage.textContent = userAnswers[questionData.id] === questionData.correctAnswer ? '¡Correcto!' : 'Incorrecto. La respuesta correcta está resaltada.';
+                optionsDiv.appendChild(feedbackMessage);
+            }
+
+            updateNavigationButtons();
+        }
+
+        // Función para actualizar el estado de los botones de navegación
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+
+            if (currentQuestionIndex === questions.length - 1) {
+                submitButton.classList.remove('hidden');
+            } else {
+                submitButton.classList.add('hidden');
+            }
+        }
+
+        // Event listeners para los botones de navegación
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                saveState(); // Guardar el estado al cambiar de pregunta
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                saveState(); // Guardar el estado al cambiar de pregunta
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Función para enviar el test y mostrar resultados
+        submitButton.addEventListener('click', () => {
+            let correctAnswers = 0;
+            let wrongAnswers = 0;
+            resultsContent.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[q.id];
+                const isCorrect = userAnswer === q.correctAnswer;
+
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const questionTitle = document.createElement('p');
+                questionTitle.innerHTML = `<strong>${index + 1}. ${q.question}</strong>`;
+                resultItem.appendChild(questionTitle);
+
+                const userAnswerText = document.createElement('p');
+                userAnswerText.innerHTML = `Tu respuesta: <span class="${isCorrect ? 'correct-answer' : 'wrong-answer'}">${userAnswer ? `${userAnswers[q.id]}) ${q.options[userAnswer]}` : 'Sin responder'}</span>`;
+                resultItem.appendChild(userAnswerText);
+
+                const correctAnswerText = document.createElement('p');
+                correctAnswerText.innerHTML = `Respuesta correcta: <span class="correct-answer">${q.correctAnswer}) ${q.options[q.correctAnswer]}</span>`;
+                resultItem.appendChild(correctAnswerText);
+
+                const feedback = document.createElement('p');
+                feedback.className = `feedback-text ${isCorrect ? 'correct-feedback-text' : 'wrong-feedback-text'}`;
+                feedback.textContent = isCorrect ? '¡Correcto!' : 'Incorrecto.';
+                resultItem.appendChild(feedback);
+
+                resultsContent.appendChild(resultItem);
+
+                if (isCorrect) {
+                    correctAnswers++;
+                } else {
+                    wrongAnswers++;
+                }
+            });
+
+            const finalScore = document.createElement('h3');
+            finalScore.className = 'section-title mt-4';
+            finalScore.textContent = `Puntuación final: ${correctAnswers} aciertos y ${wrongAnswers} fallos de ${questions.length} preguntas.`;
+            resultsContent.prepend(finalScore); // Añadir la puntuación al principio
+
+            testContainer.classList.add('hidden');
+            submitButton.classList.add('hidden');
+            prevButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            resetButton.classList.add('hidden'); // Ocultar el botón de reinicio al finalizar
+            resultsSection.classList.remove('hidden');
+        });
+
+        // Función para volver a intentar el test (desde la sección de resultados)
+        retakeTestButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar LocalStorage
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY);   // Limpiar LocalStorage
+            resultsSection.classList.add('hidden');
+            testContainer.classList.remove('hidden');
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            resetButton.classList.remove('hidden'); // Mostrar el botón de reinicio
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Nuevo botón para reiniciar el test completamente (desde cualquier punto)
+        resetButton.addEventListener('click', () => {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            localStorage.removeItem(LOCAL_STORAGE_ANSWERS_KEY); // Limpiar LocalStorage
+            localStorage.removeItem(LOCAL_STORAGE_INDEX_KEY);   // Limpiar LocalStorage
+            resultsSection.classList.add('hidden'); // Asegurarse de que la sección de resultados esté oculta
+            testContainer.classList.remove('hidden'); // Asegurarse de que el contenedor del test esté visible
+            prevButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+            submitButton.classList.add('hidden'); // Ocultar el botón de finalizar
+            renderQuestion(currentQuestionIndex);
+        });
+
+        // Inicializar el test
+        loadState(); // Cargar el estado al inicio
+        renderQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>
+
