@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo - Bloque IV Tema 08</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-indigo-700 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold uppercase tracking-tight">TEST BLOQUE IV - TEMA 08 PROTOCOLOS DE RED Y TRANSPORTE</h1>
+            <p class="text-indigo-100 mt-2 font-medium">Protocolos de Red y de Transporte: IPv4, IPv6, TCP y UDP</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-indigo-500 h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="p-6">
+            <!-- Quiz UI -->
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-6 text-sm font-bold text-slate-500 uppercase tracking-widest">
+                    <span id="question-number">Pregunta 1 de 33</span>
+                    <span id="score-live">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-lg font-semibold text-slate-800 mb-6 leading-relaxed"></div>
+
+                <div id="options-container" class="space-y-3"></div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="px-6 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition-colors">
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-md active:transform active:scale-95">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results UI -->
+            <div id="results-ui" class="hidden text-center py-8">
+                <h2 class="text-3xl font-black text-slate-900 mb-2">RESULTADOS</h2>
+                <p class="text-slate-500 mb-8 font-medium">Evaluación de Protocolos TCP/IP</p>
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-green-50 rounded-xl border border-green-100 shadow-sm">
+                        <div id="res-correct" class="text-3xl font-black text-green-600">0</div>
+                        <div class="text-[10px] text-green-700 uppercase font-black tracking-tighter">Correctas</div>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-xl border border-red-100 shadow-sm">
+                        <div id="res-incorrect" class="text-3xl font-black text-red-600">0</div>
+                        <div class="text-[10px] text-red-700 uppercase font-black tracking-tighter">Incorrectas</div>
+                    </div>
+                    <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 shadow-sm">
+                        <div id="res-empty" class="text-3xl font-black text-amber-600">0</div>
+                        <div class="text-[10px] text-amber-700 uppercase font-black tracking-tighter">Omitidas</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black hover:bg-black transition-all shadow-lg uppercase tracking-widest">
+                    Reiniciar Evaluación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. En que RFC se define el protocolo IPv4:", a: ["RFC 791", "RFC 795", "RFC 707", "RFC 792"], c: 0 },
+            { q: "2. ¿Cuáles son los mecanismos que permitirán que IPv4 e IPv6 puedan funcionar simultáneamente?", a: ["Doble pila, Túneles y Transcripción.", "Doble túnel, pila y Traducción.", "Opción Hop-by-Hop, Túneles y Transcripción.", "Doble pila, Túneles y Traducción."], c: 3 },
+            { q: "3. La longitud de una dirección IPv4 es de:", a: ["64 bits", "128 bits", "32 bits", "256 bits"], c: 2 },
+            { q: "4. ¿Cuál de las siguientes afirmaciones con respecto al direccionamiento IPv6 es FALSA?", a: ["Es innecesario la implementación de mecanismos de NAT.", "La compatibilidad con IPSec es un requisito.", "Los 64 bits de menor peso corresponden con el identificador de interfaz.", "Las direcciones tienen una longitud de 32 bytes."], c: 3 },
+            { q: "5. ¿Cuántos bits tiene el campo Clase de Tráfico en IPv6?", a: ["8", "6", "7", "10"], c: 0 },
+            { q: "6. ¿Cuáles de las siguientes son características del protocolo UDP?", a: ["Orientado a conexión, pertenece a la capa de transporte del modelo OSI y trabaja con bytes.", "No orientado a conexión, pertenece a la capa de transporte del modelo OSI y trabaja con datagramas.", "No orientado a conexión, pertenece a la capa de red y trabaja con datagramas.", "Orientado a conexión, pertenece a la capa de red y trabaja con bytes."], c: 1 },
+            { q: "7. ¿Cuál es el tamaño máximo de un datagrama UDP en bytes (incluida la cabecera)?", a: ["1500", "65535", "65507", "8"], c: 1 },
+            { q: "8. En una cabecera IPv4, ¿qué campo evita que los paquetes circulen indefinidamente por la red?", a: ["TTL (Time To Live)", "Protocolo", "CheckSum", "Offset"], c: 0 },
+            { q: "9. El protocolo ARP se utiliza para obtener:", a: ["La dirección IP a partir de una dirección MAC.", "La dirección MAC a partir de una dirección IP.", "La dirección del servidor DNS.", "La ruta hacia el gateway por defecto."], c: 1 },
+            { q: "10. ¿Cuál de las siguientes es una dirección IPv6 abreviada válida para 2001:0db8:0000:0000:0000:0000:1428:57ab?", a: ["2001:db8:1428:57ab", "2001:db8::1428:57ab", "2001:db8:0:0:0:0:1428:57ab", "2001:db8::0::1428:57ab"], c: 1 },
+            { q: "11. En TCP, el proceso de establecimiento de conexión se llama:", a: ["Handshake de 2 vías", "Three-way handshake (saludo de 3 vías)", "Open connection", "Syn-Ack process"], c: 1 },
+            { q: "12. ¿Qué campo de la cabecera TCP se utiliza para el control de flujo mediante el mecanismo de ventana deslizante?", a: ["Window size (Tamaño de ventana)", "Secuence Number", "Acknowledgment Number", "Urgent Pointer"], c: 0 },
+            { q: "13. ¿Cuál es el puerto por defecto para el protocolo HTTPS?", a: ["80", "8080", "443", "22"], c: 2 },
+            { q: "14. El protocolo ICMP opera en la capa de:", a: ["Acceso a red", "Internet", "Transporte", "Aplicación"], c: 1 },
+            { q: "15. Una dirección IPv4 de Clase C tiene una máscara de red por defecto de:", a: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.255"], c: 2 },
+            { q: "16. ¿Qué protocolo se encarga de asignar direcciones IP de forma dinámica en una red?", a: ["DNS", "DHCP", "SNMP", "RIP"], c: 1 },
+            { q: "17. En IPv6, ¿cómo se denomina a la dirección que identifica a un grupo de interfaces, de forma que el paquete se entrega a la más cercana?", a: ["Multicast", "Unicast", "Anycast", "Broadcast"], c: 2 },
+            { q: "18. ¿Qué flag de la cabecera TCP se activa para finalizar una conexión de forma ordenada?", a: ["SYN", "ACK", "FIN", "RST"], c: 2 },
+            { q: "19. ¿Cuál es el tamaño de la cabecera básica de IPv6?", a: ["20 bytes", "40 bytes", "64 bytes", "32 bytes"], c: 1 },
+            { q: "20. El campo 'Protocolo' de la cabecera IPv4 indica:", a: ["La versión de IP.", "El protocolo de la capa superior (TCP, UDP, ICMP, etc.).", "La prioridad del paquete.", "La longitud total del encabezado."], c: 1 },
+            { q: "21. ¿Qué protocolo utiliza el comando 'GET' para solicitar recursos a un servidor?", a: ["FTP", "SMTP", "HTTP", "SNMP"], c: 2 },
+            { q: "22. La fragmentación de paquetes en IPv6 es realizada por:", a: ["Los routers intermedios.", "El host de origen únicamente.", "El host de destino únicamente.", "No existe fragmentación en IPv6."], c: 1 },
+            { q: "23. ¿Qué código HTTP indica que el recurso solicitado no ha sido encontrado?", a: ["200 OK", "301 Moved Permanently", "403 Forbidden", "404 Not Found"], c: 3 },
+            { q: "24. En IPv4, la dirección 127.0.0.1 se reserva para:", a: ["Broadcast de red local.", "Multicast.", "Loopback (retroalimentación) del propio host.", "Configuración automática APIPA."], c: 2 },
+            { q: "25. ¿Qué protocolo es fundamental para la resolución de nombres de dominio en direcciones IP?", a: ["ARP", "DNS", "BGP", "ICMP"], c: 1 },
+            { q: "26. ¿Cuál es el rango de puertos efímeros o dinámicos según la IANA?", a: ["0 - 1023", "1024 - 49151", "49152 - 65535", "1 - 65535"], c: 2 },
+            { q: "27. El protocolo SSH utiliza habitualmente el puerto:", a: ["21", "22", "23", "25"], c: 1 },
+            { q: "28. ¿Qué campo de la cabecera IPv4 permite realizar calidad de servicio (QoS)?", a: ["IHL", "Tipo de Servicio (ToS) / DSCP", "Flags", "Padding"], c: 1 },
+            { q: "29. ¿Cuáles son los subprotocolos de encriptación de TLS?", a: ["Register Protocol y Handshaw Protocol.", "HTTPS y SSL.", "Record Protocol y Handshake Protocol", "Ninguna es correcta."], c: 2 },
+            { q: "30. El protocolo TLS (Transport Layer Security):", a: ["Es solo una versión actualizada y más segura de SSL.", "Es un protocolo seguro de transferencia de hipertexto.", "Es la primera versión de SSL.", "Tiene el inconveniente de que cuando el servidor envía la clave pública esta puede ser falsificada por un intruso."], c: 0 },
+            { q: "31. Si un servidor actúa de proxy y recibe una respuesta inválida del servidor destino, ¿qué código de error devuelve?", a: ["504 Gateway Timeout", "502 Bad Gateway", "500 Internal Server Error", "501 Not Implemented"], c: 1 },
+            { q: "32. ¿Cuál de las siguientes NO es una cabecera de extensión en IPv6?", a: ["Autenticación", "Opción Hop-by-Hop.", "Tiempo de vida (TTL).", "Enrutado"], c: 2 },
+            { q: "33. Indique la afirmación INCORRECTA en relación a protocolos y su puerto conocido:", a: ["TELNET, puerto 23.", "POP 3, puerto 110.", "SMTP, puerto 161.", "FTP, puerto 21."], c: 2 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_T8')) || {};
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('question-number').innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            document.getElementById('question-text').innerText = data.q;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-xl border-2 border-slate-200 option-transition hover:border-indigo-400 hover:bg-indigo-50 font-medium text-slate-700';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) btn.classList.add('correct');
+                    else if (i === answers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? "Ver Resultados" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_T8', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            document.getElementById('score-live').innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) showResults();
+            else if (currentIdx < 0) currentIdx = 0;
+            else loadQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_T8');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        document.getElementById('prev-btn').onclick = () => changeQuestion(-1);
+        document.getElementById('next-btn').onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>
