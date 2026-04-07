@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo - Bloque IV Tema 07</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-cyan-700 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold uppercase tracking-tight">TEST BLOQUE IV - TEMA 07 TCP-IP</h1>
+            <p class="text-cyan-100 mt-2 font-medium">Arquitectura de Redes: Modelo OSI y TCP/IP</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-cyan-500 h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="p-6">
+            <!-- Quiz UI -->
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-6 text-sm font-bold text-slate-500 uppercase tracking-widest">
+                    <span id="question-number">Pregunta 1 de 22</span>
+                    <span id="score-live">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-lg font-semibold text-slate-800 mb-6 leading-relaxed"></div>
+
+                <div id="options-container" class="space-y-3"></div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="px-6 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition-colors">
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="px-6 py-2 bg-cyan-600 text-white rounded-lg font-bold hover:bg-cyan-700 disabled:opacity-50 transition-all shadow-md active:transform active:scale-95">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results UI -->
+            <div id="results-ui" class="hidden text-center py-8">
+                <h2 class="text-3xl font-black text-slate-900 mb-2">RESULTADOS</h2>
+                <p class="text-slate-500 mb-8 font-medium">Evaluación de Arquitectura de Redes</p>
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-green-50 rounded-xl border border-green-100 shadow-sm">
+                        <div id="res-correct" class="text-3xl font-black text-green-600">0</div>
+                        <div class="text-[10px] text-green-700 uppercase font-black tracking-tighter">Correctas</div>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-xl border border-red-100 shadow-sm">
+                        <div id="res-incorrect" class="text-3xl font-black text-red-600">0</div>
+                        <div class="text-[10px] text-red-700 uppercase font-black tracking-tighter">Incorrectas</div>
+                    </div>
+                    <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 shadow-sm">
+                        <div id="res-empty" class="text-3xl font-black text-amber-600">0</div>
+                        <div class="text-[10px] text-amber-700 uppercase font-black tracking-tighter">Omitidas</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black hover:bg-black transition-all shadow-lg uppercase tracking-widest">
+                    Reiniciar Evaluación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. El modelo OSI está compuesto por las siguientes capas:", a: ["APLICACIÓN, TRANSPORTE, INTERNET, ACCESO AL MEDIO", "APLICACIÓN, PRESENTACIÓN, SESIÓN, TRANSPORTE, INTERNET, ENLACE DATOS, FÍSICA", "APLICACIÓN, PRESENTACIÓN, INTERNET, ACCESO AL MEDIO.", "APLICACIÓN, PRESENTACIÓN, SESIÓN, TRANSPORTE, RED, ENLACE DATOS, FÍSICA."], c: 3 },
+            { q: "2. El modelo TCP/IP está compuesto por las siguientes capas:", a: ["APLICACIÓN, PRESENTACIÓN, INTERNET, ACCESO AL MEDIO.", "APLICACIÓN, PRESENTACIÓN, SESIÓN, TRANSPORTE, INTERNET, ENLACE DATOS, FÍSICA.", "APLICACIÓN, TRANSPORTE, INTERNET, ACCESO AL MEDIO.", "APLICACIÓN, PRESENTACIÓN, SESIÓN, TRANSPORTE, RED, ENLACE DATOS, FÍSICA."], c: 2 },
+            { q: "3. En el modelo OSI ¿qué capa es la encargada de encaminar los datos hacia su destino eligiendo la ruta más efectiva?", a: ["Presentación", "Red", "Física", "Enlace"], c: 1 },
+            { q: "4. ¿A qué capa del modelo OSI pertenecen los protocolos TCP y UDP?", a: ["Transporte", "Enlace", "Red", "Internet"], c: 0 },
+            { q: "5. ¿Cuál de los siguientes protocolos pertenecen a la capa de Internet de TCP/IP?", a: ["IP, ICMP, TCP", "IP, ICMP, FTP.", "RARP, ICMP, ARP", "IP, HTTP, SMTP"], c: 2 },
+            { q: "6. En el modelo TCP/IP, ¿qué protocolo se utiliza para resolver direcciones IP en direcciones MAC?", a: ["RARP", "DNS", "ARP", "ICMP"], c: 2 },
+            { q: "7. ¿Cómo se denomina la unidad de datos (PDU) en la capa de Transporte del modelo OSI cuando se usa TCP?", a: ["Paquete", "Trama", "Segmento", "Datagrama"], c: 2 },
+            { q: "8. ¿Qué capa del modelo OSI se encarga de la representación de los datos (cifrado, compresión)?", a: ["Aplicación", "Sesión", "Presentación", "Red"], c: 2 },
+            { q: "9. ¿Qué dispositivo de red opera principalmente en la capa 2 del modelo OSI?", a: ["Router", "Hub", "Switch", "Repetidor"], c: 2 },
+            { q: "10. La capa de Sesión del modelo OSI tiene como función principal:", a: ["Encaminamiento de paquetes.", "Control del diálogo y sincronización entre aplicaciones.", "Detección de errores en el medio físico.", "Traducción de formatos de archivos."], c: 1 },
+            { q: "11. En el modelo TCP/IP, la capa de 'Acceso al Medio' equivale en el modelo OSI a:", a: ["Capa Física", "Capa de Enlace de Datos", "Capas Física y de Enlace de Datos", "Capa de Red"], c: 2 },
+            { q: "12. ¿Cuál es el rango de puertos bien conocidos (Well Known Ports)?", a: ["1024 a 49151", "0 a 1023", "49152 a 65535", "0 a 255"], c: 1 },
+            { q: "13. El protocolo ICMP se utiliza para:", a: ["Transferencia de archivos.", "Control de errores y mensajes de diagnóstico en la red.", "Resolución de nombres de dominio.", "Asignación dinámica de IPs."], c: 1 },
+            { q: "14. En el modelo OSI, la detección de errores salto a salto es responsabilidad de la capa de:", a: ["Red", "Enlace de Datos", "Transporte", "Física"], c: 1 },
+            { q: "15. ¿Qué significa PDU en el contexto de redes?", a: ["Packet Delivery Unit", "Protocol Data Unit", "Primary Data User", "Process Data Underline"], c: 1 },
+            { q: "16. ¿Cuál de estas capas NO existe en el modelo TCP/IP original?", a: ["Aplicación", "Transporte", "Sesión", "Internet"], c: 2 },
+            { q: "17. El direccionamiento lógico (IP) se gestiona en la capa de:", a: ["Enlace de datos", "Transporte", "Red", "Aplicación"], c: 2 },
+            { q: "18. ¿Qué protocolo es 'orientado a conexión'?", a: ["UDP", "IP", "TCP", "ICMP"], c: 2 },
+            { q: "19. ¿Qué es un protocolo de Nivel N según el modelo OSI?", a: ["Reglas que utiliza un nivel N para relacionarse con el mismo nivel de otro sistema.", "Reglas que utiliza un nivel N para relacionarse con niveles superiores e inferiores.", "Reglas para utilizar servicios del sistema operativo.", "Ninguna es correcta."], c: 0 },
+            { q: "20. ¿Qué significan las siglas OSI?", a: ["Operative System Information", "Operative System Integration", "Open System Interconnection", "Open System Information"], c: 2 },
+            { q: "21. ¿Cuál es una característica principal de la capa de enlace de datos?", a: ["Convierte el flujo de bits en código predefinido.", "Independiza al protocolo de capa superior del medio físico.", "Acepta paquetes de capa 3 y decide el camino.", "Genera señales eléctricas u ópticas."], c: 1 },
+            { q: "22. En el modelo TCP/IP, se denomina datagrama al paquete de datos de la capa de:", a: ["Acceso a red", "Aplicación", "Transporte", "Internet"], c: 3 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_T7')) || {};
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('question-number').innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            document.getElementById('question-text').innerText = data.q;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-xl border-2 border-slate-200 option-transition hover:border-cyan-400 hover:bg-cyan-50 font-medium text-slate-700';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) btn.classList.add('correct');
+                    else if (i === answers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? "Ver Resultados" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_T7', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            document.getElementById('score-live').innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) showResults();
+            else if (currentIdx < 0) currentIdx = 0;
+            else loadQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_T7');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        document.getElementById('prev-btn').onclick = () => changeQuestion(-1);
+        document.getElementById('next-btn').onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>
