@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bloque II Tema 05 - Bases de Datos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .is-correct-answer { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .is-user-incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <!-- Cabecera -->
+        <div class="bg-emerald-800 p-8 text-white text-center relative">
+            <div class="absolute top-0 left-0 w-full h-1 bg-emerald-400"></div>
+            <h1 class="text-2xl font-black tracking-tight uppercase">Bases de Datos</h1>
+            <p class="text-emerald-200 mt-2 font-semibold uppercase text-sm tracking-widest">Bloque II - Tema 05 (SGBD & SQL/NoSQL)</p>
+        </div>
+
+        <!-- Barra de Progreso -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-emerald-500 h-2 transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <div class="p-8">
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-8 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <span id="question-number">Pregunta 1</span>
+                    <span id="score-live" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug"></div>
+
+                <div id="options-container" class="space-y-4"></div>
+
+                <div class="flex justify-between mt-10 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="flex items-center px-5 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="flex items-center px-8 py-3 bg-emerald-700 text-white rounded-xl font-bold hover:bg-emerald-800 disabled:opacity-50 transition-all shadow-lg shadow-emerald-200">
+                        Siguiente
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="results-ui" class="hidden text-center py-10">
+                <div class="inline-block p-4 bg-emerald-50 rounded-full mb-6 border border-emerald-100">
+                    <svg class="w-16 h-16 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <h2 class="text-3xl font-black text-slate-900 mb-2">Resumen de Resultados</h2>
+                <div class="grid grid-cols-3 gap-4 my-8">
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div id="res-correct" class="text-4xl font-black text-emerald-600">0</div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Aciertos</div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div id="res-incorrect" class="text-4xl font-black text-red-600">0</div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Errores</div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div id="res-empty" class="text-4xl font-black text-amber-600">0</div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Omitidas</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="px-10 py-4 font-bold text-white bg-emerald-700 rounded-xl hover:bg-emerald-800 transition-colors shadow-lg">Intentar de nuevo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. En las bases de datos jerárquicas:", a: ["No es posible definir relaciones de muchos a muchos", "Están formadas únicamente por estructuras en forma de árbol", "Están formadas por una colección de registros unidos a través de relaciones 1:1 o 1:N", "Todas las anteriores son correctas"], c: 3 },
+            { q: "2. ¿Mediante qué siglas se conoce al lenguaje de definición de datos?", a: ["DDL", "DML", "DCL", "LDD"], c: 0 },
+            { q: "3. Respecto al diccionario de datos:", a: ["Contiene metadatos", "Describe los objetos de la base de datos", "A y B son correctas", "A y B son incorrectas"], c: 2 },
+            { q: "4. Según las 12 reglas de Codd, ¿cuál es la definición de la regla de no subversión?", a: ["Toda la información es representada por valores en posiciones de columnas y filas", "Todas las vistas actualizables deben serlo por el SGBD", "Ningún lenguaje de bajo nivel puede violar las restricciones de integridad del lenguaje de alto nivel", "Los cambios al nivel lógico no deben requerir cambios en programas de aplicación"], c: 2 },
+            { q: "5. ¿Cuál de los siguientes sistemas de bases de datos es orientado a objetos?", a: ["MySQL", "SQLite", "Zope", "MariaDB"], c: 2 },
+            { q: "6. En el modelo relacional, ¿cómo se denomina a una fila de una tabla?", a: ["Atributo", "Tupla", "Dominio", "Campo"], c: 1 },
+            { q: "7. ¿Qué propiedad ACID asegura que una transacción se realice por completo o no se realice en absoluto?", a: ["Consistencia", "Aislamiento", "Durabilidad", "Atomicidad"], c: 3 },
+            { q: "8. El lenguaje utilizado para recuperar y modificar datos en una base de datos se denomina:", a: ["DDL", "DCL", "DML", "TCL"], c: 2 },
+            { q: "9. ¿Cuál de las siguientes es una base de datos NoSQL orientada a documentos?", a: ["Redis", "MongoDB", "Neo4j", "Cassandra"], c: 1 },
+            { q: "10. La integridad referencial asegura que:", a: ["No existan nulos en la clave primaria", "Los valores de una clave foránea coincidan con una clave primaria existente", "Los datos no se pierdan tras un fallo", "El acceso sea multiusuario"], c: 1 },
+            { q: "11. ¿Qué es un SGBD (Sistema Gestor de Bases de Datos)?", a: ["Un hardware específico para datos", "El conjunto de datos almacenados", "Software que permite definir, crear y mantener la base de datos", "Un lenguaje de programación"], c: 2 },
+            { q: "12. En el modelo de red, los datos se representan mediante:", a: ["Tablas", "Árboles estrictos", "Grafos o registros unidos por enlaces", "Objetos"], c: 2 },
+            { q: "13. La sigla SQL significa:", a: ["Simple Query Language", "Structured Query Language", "System Query Language", "Standard Query Level"], c: 1 },
+            { q: "14. ¿Qué comando SQL se utiliza para eliminar la estructura de una tabla (no solo sus datos)?", a: ["DELETE", "TRUNCATE", "REMOVE", "DROP"], c: 3 },
+            { q: "15. ¿Cuál de estos es un ejemplo de base de datos NoSQL de tipo 'Clave-Valor'?", a: ["Redis", "CouchDB", "HBase", "Oracle"], c: 0 },
+            { q: "16. La consistencia en el modelo ACID garantiza que:", a: ["Los datos son accesibles siempre", "La base de datos pase de un estado válido a otro estado válido", "Las operaciones sean atómicas", "El usuario vea los datos cifrados"], c: 1 },
+            { q: "17. Una Clave Primaria (Primary Key):", a: ["Identifica de forma unívoca a cada tupla de la relación", "Puede contener valores nulos", "No puede ser compuesta por varios campos", "Es opcional en el modelo relacional"], c: 0 },
+            { q: "18. ¿Qué regla de Codd dice que el sistema debe soportar inserciones, actualizaciones y borrados de alto nivel?", a: ["Regla de tratamiento de nulos", "Regla de manipulación de datos", "Regla de independencia física", "Regla de catálogo dinámico"], c: 1 },
+            { q: "19. Las bases de datos NoSQL de grafos son ideales para:", a: ["Almacenar logs masivos", "Redes sociales y relaciones complejas entre entidades", "Sustituir a Excel", "Almacenamiento de archivos binarios"], c: 1 },
+            { q: "20. El aislamiento (Isolation) en ACID previene que:", a: ["Se pierdan datos por corte de luz", "Las transacciones concurrentes interfieran entre sí", "El disco duro se llene", "Haya errores de sintaxis"], c: 1 },
+            { q: "21. ¿Qué es el 'Esquema' de una base de datos?", a: ["Los datos reales guardados", "La descripción lógica de la estructura de la base de datos", "El diagrama de flujo del programa", "La interfaz de usuario"], c: 1 },
+            { q: "22. El comando 'UPDATE' pertenece al lenguaje:", a: ["DDL", "DCL", "DML", "DAL"], c: 2 },
+            { q: "23. En el contexto de Big Data, la escalabilidad 'Horizontal' implica:", a: ["Añadir más RAM al servidor actual", "Añadir más servidores al sistema (nodos)", "Cambiar el sistema operativo", "Eliminar tablas antiguas"], c: 1 },
+            { q: "24. El modelo de datos propuesto por Peter Chen en 1976 es:", a: ["Modelo Relacional", "Modelo de Red", "Modelo Entidad-Relación", "Modelo Jerárquico"], c: 2 },
+            { q: "25. Un 'JOIN' en SQL sirve para:", a: ["Borrar registros duplicados", "Combinar filas de dos o más tablas basándose en una columna común", "Ordenar los resultados", "Crear una nueva base de datos"], c: 1 },
+            { q: "26. Indica cuáles son Bases de datos NoSQL de columnas o tabular:", a: ["Cassandra, Redis y Oracle NoSQL", "BigTable y HBase", "Neo4j y FlockDB", "MongoDB y CouchDB"], c: 1 },
+            { q: "27. ¿A qué hace referencia las siglas ACID?", a: ["Atomicidad, consistencia, aislamiento y durabilidad", "Atomicidad, consistencia, integridad y durabilidad", "Atomicidad, consistencia, aleatoriedad y durabilidad", "Acceso, control, integridad y datos"], c: 0 },
+            { q: "28. Respecto a la SGBD NoSQL, señale la correcta:", a: ["Utilizan SQL como lenguaje de consultas estándar", "Genera cuellos de botella", "No permiten operaciones JOIN de forma nativa", "PostgreSQL no puede ser NoSQL"], c: 2 },
+            { q: "29. Una característica clave de las bases de datos orientadas a objetos es:", a: ["Sencillez de programación", "Permitir especificar la estructura de objetos complejos", "Trabajo exclusivo en la nube", "Eliminar el uso de punteros"], c: 1 },
+            { q: "30. Una tupla es:", a: ["El conjunto de valores de un campo", "La unidad de información asociada a un dominio", "La fila de una tabla compuesta por atributos", "Una clave foránea"], c: 2 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_B2T5_Full')) || {};
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('question-number').innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            document.getElementById('question-text').innerText = data.q;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-5 rounded-2xl border-2 border-slate-100 option-transition hover:border-emerald-300 hover:bg-emerald-50 font-semibold text-slate-700 shadow-sm';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) {
+                        btn.classList.add('is-correct-answer');
+                    } else if (i === answers[currentIdx]) {
+                        btn.classList.add('is-user-incorrect');
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === quizData.length - 1 ? "Finalizar" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_B2T5_Full', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            document.getElementById('score-live').innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) showResults();
+            else if (currentIdx < 0) currentIdx = 0;
+            else loadQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_B2T5_Full');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        document.getElementById('prev-btn').onclick = () => changeQuestion(-1);
+        document.getElementById('next-btn').onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>
