@@ -1,0 +1,699 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactivo</title>
+    <!-- Carga de Tailwind CSS para estilos modernos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Importación de la fuente Inter desde Google Fonts para una mejor legibilidad */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Color de fondo suave para una estética agradable */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Asegura que el cuerpo ocupe al menos toda la altura de la ventana */
+            padding: 20px; /* Espaciado interno general */
+            box-sizing: border-box; /* Incluye padding y border en el tamaño total del elemento */
+        }
+        .quiz-container {
+            background-color: #ffffff; /* Fondo blanco para el contenedor principal del quiz */
+            border-radius: 15px; /* Bordes redondeados para un aspecto moderno */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra sutil para profundidad */
+            padding: 30px; /* Espaciado interno del contenedor */
+            max-width: 800px; /* Ancho máximo del contenedor */
+            width: 100%; /* Ocupa todo el ancho disponible hasta el max-width */
+            display: flex;
+            flex-direction: column; /* Organiza los elementos en columna */
+            gap: 20px; /* Espacio entre los elementos hijos */
+        }
+        .question-section {
+            display: none; /* Oculta todas las secciones de preguntas por defecto */
+        }
+        .question-section.active {
+            display: block; /* Muestra la sección de pregunta activa */
+        }
+        .option-label {
+            display: flex;
+            align-items: center; /* Alinea verticalmente el texto y el radio button */
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0; /* Borde suave para las opciones */
+            border-radius: 10px; /* Bordes redondeados para las opciones */
+            margin-bottom: 10px; /* Espacio entre opciones */
+            cursor: pointer; /* Indica que es un elemento interactivo */
+            transition: all 0.2s ease-in-out; /* Transición suave para efectos hover */
+        }
+        .option-label:hover {
+            background-color: #f7fafc; /* Color de fondo al pasar el ratón */
+            border-color: #cbd5e0; /* Color de borde al pasar el ratón */
+        }
+        .option-label input[type="radio"] {
+            margin-right: 15px; /* Espacio entre el radio button y el texto */
+            transform: scale(1.2); /* Aumenta el tamaño del radio button para mejor visibilidad */
+        }
+        /* Estilos para opciones correctas */
+        .option-label.correct {
+            background-color: #d4edda; /* Verde claro */
+            border-color: #28a745; /* Verde oscuro */
+            color: #155724; /* Texto verde oscuro */
+        }
+        /* Estilos para opciones incorrectas */
+        .option-label.incorrect {
+            background-color: #f8d7da; /* Rojo claro */
+            border-color: #dc3545; /* Rojo oscuro */
+            color: #721c24; /* Texto rojo oscuro */
+        }
+        .feedback-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none; /* Oculto por defecto */
+        }
+        .feedback-message.correct-feedback {
+            background-color: #e6ffed;
+            color: #1a6437;
+            border: 1px solid #a8e6b9;
+        }
+        .feedback-message.incorrect-feedback {
+            background-color: #ffe6e6;
+            color: #8c1a1a;
+            border: 1px solid #e6a8a8;
+        }
+        .results-section {
+            display: none; /* Oculto por defecto */
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #cbd5e0; /* Borde punteado para la sección de resultados */
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .results-section.active {
+            display: block;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4299e1; /* Azul */
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease-in-out; /* Transición suave para el progreso */
+        }
+        /* Estilos para el modal de retroalimentación */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed; /* Se mantiene en la misma posición al hacer scroll */
+            z-index: 1000; /* Se superpone a otros elementos */
+            left: 0;
+            top: 0;
+            width: 100%; /* Ancho completo */
+            height: 100%; /* Altura completa */
+            overflow: auto; /* Permite scroll si el contenido es muy grande */
+            background-color: rgba(0,0,0,0.4); /* Fondo semi-transparente */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+        }
+        .close-button {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="quiz-container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test de TAI 2014 Interna</h1>
+
+        <!-- Barra de progreso del test -->
+        <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <!-- Botón de Reiniciar Test (visible siempre) -->
+        <button id="restartTestButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out w-full sm:w-auto self-end mb-4">
+            Reiniciar Test
+        </button>
+
+        <!-- Sección donde se cargarán las preguntas dinámicamente -->
+        <div id="quizQuestions">
+            <!-- Las preguntas se cargarán aquí dinámicamente mediante JavaScript -->
+        </div>
+
+        <!-- Controles de Navegación del test -->
+        <div class="flex justify-between mt-6">
+            <button id="prevButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                Anterior
+            </button>
+            <button id="nextButton" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                Siguiente
+            </button>
+            <button id="submitButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out hidden">
+                Finalizar Test
+            </button>
+        </div>
+
+        <!-- Sección de Resultados del test -->
+        <div id="resultsSection" class="results-section">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Resultados del Test</h2>
+            <p class="text-lg text-gray-600 mb-2">Correctas: <span id="correctCount" class="font-semibold text-green-600">0</span></p>
+            <p class="text-lg text-gray-600 mb-2">Incorrectas: <span id="incorrectCount" class="font-semibold text-red-600">0</span></p>
+            <p class="text-lg text-gray-600 mb-4">Sin contestar: <span id="unansweredCount" class="font-semibold text-yellow-600">0</span></p>
+            <button id="reviewAnswersButton" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out mt-4">
+                Revisar Respuestas
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para mostrar retroalimentación al usuario -->
+    <div id="feedbackModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalButton">&times;</span>
+            <p id="modalMessage" class="text-xl font-semibold mb-4"></p>
+            <p id="correctAnswerInfo" class="text-md text-gray-700"></p>
+            <button id="modalOkButton" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out mt-4">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos de preguntas, opciones y la respuesta correcta para cada una.
+        // Los datos han sido extraídos de los ficheros proporcionados ("Examen202014.pdf" y "Plantilla_definitiva202014.pdf").
+        const questions = [
+            {
+                question: "1. La ley 34/2002, de servicios de la sociedad de la información y comercio electrónico, en su artículo 45 trata la prescripción. Señale la respuesta correcta respecto a las infracciones:",
+                options: [
+                    "a) Las muy graves prescribirán a los tres años, las graves a los dos años y las leves al año.",
+                    "b) Las muy graves prescribirán a los cinco años, las graves a los dos años y las leves a los seis meses.",
+                    "c) Las muy graves prescribirán a los tres años, las graves a los dos años y las leves a los seis meses.",
+                    "d) Las muy graves prescribirán a los cinco años, las graves a los tres años y las leves al año."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "2. En lo referente a los certificados de identidad pública contenidos en el Documento Nacional de Identidad (DNIe), señale la sentencia FALSA:",
+                options: [
+                    "a) Son emitidos como certificados reconocidos.",
+                    "b) Vinculan una serie de datos personales del ciudadano a unas determinadas claves.",
+                    "c) Garantizan la autenticidad, integridad y no repudio.",
+                    "d) Pueden ser renovados por declaración de que el ciudadano no tiene capacidad de firma (pródigo)."
+                ],
+                correctAnswer: "d"
+            },
+            {
+                question: "3. Según el Real Decreto 869/2013, que modifica el RD 1553/2005, ¿cuál de los siguientes periodos de validez del DNI electrónico es correcto?",
+                options: [
+                    "a) Diez años, cuando el titular haya cumplido los treinta y no haya alcanzado los sesenta.",
+                    "b) Permanente cuando el titular haya cumplido los sesenta años.",
+                    "c) Dos años cuando el solicitante no haya cumplido los cinco años de edad.",
+                    "d) Diez años, cuando el titular no haya cumplido los treinta al momento de la expedición o renovación."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "4. ¿Cuál de las siguientes claves NO está contemplada entre los datos criptográficos que almacena el DNI electrónico?",
+                options: [
+                    "a) Clave RSA privada de autenticación (Digital Signature).",
+                    "b) Clave RSA pública de autenticación (Digital Signature).",
+                    "c) Clave RSA privada de no repudio (ContentCommitment).",
+                    "d) Clave RSA privada de firma (ContentCommitment)."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "5. Según el Real Decreto 1720/2007 en su artículo 24, para el ejercicio de los derechos de acceso, rectificación, cancelación y oposición, deberá concederse al interesado un medio:",
+                options: [
+                    "a) sencillo y motivado.",
+                    "b) sencillo y gratuito.",
+                    "c) motivado y previo pago.",
+                    "d) informado y exclusivo."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "6. Según la Ley Orgánica 15/1999, ¿pueden las Fuerzas y Cuerpos de seguridad recoger y tratar datos de carácter personal sin consentimiento de los afectados?",
+                options: [
+                    "a) No, porque así lo prohíbe expresamente la Ley Orgánica de Protección de Datos de Carácter Personal.",
+                    "b) Sí, siempre que sea para fines exclusivamente judiciales.",
+                    "c) Sí, siempre que resulte necesario para la prevención de un peligro real para la seguridad pública o para la represión de infracciones penales.",
+                    "d) No, deben contar en cualquier caso con el consentimiento de los afectados."
+                ],
+                correctAnswer: "c"
+            },
+            {
+                question: "7. La Ley Orgánica 15/1999 NO atribuye como una de las funciones de la Agencia Española de Protección de Datos:",
+                options: [
+                    "a) Informar, con carácter preceptivo, los proyectos de disposiciones generales que desarrollen esta Ley.",
+                    "b) Recabar de los encargados del tratamiento cuanta ayuda e información estime necesaria para el desempeño de sus funciones.",
+                    "c) Atender las peticiones y reclamaciones formuladas por las personas afectadas.",
+                    "d) Velar por la publicidad de la existencia de los ficheros de datos con carácter personal, a cuyo efecto publicará periódicamente una relación de dichos ficheros con la información adicional que el Director de la Agencia determine."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "8. Las medidas de seguridad según indica el Esquema Nacional de Seguridad, se dividen en tres grupos, señale la opción correcta:",
+                options: [
+                    "a) Marco organizacional [org], marco operativo [op] y medidas de protección [mp].",
+                    "b) Marco organizativo [org], marco operacional [op] y medidas de protección [mp].",
+                    "c) Marco orgánico [org], marco operacional [op] y marco de protección [mp].",
+                    "d) Marco orgánico [org], marco operativo [op] y medidas de protección [mp]."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "9. Según el Real Decreto 4/2010, Esquema Nacional de Interoperabilidad, se define nodo de interoperabilidad como un organismo que presta servicios de interconexión...",
+                options: [
+                    "a) técnica, organizativa y semántica entre sistemas de información para un conjunto de Administraciones Públicas bajo las condiciones que éstas fijen.",
+                    "b) técnica, organizativa y jurídica entre sistemas de información para un conjunto de Administraciones Públicas bajo las condiciones que éstas fijen.",
+                    "c) técnica, organizativa y semántica entre sistemas de información de organizaciones tanto públicas como privadas.",
+                    "d) técnica, organizativa y jurídica entre sistemas de información para un conjunto de usuarios u organizaciones privadas."
+                ],
+                correctAnswer: "b"
+            },
+            {
+                question: "10. Según el artículo 3 del Real Decreto 1671/2009, las sedes electrónicas se crearán mediante Orden del Ministro correspondiente o resolución del titular del Organismo Público, que deberá publicarse en el BOE. Entre el contenido mínimo que debe tener, NO incluye:",
+                options: [
+                    "a) Identificación de la dirección electrónica de referencia de la sede.",
+                    "b) Identificación del máximo responsable, así como del órgano u órganos encargados del tratamiento de los datos de carácter personal gestionados por dicha sede y de los servicios puestos a disposición de los ciudadanos en la misma.",
+                    "c) Identificación de los canales de acceso a los servicios disponibles en la sede, con expresión, en su caso, de los teléfonos y oficinas a través de los cuales también puede accederse a los mismos.",
+                    "d) Medios disponibles para la formulación de sugerencias y quejas."
+                ],
+                correctAnswer: "b"
+            }
+        ];
+
+        // Variables de estado del quiz
+        let currentQuestionIndex = 0; // Índice de la pregunta actual
+        let userAnswers = []; // Almacena las respuestas del usuario
+        let quizCompleted = false; // Indica si el test ha sido finalizado
+
+        // Referencias a elementos del DOM
+        const quizQuestionsContainer = document.getElementById('quizQuestions');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const submitButton = document.getElementById('submitButton');
+        const resultsSection = document.getElementById('resultsSection');
+        const correctCountSpan = document.getElementById('correctCount');
+        const incorrectCountSpan = document.getElementById('incorrectCount');
+        const unansweredCountSpan = document.getElementById('unansweredCount');
+        const reviewAnswersButton = document.getElementById('reviewAnswersButton');
+        const restartTestButton = document.getElementById('restartTestButton');
+        const progressBar = document.getElementById('progressBar');
+        const feedbackModal = document.getElementById('feedbackModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const correctAnswerInfo = document.getElementById('correctAnswerInfo');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const modalOkButton = document.getElementById('modalOkButton');
+
+        /**
+         * Inicializa el estado del quiz cargando las respuestas guardadas en LocalStorage
+         * o inicializándolas si no existen.
+         */
+        function initializeQuizState() {
+            const savedAnswers = localStorage.getItem('userAnswers');
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+                // Asegurarse de que userAnswers tenga el tamaño correcto si se añaden/quitan preguntas
+                while (userAnswers.length < questions.length) {
+                    userAnswers.push(null);
+                }
+                while (userAnswers.length > questions.length) {
+                    userAnswers.pop();
+                }
+            } else {
+                userAnswers = new Array(questions.length).fill(null);
+            }
+            // Si el quiz fue completado previamente, cargamos ese estado
+            quizCompleted = localStorage.getItem('quizCompleted') === 'true';
+            if (quizCompleted) {
+                showResults();
+            } else {
+                renderQuestion(currentQuestionIndex);
+            }
+            updateProgressBar();
+            updateNavigationButtons(); // Ensure buttons are correctly updated on init
+        }
+
+        /**
+         * Guarda el estado actual de las respuestas del usuario y el estado de completado del quiz
+         * en LocalStorage.
+         */
+        function saveQuizState() {
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizCompleted', quizCompleted);
+        }
+
+        /**
+         * Renderiza una pregunta específica en el DOM.
+         * @param {number} index - El índice de la pregunta a renderizar.
+         */
+        function renderQuestion(index) {
+            // Oculta la sección de resultados si está activa
+            resultsSection.classList.remove('active');
+            // Muestra el contenedor de preguntas y los botones de navegación
+            quizQuestionsContainer.style.display = 'block';
+            
+            // Limpia el contenido anterior del contenedor de preguntas
+            quizQuestionsContainer.innerHTML = '';
+
+            if (index < 0 || index >= questions.length) {
+                console.error("Índice de pregunta fuera de rango:", index);
+                return;
+            }
+
+            const questionData = questions[index];
+
+            // Crea el elemento div para la pregunta actual
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('question-section', 'active');
+            questionDiv.innerHTML = `
+                <p class="text-xl font-semibold text-gray-800 mb-4">${questionData.question}</p>
+                <div class="options-container">
+                    ${questionData.options.map((option, i) => `
+                        <label class="option-label">
+                            <input type="radio" name="question${index}" value="${option.charAt(0)}" data-option-value="${option.charAt(0)}" ${userAnswers[index] === option.charAt(0) ? 'checked' : ''} ${quizCompleted ? 'disabled' : ''}>
+                            <span class="text-gray-700">${option}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <div id="feedback-${index}" class="feedback-message"></div>
+            `;
+            quizQuestionsContainer.appendChild(questionDiv);
+
+            // Añade event listeners a los radio buttons para guardar la respuesta y mostrar feedback
+            questionDiv.querySelectorAll(`input[name="question${index}"]`).forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    if (!quizCompleted) { // Solo permite cambiar la respuesta si el quiz no ha terminado
+                        userAnswers[index] = event.target.value;
+                        saveQuizState(); // Guarda el estado después de cada cambio
+                        updateProgressBar(); // Actualiza la barra de progreso
+                        showFeedback(index, event.target.value); // Muestra retroalimentación inmediatamente
+                    }
+                });
+            });
+
+            // Si el quiz ya está completado, muestra las clases de correcto/incorrecto y el feedback
+            if (quizCompleted) {
+                highlightAnswers(index);
+            }
+
+            updateNavigationButtons(); // Actualiza el estado de los botones de navegación
+        }
+
+        /**
+         * Muestra retroalimentación al usuario sobre su respuesta (correcta/incorrecta)
+         * y resalta las opciones.
+         * @param {number} questionIndex - El índice de la pregunta.
+         * @param {string} selectedOptionValue - El valor de la opción seleccionada por el usuario.
+         */
+        function showFeedback(questionIndex, selectedOptionValue) {
+            const questionData = questions[questionIndex];
+            const feedbackDiv = document.getElementById(`feedback-${questionIndex}`);
+            const optionsLabels = quizQuestionsContainer.querySelectorAll(`.question-section.active .option-label`);
+
+            // Limpia clases de feedback anteriores
+            optionsLabels.forEach(label => {
+                label.classList.remove('correct', 'incorrect');
+            });
+            feedbackDiv.classList.remove('correct-feedback', 'incorrect-feedback');
+            feedbackDiv.style.display = 'none';
+
+            let isCorrect = (selectedOptionValue === questionData.correctAnswer);
+
+            // Resalta la opción seleccionada
+            optionsLabels.forEach(label => {
+                const radio = label.querySelector('input[type="radio"]');
+                if (radio && radio.value === selectedOptionValue) {
+                    if (isCorrect) {
+                        label.classList.add('correct');
+                    } else {
+                        label.classList.add('incorrect');
+                    }
+                }
+            });
+
+            // Muestra el modal de retroalimentación
+            if (isCorrect) {
+                modalMessage.textContent = "¡Respuesta Correcta!";
+                modalMessage.className = "text-xl font-semibold mb-4 text-green-700";
+                correctAnswerInfo.textContent = ""; // No se necesita mostrar la respuesta correcta si ya acertó
+            } else {
+                modalMessage.textContent = "Respuesta Incorrecta.";
+                modalMessage.className = "text-xl font-semibold mb-4 text-red-700";
+                const correctOptionText = questionData.options.find(opt => opt.charAt(0) === questionData.correctAnswer);
+                correctAnswerInfo.textContent = `La respuesta correcta era: ${correctOptionText}`;
+            }
+            feedbackModal.style.display = 'flex'; // Muestra el modal
+        }
+
+        /**
+         * Resalta las respuestas correctas e incorrectas después de finalizar el test o al revisar.
+         * @param {number} questionIndex - El índice de la pregunta a resaltar.
+         */
+        function highlightAnswers(questionIndex) {
+            const questionData = questions[questionIndex];
+            const optionsLabels = quizQuestionsContainer.querySelectorAll(`.question-section.active .option-label`);
+            const userAnswer = userAnswers[questionIndex];
+            const feedbackDiv = document.getElementById(`feedback-${questionIndex}`);
+
+            // Limpia clases de feedback anteriores
+            optionsLabels.forEach(label => {
+                label.classList.remove('correct', 'incorrect');
+            });
+            feedbackDiv.classList.remove('correct-feedback', 'incorrect-feedback');
+            feedbackDiv.style.display = 'none'; // Oculta el feedback en el cuerpo de la pregunta
+
+            optionsLabels.forEach(label => {
+                const radio = label.querySelector('input[type="radio"]');
+                if (radio) {
+                    // Si la opción es la correcta, la marcamos en verde
+                    if (radio.value === questionData.correctAnswer) {
+                        label.classList.add('correct');
+                    }
+                    // Si el usuario seleccionó esta opción y es incorrecta, la marcamos en rojo
+                    if (radio.value === userAnswer && radio.value !== questionData.correctAnswer) {
+                        label.classList.add('incorrect');
+                    }
+                    // Deshabilita los radio buttons si el quiz está completado
+                    radio.disabled = true;
+                }
+            });
+        }
+
+
+        /**
+         * Actualiza el estado de los botones de navegación (Anterior, Siguiente, Finalizar).
+         */
+        function updateNavigationButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            
+            // If quiz is completed, disable next and submit buttons
+            if (quizCompleted) {
+                nextButton.disabled = true;
+                submitButton.style.display = 'none';
+                prevButton.style.display = 'none'; // Hide prev button as well in results view
+                quizQuestionsContainer.style.display = 'none'; // Ensure questions are hidden
+            } else {
+                nextButton.disabled = currentQuestionIndex === questions.length - 1;
+                prevButton.style.display = 'inline-block'; // Show prev button
+                quizQuestionsContainer.style.display = 'block'; // Ensure questions are visible
+
+                if (currentQuestionIndex === questions.length - 1) {
+                    submitButton.style.display = 'inline-block';
+                    nextButton.style.display = 'none';
+                } else {
+                    submitButton.style.display = 'none';
+                    nextButton.style.display = 'inline-block';
+                }
+            }
+        }
+
+        /**
+         * Actualiza la barra de progreso basándose en el número de preguntas contestadas.
+         */
+        function updateProgressBar() {
+            const answeredQuestions = userAnswers.filter(answer => answer !== null).length;
+            const progress = (answeredQuestions / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        /**
+         * Muestra la sección de resultados y calcula las estadísticas.
+         */
+        function showResults() {
+            quizQuestionsContainer.style.display = 'none'; // Oculta las preguntas
+            prevButton.style.display = 'none'; // Oculta los botones de navegación
+            nextButton.style.display = 'none';
+            submitButton.style.display = 'none';
+            resultsSection.classList.add('active'); // Muestra la sección de resultados
+
+            let correct = 0;
+            let incorrect = 0;
+            let unanswered = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                const userAnswer = userAnswers[i];
+                if (userAnswer === null) {
+                    unanswered++;
+                } else if (userAnswer === questions[i].correctAnswer) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
+            }
+
+            correctCountSpan.textContent = correct;
+            incorrectCountSpan.textContent = incorrect;
+            unansweredCountSpan.textContent = unanswered;
+
+            quizCompleted = true; // Marca el quiz como completado
+            saveQuizState(); // Guarda el estado de completado
+            updateNavigationButtons(); // Actualiza los botones (deshabilitarlos)
+        }
+
+        /**
+         * Reinicia el test, borrando el estado de LocalStorage y volviendo a la primera pregunta.
+         */
+        function restartTest() {
+            localStorage.removeItem('userAnswers');
+            localStorage.removeItem('quizCompleted');
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            quizCompleted = false;
+            resultsSection.classList.remove('active'); // Oculta la sección de resultados
+            
+            // Ensure questions container is visible before rendering
+            quizQuestionsContainer.style.display = 'block'; 
+            renderQuestion(currentQuestionIndex); // Renderiza la primera pregunta
+            updateProgressBar(); // Reinicia la barra de progreso
+            updateNavigationButtons(); // Restaura los botones de navegación
+            
+            // Restore default modalOkButton behavior after restart
+            modalOkButton.textContent = "OK";
+            modalOkButton.onclick = () => {
+                feedbackModal.style.display = 'none';
+            };
+        }
+
+        // --- Event Listeners ---
+
+        // Botón Anterior
+        prevButton.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Botón Siguiente
+        nextButton.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Botón Finalizar Test
+        submitButton.addEventListener('click', () => {
+            showResults();
+        });
+
+        // Botón Reiniciar Test
+        restartTestButton.addEventListener('click', () => {
+            // Muestra un modal de confirmación antes de reiniciar
+            modalMessage.textContent = "¿Estás seguro de que quieres reiniciar el test? Se perderán todas tus respuestas.";
+            modalMessage.className = "text-xl font-semibold mb-4 text-gray-800";
+            correctAnswerInfo.textContent = "";
+            modalOkButton.textContent = "Sí, Reiniciar";
+            // Cambia el comportamiento del botón OK para reiniciar el test
+            modalOkButton.onclick = () => {
+                feedbackModal.style.display = 'none';
+                restartTest();
+            };
+            feedbackModal.style.display = 'flex';
+        });
+
+        // Botón Revisar Respuestas (en la sección de resultados)
+        reviewAnswersButton.addEventListener('click', () => {
+            currentQuestionIndex = 0; // Vuelve a la primera pregunta para la revisión
+            renderQuestion(currentQuestionIndex);
+            // Asegúrate de que los botones de navegación vuelvan a aparecer para la revisión
+            prevButton.style.display = 'inline-block';
+            nextButton.style.display = 'inline-block';
+            submitButton.style.display = 'none'; // No se puede finalizar de nuevo
+            updateNavigationButtons(); // Actualiza el estado de los botones
+        });
+
+        // Cierra el modal de retroalimentación
+        closeModalButton.addEventListener('click', () => {
+            feedbackModal.style.display = 'none';
+            // Restore default modalOkButton behavior if it was changed for restart
+            modalOkButton.textContent = "OK";
+            modalOkButton.onclick = () => {
+                feedbackModal.style.display = 'none';
+            };
+        });
+
+        // Cierra el modal de retroalimentación al hacer clic en OK (comportamiento por defecto)
+        // This listener is now redundant as modalOkButton.onclick is dynamically set.
+        // Keeping it for clarity but its behavior is overridden by restartTestButton's logic.
+        /* modalOkButton.addEventListener('click', () => {
+            feedbackModal.style.display = 'none';
+            // Restaura el comportamiento original del botón OK si se cambió para reiniciar
+            modalOkButton.textContent = "OK";
+            modalOkButton.onclick = () => {
+                feedbackModal.style.display = 'none';
+            };
+        }); */
+
+        // Cierra el modal si se hace clic fuera de él
+        window.addEventListener('click', (event) => {
+            if (event.target === feedbackModal) {
+                feedbackModal.style.display = 'none';
+                // Restaura el comportamiento original del botón OK si se cambió para reiniciar
+                modalOkButton.textContent = "OK";
+                modalOkButton.onclick = () => {
+                    feedbackModal.style.display = 'none';
+                };
+            }
+        });
+
+        // Inicializa el quiz cuando la página se carga completamente
+        document.addEventListener('DOMContentLoaded', initializeQuizState);
+    </script>
+</body>
+</html>
+

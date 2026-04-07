@@ -1,0 +1,678 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TAI LI 2024 A</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to allow scrolling */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            padding: 30px;
+            width: 100%;
+            max-width: 800px; /* Max width for the container */
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .question-card {
+            background-color: #f9fafb; /* Slightly different background for question card */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb; /* Subtle border */
+        }
+        .option-label {
+            display: block;
+            background-color: #ffffff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+        .option-label:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #dbeafe; /* Light blue for selected option */
+            border-color: #3b82f6; /* Blue border */
+        }
+        input[type="radio"] {
+            display: none; /* Hide native radio button */
+        }
+        .correct-answer {
+            background-color: #d1fae5; /* Light green */
+            border-color: #10b981; /* Green border */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+        }
+        .result-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .result-message.correct {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .result-message.incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .button-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+        }
+        .button-secondary {
+            background-color: #e5e7eb; /* Gray */
+            color: #374151;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: center; /* Align items vertically in the center */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
+        }
+        .final-score-container {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ecfdf5; /* Very light green background */
+            border: 1px solid #a7f3d0;
+            margin-top: 20px;
+        }
+        .final-score-container h2 {
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .final-score-container p {
+            font-size: 1.2rem; /* Slightly smaller font for individual stats */
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 8px;
+        }
+        .final-score-container .total-score {
+            font-size: 1.5rem; /* Larger font for total score */
+            font-weight: 700;
+            color: #047857;
+            margin-top: 15px;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-app" class="quiz-container">
+        <h1 style="color: #003366; font-family: 'Georgia', serif; font-size: 2rem; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">Test TAI LI 2024 - Modelo A</h1>
+        <div id="quiz-questions">
+            <!-- Questions will be loaded here -->
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev-btn" class="button-secondary">Anterior</button>
+            <button id="reset-test-btn" class="button-secondary">Reiniciar Test</button> <!-- New button for full reset -->
+            <button id="next-btn" class="button-primary ml-auto">Siguiente</button>
+            <button id="submit-btn" class="button-primary" style="display: none;">Finalizar Test</button>
+        </div>
+        <div id="quiz-results" class="final-score-container" style="display: none;">
+            <h2>Resultados del Test</h2>
+            <p>Aciertos: <span id="correct-answers-display" class="text-green-700"></span></p>
+            <p>Fallos: <span id="incorrect-answers-display" class="text-red-700"></span></p>
+            <p class="total-score">Has completado <span id="total-questions-answered-display"></span> de <span id="total-questions-display"></span> preguntas.</p>
+            <button id="restart-btn" class="button-primary mt-6">Revisar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            {
+                id: "P1-1",
+                section: "Primera Parte",
+                question: "1. ¿Cuál de los siguientes derechos recogidos en el Capítulo Segundo del Título I de la Constitución Española NO forma parte de los Derechos Fundamentales y Libertades Públicas (Artículos 15 a 29)?",
+                options: {
+                    A: "Derecho a sindicarse libremente.",
+                    B: "Derecho a la propiedad privada.",
+                    C: "Derecho a la producción y creación literaria, artística, científica y técnica.",
+                    D: "Derecho a elegir libremente su residencia."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-2",
+                section: "Primera Parte",
+                question: "2. Según el Título I, Capítulo Cuarto, \"De las garantías de las libertades y derechos fundamentales\" de la Constitución Española de 1978, señale la opción correcta:",
+                options: {
+                    A: "Los derechos y libertades reconocidos no vinculan a todas las Administraciones Públicas.",
+                    B: "Sólo por ley orgánica podrá regularse el ejercicio de tales derechos y libertades.",
+                    C: "Una ley orgánica regulará la institución del Defensor del Pueblo.",
+                    D: "El reconocimiento, el respeto y la protección de los principios reconocidos en el Capítulo tercero, informará la judicialización positiva, la práctica legislativa y la actuación de los poderes públicos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-3",
+                section: "Primera Parte",
+                question: "3. Señale la respuesta INCORRECTA de acuerdo con el Título II, artículo 62 de la Constitución Española de 1978. Corresponde al Rey:",
+                options: {
+                    A: "Convocar a referéndum en los casos previstos en la Constitución, previa autorización de las Cortes Generales.",
+                    B: "Convocar y disolver las Cortes Generales y convocar elecciones en los términos previstos en la Constitución.",
+                    C: "Proponer el candidato a Presidente de Gobierno y, en su caso, nombrarlo, así como poner fin a sus funciones en los términos previstos en la Constitución.",
+                    D: "Nombrar y separar a los miembros del Gobierno, a propuesta de su Presidente."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-4",
+                section: "Primera Parte",
+                question: "4. ¿Quién puede ser elegido Defensor del Pueblo, según la Ley Orgánica 3/1981, de 6 de abril?",
+                options: {
+                    A: "Cualquier Magistrado elegido por las Cortes Generales.",
+                    B: "Cualquier Senador elegido por las Cortes Generales.",
+                    C: "Cualquier persona que se encuentre en el pleno disfrute de sus derechos civiles.",
+                    D: "Cualquier español mayor de edad que se encuentre en el pleno disfrute de sus derechos civiles y políticos."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-5",
+                section: "Primera Parte",
+                question: "5. Según el artículo 71 de la Constitución Española de 1978, ¿quién es el competente en las causas contra Diputados y Senadores?",
+                options: {
+                    A: "Sala de lo Penal del Tribunal Constitucional.",
+                    B: "Sala de lo Contencioso Administrativo del Tribunal Supremo.",
+                    C: "Sala de lo Penal del Tribunal Supremo.",
+                    D: "Sala de lo Civil del Tribunal Supremo."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-6",
+                section: "Primera Parte",
+                question: "6. Según el Título III \"De las Cortes Generales\" de la Constitución Española de 1978, las Cámaras podrán:",
+                options: {
+                    A: "Recibir peticiones individuales y colectivas, siempre por escrito, quedando prohibida la presentación directa por manifestaciones ciudadanas.",
+                    B: "Delegar en las Comisiones Legislativas Permanentes la aprobación de proyectos o proposiciones de ley relativas a los Presupuestos Generales del Estado.",
+                    C: "Reunirse en sesión extraordinaria a petición de la mayoría simple de los miembros de cualquiera de las Cámaras.",
+                    D: "Nombrar conjuntamente Comisiones de Investigación sobre asuntos de interés público. Sus conclusiones serán vinculantes para los Tribunales."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-7",
+                section: "Primera Parte",
+                question: "7. Según lo establecido en el artículo 159 de la Constitución Española de 1978, los miembros del Tribunal Constitucional serán designados por períodos de:",
+                options: {
+                    A: "9 años y se renovarán por terceras partes cada 3.",
+                    B: "9 años y se renovarán por terceras partes cada 2.",
+                    C: "6 años y se renovarán por terceras partes cada 3.",
+                    D: "6 años y se renovarán por terceras partes cada 2."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-8",
+                section: "Primera Parte",
+                question: "8. El Gobierno se rige, en su organización y funcionamiento, entre otras, por la Ley:",
+                options: {
+                    A: "Ley 50/1997, de 27 de noviembre.",
+                    B: "Ley 50/1999, de 26 de noviembre.",
+                    C: "Ley 50/1996, de 28 de noviembre.",
+                    D: "Ley 50/1998, de 29 de noviembre."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-9",
+                section: "Primera Parte",
+                question: "9. La Constitución Española de 1978 en su artículo 113 establece que:",
+                options: {
+                    A: "El Congreso de los Diputados puede exigir la responsabilidad jurídica del Gobierno mediante la adopción por mayoría absoluta de la moción de censura.",
+                    B: "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno mediante la adopción por mayoría simple de la moción de censura.",
+                    C: "El Congreso de los Diputados puede exigir la responsabilidad civil del Gobierno mediante la adopción por mayoría absoluta de la moción de censura.",
+                    D: "El Congreso de los Diputados puede exigir la responsabilidad política del Gobierno mediante la adopción por mayoría absoluta de la moción de censura."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-10",
+                section: "Primera Parte",
+                question: "10. Señale la respuesta INCORRECTA sobre el uso obligatorio de firma requerida a los interesados por parte de las Administraciones Públicas que recoge el artículo 11 de Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas:",
+                options: {
+                    A: "Conocer el estado de la tramitación.",
+                    B: "Desistir de acciones.",
+                    C: "Presentar declaraciones responsables o comunicaciones.",
+                    D: "Formular solicitudes."
+                },
+                correctAnswer: "A"
+            },
+            {
+                id: "P1-11",
+                section: "Primera Parte",
+                question: "11. Tal y como se recoge en la Resolución de 14 de diciembre de 2015, de la Dirección de Tecnologías de la Información y las Comunicaciones, por la que se establecen las prescripciones técnicas necesarias para el desarrollo y aplicación del sistema Cl@ve, señale la respuesta correcta:",
+                options: {
+                    A: "Es un sistema que está dirigido a los ciudadanos que cumplan con los requisitos indicados en las Prescripciones Técnicas.",
+                    B: "Ofrece tres niveles de garantía de registro asociados a la forma y a las garantías que ofrezca la comunicación de la información de registro por parte del ciudadano.",
+                    C: "Proporcionará a los usuarios tres modalidades de identificación electrónica basadas en el uso de claves concertadas.",
+                    D: "Permitirá también el acceso a servicios de firma electrónica, en particular, a servicios de firma de documentos electrónicos mediante certificados electrónicos centralizados."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-12",
+                section: "Primera Parte",
+                question: "12. Señale la respuesta correcta sobre la solicitud de acceso a la información pública que recoge el artículo 17 de la Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno:",
+                options: {
+                    A: "Sólo se podrá presentar en castellano.",
+                    B: "Es obligatorio indicar una dirección de contacto electrónica, a efectos de comunicaciones.",
+                    C: "Deberá motivarse.",
+                    D: "Deberá dirigirse al titular del órgano administrativo o entidad que posea la información."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-13",
+                section: "Primera Parte",
+                question: "13. Indique la respuesta correcta sobre la vigencia que tienen los certificados electrónicos reconocidos incorporados al documento nacional de identidad, según la legislación vigente:",
+                options: {
+                    A: "No podrá ser superior a tres años.",
+                    B: "No podrá ser superior a cuatro años.",
+                    C: "No podrá ser superior a cinco años.",
+                    D: "No podrá ser superior a seis años."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-14",
+                section: "Primera Parte",
+                question: "14. La Ley 56/2007, de 28 de diciembre, de Medidas de Impulso de la Sociedad de la Información, ¿qué establece sobre la factura electrónica en el artículo 1?",
+                options: {
+                    A: "Los formatos estructurados de las facturas electrónicas permitirán su visualización y emisión en las distintas lenguas oficiales existentes y en inglés, con la finalidad de garantizar los derechos de los usuarios nacionales y extranjeros.",
+                    B: "Los formatos estructurados de las facturas electrónicas permitirán su visualización y emisión en las distintas lenguas oficiales existentes, con la finalidad de garantizar los derechos de los usuarios.",
+                    C: "No trata en ningún artículo sobre la factura electrónica.",
+                    D: "La factura electrónica solo se utilizará en contratación, estando excluida de la justificación de ayudas y subvenciones."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-15",
+                section: "Primera Parte",
+                question: "15. ¿Qué principio relativo al tratamiento de datos personales definido en el Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos y por el que se deroga la Directiva 95/46/CE (Reglamento general de protección de datos) se refiere a que los datos serán adecuados, pertinentes y limitados a lo necesario en relación con los fines para los que son tratados?",
+                options: {
+                    A: "Limitación de la finalidad.",
+                    B: "Exactitud.",
+                    C: "Minimización de datos.",
+                    D: "Adecuación de datos."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-16",
+                section: "Primera Parte",
+                question: "16. Señale la respuesta correcta respecto a las notificaciones según la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas:",
+                options: {
+                    A: "Toda notificación deberá ser cursada dentro del plazo de quince dias a partir de la fecha en que el acto haya sido dictado.",
+                    B: "Cuando los interesados en un procedimiento sean desconocidos, se ignore el lugar de la notificación o bien, intentada ésta, no se hubiese podido practicar, la notificación se hará por medio de un anuncio publicado en el BOE.",
+                    C: "Las notificaciones se practicarán preferentemente en papel y, en todo caso, cuando el interesado resulte obligado a recibirlas por esta vía.",
+                    D: "Cuando la notificación se practique en el domicilio del interesado, de no hallarse presente éste en el momento de entregarse la notificación, podrá hacerse cargo de ella cualquier persona mayor de dieciséis años que se encuentre en el domicilio y haga constar su identidad."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-17",
+                section: "Primera Parte",
+                question: "17. De acuerdo con el Real Decreto 203/2021, de 30 de marzo, por el que se aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos, ¿cuál de las siguientes opciones forma parte del contenido mínimo que debe contener una sede electrónica?",
+                options: {
+                    A: "Relación de los canales de acceso electrónico a dicha sede como instrumento de comunicación para los ciudadanos.",
+                    B: "Relación de los Puntos de Acceso General electrónicos que la referencian directa o indirectamente.",
+                    C: "Normativa reguladora del Registro al que se acceda a través de la sede electrónica.",
+                    D: "Enlace directo al Boletín Oficial correspondiente."
+                },
+                correctAnswer: "C"
+            },
+            {
+                id: "P1-18",
+                section: "Primera Parte",
+                question: "18. Marque la respuesta correcta relacionada con el nodo eIDAS español:",
+                options: {
+                    A: "Para las Administraciones Públicas, la integración con el nodo eIDAS español se realiza a través de @Firma.",
+                    B: "Permite el reconocimiento de identidades en soportes físicos emitidas por otros países.",
+                    C: "Facilita la aceptación del DNI electrónico en servicios de Administración Electrónica de otras administraciones integrantes de la OCDE.",
+                    D: "Utiliza un sistema de intercambio de mensajes conforme al estándar SAML 2.0."
+                },
+                correctAnswer: "D"
+            },
+            {
+                id: "P1-19",
+                section: "Primera Parte",
+                question: "19. ¿Qué es la taxonomía de Flynn?",
+                options: {
+                    A: "Una clasificación de patrones de diseño para objetos de software, centrados en su creación, relación e interacción.",
+                    B: "Una clasificación para las computadoras con arquitectura paralela atendiendo al flujo de datos e instrucciones en un sistema.",
+                    C: "Una clasificación que pretende clarificar los diferentes tipos de tecnologías, técnicas y mecanismos que abarca el concepto abstracto de \"Inteligencia Artificial\".",
+                    D: "Una clasificación de los tipos de controladores (drivers) JDBC."
+                },
+                correctAnswer: "B"
+            },
+            {
+                id: "P1-20",
+                section: "Primera Parte",
+                question: "20. Indique, de las siguientes palabras, cuál indica además un número hexadecimal válido:",
+                options: {
+                    A: "EBOCA",
+                    B: "BECADAS",
+                    C: "ACCEDA",
+                    D: "CEGADA"
+                },
+                correctAnswer: "C"
+            }
+           
+        ];
+
+        // Filter out questions from "Supuesto I" and "Preguntas de Reserva (Supuesto I)"
+        const questions = allQuestions.filter(q =>
+            q.section !== "Supuesto I" && q.section !== "Preguntas de Reserva (Supuesto I)"
+        );
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // To store user answers
+        let quizSubmitted = false;
+        let answeredQuestions = new Set(); // To keep track of answered questions
+
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const quizResultsDiv = document.getElementById('quiz-results');
+        const correctAnswersDisplay = document.getElementById('correct-answers-display'); // New element
+        const incorrectAnswersDisplay = document.getElementById('incorrect-answers-display'); // New element
+        const totalQuestionsDisplay = document.getElementById('total-questions-display');
+        const totalQuestionsAnsweredDisplay = document.getElementById('total-questions-answered-display'); // New element
+        const restartBtn = document.getElementById('restart-btn'); // This is the "Revisar Test" button
+        const resetTestBtn = document.getElementById('reset-test-btn'); // The new "Reiniciar Test" button
+
+        // Function to save quiz state to localStorage
+        function saveQuizState() {
+            localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
+            localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+            localStorage.setItem('quizSubmitted', quizSubmitted);
+            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
+        }
+
+        // Function to load quiz state from localStorage
+        function loadQuizState() {
+            const savedIndex = localStorage.getItem('currentQuestionIndex');
+            const savedAnswers = localStorage.getItem('userAnswers');
+            const savedSubmitted = localStorage.getItem('quizSubmitted');
+            const savedAnswered = localStorage.getItem('answeredQuestions');
+
+            if (savedIndex !== null) {
+                currentQuestionIndex = parseInt(savedIndex);
+            }
+            if (savedAnswers !== null) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            if (savedSubmitted !== null) {
+                quizSubmitted = savedSubmitted === 'true';
+            }
+            if (savedAnswered !== null) {
+                answeredQuestions = new Set(JSON.parse(savedAnswered));
+            }
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            quizQuestionsContainer.innerHTML = ''; // Clear the container
+
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = q.section;
+            quizQuestionsContainer.appendChild(sectionTitle);
+
+            const questionCard = document.createElement('div');
+            questionCard.className = 'question-card';
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-lg font-semibold text-gray-700 mb-4';
+            questionText.textContent = q.question;
+            questionCard.appendChild(questionText);
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = `options-q${currentQuestionIndex}`; // ID for the options container
+
+            for (const key in q.options) {
+                const optionId = `q${currentQuestionIndex}-${key}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = key;
+                input.className = 'hidden'; // Hide native radio button
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.className = 'option-label';
+                label.textContent = `${key}) ${q.options[key]}`;
+
+                // If an answer is already saved, mark it
+                if (userAnswers[currentQuestionIndex] === key) {
+                    input.checked = true;
+                }
+
+                // If the question has already been answered (and not in final review mode),
+                // or if the quiz has been submitted, disable options and show feedback.
+                if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                    input.disabled = true;
+                    if (key === q.correctAnswer) {
+                        label.classList.add('correct-answer');
+                    } else if (userAnswers[currentQuestionIndex] === key && userAnswers[currentQuestionIndex] !== q.correctAnswer) {
+                        label.classList.add('incorrect-answer');
+                    }
+                }
+
+                // Handle selection change
+                input.addEventListener('change', (event) => {
+                    if (!quizSubmitted && !answeredQuestions.has(currentQuestionIndex)) {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                        answeredQuestions.add(currentQuestionIndex); // Mark as answered
+                        checkAnswerAndProvideFeedback(currentQuestionIndex, event.target.value, optionsDiv);
+                        saveQuizState(); // Save state after each answer
+                    }
+                });
+
+                optionsDiv.appendChild(input);
+                optionsDiv.appendChild(label);
+            }
+            questionCard.appendChild(optionsDiv);
+
+            // If the question has already been answered or the quiz has been submitted, show individual result
+            if (answeredQuestions.has(currentQuestionIndex) || quizSubmitted) {
+                const resultMessage = document.createElement('div');
+                resultMessage.className = 'result-message';
+                if (userAnswers[currentQuestionIndex] === q.correctAnswer) {
+                    resultMessage.classList.add('correct');
+                    resultMessage.textContent = '¡Correcto!';
+                } else {
+                    resultMessage.classList.add('incorrect');
+                    resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+                }
+                questionCard.appendChild(resultMessage);
+            }
+
+            quizQuestionsContainer.appendChild(questionCard);
+            updateNavigationButtons();
+        }
+
+        function checkAnswerAndProvideFeedback(qIndex, selectedAnswer, optionsContainer) {
+            const q = questions[qIndex];
+            const radios = optionsContainer.querySelectorAll(`input[name="question-${qIndex}"]`);
+            const labels = optionsContainer.querySelectorAll('.option-label');
+
+            // Disable all options for this question
+            radios.forEach(radio => radio.disabled = true);
+
+            // Highlight the selected and correct answers
+            labels.forEach(label => {
+                const input = document.getElementById(label.htmlFor);
+                if (input.value === q.correctAnswer) {
+                    label.classList.add('correct-answer');
+                } else if (input.value === selectedAnswer && selectedAnswer !== q.correctAnswer) {
+                    label.classList.add('incorrect-answer');
+                }
+            });
+
+            // Show feedback message
+            const resultMessage = document.createElement('div');
+            resultMessage.className = 'result-message';
+            if (selectedAnswer === q.correctAnswer) {
+                resultMessage.classList.add('correct');
+                resultMessage.textContent = '¡Correcto!';
+            } else {
+                resultMessage.classList.add('incorrect');
+                resultMessage.textContent = `Incorrecto. La respuesta correcta era: ${q.correctAnswer})`;
+            }
+            optionsContainer.parentNode.appendChild(resultMessage); // Add it to the question card
+        }
+
+
+        function updateNavigationButtons() {
+            // Always show "Reiniciar Test" button
+            resetTestBtn.style.display = 'inline-block';
+
+            // Logic for other buttons remains similar to before
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+            nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+            submitBtn.style.display = currentQuestionIndex === questions.length - 1 && !quizSubmitted ? 'inline-block' : 'none';
+
+            if (quizSubmitted) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                // When quiz is submitted, the "Reiniciar Test" button is still visible
+                // but the "Revisar Test" button on the results page is used for review.
+            }
+        }
+
+        function showResults() {
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let answeredCount = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i]) { // Check if the question was answered
+                    answeredCount++;
+                    if (userAnswers[i] === questions[i].correctAnswer) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            }
+
+            correctAnswersDisplay.textContent = correctCount;
+            incorrectAnswersDisplay.textContent = incorrectCount;
+            totalQuestionsAnsweredDisplay.textContent = answeredCount;
+            totalQuestionsDisplay.textContent = questions.length; // Total questions available in the test
+
+            document.getElementById('quiz-app').style.display = 'none';
+            quizResultsDiv.style.display = 'block';
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+                saveQuizState(); // Save state after navigation
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            quizSubmitted = true;
+            saveQuizState(); // Save state when quiz is submitted
+            // Reload all questions to show individual results
+            currentQuestionIndex = 0; // Go back to the first question to review
+            loadQuestion(); // Load the first question with feedback
+            document.getElementById('quiz-app').style.display = 'block'; // Ensure quiz is visible
+            quizResultsDiv.style.display = 'none'; // Hide final results temporarily
+            showResults(); // Show the final summary
+        });
+
+        restartBtn.addEventListener('click', () => {
+            // This button is for reviewing the test, not a full reset
+            currentQuestionIndex = 0;
+            quizSubmitted = true; // Stay in submitted state to show feedback
+            quizResultsDiv.style.display = 'none';
+            document.getElementById('quiz-app').style.display = 'block';
+            loadQuestion();
+        });
+
+        // Event listener for the new "Reiniciar Test" button
+        resetTestBtn.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quizSubmitted = false;
+            answeredQuestions.clear(); // Clear the record of answered questions
+            localStorage.clear(); // Clear all saved data from localStorage
+            quizResultsDiv.style.display = 'none'; // Hide results if visible
+            document.getElementById('quiz-app').style.display = 'block'; // Show quiz app
+            loadQuestion();
+        });
+
+        // Initialize the quiz
+        loadQuizState(); // Load state when the page loads
+        loadQuestion();
+    </script>
+</body>
+</html>
+
