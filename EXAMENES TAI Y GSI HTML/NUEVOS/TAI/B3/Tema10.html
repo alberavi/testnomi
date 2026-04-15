@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test B3T10 - Herramientas CASE y Git</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #8b5cf6; background-color: #f5f3ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+        .progress-bar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20 font-sans">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Cabecera -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">TEST BLOQUE III TEMA 10</h1>
+                    <p class="text-slate-500 text-sm">Herramientas CASE y Control de Versiones (GIT)</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-black text-purple-600" id="score-display">0</div>
+                    <div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest">Puntos</div>
+                </div>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div id="progress" class="progress-bar bg-purple-500 h-full" style="width: 3.33%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs font-bold text-slate-400">
+                <span>PREGUNTA <span id="current-idx-text">1</span>/30</span>
+                <span id="percent-text">3% COMPLETADO</span>
+            </div>
+        </div>
+
+        <!-- Contenedor del Test -->
+        <div id="quiz-container" class="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 min-h-[400px] flex flex-col">
+            <div id="question-text" class="text-lg text-slate-800 font-semibold mb-8 leading-relaxed"></div>
+            
+            <div id="options-container" class="space-y-3 flex-grow">
+                <!-- Opciones dinámicas -->
+            </div>
+            
+            <div class="flex justify-between mt-10 border-t border-slate-100 pt-6">
+                <button id="prev-btn" class="px-6 py-2 font-bold text-slate-400 hover:text-purple-600 disabled:opacity-0 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    ANTERIOR
+                </button>
+                <button id="next-btn" class="bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 shadow-lg shadow-purple-200 transition-all flex items-center gap-2">
+                    SIGUIENTE
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
+            <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2">Examen Finalizado</h2>
+            <p class="text-slate-500 mb-6">Test Bloque III Tema 10</p>
+            <div class="bg-slate-50 rounded-2xl py-6 mb-8 border border-slate-200">
+                <div class="text-5xl font-black text-purple-600" id="final-score">0/30</div>
+                <div class="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest" id="final-percent">0% ACIERTOS</div>
+            </div>
+            <p class="text-slate-600 mb-8 font-medium px-4" id="final-comment"></p>
+            <button onclick="location.reload()" class="w-full bg-purple-600 text-white py-4 rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200">REPETIR TEST</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. ¿Qué se entiende por CASE?", a: ["Computer-Aided Systems Engineering", "Computer Assistant Software Enable", "Ingeniería de software asistida por computadora", "Respuestas a y c son correctas"], c: 3 },
+            { q: "2. Son herramientas específicas del control de versiones de software:", a: ["Hbase, Redis y Gimp.", "RedMine, Planner y OpenProj", "Gimp, Mercurial y CVS.", "Git, Mercurial y Apache Subversión."], c: 3 },
+            { q: "3. ¿Cuál de las siguientes afirmaciones sobre el comando fetch de git es correcta?", a: ["Descarga los cambios de una determinada rama y actualiza el repositorio local.", "Ejecutando 'git fetch' solamente se descargan las últimas modificaciones en nuestro branch local.", "Ejecutando 'git fetch' se descargan objetos y referencias de otro repositorio.", "Ejecutar 'git fetch' equivaldría a ejecutar git pull + git merge."], c: 2 },
+            { q: "4. ¿Cuál de las siguientes NO es una característica de un repositorio GIT?", a: ["Es un sistema distribuido.", "Posee tres estados principales en los que se pueden encontrar los archivos.", "Es necesario tener conexión a internet para poder realizar confirmaciones.", "Identifica las acciones mediante una suma de comprobación."], c: 2 },
+            { q: "5. Señala la opción que no sea un componente de una herramienta CASE:", a: ["Repositorio", "Analista", "Metamodelo", "Generador de Informes"], c: 1 },
+            { q: "6. Señale cuál sería el comando correcto en GIT para actualizar el contenido de un branch y empezar a trabajar en ese branch:", a: ["git pull origin nombre_branch", "git push origin nombre_branch", "git checkout nombre_branch", "git status"], c: 2 },
+            { q: "7. ¿Qué comando se utiliza para enviar los cambios del repositorio local al remoto en GIT?", a: ["git fetch", "git pull", "git push", "git commit"], c: 2 },
+            { q: "8. Las herramientas CASE que abarcan todas las fases del ciclo de vida se denominan:", a: ["I-CASE", "U-CASE", "L-CASE", "S-CASE"], c: 0 },
+            { q: "9. ¿En qué estado se encuentra un archivo en GIT si ha sido modificado pero no se ha preparado para la próxima confirmación?", a: ["Committed", "Modified", "Staged", "Untracked"], c: 1 },
+            { q: "10. El comando 'git log' permite:", a: ["Ver el estado actual de los archivos.", "Visualizar el historial de confirmaciones.", "Borrar un commit antiguo.", "Ver las diferencias entre archivos."], c: 1 },
+            { q: "11. ¿Cuál de las siguientes es una ventaja de las herramientas CASE?", a: ["Aumento del coste de mantenimiento.", "Dificultad en la reutilización de software.", "Mejora de la calidad del software.", "Aumento del tiempo de desarrollo."], c: 2 },
+            { q: "12. En GIT, el área donde se preparan los archivos antes del commit se llama:", a: ["Repository", "Working Directory", "Staging Area / Index", "Remote Area"], c: 2 },
+            { q: "13. ¿Qué comando se utiliza para añadir archivos al área de preparación (index) en GIT?", a: ["git commit", "git init", "git add", "git status"], c: 2 },
+            { q: "14. Las herramientas U-CASE (Upper CASE) se centran en:", a: ["La generación de código.", "Las fases finales del ciclo de vida.", "Las primeras fases del ciclo de vida (planificación, análisis).", "El mantenimiento exclusivamente."], c: 2 },
+            { q: "15. El comando 'git clone' se utiliza para:", a: ["Crear un commit nuevo.", "Copiar un repositorio existente a un nuevo directorio.", "Fusionar dos ramas.", "Eliminar el historial."], c: 1 },
+            { q: "16. ¿Qué comando permite ver qué archivos están modificados y cuáles están en el área de preparación?", a: ["git log", "git diff", "git status", "git show"], c: 2 },
+            { q: "17. ¿Cuál es el comando para fusionar una rama en la rama actual en GIT?", a: ["git branch merge", "git combine", "git join", "git merge"], c: 3 },
+            { q: "18. En el contexto de CASE, el repositorio se define como:", a: ["Un lugar donde solo se guarda el código fuente.", "Una base de datos que almacena toda la información relativa al proyecto.", "Un servidor de correo para los desarrolladores.", "Una herramienta para dibujar diagramas."], c: 1 },
+            { q: "19. ¿Cuál de los siguientes es un sistema de control de versiones centralizado (no distribuido)?", a: ["Git", "Mercurial", "Subversion (SVN)", "Bazaar"], c: 2 },
+            { q: "20. El comando 'git commit -m \"mensaje\"' sirve para:", a: ["Subir cambios al servidor.", "Confirmar los cambios en el repositorio local con un mensaje explicativo.", "Crear una rama nueva.", "Descargar cambios del servidor."], c: 1 },
+            { q: "21. ¿Qué comando se usa para crear una nueva rama en GIT?", a: ["git new-branch", "git checkout -b", "git branch", "Las respuestas B y C son correctas para crear/gestionar."], c: 3 },
+            { q: "22. Las herramientas CASE facilitan la reingeniería de software. ¿Qué es la reingeniería?", a: ["El proceso de analizar un sistema para crear una representación del mismo en una forma de mayor abstracción.", "El proceso de modificación de un sistema software después de su entrega.", "La creación de código a partir de especificaciones.", "Ninguna es correcta."], c: 1 },
+            { q: "23. En Git, ¿qué es un 'HEAD'?", a: ["El nombre de la rama principal siempre.", "Un puntero al último commit de la rama actual.", "El primer commit de la historia del proyecto.", "Un comando para borrar archivos."], c: 1 },
+            { q: "24. El comando 'git pull' es en realidad la combinación de:", a: ["fetch + commit", "add + commit", "fetch + merge", "push + fetch"], c: 2 },
+            { q: "25. ¿Cuál de estas afirmaciones sobre las herramientas CASE es correcta?", a: ["Se centran exclusivamente en la parte de planificación.", "Mejora la productividad del software.", "Generación del código a partir del diseño.", "Las respuestas B, C y D son ventajas/características correctas."], c: 3 },
+            { q: "26. En git si queremos visualizar los cambios que se han producido en diferentes commits ¿Qué comando sería?", a: ["git diff", "git status", "git find", "git get diff"], c: 0 },
+            { q: "27. Las herramientas L-CASE (Lower CASE):", a: ["Se centran en las últimas fases del ciclo de vida (implementación, pruebas).", "Abarcan todas las fases del ciclo de vida del software.", "Se centran en las etapas intermedias del ciclo de vida del software.", "Se centran en las primeras fases del ciclo de vida del software."], c: 0 },
+            { q: "28. ¿Cuál de los siguientes es un sitio web para alojar proyectos software de código abierto creado por MICROSOFT?", a: ["LaunchPad", "CodePlex (actualmente GitHub es el principal tras su compra)", "SourceForge", "Bitbucket"], c: 1 },
+            { q: "29. ¿Cuál de los siguientes no es un sistema de control de versiones?", a: ["Bitbucket (es una plataforma de alojamiento)", "Mercurial", "GIT", "CVS"], c: 0 },
+            { q: "30. ¿Con qué comando se crea un nuevo repositorio local en GIT?", a: ["GIT INIT", "GIT CREATE", "GIT ADD", "GIT CLONE"], c: 0 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function updateUI() {
+            const item = questions[currentIdx];
+            document.getElementById('current-idx-text').innerText = currentIdx + 1;
+            document.getElementById('question-text').innerText = item.q;
+            document.getElementById('score-display').innerText = score;
+            
+            const progress = ((currentIdx + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('percent-text').innerText = `${Math.round(progress)}% COMPLETADO`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl flex items-start gap-4';
+                const letter = String.fromCharCode(65 + i);
+                
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200">${letter}</span>
+                    <span class="text-slate-700 font-medium pt-1">${option}</span>
+                `;
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) {
+                        btn.classList.add('correct');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white border border-emerald-600";
+                    } else if (i === userAnswers[currentIdx]) {
+                        btn.classList.add('incorrect');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-sm font-bold text-white border border-red-600";
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === questions.length - 1 ? 'TERMINAR' : 'SIGUIENTE';
+        }
+
+        function selectOption(idx) {
+            if (userAnswers[currentIdx] !== null) return;
+            userAnswers[currentIdx] = idx;
+            if (idx === questions[currentIdx].c) score++;
+            updateUI();
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                updateUI();
+            } else {
+                showResults();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                updateUI();
+            }
+        };
+
+        function showResults() {
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+            document.getElementById('final-percent').innerText = `${percent}% ACIERTOS`;
+
+            let comment = "";
+            if (percent === 100) comment = "¡Perfecto! Eres un maestro de las herramientas CASE y el flujo de Git.";
+            else if (percent >= 80) comment = "¡Excelente! Tienes un conocimiento sólido de los sistemas de control de versiones.";
+            else if (percent >= 50) comment = "Aprobado. Repasa los comandos avanzados de Git y la clasificación de herramientas CASE.";
+            else comment = "Necesitas reforzar los conceptos de Upper CASE, Lower CASE y el flujo de trabajo de Git.";
+
+            document.getElementById('final-comment').innerText = comment;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

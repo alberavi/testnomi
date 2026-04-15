@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Oficial B3T2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #10b981; background-color: #f0fdf4; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-900">
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <!-- Encabezado Estilo Examen -->
+        <div class="bg-white rounded-t-2xl shadow-sm border-b p-8 text-center">
+            <h1 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">TEST BLOQUE III - TEMA 02</h1>
+            <p class="text-emerald-600 font-bold mt-1">Modelo Relacional, Normalización e Integridad</p>
+            <div class="mt-6 flex justify-center gap-6">
+                <div class="text-center">
+                    <span id="counter" class="block text-sm font-black text-slate-400 uppercase">Pregunta</span>
+                    <span class="text-xl font-bold text-slate-700">0 / 32</span>
+                </div>
+                <div class="text-center border-l border-r px-6">
+                    <span class="block text-sm font-black text-slate-400 uppercase">Aciertos</span>
+                    <span id="score-val" class="text-xl font-bold text-emerald-600">0</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-sm font-black text-slate-400 uppercase">Progreso</span>
+                    <span id="progress-percent" class="text-xl font-bold text-blue-600">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor del Test -->
+        <div class="bg-white p-8 shadow-xl min-h-[400px] flex flex-col justify-between">
+            <div id="quiz-content">
+                <h2 id="question-text" class="text-xl font-bold leading-snug mb-8 text-slate-800"></h2>
+                <div id="options" class="grid grid-cols-1 gap-3">
+                    <!-- Opciones dinámicas -->
+                </div>
+            </div>
+
+            <!-- Navegación -->
+            <div class="flex justify-between items-center mt-12 pt-6 border-t border-slate-100">
+                <button id="prev-btn" class="flex items-center gap-2 px-4 py-2 font-bold text-slate-400 hover:text-slate-800 transition-colors disabled:opacity-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    ANTERIOR
+                </button>
+                <button id="next-btn" class="bg-slate-800 hover:bg-emerald-600 text-white px-10 py-3 rounded-xl font-black shadow-lg transition-all active:scale-95">
+                    SIGUIENTE
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra de Progreso Inferior -->
+        <div class="w-full bg-slate-200 h-2 rounded-b-2xl overflow-hidden">
+            <div id="progress-bar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <!-- Resultados Finales -->
+        <div id="results-screen" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
+                <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h2 class="text-3xl font-black text-slate-800 mb-2">¡Test Completado!</h2>
+                <p class="text-slate-500 mb-8">Has finalizado el repaso del Tema 02.</p>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-slate-50 p-4 rounded-2xl">
+                        <span class="block text-xs font-bold text-slate-400 uppercase">Aciertos</span>
+                        <span id="final-score" class="text-3xl font-black text-emerald-600">0</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl">
+                        <span class="block text-xs font-bold text-slate-400 uppercase">Total</span>
+                        <span class="text-3xl font-black text-slate-800">32</span>
+                    </div>
+                </div>
+                <button onclick="location.reload()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl hover:bg-emerald-700 transition-all">REPETIR EXAMEN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DATOS EXTRAÍDOS FIELMENTE DEL PDF (Pregunta, Opciones, Índice de Respuesta Correcta 0-3)
+        const questions = [
+            { q: "1. Un atributo o columna de una determinada tupla o fila", a: ["No puede tener un valor nulo", "Puede tener un valor nulo", "Puede tener un valor nulo si lo permite su dominio", "Solo puede tener valor nulo si no es clave"], c: 2 },
+            { q: "2. En el modelo relacional de Codd, una relación es:", a: ["Una asociación o correspondencia existente al menos entre dos entidades.", "Un conjunto de n-tuplas, donde una n-tupla se define a su vez como una lista ordenada de valores atómicos.", "Ninguna es correcta.", "Una asociación o correspondencia existente entre una o varias entidades."], c: 1 },
+            { q: "3. ¿Cuál de las siguientes definiciones sobre la integridad referencial NO es correcta?", a: ["Una clave externa nunca puede tener valores nulos.", "Una clave externa puede ser duplicada.", "La clave externa en una entidad debe siempre vincular a una fila válida de la entidad a la que se haga referencia.", "La necesidad de la regla de integridad relacional proviene del hecho de que las claves externas tienen por objetivo establecer una conexión con la clave primaria que referencian."], c: 0 },
+            { q: "4. ¿cuál de las siguientes opciones NO representa uno de los niveles de abstracción de Bases de Datos?", a: ["Interno", "Externo", "Conceptual", "Sintáctico"], c: 3 },
+            { q: "5. ¿Cuál de las siguientes afirmaciones sobre la teoría de la Normalización es INCORRECTA?", a: ["Como resultado de la aplicación de esta técnica se logra minimizar las relaciones existentes entre las tablas.", "Proporciona una estructura más flexible y fácil de mantener.", "Evita redundancias y anomalías de actualización.", "Se basa en el concepto de dependencia funcional."], c: 0 },
+            { q: "6. Atendiendo al modelo relacional de Codd, un Dominio es:", a: ["Un conjunto finito de valores del mismo tipo.", "Un conjunto de valores atómicos.", "Cualquier columna de una tabla.", "El nombre que recibe una tabla."], c: 1 },
+            { q: "7. ¿Cuándo se dice que existe una dependencia funcional (X -> Y)?", a: ["Cuando cada valor de X tiene asociado en todo momento un único valor de Y.", "Cuando cada valor de Y tiene asociado un único valor de X.", "Cuando X es una clave foránea que apunta a Y.", "Cuando Y es un atributo nulo."], c: 0 },
+            { q: "8. Un esquema de relación está en Primera Forma Normal (1FN) si y solo si:", a: ["Tiene una clave primaria.", "Todos los atributos son atómicos (no hay grupos repetitivos).", "No existen dependencias transitivas.", "No existen dependencias parciales."], c: 1 },
+            { q: "9. Un esquema de relación está en Segunda Forma Normal (2FN) si:", a: ["Está en 1FN y no tiene dependencias transitivas.", "Está en 1FN y no tiene dependencias parciales de la clave primaria.", "Está en 1FN y cada determinante es una clave candidata.", "Tiene al menos dos tablas relacionadas."], c: 1 },
+            { q: "10. Un esquema de relación está en Tercera Forma Normal (3FN) si:", a: ["Está en 2FN y no tiene dependencias parciales.", "Está en 2FN y ningún atributo no primo tiene una dependencia transitiva respecto a la clave primaria.", "Está en 2FN y todos los atributos son claves.", "Está en BCNF."], c: 1 },
+            { q: "11. ¿En qué consiste la anomalía de actualización?", a: ["En la imposibilidad de añadir nuevos registros por falta de espacio.", "En la necesidad de actualizar el mismo dato en varios lugares debido a la redundancia.", "En el borrado accidental de datos.", "En el cambio de nombre de una tabla."], c: 1 },
+            { q: "12. Señale la definición correcta de Integridad de Entidad:", a: ["Las claves foráneas no pueden ser nulas.", "La clave primaria puede ser nula si es compuesta.", "Ningún atributo que forme parte de la clave primaria de una relación puede tomar valores nulos.", "La base de datos debe ser consistente."], c: 2 },
+            { q: "13. ¿A qué nivel de abstracción corresponde la visión del administrador de la base de datos sobre la estructura global?", a: ["Nivel Interno", "Nivel Físico", "Nivel Externo", "Nivel Conceptual"], c: 3 },
+            { q: "14. El nivel que describe cómo se almacenan realmente los datos (punteros, índices, etc.) es el:", a: ["Nivel Lógico", "Nivel de Vistas", "Nivel Conceptual", "Nivel Interno"], c: 3 },
+            { q: "15. ¿Qué nivel de arquitectura ANSI/SPARC proporciona independencia lógica y física?", a: ["Nivel de Almacenamiento", "Nivel de Red", "Nivel Conceptual", "Nivel de Aplicación"], c: 2 },
+            { q: "16. Una clave candidata es:", a: ["La que el usuario elige como principal.", "Cualquier atributo que pueda ser nulo.", "Un conjunto de atributos que identifica unívocamente una tupla y es mínima.", "Una clave que siempre es ajena."], c: 2 },
+            { q: "17. Un atributo primo es aquel que:", a: ["Es un número primo.", "Es el primer atributo de la tabla.", "No puede ser nulo.", "Forma parte de alguna clave candidata."], c: 3 },
+            { q: "18. ¿Cuál es la principal ventaja de la Forma Normal de Boyce-Codd (BCNF)?", a: ["Elimina todas las anomalías de inserción, borrado y actualización debidas a dependencias funcionales.", "Permite tener más de una clave primaria.", "Reduce el número de tablas al mínimo.", "No requiere que la tabla esté en 3FN."], c: 0 },
+            { q: "19. Una dependencia transitiva ocurre cuando:", a: ["Un atributo depende de la clave foránea.", "A -> B y B -> C (siendo B y C no primos), entonces A -> C.", "Un atributo depende solo de parte de la clave.", "Hay un bucle en el diagrama."], c: 1 },
+            { q: "20. El grado de una relación es:", a: ["El número de registros.", "El número de atributos.", "La calidad de los datos.", "El nivel de normalización."], c: 1 },
+            { q: "21. La cardinalidad de una relación es:", a: ["El número de columnas.", "El número de tuplas.", "El número de claves externas.", "El número de dominios."], c: 1 },
+            { q: "22. En el modelo relacional, las filas se denominan:", a: ["Tuplas", "Atributos", "Campos", "Relaciones"], c: 0 },
+            { q: "23. En el modelo relacional, las columnas se denominan:", a: ["Tuplas", "Registros", "Tablas", "Atributos"], c: 3 },
+            { q: "24. ¿Qué operación del álgebra relacional selecciona un subconjunto de columnas?", a: ["Selección", "Unión", "Diferencia", "Proyección"], c: 3 },
+            { q: "25. ¿Qué operación del álgebra relacional selecciona un subconjunto de filas?", a: ["Proyección", "Selección", "Producto Cartesiano", "Intersección"], c: 1 },
+            { q: "26. Un determinante en una dependencia funcional es:", a: ["El atributo de la derecha.", "Un atributo nulo.", "Un valor numérico.", "El atributo de la izquierda (el que determina el valor del otro)."], c: 3 },
+            { q: "27. ¿Qué nivel de abstracción es el más cercano al usuario final?", a: ["Conceptual", "Interno", "Físico", "Externo (Vistas)"], c: 3 },
+            { q: "28. Una clave primaria compuesta es aquella que:", a: ["Tiene letras y números.", "Está formada por más de un atributo.", "Se refiere a dos tablas distintas.", "No es única."], c: 1 },
+            { q: "29. ¿Cuál es el objetivo principal de la normalización?", a: ["Aumentar la velocidad de las consultas.", "Minimizar la redundancia y evitar anomalías.", "Hacer las tablas más grandes.", "Eliminar las claves primarias."], c: 1 },
+            { q: "30. Señale cuál de las siguientes afirmaciones sobre la clave candidata es INCORRECTA", a: ["En una tabla de empleados la columna nombre podría ser clave principal.", "Todas son correctas.", "La clave primaria es la clave candidata que elijamos para representar cada fila de manera unívoca.", "Puede haber varias claves candidatas dentro de una tabla."], c: 1 },
+            { q: "31. En el contexto del modelo relacional, ¿qué regla de integridad significa que la clave externa de una tabla de referencia siempre debe aludir a una fila válida de la tabla a la que se haga referencia", a: ["Integridad de negocio.", "Integridad referencial.", "Integridad de entidad.", "Integridad de propagación."], c: 1 },
+            { q: "32. ¿Cuál de las siguientes afirmaciones sobre las relaciones en la integridad referencial es FALSA?", a: ["Un registro de una tabla puede estar relacionado con un registro de otra tabla como mucho.", "Entre dos tablas de cualquier base de datos relacional pueden haber dos tipos de relaciones, relaciones uno a uno y relaciones uno a muchos.", "La integridad referencial se activa en cuanto creamos una clave foránea.", "Una clave foránea es pues un campo de una tabla que contiene una referencia a un registro de otra tabla."], c: 0 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function render() {
+            const item = questions[currentIdx];
+            
+            // Actualizar textos e indicadores
+            document.getElementById('counter').parentElement.querySelector('span:last-child').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('score-val').innerText = score;
+            document.getElementById('question-text').innerText = item.q;
+            
+            const perc = Math.round(((currentIdx + 1) / questions.length) * 100);
+            document.getElementById('progress-percent').innerText = `${perc}%`;
+            document.getElementById('progress-bar').style.width = `${perc}%`;
+
+            // Renderizar Opciones
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+
+            item.a.forEach((txt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-5 rounded-2xl font-bold text-slate-700 bg-white shadow-sm flex items-start gap-4';
+                
+                const label = document.createElement('span');
+                label.className = 'bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs font-black mt-1';
+                label.innerText = String.fromCharCode(65 + i);
+                
+                const content = document.createElement('span');
+                content.innerText = txt;
+                
+                btn.appendChild(label);
+                btn.appendChild(content);
+
+                // Lógica de respuesta
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) btn.classList.add('correct');
+                    else if (i === userAnswers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => {
+                        userAnswers[currentIdx] = i;
+                        if (i === item.c) score++;
+                        render();
+                    };
+                }
+                optionsDiv.appendChild(btn);
+            });
+
+            // Botones de navegación
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            prevBtn.disabled = currentIdx === 0;
+            if (currentIdx === questions.length - 1) {
+                nextBtn.innerText = "FINALIZAR";
+                nextBtn.classList.replace('bg-slate-800', 'bg-blue-600');
+            } else {
+                nextBtn.innerText = "SIGUIENTE";
+                nextBtn.classList.replace('bg-blue-600', 'bg-slate-800');
+            }
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                render();
+            } else {
+                document.getElementById('final-score').innerText = score;
+                document.getElementById('results-screen').classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                render();
+            }
+        };
+
+        // Iniciar
+        render();
+    </script>
+</body>
+</html>

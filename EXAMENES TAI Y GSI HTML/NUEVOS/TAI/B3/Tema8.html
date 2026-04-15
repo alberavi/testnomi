@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test B3T8 - Desarrollo Web y PHP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #f59e0b; background-color: #fffbeb; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+        .progress-bar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-orange-50 min-h-screen pb-20 font-sans">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Cabecera -->
+        <div class="bg-white rounded-2xl shadow-sm border border-orange-200 p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">TEST BLOQUE III TEMA 08</h1>
+                    <p class="text-slate-500 text-sm">JavaScript, PHP, DOM y Estándares Web</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-black text-orange-600" id="score-display">0</div>
+                    <div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest">Puntos</div>
+                </div>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div id="progress" class="progress-bar bg-orange-500 h-full" style="width: 2.5%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs font-bold text-slate-400">
+                <span>PREGUNTA <span id="current-idx-text">1</span>/40</span>
+                <span id="percent-text">2% COMPLETADO</span>
+            </div>
+        </div>
+
+        <!-- Contenedor del Test -->
+        <div id="quiz-container" class="bg-white rounded-2xl shadow-xl border border-orange-100 p-8 min-h-[400px] flex flex-col">
+            <div id="question-text" class="text-lg text-slate-800 font-semibold mb-8 leading-relaxed"></div>
+            
+            <div id="options-container" class="space-y-3 flex-grow">
+                <!-- Opciones dinámicas -->
+            </div>
+            
+            <div class="flex justify-between mt-10 border-t border-slate-100 pt-6">
+                <button id="prev-btn" class="px-6 py-2 font-bold text-slate-400 hover:text-orange-600 disabled:opacity-0 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    ANTERIOR
+                </button>
+                <button id="next-btn" class="bg-orange-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-700 shadow-lg shadow-orange-200 transition-all flex items-center gap-2">
+                    SIGUIENTE
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
+            <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2">Resultados Finales</h2>
+            <p class="text-slate-500 mb-6">Test Bloque III Tema 8</p>
+            <div class="bg-slate-50 rounded-2xl py-6 mb-8 border border-slate-200">
+                <div class="text-5xl font-black text-orange-600" id="final-score">0/40</div>
+                <div class="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest" id="final-percent">0% ACIERTOS</div>
+            </div>
+            <p class="text-slate-600 mb-8 font-medium px-4" id="final-comment"></p>
+            <button onclick="location.reload()" class="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-200">REINTENTAR EXAMEN</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. ¿Cuál de los siguientes No es un formato de imágenes recomendado para utilizar en páginas web?", a: ["SVG", "GIF", "BMP", "WEBP"], c: 2 },
+            { q: "2. ¿Cuál de las siguientes afirmaciones sobre cookies es INCORRECTA?", a: ["Las cookies zombies se vuelven a crear después de borrarlas.", "Su función es identificar al usuario almacenando su historial.", "Es un archivo creado por un sitio web con pequeñas cantidades de datos.", "Una cookie temporal se almacena en el disco duro y sólo puede ser borrada por el usuario."], c: 3 },
+            { q: "3. Indique la afirmación VERDADERA, ECMAScript 7 (ECMASCRIPT 2016) añade:", a: ["La posibilidad de utilizar expresiones regulares.", "El operador exponencial (**)", "Soporte para formato de texto sencillo para intercambio de datos.", "La instrucción try/catch"], c: 1 },
+            { q: "4. ¿Qué herramienta de javascript permite detectar la falta de compatibilidad del proyecto con cada navegador?", a: ["aurelia", "jquery", "vue", "modernizer"], c: 3 },
+            { q: "5. Para obtener un elemento a través de su id en javascript, ¿Cuál sería la forma correcta?", a: ["window.document.getElementById(\"header\")", "document.getElementId(\"header\")", "document.getElement(\"header\")", "window.document.getElement(\"header\")"], c: 0 },
+            { q: "6. En javascript, ¿Cuál es la forma correcta de crear un array?", a: ["var txt = new Array(\"tim\",\"kim\",\"jim\")", "var txt = new Array:1=(\"tim\")2=(\"kim\")3=(\"jim\")", "var txt = \"tim\",\"kim\",\"jim\"", "var txt = (1:\"tim\",2:\"kim\",3:\"jim\")"], c: 0 },
+            { q: "7. ¿Cómo se escribe un condicional IF en javascript?", a: ["if i == 5 then", "if i = 5 then", "if (i == 5)", "if i = 5"], c: 2 },
+            { q: "8. ¿Cuál de las siguientes es una librería de JavaScript?", a: ["React", "Angular", "Vue", "Todas son correctas"], c: 3 },
+            { q: "9. Indica cuál NO es un entorno de ejecución de JavaScript:", a: ["Node.js", "Deno", "Babel", "Bun"], c: 2 },
+            { q: "10. ¿Cuál de las siguientes es la forma correcta de declarar una variable en PHP?", a: ["var nombreVar", "$nombreVar", "int nombreVar", "nombreVar"], c: 1 },
+            { q: "11. En PHP, ¿cómo se concatena dos cadenas de texto?", a: ["Usando el punto (.)", "Usando el signo más (+)", "Usando la coma (,)", "Usando el ampersand (&)"], c: 0 },
+            { q: "12. ¿Qué función de PHP se utiliza para abrir un archivo?", a: ["open_file()", "fopen()", "file_open()", "read_file()"], c: 1 },
+            { q: "13. ¿Cuál es la forma correcta de iniciar una sesión en PHP?", a: ["session_start();", "start_session();", "init_session();", "session_init();"], c: 0 },
+            { q: "14. ¿Qué método de envío de formulario en PHP muestra los datos en la URL?", a: ["POST", "SEND", "GET", "URL"], c: 2 },
+            { q: "15. ¿Qué significa PHP?", a: ["Personal Home Page", "PHP: Hypertext Preprocessor", "Private Hypertext Page", "Preprocessed Hypertext Page"], c: 1 },
+            { q: "16. En JavaScript, ¿qué operador se usa para comparar valor y tipo?", a: ["==", "===", "=", "!="], c: 1 },
+            { q: "17. ¿Cómo se añade un comentario de una sola línea en PHP?", a: ["//", "/* */", "<!-- -->", "::"], c: 0 },
+            { q: "18. ¿Qué función de JavaScript se usa para convertir un string en un número entero?", a: ["toInteger()", "parseInt()", "getNumber()", "castInt()"], c: 1 },
+            { q: "19. ¿Cuál es el puerto por defecto para un servidor web HTTP?", a: ["443", "21", "80", "25"], c: 2 },
+            { q: "20. En el DOM, ¿cuál es el objeto raíz?", a: ["body", "html", "window", "document"], c: 3 },
+            { q: "21. ¿Qué etiqueta HTML se usa para incluir código JavaScript externo?", a: ["<script>", "<js>", "<javascript>", "<code>"], c: 0 },
+            { q: "22. En PHP, ¿qué superglobal se usa para recibir archivos subidos?", a: ["$_GET", "$_POST", "$_FILES", "$_ENV"], c: 2 },
+            { q: "23. ¿Cómo se define una constante en PHP?", a: ["constante()", "define()", "const()", "set()"], c: 1 },
+            { q: "24. ¿Qué evento de JavaScript se dispara cuando se hace clic en un elemento?", a: ["onhover", "onclick", "onpress", "onchange"], c: 1 },
+            { q: "25. ¿Cuál es el formato de imagen que soporta animaciones y transparencia binaria?", a: ["PNG", "JPG", "GIF", "SVG"], c: 2 },
+            { q: "26. ¿Qué función de PHP cuenta los elementos de un array?", a: ["size()", "count()", "length()", "total()"], c: 1 },
+            { q: "27. En JavaScript, ¿qué palabra clave se usa para declarar una variable que no puede ser reasignada?", a: ["let", "var", "const", "static"], c: 2 },
+            { q: "28. ¿Qué significa DOM?", a: ["Data Object Model", "Document Object Model", "Digital Object Management", "Document Oriented Model"], c: 1 },
+            { q: "29. ¿Qué función de PHP se usa para redirigir al usuario a otra página?", a: ["redirect()", "header()", "move()", "go()"], c: 1 },
+            { q: "30. ¿Cuál de estos es un framework de PHP?", a: ["Laravel", "Django", "Rails", "Spring"], c: 0 },
+            { q: "31. ¿Qué comando de PHP se usa para incluir un archivo y detiene la ejecución si falla?", a: ["include", "require", "import", "attach"], c: 1 },
+            { q: "32. En JavaScript, ¿qué hace el método pop() en un array?", a: ["Añade un elemento al final", "Elimina el primer elemento", "Elimina el último elemento", "Ordena el array"], c: 2 },
+            { q: "33. ¿Qué extensión tienen los archivos de PHP?", a: [".html", ".php", ".js", ".xml"], c: 1 },
+            { q: "34. ¿Qué protocolo se utiliza habitualmente para enviar correos electrónicos desde PHP?", a: ["FTP", "SMTP", "HTTP", "SNMP"], c: 1 },
+            { q: "35. En el DOM, ¿qué método se usa para crear un nuevo elemento?", a: ["newElement()", "createElement()", "addElement()", "makeElement()"], c: 1 },
+            { q: "36. ¿Cómo se accede al valor de un parámetro 'id' pasado por URL en PHP?", a: ["$GET['id']", "$_URL['id']", "$_GET['id']", "$id"], c: 2 },
+            { q: "37. Función que reordena aleatoriamente una cadena en PHP:", a: ["strpos", "strsuffle", "str_shuffle", "str_replace"], c: 2 },
+            { q: "38. Convierte un string codificado en JSON a una variable de PHP:", a: ["json_decode", "json_string", "json_encode", "json_parse"], c: 0 },
+            { q: "39. En PHP, ¿cómo se determina si una variable está definida y no es NULL?", a: ["empty", "unset", "isset", "die"], c: 2 },
+            { q: "40. Diferencia entre include y require en PHP:", a: ["include da un warning, require da fatal error.", "require_once e include_once evitan duplicados.", "require detiene el script si hay error.", "Todas las respuestas son correctas."], c: 3 }
+        ];
+
+        // Mapeo de respuestas correctas basado en el PDF
+        // Las preguntas 37-40 se extrajeron del snippet final
+        const answers = ["C", "D", "B", "D", "A", "A", "C", "D", "C", "B", "A", "B", "A", "C", "B", "B", "A", "B", "C", "D", "A", "C", "B", "B", "C", "B", "C", "B", "B", "A", "B", "C", "B", "B", "B", "C", "C", "A", "C", "D"];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function updateUI() {
+            const item = questions[currentIdx];
+            document.getElementById('current-idx-text').innerText = currentIdx + 1;
+            document.getElementById('question-text').innerText = item.q;
+            document.getElementById('score-display').innerText = score;
+            
+            const progress = ((currentIdx + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('percent-text').innerText = `${Math.round(progress)}% COMPLETADO`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl flex items-start gap-4';
+                const letter = String.fromCharCode(65 + i);
+                
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200">${letter}</span>
+                    <span class="text-slate-700 font-medium pt-1">${option}</span>
+                `;
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) {
+                        btn.classList.add('correct');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white border border-emerald-600";
+                    } else if (i === userAnswers[currentIdx]) {
+                        btn.classList.add('incorrect');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-sm font-bold text-white border border-red-600";
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === questions.length - 1 ? 'RESULTADOS' : 'SIGUIENTE';
+        }
+
+        function selectOption(idx) {
+            if (userAnswers[currentIdx] !== null) return;
+            userAnswers[currentIdx] = idx;
+            if (idx === questions[currentIdx].c) score++;
+            updateUI();
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                updateUI();
+            } else {
+                showResults();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                updateUI();
+            }
+        };
+
+        function showResults() {
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+            document.getElementById('final-percent').innerText = `${percent}% ACIERTOS`;
+
+            let comment = "";
+            if (percent === 100) comment = "¡Nivel Dios! Eres un experto en desarrollo web full-stack.";
+            else if (percent >= 80) comment = "¡Muy bien! Tienes conocimientos sólidos de JavaScript y PHP.";
+            else if (percent >= 50) comment = "Aprobado, pero conviene repasar las funciones de manipulación de strings en PHP.";
+            else comment = "Necesitas profundizar en el Tema 8. Repasa las diferencias entre include/require y los métodos del DOM.";
+
+            document.getElementById('final-comment').innerText = comment;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

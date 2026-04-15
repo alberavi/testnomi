@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test B3T5 - POO, Patrones y UML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #6366f1; background-color: #f5f3ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">TEST BLOQUE III TEMA 05</h1>
+            <p class="text-slate-500 text-sm">Programación Orientada a Objetos, Patrones de Diseño y UML</p>
+            <div class="flex items-center gap-4 mt-4">
+                <div class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                    Pregunta <span id="current-idx">1</span> de 32
+                </div>
+                <div class="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                    Aciertos: <span id="score">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="quiz-container" class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+            <div id="question-text" class="text-lg text-slate-800 font-medium mb-8 leading-relaxed whitespace-pre-wrap"></div>
+            <div id="options-container" class="space-y-4"></div>
+            
+            <div class="flex justify-between mt-10 border-t pt-6">
+                <button id="prev-btn" class="px-6 py-2 font-bold text-slate-400 hover:text-slate-600 disabled:opacity-0 transition-opacity">ANTERIOR</button>
+                <button id="next-btn" class="bg-indigo-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors">SIGUIENTE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">¡Test Finalizado!</h2>
+            <div class="text-6xl font-black text-indigo-600 mb-4" id="final-score">0/32</div>
+            <p class="text-slate-600 mb-8 leading-relaxed" id="final-comment"></p>
+            <button onclick="location.reload()" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-700 transition-all">REINTENTAR</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. ¿Cuáles de los siguientes NO son Diagramas UML de tipo de estructura?", a: ["Perfil", "Objetos", "Casos de uso", "Clases"], c: 2 },
+            { q: "2. ¿Cuál de las siguientes afirmaciones sobre el patrón SINGLETON es Correcta?", a: ["Hace uso de métodos privados y estáticos.", "No es recomendable utilizar este patrón en casos como por ejemplo los objetos que manejan la conexión a una base de datos.", "Es un patrón Estructural.", "Permite la instanciación de un número de objetos determinado paramétricamente."], c: 0 },
+            { q: "3. ¿Cuál de los siguientes patrones NO es de creación?", a: ["Abstract Factory.", "Factory", "Builder", "Adapter"], c: 3 },
+            { q: "4. ¿Cuál de las siguientes afirmaciones sobre la herencia es FALSA?", a: ["Ningún lenguaje orientado a objetos soporta la herencia múltiple.", "Aporta la posibilidad de crear una estructura jerárquica de clases cada vez más especializada.", "Su principal ventaja es la capacidad para definir atributos y métodos nuevos para la subclase.", "La relación padre-hijo entre clases es denominada vista de clases en árbol."], c: 0 },
+            { q: "5. ¿Cuál de los siguientes diagramas es de comportamiento?", a: ["Ninguno", "Componentes", "Paquetes", "Perfil"], c: 0 },
+            { q: "6. ¿Cuál es la finalidad del Diagrama de estados en UML?", a: ["Representar las interacciones entre los objetos a través del paso de mensaje.", "Documentar los diferentes estados por los que una clase puede pasar y los eventos que provocan estos cambios de estado.", "Mostrar la arquitectura física del sistema.", "Representar la jerarquía de clases."], c: 1 },
+            { q: "7. El polimorfismo es:", a: ["La capacidad de un objeto de tomar diferentes formas.", "La capacidad de que una operación tenga el mismo nombre en diferentes clases y se comporte de forma distinta.", "Un error de compilación.", "La propiedad de ocultar los datos de un objeto."], c: 1 },
+            { q: "8. ¿Qué patrón de diseño se utiliza para proporcionar una interfaz unificada para un conjunto de interfaces en un subsistema?", a: ["Facade", "Proxy", "Decorator", "Strategy"], c: 0 },
+            { q: "9. ¿Cuál de los siguientes es un diagrama de interacción en UML?", a: ["Diagrama de Despliegue.", "Diagrama de Secuencia.", "Diagrama de Actividades.", "Diagrama de Componentes."], c: 1 },
+            { q: "10. ¿Qué significa encapsulamiento en POO?", a: ["Permite que una clase herede de otra.", "Es la capacidad de ocultar los detalles internos de un objeto y proteger su integridad.", "Es la creación de múltiples objetos de la misma clase.", "Permite que un objeto cambie de tipo en tiempo de ejecución."], c: 1 },
+            { q: "11. El patrón Factory Method es un patrón de tipo:", a: ["Estructural", "De Comportamiento", "De Creación", "De Interfaz"], c: 2 },
+            { q: "12. En UML, ¿cómo se representa una relación de composición?", a: ["Un rombo vacío en el extremo de la clase contenedora.", "Un rombo relleno en el extremo de la clase contenedora.", "Una flecha punteada.", "Una línea continua sin adornos."], c: 1 },
+            { q: "13. ¿Cuál de los siguientes NO es un concepto fundamental de la POO?", a: ["Abstracción", "Modularidad", "Persistencia", "Encapsulación"], c: 2 },
+            { q: "14. El patrón Observer es un patrón de:", a: ["Creación", "Estructura", "Comportamiento", "Arquitectura"], c: 2 },
+            { q: "15. ¿Qué diagrama UML describe cómo se distribuye físicamente el sistema en nodos de hardware?", a: ["Diagrama de Paquetes", "Diagrama de Estructura Compuesta", "Diagrama de Despliegue", "Diagrama de Objetos"], c: 2 },
+            { q: "16. Una clase abstracta es aquella que:", a: ["No tiene atributos.", "No puede ser instanciada directamente.", "Solo tiene métodos estáticos.", "Es el supertipo de todas las clases en Java."], c: 1 },
+            { q: "17. ¿Cuál es la diferencia entre agregación y composición?", a: ["En la composición, la vida del objeto hijo depende de la del padre; en la agregación no.", "Son conceptos idénticos.", "La agregación es más fuerte que la composición.", "La composición solo se da entre interfaces."], c: 0 },
+            { q: "18. El patrón Strategy permite:", a: ["Definir una familia de algoritmos e intercambiarlos en tiempo de ejecución.", "Garantizar una única instancia de una clase.", "Adaptar una interfaz a otra.", "Decorar un objeto con nuevas funcionalidades."], c: 0 },
+            { q: "19. ¿Cuál es el propósito del diagrama de Casos de Uso?", a: ["Mostrar la lógica interna de un método.", "Representar las funciones del sistema desde el punto de vista del usuario.", "Diseñar la base de datos.", "Mostrar la secuencia temporal de mensajes."], c: 1 },
+            { q: "20. En POO, un método 'constructor' se encarga de:", a: ["Destruir el objeto.", "Inicializar el estado de un nuevo objeto.", "Copiar un objeto en otro.", "Serializar el objeto."], c: 1 },
+            { q: "21. El patrón Decorator se utiliza para:", a: ["Añadir responsabilidades a objetos de forma dinámica.", "Crear objetos complejos paso a paso.", "Acceder a los elementos de una colección sin exponer su estructura.", "Simplificar una interfaz compleja."], c: 0 },
+            { q: "22. En UML 2.0, el diagrama de tiempos (Timing Diagram) es un tipo de:", a: ["Diagrama de Interacción.", "Diagrama de Estructura.", "Diagrama de Casos de Uso.", "Diagrama de Clase."], c: 0 },
+            { q: "23. ¿Qué patrón de diseño permite tratar objetos individuales y composiciones de objetos de manera uniforme?", a: ["Composite", "Flyweight", "Bridge", "Memento"], c: 0 },
+            { q: "24. El acoplamiento en el diseño de software debe ser:", a: ["Máximo", "Variable", "Mínimo", "Inexistente"], c: 2 },
+            { q: "25. La cohesión en el diseño de software debe ser:", a: ["Mínima", "Media", "Máxima", "Nula"], c: 2 },
+            { q: "26. ¿Qué diagrama UML muestra la estructura interna de una clase o componente, incluyendo sus partes y puertos?", a: ["Diagrama de Estructura Compuesta", "Diagrama de Objetos", "Diagrama de Perfil", "Diagrama de Colaboración"], c: 0 },
+            { q: "27. ¿Qué es la sobrecarga de métodos?", a: ["Cuando una clase hija redefine un método de la clase padre.", "Tener varios métodos con el mismo nombre pero diferentes parámetros en la misma clase.", "Un error de memoria por exceso de llamadas.", "El uso de polimorfismo dinámico."], c: 1 },
+            { q: "28. ¿Cuál de los siguientes es un patrón de software de comportamiento?", a: ["Builder.", "Adapter", "Estrategia", "Facade"], c: 2 },
+            { q: "29. La definición de un objeto está compuesta por:", a: ["Identidad, Estructura y Comportamiento.", "Identidad, Clases e Acción", "Identidad, Comportamiento e Estado.", "Identidad y Clases."], c: 2 },
+            { q: "30. En POO, ¿Cuál es el mecanismo que implementa la propiedad de generalización?", a: ["Ninguna de las anteriores es correcta.", "Especialización.", "Encapsulamiento.", "Polimorfismo."], c: 1 },
+            { q: "31. ¿Cuál de los siguientes NO es un elemento de los diagramas de secuencia?", a: ["Mensaje", "Objeto", "Interfaces", "Actor"], c: 2 },
+            { q: "32. Cuál de las siguientes afirmaciones es incorrecta:", a: ["Un objeto es una entidad que posee un conjunto de datos y un conjunto de operaciones.", "La programación permite la reutilización y adaptación de códigos existentes bien probados y depurados.", "El estado de un objeto viene determinado según el tipo de operaciones que tenga.", "Una clase es una descripción general de un conjunto de objetos similares."], c: 2 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function showQuestion() {
+            const item = questions[currentIdx];
+            document.getElementById('current-idx').innerText = currentIdx + 1;
+            document.getElementById('question-text').innerText = item.q;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl flex items-start gap-4';
+                
+                const letter = String.fromCharCode(65 + i);
+                btn.innerHTML = `<span class="font-bold text-slate-400 min-w-[1.5rem]">${letter}.</span> <span class="text-slate-700 font-medium">${option}</span>`;
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) btn.classList.add('correct');
+                    else if (i === userAnswers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerText = currentIdx === questions.length - 1 ? "FINALIZAR" : "SIGUIENTE";
+        }
+
+        function selectOption(idx) {
+            if (userAnswers[currentIdx] !== null) return;
+            userAnswers[currentIdx] = idx;
+            if (idx === questions[currentIdx].c) score++;
+            document.getElementById('score').innerText = score;
+            showQuestion();
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                showQuestion();
+            } else {
+                showResults();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                showQuestion();
+            }
+        };
+
+        function showResults() {
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+            let comment = "";
+            const percent = (score / questions.length) * 100;
+            if (percent === 100) comment = "¡Perfecto! Eres un experto en POO y UML.";
+            else if (percent >= 80) comment = "¡Excelente! Tienes conceptos de diseño muy sólidos.";
+            else if (percent >= 50) comment = "Aprobado, pero repasa los patrones de diseño y diagramas estructurales.";
+            else comment = "Necesitas repasar a fondo el Bloque III Tema 5.";
+            
+            document.getElementById('final-comment').innerText = comment;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

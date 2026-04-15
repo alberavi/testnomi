@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Oficial B3T4 - SQL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #3b82f6; background-color: #eff6ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+        code { background: #f8fafc; padding: 2px 6px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; color: #1e293b; border: 1px solid #e2e8f0; }
+        pre { background: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.75rem; overflow-x: auto; margin: 1rem 0; font-size: 0.875rem; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-slate-900">
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <!-- Cabecera Estilo Admin -->
+        <div class="bg-white rounded-t-3xl shadow-sm border-b p-8 border-t-8 border-blue-600">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-center md:text-left">
+                    <h1 class="text-2xl font-black text-slate-800 tracking-tight">BLOQUE III - TEMA 04</h1>
+                    <p class="text-blue-600 font-bold">Bases de Datos: SQL, Triggers y Procedimientos</p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="bg-blue-50 px-4 py-2 rounded-2xl text-center">
+                        <span class="block text-[10px] font-black text-blue-400 uppercase">Aciertos</span>
+                        <span id="score-val" class="text-xl font-bold text-blue-700">0</span>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-2 rounded-2xl text-center">
+                        <span class="block text-[10px] font-black text-slate-400 uppercase">Pregunta</span>
+                        <span id="q-counter" class="text-xl font-bold text-slate-700">1/33</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cuerpo del Test -->
+        <div class="bg-white p-8 shadow-2xl min-h-[500px] flex flex-col">
+            <div id="quiz-content" class="flex-grow">
+                <div id="question-container">
+                    <div id="question-text" class="text-lg font-semibold leading-relaxed mb-8 text-slate-800"></div>
+                </div>
+                <div id="options" class="grid grid-cols-1 gap-4">
+                    <!-- Opciones -->
+                </div>
+            </div>
+
+            <!-- Footer con Navegación -->
+            <div class="flex justify-between items-center mt-12 pt-6 border-t border-slate-100">
+                <button id="prev-btn" class="flex items-center gap-2 px-6 py-3 font-bold text-slate-400 hover:text-slate-800 transition-all disabled:opacity-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    ATRÁS
+                </button>
+                <div id="progress-dots" class="hidden md:flex gap-1"></div>
+                <button id="next-btn" class="bg-slate-900 hover:bg-blue-600 text-white px-10 py-3 rounded-2xl font-black shadow-lg transition-all active:scale-95">
+                    SIGUIENTE
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra de progreso inferior -->
+        <div class="w-full bg-slate-200 h-1.5 rounded-b-3xl overflow-hidden">
+            <div id="progress-bar" class="bg-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <!-- Modal Final -->
+        <div id="results-screen" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl border-b-8 border-blue-500">
+                <div class="text-6xl mb-6">📊</div>
+                <h2 class="text-3xl font-black text-slate-800 mb-2">Resultado Final</h2>
+                <p class="text-slate-500 mb-8 font-medium">Has completado el repaso de SQL</p>
+                <div class="bg-slate-50 rounded-3xl p-6 mb-8 flex justify-around">
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400 uppercase">Puntuación</span>
+                        <span id="final-score" class="text-4xl font-black text-blue-600">0</span>
+                    </div>
+                    <div class="border-l border-slate-200"></div>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400 uppercase">Efectividad</span>
+                        <span id="final-percent" class="text-4xl font-black text-slate-800">0%</span>
+                    </div>
+                </div>
+                <button onclick="location.reload()" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 transition-all">REPETIR TEST</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. ¿Cuál de las siguientes definiciones sobre el comando JOIN de SQL es FALSA?", a: ["El INNER JOIN devuelve todos los valores cuando hay una coincidencia en la tabla derecha o izquierda.", "El LEFT JOIN devuelve todos los registros de la tabla derecha y los registros coincidentes de la tabla derecha.", "Todas son falsas.", "El RIGHT JOIN devuelve todos los registros de la tabla izquierda y los registros coincidentes de la tabla derecha."], c: 2 },
+            { q: "2. ¿Qué sentencia de las siguientes pertenece a la categoría DML (Data Manipulation Language)?", a: ["GRANT", "Ninguna", "ALTER", "REVOKE"], c: 1 },
+            { q: "3. ¿Cuál de las siguientes afirmaciones sobre bases de datos es INCORRECTA?", a: ["El lenguaje de manipulación de datos de SQL Server es PL-SQL, y en Oracle se utiliza TRANSACT-SQL.", "Rollback termina la transacción actual y guarda las modificaciones en la base de datos.", "Savepoint se utiliza en PLSQL para restaurar una base de datos a partir de un backup.", "Todas son incorrectas."], c: 3 },
+            { q: "4. Si estoy utilizando un gestor de base de datos de ORACLE, ¿cuál sería la consulta correcta para obtener la fecha del sistema, incluidos los segundos fraccionados y la zona horaria del sistema?", a: ["SELECT SYSTIMESTAMP FROM DUAL;", "SELECT NOW();", "SELECT SYSDATE();", "SELECT SYSTEM.DATE FROM DUAL;"], c: 0 },
+            { q: "5. Si quiero borrar solo el contenido de la tabla EMPLEADOS, ¿cuál de las siguientes sentencias debería utilizar?", a: ["DELETE TABLE EMPLEADOS", "DROP TABLE EMPLEADOS", "TRUNCATE TABLE EMPLEADOS", "REMOVE EMPLEADOS"], c: 2 },
+            { q: "6. Para añadir una columna 'Email' de tipo VARCHAR(255) a la tabla 'Clientes', se utiliza:", a: ["ALTER TABLE Clientes ADD Email varchar(255);", "UPDATE TABLE Clientes ADD Email varchar(255);", "INSERT INTO Clientes (Email) VALUES (varchar(255));", "ALTER TABLE Clientes COLUMN Email varchar(255);"], c: 0 },
+            { q: "7. El comando SQL 'GRANT' pertenece a la categoría:", a: ["DML", "DDL", "DCL", "TCL"], c: 2 },
+            { q: "8. ¿Qué palabra clave se usa en una consulta SELECT para devolver solo valores diferentes?", a: ["UNIQUE", "DIFFERENT", "DISTINCT", "ONLY"], c: 2 },
+            { q: "9. ¿Cuál de estos no es un operador lógico en SQL?", a: ["AND", "OR", "XOR", "BETWEEN"], c: 2 },
+            { q: "10. La cláusula 'HAVING' se utiliza en combinación con:", a: ["ORDER BY", "GROUP BY", "WHERE", "JOIN"], c: 1 },
+            { q: "11. ¿Cuál es el puerto por defecto de Oracle?", a: ["3306", "5432", "1521", "1433"], c: 2 },
+            { q: "12. Un trigger (disparador) se ejecuta:", a: ["Cuando el usuario lo llama explícitamente", "Automáticamente como respuesta a un evento DML (INSERT, UPDATE, DELETE)", "Al iniciar el servidor de base de datos", "Solo durante la noche en procesos batch"], c: 1 },
+            { q: "13. ¿Qué comando se usa para eliminar todos los privilegios de un usuario?", a: ["DENY", "REVOKE", "REMOVE", "DROP USER"], c: 1 },
+            { q: "14. En SQL, ¿cuál es el carácter comodín que representa 'cero, uno o más caracteres'?", a: ["_", "*", "?", "%"], c: 3 },
+            { q: "15. El comando ROLLBACK pertenece a:", a: ["DCL", "DDL", "TCL (Transaction Control)", "DML"], c: 2 },
+            { q: "16. La integridad referencial se garantiza mediante el uso de:", a: ["Primary Keys", "Foreign Keys", "Unique Index", "Check Constraints"], c: 1 },
+            { q: "17. ¿Qué función de agregado devuelve el valor medio de una columna numérica?", a: ["AVG()", "MEAN()", "SUM() / COUNT()", "MEDIAN()"], c: 0 },
+            { q: "18. Para cambiar el nombre de una tabla se usa:", a: ["CHANGE TABLE", "UPDATE TABLE NAME", "RENAME TABLE", "ALTER TABLE RENAME"], c: 2 },
+            { q: "19. ¿Cuál es la diferencia entre DELETE y TRUNCATE?", a: ["No hay diferencia", "DELETE borra filas una a una y permite rollback; TRUNCATE es DDL y más rápido", "TRUNCATE borra la estructura de la tabla", "DELETE es más rápido que TRUNCATE"], c: 1 },
+            { q: "20. El uso de 'AS' en una consulta SQL sirve para:", a: ["Definir una clave", "Crear un alias para una tabla o columna", "Ordenar los resultados", "Unir dos tablas"], c: 1 },
+            { q: "21. Un 'Stored Procedure' se diferencia de una función en que:", a: ["No existen procedimientos en SQL", "El procedimiento puede no devolver valores, la función siempre debe devolver uno", "La función puede realizar INSERTs y el procedimiento no", "Son exactamente lo mismo"], c: 1 },
+            { q: "22. La restricción 'NOT NULL' asegura que:", a: ["La columna sea una clave primaria", "La columna no acepte valores nulos", "La columna sea única", "La columna tenga un valor por defecto"], c: 1 },
+            { q: "23. ¿Qué comando SQL se usa para crear una base de datos?", a: ["NEW DATABASE", "ADD DATABASE", "BUILD DATABASE", "CREATE DATABASE"], c: 3 },
+            { q: "24. El operador 'IN' permite:", a: ["Buscar un patrón", "Especificar múltiples valores en una cláusula WHERE", "Insertar datos", "Entrar en una tabla"], c: 1 },
+            { q: "25. ¿Cuál es el orden correcto de las cláusulas en una consulta SELECT?", a: ["SELECT, WHERE, FROM, GROUP BY", "SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY", "SELECT, FROM, HAVING, WHERE", "SELECT, WHERE, FROM, ORDER BY"], c: 1 },
+            { q: "26. ¿Qué significa ACID en bases de datos?", a: ["Atomicity, Consistency, Isolation, Durability", "Access, Control, Integrity, Data", "Auto, Clear, Index, Delete", "Array, Column, Item, Document"], c: 0 },
+            { q: "27. ¿Cómo se selecciona todo el contenido de la tabla 'Persons'?", a: ["SELECT Persons", "SELECT * FROM Persons", "GET Persons", "SELECT [All] FROM Persons"], c: 1 },
+            { q: "28. ¿Cómo se seleccionan todos los registros donde 'FirstName' empieza por 'a'?", a: ["SELECT * FROM Persons WHERE FirstName='a'", "SELECT * FROM Persons WHERE FirstName LIKE 'a%'", "SELECT * FROM Persons WHERE FirstName='%a'", "SELECT * FROM Persons WHERE FirstName LIKE 'a'"], c: 1 },
+            { q: "29. El comando para eliminar una vista es:", a: ["DELETE VIEW", "DROP VIEW", "REMOVE VIEW", "ALTER VIEW DROP"], c: 1 },
+            { q: "30. En una unión, ¿qué JOIN devuelve solo las filas que tienen correspondencia en ambas tablas?", a: ["LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "INNER JOIN"], c: 3 },
+            { q: "31. ¿Qué sentencia borraría las facturas con ID_PRODUCTO 999?", a: ["DELETE * FROM FACTURA WHERE ID_PRODUCTO=999", "REMOVE FROM FACTURA WHERE ID_PRODUCTO=999", "DELETE FROM FACTURA WHERE ID_PRODUCTO=999", "DROP FROM FACTURA WHERE ID_PRODUCTO=999"], c: 2 },
+            { q: "32. Dado el trigger 'verificarEdad' que pone edad=0 si es < 0, tras insertar (-20, 'Julia'), (30, 'Jaime') y (0, 'Alba'), ¿qué edades tendrían?", a: ["Julia: 0, Jaime: 30, Alba: 0", "Error de inserción", "Julia: 20, Jaime: 0, Alba: 0", "Julia: 0, Jaime: 30, Alba: 1"], c: 0 },
+            { q: "33. ¿Consulta para obtener nombres cuyo SEGUNDO carácter sea 'a'?", a: ["LIKE 'a%'", "LIKE '_a%'", "LIKE '%a%'", "Ninguna es correcta"], c: 1 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function render() {
+            const item = questions[currentIdx];
+            document.getElementById('q-counter').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('score-val').innerText = score;
+            
+            // Texto de pregunta con soporte para código si fuera necesario
+            document.getElementById('question-text').innerText = item.q;
+            
+            const perc = ((currentIdx + 1) / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${perc}%`;
+
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+
+            item.a.forEach((txt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 md:p-5 rounded-2xl font-bold text-slate-700 bg-white shadow-sm flex items-start gap-4';
+                
+                const badge = document.createElement('span');
+                badge.className = 'bg-slate-100 text-slate-400 px-2 py-1 rounded-lg text-[10px] font-black mt-1 uppercase';
+                badge.innerText = String.fromCharCode(65 + i);
+                
+                const label = document.createElement('span');
+                label.innerText = txt;
+                
+                btn.appendChild(badge);
+                btn.appendChild(label);
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) btn.classList.add('correct');
+                    else if (i === userAnswers[currentIdx]) btn.classList.add('incorrect');
+                } else {
+                    btn.onclick = () => {
+                        userAnswers[currentIdx] = i;
+                        if (i === item.c) score++;
+                        render();
+                    };
+                }
+                optionsDiv.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.innerText = currentIdx === questions.length - 1 ? "FINALIZAR" : "SIGUIENTE";
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                render();
+            } else {
+                document.getElementById('final-score').innerText = score;
+                document.getElementById('final-percent').innerText = Math.round((score/questions.length)*100) + "%";
+                document.getElementById('results-screen').classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                render();
+            }
+        };
+
+        render();
+    </script>
+</body>
+</html>

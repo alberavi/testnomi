@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test B3T7 - Servicios Web y Sockets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #6366f1; background-color: #f5f3ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+        .progress-bar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20 font-sans">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Cabecera -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">TEST BLOQUE III TEMA 07</h1>
+                    <p class="text-slate-500 text-sm">Sockets, Arquitectura Cliente/Servidor y Servicios Web</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-black text-indigo-600" id="score-display">0</div>
+                    <div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest">Puntos</div>
+                </div>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div id="progress" class="progress-bar bg-indigo-600 h-full" style="width: 3.33%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs font-bold text-slate-400">
+                <span>PREGUNTA <span id="current-idx-text">1</span>/30</span>
+                <span id="percent-text">3% COMPLETADO</span>
+            </div>
+        </div>
+
+        <!-- Contenedor del Test -->
+        <div id="quiz-container" class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 min-h-[400px] flex flex-col">
+            <div id="question-text" class="text-lg text-slate-800 font-semibold mb-8 leading-relaxed"></div>
+            
+            <div id="options-container" class="space-y-3 flex-grow">
+                <!-- Opciones dinámicas -->
+            </div>
+            
+            <div class="flex justify-between mt-10 border-t border-slate-100 pt-6">
+                <button id="prev-btn" class="px-6 py-2 font-bold text-slate-400 hover:text-indigo-600 disabled:opacity-0 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    ANTERIOR
+                </button>
+                <button id="next-btn" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center gap-2">
+                    SIGUIENTE
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl scale-in">
+            <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2">¡Test Finalizado!</h2>
+            <p class="text-slate-500 mb-6">Resultados del Bloque III Tema 7</p>
+            <div class="bg-slate-50 rounded-2xl py-6 mb-8">
+                <div class="text-5xl font-black text-indigo-600" id="final-score">0/30</div>
+                <div class="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest" id="final-percent">0% ACIERTOS</div>
+            </div>
+            <p class="text-slate-600 mb-8 font-medium leading-relaxed" id="final-comment"></p>
+            <button onclick="location.reload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">VOLVER A EMPEZAR</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. ¿Cuál de las siguientes afirmaciones sobre SOCKETS es INCORRECTA?", a: ["Un socket define el punto final en una conexión.", "Puede ser un método para la comunicación entre una aplicación cliente y una aplicación servidor.", "Puede ser un número de puerto.", "Puede ser una dirección de internet formada por una dirección IP y un número de puerto."], c: 2 },
+            { q: "2. En el ámbito de los servicios web, señale la opción INCORRECTA sobre el protocolo REST:", a: ["Los objetos en REST se manipulan a través de su URI.", "Es un protocolo cliente/servidor con estado.", "Tiene interfaz uniforme para la transferencia de datos (POST, GET, PUT DELETE).", "Los componentes del protocolo REST poseen una arquitectura de capas."], c: 1 },
+            { q: "3. ¿En la arquitectura cliente/servidor a qué nivel pertenece la realización de peticiones http?", a: ["Cliente.", "Ninguna.", "Servidor web.", "Servidor BD."], c: 0 },
+            { q: "4. ¿Cuál de las siguientes NO es una característica de WSDL?", a: ["Nos indica los tipos de datos necesarios para utilizar un Web Service.", "Es un protocolo basado en XML.", "Todas son correctas.", "Nos indica las interfaces que provee un Web Service."], c: 2 },
+            { q: "5. De entre los siguientes, ¿cuál es un estándar básico en donde se describen los formatos y requisitos del mensaje para poder interactuar con un servicio web?", a: ["JSON", "SOAP", "WSDL", "UDDI"], c: 1 },
+            { q: "6. ¿Qué tipo de servicios basan su comunicación en un protocolo estándar que define cómo dos objetos en diferentes procesos pueden comunicarse mediante intercambio de datos XML?", a: ["REST", "SOAP", "Web Services", "Sockets"], c: 1 },
+            { q: "7. ¿Qué significa WSDL?", a: ["Web Service Description Language", "Web Service Definition Language", "Web Service Discovery Language", "Web System Data Language"], c: 0 },
+            { q: "8. ¿Cuál es el puerto por defecto de HTTPS?", a: ["80", "8080", "443", "8443"], c: 2 },
+            { q: "9. En una arquitectura cliente/servidor de 3 capas, ¿qué contiene la capa intermedia?", a: ["Base de datos.", "Lógica de negocio.", "Interfaz de usuario.", "Sistema Operativo."], c: 1 },
+            { q: "10. ¿Cuál de los siguientes métodos HTTP se utiliza en REST para actualizar un recurso?", a: ["GET", "POST", "PUT", "DELETE"], c: 2 },
+            { q: "11. ¿Qué es un Web Service?", a: ["Una página web interactiva.", "Un sistema de software diseñado para soportar la interacción máquina a máquina a través de una red.", "Un servidor físico dedicado a la web.", "Un lenguaje de programación."], c: 1 },
+            { q: "12. ¿Cuál es el formato de datos más común usado en servicios REST hoy en día?", a: ["XML", "CSV", "YAML", "JSON"], c: 3 },
+            { q: "13. ¿Qué parte de un mensaje SOAP es obligatoria?", a: ["Header", "Fault", "Body y Envelope", "Attachment"], c: 2 },
+            { q: "14. El protocolo SOAP se basa habitualmente sobre:", a: ["UDP", "HTTP", "FTP", "ICMP"], c: 1 },
+            { q: "15. ¿Qué componente de UDDI se asocia con 'Páginas Blancas'?", a: ["Servicios ofrecidos", "Información de contacto y datos de la empresa", "Clasificación por sectores", "Especificaciones técnicas"], c: 1 },
+            { q: "16. En sockets, ¿qué significa 'Listen'?", a: ["Cerrar la conexión.", "Enviar un paquete de datos.", "Esperar conexiones entrantes.", "Conectarse a un servidor."], c: 2 },
+            { q: "17. ¿Qué diferencia principal hay entre SOAP y REST?", a: ["SOAP es solo para Java, REST para todos.", "REST es un protocolo, SOAP es una arquitectura.", "SOAP utiliza XML, REST puede usar JSON, XML, etc.", "REST es más pesado que SOAP."], c: 2 },
+            { q: "18. Un socket de flujo (Stream Socket) utiliza:", a: ["UDP", "TCP", "HTTP", "IPX"], c: 1 },
+            { q: "19. ¿A qué nivel del modelo OSI operan los Sockets?", a: ["Físico", "Enlace de datos", "Sesión / Transporte", "Red"], c: 2 },
+            { q: "20. En REST, ¿qué código de estado HTTP indica que un recurso se ha creado con éxito?", a: ["200 OK", "201 Created", "404 Not Found", "500 Internal Error"], c: 1 },
+            { q: "21. ¿Qué tecnología permite la publicación y búsqueda de servicios web?", a: ["WSDL", "UDDI", "SOAP", "HTML"], c: 1 },
+            { q: "22. En una arquitectura multinivel, la escalabilidad es:", a: ["Menor que en arquitecturas de 1 nivel.", "Nula.", "Mayor, ya que permite distribuir la carga entre servidores.", "Igual en todos los casos."], c: 2 },
+            { q: "23. ¿Qué indica el elemento 'types' en un documento WSDL?", a: ["Los métodos disponibles.", "La dirección del servidor.", "Las definiciones de tipos de datos usados en los mensajes.", "El protocolo de transporte."], c: 2 },
+            { q: "24. ¿Cuál de los siguientes es un ejemplo de cliente 'pesado'?", a: ["Un navegador web.", "Una aplicación de escritorio que procesa datos localmente.", "Un terminal tonto.", "Un dispositivo móvil sin apps."], c: 1 },
+            { q: "25. En SOAP, ¿dónde se coloca la información sobre errores?", a: ["Header", "Envelope", "Fault (dentro del Body)", "Attachment"], c: 2 },
+            { q: "26. ¿Qué es SOAP?", a: ["Un protocolo que gestiona la comunicación entre dos entidades u objetos mediante el intercambio de datos XML.", "Un lenguaje que describe los interfaces de un servicio web.", "Una forma de registrar servicios web.", "El protocolo de aplicaciones con origen en la fuente."], c: 0 },
+            { q: "27. ¿Qué provee un catálogo de negocios en Internet en el contexto de servicios web?", a: ["SOAP", "WSDL", "UDDI", "Ninguno de ellos"], c: 2 },
+            { q: "28. ¿Qué sería una alternativa a SOAP?", a: ["CORVA", "XML-ECOM", "REST", "Ninguno de ellos"], c: 2 },
+            { q: "29. En WSDL, ¿qué operación describe un servicio que envía un mensaje y luego recibe respuesta?", a: ["One-way", "Request-response", "Notification", "Solicit-response"], c: 3 },
+            { q: "30. UDDI consta de tres componentes, indique la respuesta INCORRECTA:", a: ["Páginas Amarillas", "Páginas Azules", "Páginas Blancas", "Páginas Verdes"], c: 1 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function updateUI() {
+            const item = questions[currentIdx];
+            document.getElementById('current-idx-text').innerText = currentIdx + 1;
+            document.getElementById('question-text').innerText = item.q;
+            document.getElementById('score-display').innerText = score;
+            
+            const progress = ((currentIdx + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('percent-text').innerText = `${Math.round(progress)}% COMPLETADO`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl flex items-start gap-4';
+                const letter = String.fromCharCode(65 + i);
+                
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200">${letter}</span>
+                    <span class="text-slate-700 font-medium pt-1">${option}</span>
+                `;
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) {
+                        btn.classList.add('correct');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white border border-emerald-600";
+                    } else if (i === userAnswers[currentIdx]) {
+                        btn.classList.add('incorrect');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-sm font-bold text-white border border-red-600";
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === questions.length - 1 ? 'FINALIZAR' : 'SIGUIENTE';
+        }
+
+        function selectOption(idx) {
+            if (userAnswers[currentIdx] !== null) return;
+            userAnswers[currentIdx] = idx;
+            if (idx === questions[currentIdx].c) score++;
+            updateUI();
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                updateUI();
+            } else {
+                showResults();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                updateUI();
+            }
+        };
+
+        function showResults() {
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+            document.getElementById('final-percent').innerText = `${percent}% ACIERTOS`;
+
+            let comment = "";
+            if (percent === 100) comment = "¡Perfecto! Dominas los servicios web, protocolos SOAP/REST y la infraestructura UDDI.";
+            else if (percent >= 80) comment = "¡Excelente! Tienes muy claros los conceptos de arquitectura cliente/servidor.";
+            else if (percent >= 50) comment = "Bien, has aprobado. Repasa la diferencia entre Solicit-Response y Request-Response en WSDL.";
+            else comment = "Necesitas repasar el Tema 7. Fíjate bien en los componentes de UDDI y las características de REST.";
+
+            document.getElementById('final-comment').innerText = comment;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

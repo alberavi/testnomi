@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bloque III Tema 01 - EEDD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition { transition: all 0.2s ease; }
+        .is-correct-answer { background-color: #e0e7ff !important; border-color: #4f46e5 !important; color: #312e81 !important; }
+        .is-user-incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <!-- Cabecera -->
+        <div class="bg-indigo-900 p-8 text-white text-center relative">
+            <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400"></div>
+            <h1 class="text-2xl font-black tracking-tight uppercase text-indigo-50">Análisis de Sistemas</h1>
+            <p class="text-indigo-300 mt-2 font-semibold uppercase text-sm tracking-widest">Bloque III - Tema 01 (Métrica v3 / DFD / E-R)</p>
+        </div>
+
+        <!-- Barra de Progreso -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-indigo-500 h-2 transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <div class="p-8">
+            <div id="quiz-ui">
+                <div class="flex justify-between items-center mb-8 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <span id="question-number">Pregunta 1</span>
+                    <span id="score-live" class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100">Aciertos: 0</span>
+                </div>
+
+                <div id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-snug"></div>
+
+                <div id="options-container" class="space-y-4"></div>
+
+                <div class="flex justify-between mt-10 pt-6 border-t border-slate-100">
+                    <button id="prev-btn" class="flex items-center px-5 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        Anterior
+                    </button>
+                    <button id="next-btn" class="flex items-center px-8 py-3 bg-indigo-700 text-white rounded-xl font-bold hover:bg-indigo-800 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200">
+                        Siguiente
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="results-ui" class="hidden text-center py-10">
+                <div class="inline-block p-4 bg-indigo-50 rounded-full mb-6 border border-indigo-100">
+                    <svg class="w-16 h-16 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <h2 class="text-3xl font-black text-slate-900 mb-2">Evaluación Finalizada</h2>
+                <div class="grid grid-cols-3 gap-4 my-8">
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div id="res-correct" class="text-4xl font-black text-indigo-600">0</div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Aciertos</div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div id="res-incorrect" class="text-4xl font-black text-red-600">0</div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Errores</div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div id="res-empty" class="text-4xl font-black text-amber-600">0</div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Omitidas</div>
+                    </div>
+                </div>
+                <button onclick="resetQuiz()" class="px-10 py-4 font-bold text-white bg-indigo-700 rounded-xl hover:bg-indigo-800 transition-colors shadow-lg">Reiniciar Test</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. ¿Qué elemento de un DFD se representa mediante una notación que consta de una flecha con trazo discontinuo que indica la dirección de flujo?", a: ["Flujo de control", "Diagrama de secuencia", "Flujo de datos", "Proceso de control"], c: 0 },
+            { q: "2. Según métrica v3, ¿Cuál es la definición correcta de especialización?", a: ["Abstraer un tipo de entidad superior a partir de varios subtipos", "Un supertipo se descompone en uno o varios subtipos, que heredan atributos y relaciones", "Relacionar dos tipos de entidades de dominios independientes", "Construir un nuevo tipo de entidad como composición de otros"], c: 1 },
+            { q: "3. Señale la respuesta INCORRECTA sobre el número identificativo de un proceso en DFD:", a: ["Es único en el sistema", "Es cero para el proceso del diagrama de contexto", "Se representa en la parte superior del círculo", "Todas son correctas"], c: 3 },
+            { q: "4. Un almacén de datos en un DFD representa:", a: ["Un ente ajeno al sistema", "La información en reposo utilizada por el sistema", "Procesos que coordinan actividades", "Flujo entre un proceso y otro"], c: 1 },
+            { q: "5. ¿Cómo se denomina al diagrama de nivel 0 en DFD?", a: ["Diagrama de detalle", "Diagrama de flujo", "Diagrama de contexto", "Diagrama de explosión"], c: 2 },
+            { q: "6. En un diagrama Entidad-Relación, un atributo clave es aquel que:", a: ["Es el más importante de la entidad", "Identifica de forma única a una instancia de la entidad", "Se hereda de un supertipo", "No puede ser nulo"], c: 1 },
+            { q: "7. El proceso de descomponer un proceso DFD en otros procesos más detallados se llama:", a: ["Especialización", "Normalización", "Explosión o nivelado", "Agregación"], c: 2 },
+            { q: "8. ¿Cuál de las siguientes afirmaciones sobre la agregación es correcta?", a: ["Es una relación 'es-un'", "Es una relación 'tiene-un' o 'parte-de'", "Implica herencia de atributos", "Se representa con una flecha discontinua"], c: 1 },
+            { q: "9. Un flujo de datos entre dos almacenes:", a: ["Es obligatorio en el nivel 1", "Está prohibido en un DFD", "Solo puede ocurrir a través de un proceso", "Es una relación recursiva"], c: 2 },
+            { q: "10. La cardinalidad (1, N) en una relación indica:", a: ["Mínimo uno, máximo muchos", "Mínimo cero, máximo muchos", "Mínimo uno, máximo uno", "Mínimo muchos, máximo muchos"], c: 0 },
+            { q: "11. ¿Qué representa una entidad externa en un DFD?", a: ["Una base de datos interna", "Un ente ajeno que proporciona o recibe información", "Un algoritmo de cálculo", "Un almacén temporal"], c: 1 },
+            { q: "12. En Métrica v3, el catálogo de normas de la organización se encuentra en la interfaz de:", a: ["Gestión de Proyectos", "Aseguramiento de la Calidad", "Seguridad", "Gestión de Configuración"], c: 1 },
+            { q: "13. ¿Cuál es el objetivo principal del análisis de requisitos?", a: ["Codificar la aplicación", "Definir qué debe hacer el sistema sin decir cómo", "Diseñar la interfaz de usuario", "Elegir el hardware"], c: 1 },
+            { q: "14. Los diagramas de flujo de datos (DFD) son una herramienta del:", a: ["Análisis estructurado", "Análisis orientado a objetos", "Diseño físico", "Mantenimiento"], c: 0 },
+            { q: "15. En el nivel de contexto (Nivel 0) de un DFD:", a: ["Aparecen todos los almacenes", "Solo hay un proceso que representa a todo el sistema", "Se detallan los subprocesos", "No hay entidades externas"], c: 1 },
+            { q: "16. Una relación recursiva en un modelo E-R ocurre cuando:", a: ["Dos entidades tienen la misma clave", "Una entidad se relaciona consigo misma", "Hay una relación de muchos a muchos", "La entidad es débil"], c: 1 },
+            { q: "17. ¿Qué es una entidad débil?", a: ["Aquella que no tiene atributos", "Aquella cuya existencia depende de otra entidad", "Una entidad con pocos datos", "Un sinónimo de atributo"], c: 1 },
+            { q: "18. El diccionario de datos en el análisis estructurado:", a: ["Es un manual de usuario", "Define de forma precisa todos los flujos y almacenes del DFD", "Es el código fuente", "Contiene las claves de acceso"], c: 1 },
+            { q: "19. ¿Cuál de estas NO es una técnica de captura de requisitos?", a: ["Entrevistas", "JAD (Joint Application Development)", "Cuestionarios", "Normalización"], c: 3 },
+            { q: "20. En un DFD, un proceso se representa comúnmente mediante:", a: ["Un rectángulo", "Un círculo o elipse", "Dos líneas paralelas", "Una flecha"], c: 1 },
+            { q: "21. Un 'subtipo' en una jerarquía de generalización:", a: ["Hereda atributos del supertipo", "Define sus propios atributos específicos", "A y B son correctas", "A y B son incorrectas"], c: 2 },
+            { q: "22. La técnica de 'Métrica 3' se basa en:", a: ["El modelo de ciclo de vida en cascada", "La aproximación estructurada y orientada a objetos", "Solo desarrollo ágil", "La norma ISO 9001 exclusivamente"], c: 1 },
+            { q: "23. En el análisis de sistemas, un requisito no funcional se refiere a:", a: ["Lo que el sistema debe hacer", "Restricciones de rendimiento, seguridad o calidad", "Las tablas de la base de datos", "Los menús de navegación"], c: 1 },
+            { q: "24. El balanceo de flujos en DFD consiste en:", a: ["Que el sistema no se cuelgue", "Mantener la coherencia de entradas/salidas entre niveles", "Igualar el número de procesos y almacenes", "Distribuir la carga del servidor"], c: 1 },
+            { q: "25. Una relación N:M (muchos a muchos) en el modelo relacional:", a: ["Se traduce directamente como una clave foránea", "Requiere una tabla intermedia o de relación", "No está permitida", "Solo se usa en bases de datos NoSQL"], c: 1 },
+            { q: "26. ¿Qué indica el trazo continuo en un flujo de un DFD?", a: ["Flujo de control", "Flujo de datos", "Proceso síncrono", "Relación lógica"], c: 1 },
+            { q: "27. Los 'Eventos' en un DFD de tiempo real disparan:", a: ["Nuevos flujos de datos", "Procesos de control", "Almacenes de respaldo", "Entidades externas"], c: 1 },
+            { q: "28. Ejemplo de relación recursiva:", a: ["Un empleado supervisa a otros empleados", "Un cliente compra un producto", "Una factura tiene líneas de detalle", "Una empresa tiene departamentos"], c: 0 },
+            { q: "29. Según Métrica v3, un Proceso de Control:", a: ["Representa un ente ajeno", "Representa información en reposo", "Coordina y sincroniza actividades de otros procesos", "Indica dirección de flujo"], c: 2 },
+            { q: "30. El Diagrama de Contexto corresponde al:", a: ["Nivel 1", "Nivel 0", "Nivel de detalle", "Diagrama de explosión"], c: 1 }
+        ];
+
+        let currentIdx = 0;
+        let answers = JSON.parse(localStorage.getItem('testAnswers_B3T1')) || {};
+
+        function loadQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('question-number').innerText = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+            document.getElementById('question-text').innerText = data.q;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizData.length) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            data.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-5 rounded-2xl border-2 border-slate-100 option-transition hover:border-indigo-300 hover:bg-indigo-50 font-semibold text-slate-700 shadow-sm';
+                btn.innerText = `${String.fromCharCode(65 + i)}. ${option}`;
+                
+                if (answers[currentIdx] !== undefined) {
+                    btn.classList.add('disabled');
+                    if (i === data.c) {
+                        btn.classList.add('is-correct-answer');
+                    } else if (i === answers[currentIdx]) {
+                        btn.classList.add('is-user-incorrect');
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === quizData.length - 1 ? "Finalizar" : "Siguiente";
+            updateScore();
+        }
+
+        function selectOption(index) {
+            if (answers[currentIdx] !== undefined) return;
+            answers[currentIdx] = index;
+            localStorage.setItem('testAnswers_B3T1', JSON.stringify(answers));
+            loadQuestion();
+        }
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.keys(answers).forEach(key => {
+                if (answers[key] === quizData[key].c) correctCount++;
+            });
+            document.getElementById('score-live').innerText = `Aciertos: ${correctCount}`;
+        }
+
+        function changeQuestion(step) {
+            currentIdx += step;
+            if (currentIdx >= quizData.length) showResults();
+            else if (currentIdx < 0) currentIdx = 0;
+            else loadQuestion();
+        }
+
+        function showResults() {
+            document.getElementById('quiz-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+            let correct = 0, incorrect = 0, empty = 0;
+            quizData.forEach((d, i) => {
+                if (answers[i] === undefined) empty++;
+                else if (answers[i] === d.c) correct++;
+                else incorrect++;
+            });
+            document.getElementById('res-correct').innerText = correct;
+            document.getElementById('res-incorrect').innerText = incorrect;
+            document.getElementById('res-empty').innerText = empty;
+        }
+
+        function resetQuiz() {
+            localStorage.removeItem('testAnswers_B3T1');
+            answers = {};
+            currentIdx = 0;
+            document.getElementById('quiz-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+            loadQuestion();
+        }
+
+        document.getElementById('prev-btn').onclick = () => changeQuestion(-1);
+        document.getElementById('next-btn').onclick = () => changeQuestion(1);
+
+        loadQuestion();
+    </script>
+</body>
+</html>

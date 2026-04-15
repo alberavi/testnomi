@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test B3T6 - Java y Java EE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #6366f1; background-color: #f5f3ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+        .progress-bar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20 font-sans">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Cabecera -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">TEST BLOQUE III TEMA 06</h1>
+                    <p class="text-slate-500 text-sm">Arquitectura Java, Java EE (Jakarta EE) y Desarrollo Web</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-black text-indigo-600" id="score-display">0</div>
+                    <div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest">Puntos</div>
+                </div>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div id="progress" class="progress-bar bg-indigo-600 h-full" style="width: 2%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs font-bold text-slate-400">
+                <span>PREGUNTA <span id="current-idx-text">1</span>/50</span>
+                <span id="percent-text">2% COMPLETADO</span>
+            </div>
+        </div>
+
+        <!-- Contenedor del Test -->
+        <div id="quiz-container" class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 min-h-[400px] flex flex-col">
+            <div id="question-text" class="text-lg text-slate-800 font-semibold mb-8 leading-relaxed"></div>
+            
+            <div id="options-container" class="space-y-3 flex-grow">
+                <!-- Opciones dinámicas -->
+            </div>
+            
+            <div class="flex justify-between mt-10 border-t border-slate-100 pt-6">
+                <button id="prev-btn" class="px-6 py-2 font-bold text-slate-400 hover:text-indigo-600 disabled:opacity-0 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    ANTERIOR
+                </button>
+                <button id="next-btn" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center gap-2">
+                    SIGUIENTE
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl scale-in">
+            <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2">¡Completado!</h2>
+            <p class="text-slate-500 mb-6">Has finalizado el test de Java EE</p>
+            <div class="bg-slate-50 rounded-2xl py-6 mb-8">
+                <div class="text-5xl font-black text-indigo-600" id="final-score">0/50</div>
+                <div class="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest" id="final-percent">0% ACIERTOS</div>
+            </div>
+            <p class="text-slate-600 mb-8 font-medium leading-relaxed" id="final-comment"></p>
+            <button onclick="location.reload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">REINTENTAR TEST</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. En la arquitectura J2EE el paquete javax.json.stream proporciona una API de transmisión para analizar y generar JSON, ¿cuáles son las interfaces que componen este paquete?", a: ["JsonGenerator, JsonGeneratorFactory, JsonUri, JsonParser, JsonParserFactory.", "JsonBuilder, JsonGeneratorFactory, JsonUri, JsonParser, JsonParserDecorator.", "JsonGenerator, JsonGeneratorFactory, JsonLocation, JsonParser, JsonParserFactory.", "JsonGenerator, JsonGeneratorFactory, JsonUri, JsonParser, JsonParserDecorator."], c: 2 },
+            { q: "2. ¿Qué tipo de estructura utiliza la clase HttpSession para almacenar la información entre sesiones?", a: ["ArrayList.", "HashTable.", "TreeMap.", "HashMap."], c: 3 },
+            { q: "3. ¿Cuál de las siguientes afirmaciones de la máquina virtual de java es FALSA?", a: ["Gestiona automáticamente el uso de la memoria, de modo que no queden huecos.", "Las referencias a arrays son verificadas en el momento de la ejecución del programa.", "Es multithread (Con reflejo en el SO o no).", "Permite la manipulación de forma directa los punteros."], c: 3 },
+            { q: "4. ¿Qué paquete debemos importar si queremos utilizar la interface Iterator de java?", a: ["java.math", "java.util", "java.enum", "java.collections"], c: 1 },
+            { q: "5. En el contexto de Java EE, ¿en qué paquete se encuentran las clases e interfaces para programación concurrente?", a: ["javax.ejb2.concurrent", "javax.enterprise.concurrent", "javax.ejb.concurrence", "java.ejb2.aspect"], c: 1 },
+            { q: "6. La clase stream() de Java pertenece al paquete:", a: ["java.util.stream", "java.io", "java.nio", "java.lang"], c: 0 },
+            { q: "7. ¿Cuál es el puerto por defecto de Tomcat?", a: ["80", "8080", "443", "7001"], c: 1 },
+            { q: "8. ¿Qué etiqueta se utiliza en un archivo web.xml para definir un servlet?", a: ["<servlet-mapping>", "<servlet>", "<class>", "<init-param>"], c: 1 },
+            { q: "9. ¿Cuál de los siguientes NO es un estado de un EJB de sesión con estado?", a: ["No existe", "Listo", "Pasivado", "Ejecutando"], c: 3 },
+            { q: "10. El recolector de basura (Garbage Collector) de Java se encarga de:", a: ["Cerrar las conexiones a BD automáticamente.", "Eliminar objetos de la memoria que ya no tienen referencias.", "Reiniciar la JVM si hay errores.", "Optimizar el código bytecode."], c: 1 },
+            { q: "11. En JSP, ¿cómo se incluye un comentario que NO se vea en el HTML resultante?", a: ["<!-- comentario -->", "// comentario", "<%-- comentario --%>", "/* comentario */"], c: 2 },
+            { q: "12. La interfaz que permite ejecutar sentencias SQL precompiladas es:", a: ["Statement", "PreparedStatement", "CallableStatement", "ResultSet"], c: 1 },
+            { q: "13. ¿Qué método de un Servlet se llama cuando el servidor se apaga o el servlet se descarga?", a: ["stop()", "finish()", "destroy()", "finalize()"], c: 2 },
+            { q: "14. ¿Cuál es la superclase de todos los errores y excepciones en Java?", a: ["Exception", "Error", "Throwable", "RuntimeException"], c: 2 },
+            { q: "15. ¿Qué herramienta se utiliza para compilar código Java?", a: ["java", "javac", "javaw", "jar"], c: 1 },
+            { q: "16. En una arquitectura MVC, el Servlet suele actuar como:", a: ["Modelo", "Vista", "Controlador", "Base de datos"], c: 2 },
+            { q: "17. ¿Qué es un WAR en Java EE?", a: ["Windows Archive", "Web Application Resource", "Web Application Archive", "Web Assembly Record"], c: 2 },
+            { q: "18. ¿Cuál es el ámbito (scope) por defecto de un Bean en Spring?", a: ["Prototype", "Request", "Session", "Singleton"], c: 3 },
+            { q: "19. ¿Cuál es el archivo de configuración principal de una aplicación web Java?", a: ["application.xml", "web.xml", "server.xml", "context.xml"], c: 1 },
+            { q: "20. La interfaz Map de Java:", a: ["Permite elementos duplicados.", "Almacena pares clave-valor.", "Mantiene siempre el orden de inserción.", "Es una colección de tipo List."], c: 1 },
+            { q: "21. ¿Qué tecnología de Java permite la invocación de métodos de objetos situados en diferentes JVM?", a: ["JNDI", "RMI", "JDBC", "JMS"], c: 1 },
+            { q: "22. ¿Qué palabra reservada se usa para crear una subclase en Java?", a: ["implements", "instanceof", "extends", "inherits"], c: 2 },
+            { q: "23. En el ciclo de vida de un JSP, ¿cuál es el primer paso?", a: ["Carga de clase", "Traducción", "Compilación", "Instanciación"], c: 1 },
+            { q: "24. El operador '==' en Java cuando se compara objetos:", a: ["Compara el contenido de los objetos.", "Compara las referencias de memoria.", "Siempre devuelve true si son de la misma clase.", "Llama al método .equals() automáticamente."], c: 1 },
+            { q: "25. ¿Cuál es el tamaño de un 'int' en Java?", a: ["16 bits", "32 bits", "64 bits", "Depende del SO"], c: 1 },
+            { q: "26. ¿Qué método se usa para enviar un objeto a través de un ObjectOutputStream?", a: ["write()", "writeObject()", "sendObject()", "serialize()"], c: 1 },
+            { q: "27. ¿Qué interfaz debe implementar una clase para poder ser serializada?", a: ["Cloneable", "Externalizable", "Serializable", "DataOutput"], c: 2 },
+            { q: "28. ¿Cómo se llama el proceso de convertir un tipo primitivo en su objeto wrapper correspondiente de forma automática?", a: ["Casting", "Autoboxing", "Wrapping", "Binding"], c: 1 },
+            { q: "29. ¿Cuál es la diferencia entre un ArrayList y un Vector?", a: ["ArrayList es sincronizado, Vector no.", "Vector es sincronizado, ArrayList no.", "ArrayList es más lento que Vector.", "Vector no permite nulos."], c: 1 },
+            { q: "30. La cláusula 'finally' en un bloque try-catch:", a: ["Solo se ejecuta si hay error.", "Solo se ejecuta si NO hay error.", "Se ejecuta siempre, haya o no error.", "Es opcional y solo puede haber una."], c: 2 },
+            { q: "31. ¿Qué es el JIT en la JVM?", a: ["Java Interior tool", "Just In Time compiler", "Java Interface Template", "Joint Integration Technology"], c: 1 },
+            { q: "32. ¿Qué palabra reservada impide que una clase sea heredada?", a: ["static", "abstract", "final", "private"], c: 2 },
+            { q: "33. El paquete java.lang:", a: ["Debe importarse explícitamente.", "Contiene las clases básicas y se importa automáticamente.", "Solo contiene interfaces.", "Es para el manejo de archivos."], c: 1 },
+            { q: "34. ¿Qué método de la clase String devuelve el número de caracteres?", a: ["size()", "count()", "length()", "index()"], c: 2 },
+            { q: "35. Un Servlet es:", a: ["Un programa de escritorio.", "Un componente que se ejecuta en el servidor para extender sus capacidades.", "Una página HTML estática.", "Un script de cliente."], c: 1 },
+            { q: "36. ¿Qué objeto implícito de JSP se usa para escribir en la respuesta?", a: ["response", "out", "writer", "request"], c: 1 },
+            { q: "37. ¿Cuál es el protocolo de transporte de SOAP?", a: ["FTP", "SMTP", "HTTP", "TCP"], c: 2 },
+            { q: "38. ¿Qué significa JPA?", a: ["Java Persistence API", "Java Process Application", "Joint Program association", "Java Page Architecture"], c: 0 },
+            { q: "39. En Java, una interfaz puede:", a: ["Tener constructores.", "Tener variables de instancia.", "Tener firmas de métodos (y métodos default/static).", "Heredar de una clase."], c: 2 },
+            { q: "40. ¿Cuál es el resultado de 10 % 3?", a: ["3", "1", "0", "3.33"], c: 1 },
+            { q: "41. ¿Qué hace el método split() de la clase String?", a: ["Une dos cadenas.", "Divide una cadena en un array basándose en un delimitador.", "Elimina los espacios en blanco.", "Convierte a mayúsculas."], c: 1 },
+            { q: "42. ¿Qué anotación se usa para marcar un método que se ejecutará después del constructor en un Bean?", a: ["@PreDestroy", "@PostConstruct", "@Init", "@After"], c: 1 },
+            { q: "43. ¿Cuál es la diferencia entre throw y throws?", a: ["No hay diferencia.", "throw lanza una excepción, throws declara que un método puede lanzarla.", "throws lanza una excepción, throw la captura.", "throw se usa en la firma del método."], c: 1 },
+            { q: "44. ¿Qué es Hibernate?", a: ["Un servidor de aplicaciones.", "Un framework de persistencia ORM.", "Un IDE de desarrollo.", "Una base de datos NoSQL."], c: 1 },
+            { q: "45. ¿Cuál es la sintaxis correcta para expresiones en JSP?", a: ["<%= %>", "<%! %>", "<% %>", "<%@ %>"], c: 0 },
+            { q: "46. Alternativas de persistencia en Java:", a: ["JDBC y ORM", "JDBC y JNDI", "JPDB y JAX", "JPDB y POJO"], c: 0 },
+            { q: "47. ¿Qué dos tipos de EJB existen (según el test)?", a: ["Bean de sesión y Bean de estado", "Bean de síncrono y Bean asíncrono", "Bean de sesión y Bean de clase", "Bean de sesión y Bean dirigido por mensajes"], c: 3 },
+            { q: "48. ¿Qué paquete se usa principalmente para Servlets?", a: ["javax.servlet", "javax.http", "javax.io", "Ninguno es correcto"], c: 0 },
+            { q: "49. Indica cuál NO es un Framework de Java:", a: ["Struts", "DropWizard", "Prism", "Grails"], c: 2 },
+            { q: "50. ¿Qué método inicializa un servlet?", a: ["init()", "run()", "start()", "Ninguno es correcto"], c: 0 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function updateUI() {
+            const item = questions[currentIdx];
+            
+            // Textos
+            document.getElementById('current-idx-text').innerText = currentIdx + 1;
+            document.getElementById('question-text').innerText = item.q;
+            document.getElementById('score-display').innerText = score;
+            
+            // Barra de progreso
+            const progress = ((currentIdx + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('percent-text').innerText = `${Math.round(progress)}% COMPLETADO`;
+
+            // Opciones
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl flex items-start gap-4';
+                
+                const letter = String.fromCharCode(65 + i);
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200">${letter}</span>
+                    <span class="text-slate-700 font-medium pt-1">${option}</span>
+                `;
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) {
+                        btn.classList.add('correct');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white border border-emerald-600";
+                    } else if (i === userAnswers[currentIdx]) {
+                        btn.classList.add('incorrect');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-sm font-bold text-white border border-red-600";
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            // Botones navegación
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === questions.length - 1 
+                ? 'VER RESULTADOS <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>' 
+                : 'SIGUIENTE <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>';
+        }
+
+        function selectOption(idx) {
+            if (userAnswers[currentIdx] !== null) return;
+            userAnswers[currentIdx] = idx;
+            if (idx === questions[currentIdx].c) {
+                score++;
+            }
+            updateUI();
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                updateUI();
+            } else {
+                showResults();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                updateUI();
+            }
+        };
+
+        function showResults() {
+            const finalScoreElem = document.getElementById('final-score');
+            const finalPercentElem = document.getElementById('final-percent');
+            const finalCommentElem = document.getElementById('final-comment');
+            
+            const percent = Math.round((score / questions.length) * 100);
+            finalScoreElem.innerText = `${score} / ${questions.length}`;
+            finalPercentElem.innerText = `${percent}% ACIERTOS`;
+
+            let comment = "";
+            if (percent === 100) comment = "¡Nivel Dios en Java! Has clavado todas las preguntas, incluso las de interfaces JSON.";
+            else if (percent >= 85) comment = "¡Excelente! Dominas perfectamente el ecosistema Java y Java EE.";
+            else if (percent >= 70) comment = "¡Muy bien! Tienes una base sólida, pero revisa algunos detalles de Servlets y EJBs.";
+            else if (percent >= 50) comment = "Aprobado. Te recomiendo repasar los métodos del ciclo de vida y los paquetes de utilidades.";
+            else comment = "Necesitas estudiar más el Bloque III Tema 6. Java EE tiene muchos detalles técnicos.";
+
+            finalCommentElem.innerText = comment;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        // Iniciar
+        updateUI();
+    </script>
+</body>
+</html>

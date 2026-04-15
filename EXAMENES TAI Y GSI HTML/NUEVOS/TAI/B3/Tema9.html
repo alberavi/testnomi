@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test B3T9 - Accesibilidad y Usabilidad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .option-btn:hover:not(.disabled) { border-color: #3b82f6; background-color: #eff6ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .disabled { cursor: default; }
+        .progress-bar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20 font-sans">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Cabecera -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">TEST BLOQUE III TEMA 09</h1>
+                    <p class="text-slate-500 text-sm">Usabilidad, Accesibilidad y Pautas WCAG</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-black text-blue-600" id="score-display">0</div>
+                    <div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest">Puntos</div>
+                </div>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div id="progress" class="progress-bar bg-blue-500 h-full" style="width: 3.33%"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs font-bold text-slate-400">
+                <span>PREGUNTA <span id="current-idx-text">1</span>/30</span>
+                <span id="percent-text">3% COMPLETADO</span>
+            </div>
+        </div>
+
+        <!-- Contenedor del Test -->
+        <div id="quiz-container" class="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 min-h-[400px] flex flex-col">
+            <div id="question-text" class="text-lg text-slate-800 font-semibold mb-8 leading-relaxed"></div>
+            
+            <div id="options-container" class="space-y-3 flex-grow">
+                <!-- Opciones dinámicas -->
+            </div>
+            
+            <div class="flex justify-between mt-10 border-t border-slate-100 pt-6">
+                <button id="prev-btn" class="px-6 py-2 font-bold text-slate-400 hover:text-blue-600 disabled:opacity-0 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    ANTERIOR
+                </button>
+                <button id="next-btn" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-2">
+                    SIGUIENTE
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
+            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2">Examen Finalizado</h2>
+            <p class="text-slate-500 mb-6">Test Bloque III Tema 9</p>
+            <div class="bg-slate-50 rounded-2xl py-6 mb-8 border border-slate-200">
+                <div class="text-5xl font-black text-blue-600" id="final-score">0/30</div>
+                <div class="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest" id="final-percent">0% ACIERTOS</div>
+            </div>
+            <p class="text-slate-600 mb-8 font-medium px-4" id="final-comment"></p>
+            <button onclick="location.reload()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">REPETIR TEST</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "1. ¿Cuál de las siguientes no es una característica de la usabilidad?", a: ["Satisfacción", "Facilidad de aprendizaje", "Efectividad", "Universalidad"], c: 3 },
+            { q: "2. ¿Cuántos son los principios sobre los que está basado el diseño universal?", a: ["Cuatro", "Diez", "Siete", "Tres"], c: 2 },
+            { q: "3. Las WCAG 2.0 se estructuran en:", a: ["Principios, pautas y criterios de conformidad.", "Principios, puntos y criterios de conformidad.", "Principios, puntos y criterios de cumplimiento.", "Principios, pautas y criterios de cumplimiento."], c: 0 },
+            { q: "4. ¿Cuál de los siguientes criterios tiene que cumplir una página para obtener el nivel AA?", a: ["Idioma de cada pasaje diferente al principal.", "Funcionalidad por teclado sin tiempo límite.", "Especificar el idioma de la página.", "Para el nivel AA, la página debe cumplir todos los anteriores."], c: 3 },
+            { q: "5. ¿Cuál de las siguientes pautas WCAG 2.1 NO pertenece al principio 3 Comprensible?", a: ["Previsible.", "Asistencia a la entrada de datos.", "Legible.", "Distinguible."], c: 3 },
+            { q: "6. Sobre los principios de la WCAG 2.1 es FALSA:", a: ["El contenido debe ser suficientemente robusto.", "Los usuarios evitarán y corregirán errores.", "El contenido debe ser operable.", "El contenido debe ser perceptible."], c: 1 },
+            { q: "7. ¿A qué principio pertenece la pauta de 'Proporcionar alternativas textuales para todo contenido no textual'?", a: ["Comprensible.", "Operable.", "Perceptible.", "Robusto."], c: 2 },
+            { q: "8. ¿A qué principio pertenece la pauta 'No diseñar contenido que pueda causar ataques o convulsiones'?", a: ["Perceptible.", "Operable.", "Comprensible.", "Robusto."], c: 1 },
+            { q: "9. ¿Cuál de los siguientes es un lector de pantalla para Linux?", a: ["JAWS.", "NVDA.", "Orca.", "VoiceOver."], c: 2 },
+            { q: "10. ¿Qué nivel de conformidad WCAG es el más exigente?", a: ["Nivel A.", "Nivel AA.", "Nivel AAA.", "Nivel A+."], c: 2 },
+            { q: "11. ¿Cuál de las siguientes es una pauta del principio 4 Robusto?", a: ["Legible.", "Compatibilidad.", "Navegable.", "Entrada de datos."], c: 1 },
+            { q: "12. La pauta 'Proporcionar medios para ayudar a los usuarios a navegar' pertenece al principio:", a: ["Perceptible.", "Operable.", "Comprensible.", "Robusto."], c: 1 },
+            { q: "13. ¿Qué herramienta de autoría de la W3C define la accesibilidad de los CMS o editores?", a: ["WCAG.", "UAAG.", "ATAG.", "WAI-ARIA."], c: 2 },
+            { q: "14. El lector de pantalla integrado en dispositivos Apple se llama:", a: ["Narrador.", "TalkBack.", "VoiceOver.", "Siri."], c: 2 },
+            { q: "15. El diseño para todos o diseño universal busca:", a: ["Diseñar solo para personas con discapacidad.", "Diseñar productos usables por el mayor número de personas posible.", "Diseñar webs solo para móviles.", "Asegurar que el código sea robusto."], c: 1 },
+            { q: "16. ¿Qué técnica W3C permite mejorar la accesibilidad de aplicaciones web dinámicas?", a: ["WAI-ARIA.", "JSON-LD.", "XHTML.", "CSS3."], c: 0 },
+            { q: "17. ¿A qué principio de la WCAG pertenece la pauta 'Legible'?", a: ["Perceptible.", "Operable.", "Comprensible.", "Robusto."], c: 2 },
+            { q: "18. Un criterio de conformidad de nivel A es:", a: ["Subtítulos (en directo).", "Audiodescripción (grabado).", "Solo audio o solo vídeo (grabado).", "Contraste (mínimo)."], c: 2 },
+            { q: "19. ¿Cuál es el orden jerárquico de la WCAG 2.1?", a: ["Pautas > Principios > Criterios.", "Principios > Pautas > Criterios.", "Criterios > Pautas > Principios.", "Normas > Reglas > Criterios."], c: 1 },
+            { q: "20. La facilidad con la que usuarios nuevos pueden realizar tareas la primera vez es:", a: ["Eficiencia.", "Memorizabilidad.", "Aprendizaje.", "Satisfacción."], c: 2 },
+            { q: "21. El principio de diseño universal 'Uso equitativo' significa:", a: ["El diseño debe ser fácil de entender.", "El diseño es útil para personas con diversas capacidades.", "El diseño comunica información necesaria de forma eficaz.", "El diseño minimiza riesgos y consecuencias adversas."], c: 1 },
+            { q: "22. ¿Qué organismo internacional desarrolla las WCAG?", a: ["ISO.", "IEEE.", "W3C.", "IETF."], c: 2 },
+            { q: "23. ¿Cuál de estos NO es un principio de la WCAG?", a: ["Perceptible.", "Operable.", "Interoperable.", "Robusto."], c: 2 },
+            { q: "24. El lector de pantalla JAWS es propiedad de:", a: ["Microsoft.", "Apple.", "Freedom Scientific.", "Google."], c: 2 },
+            { q: "25. La pauta 'Asistencia a la entrada de datos' pertenece al principio:", a: ["Perceptible.", "Robusto.", "Operable.", "Comprensible."], c: 3 },
+            { q: "26. Es un ejemplo de criterio de conformidad AAA:", a: ["Subtítulos para audio en directo.", "Identificación coherente de componentes.", "Alternativa para medios temporales solo audio en directo.", "Todas son correctas."], c: 3 },
+            { q: "27. Pautas de W3C para desarrolladores de herramientas que generan contenido web:", a: ["WAI-ARIA.", "ATAG.", "WCAG.", "UAAG."], c: 1 },
+            { q: "28. Lector de pantalla de código abierto para Windows:", a: ["Voice Over.", "Orca.", "Cortana.", "NVDA."], c: 3 },
+            { q: "29. WCAG consiste en una guía de recomendaciones para realizar webs:", a: ["Más seguras.", "Más accesibles.", "Más Interoperables.", "Más sencillas."], c: 1 },
+            { q: "30. Las pautas para agentes de usuario (navegadores) se conocen como:", a: ["WCAG.", "WGML.", "UAAG.", "ATAG."], c: 2 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function updateUI() {
+            const item = questions[currentIdx];
+            document.getElementById('current-idx-text').innerText = currentIdx + 1;
+            document.getElementById('question-text').innerText = item.q;
+            document.getElementById('score-display').innerText = score;
+            
+            const progress = ((currentIdx + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('percent-text').innerText = `${Math.round(progress)}% COMPLETADO`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.a.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl flex items-start gap-4';
+                const letter = String.fromCharCode(65 + i);
+                
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200">${letter}</span>
+                    <span class="text-slate-700 font-medium pt-1">${option}</span>
+                `;
+
+                if (userAnswers[currentIdx] !== null) {
+                    btn.classList.add('disabled');
+                    if (i === item.c) {
+                        btn.classList.add('correct');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white border border-emerald-600";
+                    } else if (i === userAnswers[currentIdx]) {
+                        btn.classList.add('incorrect');
+                        btn.querySelector('span').className = "flex-shrink-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-sm font-bold text-white border border-red-600";
+                    }
+                } else {
+                    btn.onclick = () => selectOption(i);
+                }
+                container.appendChild(btn);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            document.getElementById('next-btn').innerHTML = currentIdx === questions.length - 1 ? 'TERMINAR' : 'SIGUIENTE';
+        }
+
+        function selectOption(idx) {
+            if (userAnswers[currentIdx] !== null) return;
+            userAnswers[currentIdx] = idx;
+            if (idx === questions[currentIdx].c) score++;
+            updateUI();
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                updateUI();
+            } else {
+                showResults();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIdx > 0) {
+                currentIdx--;
+                updateUI();
+            }
+        };
+
+        function showResults() {
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+            document.getElementById('final-percent').innerText = `${percent}% ACIERTOS`;
+
+            let comment = "";
+            if (percent === 100) comment = "¡Excelencia en Accesibilidad! Dominas perfectamente los principios P.O.R.C. y las pautas WCAG.";
+            else if (percent >= 80) comment = "¡Muy bien! Tienes claros los conceptos de usabilidad y los niveles de conformidad.";
+            else if (percent >= 50) comment = "Has aprobado, pero recuerda repasar la diferencia entre ATAG, UAAG y WCAG.";
+            else comment = "Necesitas repasar los 4 principios de accesibilidad (Perceptible, Operable, Comprensible y Robusto).";
+
+            document.getElementById('final-comment').innerText = comment;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
