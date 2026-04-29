@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Seguridad en Redes - TAI</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 850px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">SEGURIDAD EN REDES</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 50</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>En blanco</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "1. Los cortafuegos de filtrado de paquetes ¿en qué capa TCP/IP actúan?", a: ["Capa IP.", "Capa de Aplicación.", "Capa de Sesión.", "Capa de Transporte."], c: 0 },
+        { q: "2. Cuál de los siguientes elementos de seguridad opera en el nivel 3 del modelo OSI:", a: ["Proxy.", "Firewall de filtrado de paquetes.", "Antivirus.", "Filtro antispam."], c: 1 },
+        { q: "3. Un cortafuegos es:", a: ["Un software que impide los accesos indeseables a la intranet desde el exterior.", "Un software cuya función principal es limitar el uso excesivo de Internet.", "Un motor antivirus dedicado a impedir los virus que llegan de Internet.", "Un elemento (hardware o software) cuya función principal es limitar el acceso a determinadas páginas."], c: 0 },
+        { q: "4. Para la protección del puesto de trabajo, NO son necesarios los productos de una de las siguientes categorías:", a: ["Antifraude.", "Seguridad en movilidad.", "Seguridad en los sistemas.", "Análisis forense."], c: 2 },
+        { q: "5. ¿Cuál es el principal objetivo de un Sistema de Detección de Intrusos (IDS)?", a: ["Identificar y registrar actividades sospechosas o ataques en una red o sistema.", "Bloquear automáticamente cualquier tráfico que parezca un ataque.", "Cifrar todo el tráfico de la red para que no pueda ser interceptado.", "Proporcionar una interfaz gráfica para la gestión de usuarios."], c: 0 },
+        { q: "6. ¿Qué técnica utiliza un Firewall de Inspección de Estado (Stateful Inspection)?", a: ["Filtra paquetes basándose únicamente en la dirección IP de origen.", "Analiza el contenido de los paquetes a nivel de aplicación.", "Mantiene un registro de las conexiones activas y decide basándose en el estado de la conexión.", "Funciona únicamente en la capa física del modelo OSI."], c: 2 },
+        { q: "7. ¿Cuál de los siguientes protocolos se utiliza comúnmente para establecer túneles VPN seguros?", a: ["HTTP.", "FTP.", "SMTP.", "IPsec."], c: 3 },
+        { q: "8. ¿Qué es una Zona Desmilitarizada (DMZ) en seguridad perimetral?", a: ["Una zona de la red donde se ubican los servidores que deben ser accesibles desde Internet.", "Un área de la oficina donde no se permite el uso de dispositivos electrónicos.", "Una parte de la red interna que no tiene ninguna medida de seguridad.", "Una red inalámbrica abierta para invitados."], c: 0 },
+        { q: "9. Un proxy que actúa en el nivel de aplicación del modelo OSI se conoce como:", a: ["Router.", "Switch.", "Gateway de nivel de aplicación (Application Level Gateway).", "Bridge."], c: 2 },
+        { q: "10. ¿Qué ventaja ofrece una VPN (Virtual Private Network)?", a: ["Aumenta la velocidad física de la conexión a Internet.", "Elimina la necesidad de usar contraseñas en los sistemas.", "Garantiza que el hardware del ordenador no se estropee.", "Permite una conexión segura y cifrada a través de una red pública como Internet."], c: 3 },
+        { q: "11. El filtrado de paquetes basándose en la dirección MAC actúa en el nivel:", a: ["Nivel 1 (Físico).", "Nivel 2 (Enlace de datos).", "Nivel 3 (Red).", "Nivel 4 (Transporte)."], c: 1 },
+        { q: "12. ¿Cuál es la principal diferencia entre un IDS y un IPS?", a: ["El IDS solo detecta, mientras que el IPS detecta y toma medidas para bloquear el ataque.", "El IDS es hardware y el IPS es software.", "El IPS solo funciona en redes inalámbricas.", "No hay diferencia, son sinónimos."], c: 0 },
+        { q: "13. ¿Qué mecanismo de seguridad se encarga de traducir direcciones IP privadas a una única IP pública?", a: ["DHCP.", "DNS.", "NAT (Network Address Translation).", "SNMP."], c: 2 },
+        { q: "14. En un entorno de seguridad perimetral, el 'bastion host' es:", a: ["Un servidor altamente asegurado diseñado para resistir ataques, que suele estar en la DMZ.", "El ordenador personal de un atacante.", "Un tipo de cable de red blindado.", "Un software de gestión de nóminas."], c: 0 },
+        { q: "15. ¿Qué significa el término 'Honeypot' en seguridad informática?", a: ["Un sistema trampa diseñado para ser atacado y así recolectar información sobre los atacantes.", "Un virus que borra archivos de música.", "Un sistema de alimentación ininterrumpida.", "Un tipo de conector de fibra óptica."], c: 0 },
+        { q: "16. ¿Qué puerto utiliza habitualmente el protocolo HTTPS por defecto?", a: ["21.", "80.", "443.", "3389."], c: 2 },
+        { q: "17. Un ataque de Denegación de Servicio (DoS) tiene como objetivo principal afectar a:", a: ["La confidencialidad.", "La integridad.", "La disponibilidad.", "La autenticidad."], c: 2 },
+        { q: "18. ¿Qué protocolo permite la gestión y monitorización remota de dispositivos de red?", a: ["ICMP.", "SNMP.", "POP3.", "IGMP."], c: 1 },
+        { q: "19. El protocolo SSH (Secure Shell) se utiliza principalmente para:", a: ["Enviar correos electrónicos de forma masiva.", "Acceso remoto seguro a máquinas a través de una red.", "Descargar páginas web sin imágenes.", "Configurar la resolución del monitor."], c: 1 },
+        { q: "20. En seguridad de red, ¿qué es el 'spoofing'?", a: ["Hacer una copia de seguridad de los datos.", "Suplantar la identidad de una entidad (como una IP o MAC) para engañar a un sistema.", "Aumentar la memoria RAM de un servidor.", "Limpiar físicamente los componentes de red."], c: 1 },
+        { q: "21. ¿Qué es un NGFW (Next-Generation Firewall)?", a: ["Un cortafuegos que solo funciona con protocolos antiguos.", "Un cortafuegos que combina filtrado tradicional con inspección profunda de paquetes y control de aplicaciones.", "Un dispositivo que solo sirve para redes domésticas.", "Un cable de red con seguridad integrada."], c: 1 },
+        { q: "22. El protocolo TLS (Transport Layer Security) es el sucesor de:", a: ["HTTP.", "IPsec.", "SSL.", "SSH."], c: 2 },
+        { q: "23. ¿Qué tipo de VPN es más común para permitir que empleados individuales se conecten a la oficina desde casa?", a: ["VPN de sitio a sitio (Site-to-Site).", "VPN de acceso remoto (Remote Access).", "VPN interna.", "VPN de hardware puro."], c: 1 },
+        { q: "24. ¿Qué comando se utiliza en Windows/Linux para verificar la conectividad básica con otra IP mediante ICMP?", a: ["IPCONFIG.", "IFCONFIG.", "PING.", "TRACERT."], c: 2 },
+        { q: "25. La técnica de ocultar información dentro de otros archivos (como imágenes) se denomina:", a: ["Criptografía.", "Esteganografía.", "Hashing.", "Encoding."], c: 1 },
+        { q: "26. ¿Qué es un SIEM (Security Information and Event Management)?", a: ["Una herramienta que centraliza y analiza registros y eventos de seguridad de toda la infraestructura.", "Un tipo de teclado ergonómico.", "Un protocolo de transferencia de archivos.", "Un sistema de gestión de bases de datos relacionales."], c: 0 },
+        { q: "27. En el contexto de firewalls, ¿qué significa la política 'Deny All'?", a: ["Se permite todo el tráfico por defecto.", "Se bloquea todo el tráfico por defecto, permitiendo solo lo que está explícitamente autorizado.", "Se bloquean solo los correos electrónicos.", "No se puede usar el cortafuegos."], c: 1 },
+        { q: "28. ¿Qué puerto usa el protocolo SSH por defecto?", a: ["23.", "25.", "22.", "110."], c: 2 },
+        { q: "29. ¿Qué tecnología se utiliza para asegurar que un dispositivo que se conecta a la red cumple con las políticas de seguridad (antivirus actualizado, parches, etc.)?", a: ["DNS.", "NAT.", "VLAN.", "NAC (Network Access Control)."], c: 3 },
+        { q: "30. ¿Qué es el 'phishing'?", a: ["Un método para pescar datos de red.", "Un ataque de fuerza bruta a contraseñas.", "Un intento de engañar al usuario para que revele información confidencial (como contraseñas) mediante suplantación.", "Un error de hardware en la tarjeta de red."], c: 2 },
+        { q: "31. ¿Qué capa del modelo OSI se encarga del direccionamiento lógico (direcciones IP)?", a: ["Física.", "Enlace de datos.", "Transporte.", "Red."], c: 3 },
+        { q: "32. Un 'Sniffer' es una herramienta que se utiliza para:", a: ["Reparar cables rotos.", "Cifrar discos duros.", "Limpiar el registro de Windows.", "Capturar y analizar el tráfico que circula por la red."], c: 3 },
+        { q: "33. ¿Qué tipo de cortafuegos actúa como intermediario entre el cliente y el servidor, ocultando la identidad del cliente?", a: ["Filtrado de paquetes.", "Inspección de estado.", "Servidor Proxy.", "Router básico."], c: 2 },
+        { q: "34. ¿Qué protocolo se utiliza para resolver un nombre de dominio (como google.com) en una dirección IP?", a: ["DHCP.", "DNS.", "ARP.", "RARP."], c: 1 },
+        { q: "35. ¿Qué significa que una VPN use un 'Túnel'?", a: ["Que los datos viajan por cables subterráneos.", "Que los datos se encapsulan dentro de otro protocolo para viajar de forma segura.", "Que la conexión es lenta como un túnel oscuro.", "Que solo funciona en redes locales."], c: 1 },
+        { q: "36. ¿Qué puerto se utiliza para el protocolo Telnet?", a: ["21.", "23.", "25.", "80."], c: 1 },
+        { q: "37. Un WAF (Web Application Firewall) está específicamente diseñado para proteger:", a: ["Servidores de archivos.", "Bases de datos Oracle.", "Servidores y aplicaciones web de ataques como SQL Injection.", "Impresoras de red."], c: 2 },
+        { q: "38. ¿Qué es un exploit?", a: ["Un antivirus gratuito.", "Un fragmento de software o comando que aprovecha una vulnerabilidad para causar un comportamiento no deseado.", "Un manual de usuario.", "Un tipo de memoria USB."], c: 1 },
+        { q: "39. ¿Cuál es el objetivo de usar VLANs en seguridad?", a: ["Aumentar el ancho de banda total.", "Segmentar la red lógicamente para aislar tráfico y mejorar la seguridad.", "Permitir que todos los usuarios vean el tráfico de los demás.", "Evitar el uso de switches."], c: 1 },
+        { q: "40. ¿Qué protocolo es inseguro porque envía las credenciales en texto plano?", a: ["SSH.", "SFTP.", "Telnet.", "HTTPS."], c: 2 },
+        { q: "41. El ataque 'Man-in-the-Middle' (MitM) consiste en:", a: ["Un atacante que se sitúa entre dos partes que se comunican para interceptar o modificar la información.", "Un ataque físico al servidor.", "Instalar un virus en el servidor.", "Olvidar la contraseña de administrador."], c: 0 },
+        { q: "42. ¿Qué es el filtrado de contenido?", a: ["Limpiar el polvo de los servidores.", "Bloquear el acceso a sitios web basándose en categorías, palabras clave o reputación.", "Analizar solo el tamaño de los archivos.", "Un tipo de compresión de datos."], c: 1 },
+        { q: "43. ¿Qué puerto usa el protocolo FTP de datos por defecto?", a: ["20.", "21.", "22.", "23."], c: 0 },
+        { q: "44. ¿Qué es un ataque de fuerza bruta?", a: ["Golpear el hardware.", "Probar todas las combinaciones posibles de contraseñas hasta encontrar la correcta.", "Apagar el router repentinamente.", "Usar un cable de red muy grueso."], c: 1 },
+        { q: "45. El estándar 802.1X se utiliza principalmente para:", a: ["La velocidad de la fibra.", "Autenticación basada en puerto en redes cableadas o inalámbricas.", "Configurar el correo electrónico.", "Diseñar páginas web."], c: 1 },
+        { q: "46. ¿Qué es una VPN SSL/TLS?", a: ["Una VPN que requiere instalar un cliente pesado obligatoriamente.", "Una VPN que suele utilizar el navegador web para establecer el túnel seguro.", "Una VPN que no usa cifrado.", "Una VPN para redes de telefonía antigua."], c: 1 },
+        { q: "47. Un cortafuegos basado en host se instala en:", a: ["El router principal.", "Un dispositivo dedicado en la entrada de la red.", "Un ordenador o servidor individual para proteger ese equipo específico.", "En la central del ISP."], c: 2 },
+        { q: "48. El análisis de vulnerabilidades sirve para:", a: ["Atacar a otras empresas.", "Identificar debilidades conocidas en los sistemas antes de que sean explotadas.", "Borrar logs de seguridad.", "Aumentar el precio de las licencias."], c: 1 },
+        { q: "49. Los cortafuegos no pueden aportar seguridad total a los sistemas. ¿Cuál es la razón principal?", a: ["Porque son muy caros.", "Porque siempre tienen fallos de fabricación.", "Porque la seguridad es un proceso continuo y existen ataques internos, vulnerabilidades de día cero, etc.", "Porque solo funcionan de día."], c: 2 },
+        { q: "50. ¿Qué es el split tunneling en una VPN?", a: ["Una técnica para usar varios servidores de VPN a la vez.", "Una técnica que permite enrutar parte del tráfico por la VPN y el resto directamente a Internet por el ISP local.", "Un mecanismo para cifrar dos veces los datos.", "Una forma de dividir el cable de red en dos."], c: 1 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('netsec_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('netsec_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('netsec_idx', currentIdx);
+        localStorage.setItem('netsec_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
