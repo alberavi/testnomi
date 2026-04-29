@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SQL - TAI</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 850px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+        code { background: #eee; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">LENGUAJE SQL</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 38</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>En blanco</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "1. En un Sistema Gestor de Base de Datos (SGBD), el lenguaje DDL proporciona una serie de facilidades, las cuales son:", a: ["Suministra facilidades para poder consultar y actualizar los datos existentes en la Base de Datos.", "Brinda facilidades para poder gestionar permisos sobre los objetos de la base de datos.", "Proporciona facilidades para poder crear tablas o columnas.", "Aporta facilidades para hacer SELECT sobre las tablas de la base de datos."], c: 2 },
+        { q: "2. El lenguaje SQL posee una serie de operadores de agregación, cuál de los siguientes NO es uno de ellos:", a: ["LIKE.", "AVG.", "MIN.", "COUNT."], c: 0 },
+        { q: "3. En SQL, las cláusulas para, respectivamente, consultar datos, introducirlos, modificarlos y borrarlos, son:", a: ["SELECT, APPEND, UPDATE, DELETE.", "SELECT, INSERT, UPDATE, ERASE.", "SELECT, APPEND, UPDATE, ERASE.", "SELECT, INSERT, UPDATE, DELETE."], c: 3 },
+        { q: "4. La sentencia TRUNCATE del lenguaje SQL pertenece al:", a: ["DDL.", "DCL.", "DCU.", "DML."], c: 0 },
+        { q: "5. Sean las tablas R(A, B, C) y S(A, D). ¿Cuál es el resultado de la siguiente consulta SQL?\nSELECT * FROM R, S WHERE R.A = S.A", a: ["El producto cartesiano de R y S.", "La unión de R y S.", "La intersección de R y S.", "El join o reunión de R y S."], c: 3 },
+        { q: "6. ¿Qué sentencia SQL se utiliza para eliminar los datos de una tabla sin eliminar la estructura de la misma?", a: ["DROP TABLE.", "DELETE TABLE.", "TRUNCATE TABLE.", "REMOVE TABLE."], c: 2 },
+        { q: "7. Indique qué sentencia SQL es correcta para obtener el número de filas de una tabla llamada 'CLIENTES':", a: ["SELECT COUNT(*) FROM CLIENTES;", "SELECT SUM(*) FROM CLIENTES;", "SELECT NUMBER(*) FROM CLIENTES;", "SELECT COUNT() FROM CLIENTES;"], c: 0 },
+        { q: "8. ¿Cuál de las siguientes sentencias SQL se utiliza para cambiar el nombre de una columna en una tabla existente?", a: ["ALTER TABLE ... RENAME COLUMN ... TO ...", "MODIFY TABLE ... CHANGE COLUMN ...", "UPDATE TABLE ... RENAME ...", "ALTER TABLE ... MODIFY ..."], c: 0 },
+        { q: "9. ¿Cuál es la función de la cláusula HAVING en una consulta SQL?", a: ["Se utiliza para filtrar las filas antes de que se agrupen.", "Se utiliza para filtrar los grupos de filas después de que se hayan agrupado.", "Se utiliza para ordenar el resultado de la consulta.", "Se utiliza para combinar varias tablas."], c: 1 },
+        { q: "10. En SQL, la sentencia que permite revocar privilegios previamente concedidos es:", a: ["DENY.", "REMOVE.", "REVOKE.", "CANCEL."], c: 2 },
+        { q: "11. ¿Qué operador se utiliza en SQL para buscar un patrón específico en una columna?", a: ["MATCH.", "SEARCH.", "LIKE.", "FIND."], c: 2 },
+        { q: "12. La cláusula que se utiliza para combinar filas de dos o más tablas, basándose en una columna relacionada entre ellas, es:", a: ["GROUP BY.", "ORDER BY.", "JOIN.", "HAVING."], c: 2 },
+        { q: "13. ¿Cuál de las siguientes es una sentencia válida para insertar una nueva fila en la tabla 'PRODUCTOS'?", a: ["INSERT INTO PRODUCTOS (ID, NOMBRE) VALUES (1, 'Teclado');", "INSERT PRODUCTOS VALUES (1, 'Teclado');", "ADD ROW TO PRODUCTOS VALUES (1, 'Teclado');", "INSERT NEW INTO PRODUCTOS VALUES (1, 'Teclado');"], c: 0 },
+        { q: "14. En SQL, ¿qué comando se utiliza para crear un índice?", a: ["NEW INDEX.", "CREATE INDEX.", "ADD INDEX.", "MAKE INDEX."], c: 1 },
+        { q: "15. ¿Qué comando SQL se utiliza para eliminar una base de datos completa?", a: ["DELETE DATABASE.", "REMOVE DATABASE.", "DROP DATABASE.", "ERASE DATABASE."], c: 2 },
+        { q: "16. Para ordenar los resultados de una consulta de forma descendente, se utiliza:", a: ["ORDER BY ... DESC.", "ORDER BY ... DOWN.", "SORT BY ... DESC.", "ORDER BY ... REVERSE."], c: 0 },
+        { q: "17. ¿Cuál es la diferencia entre los comandos DELETE y TRUNCATE?", a: ["DELETE elimina la tabla, TRUNCATE solo los datos.", "DELETE es DDL, TRUNCATE es DML.", "DELETE permite filtrar con WHERE, TRUNCATE elimina todo el contenido sin filtrar.", "No hay diferencia, ambos hacen lo mismo."], c: 2 },
+        { q: "18. En el estándar SQL, ¿cuál de las siguientes opciones describe mejor a una 'Vista'?", a: ["Una tabla física que almacena resultados de consultas.", "Una tabla virtual basada en el conjunto de resultados de una consulta SQL.", "Un índice especializado para búsquedas rápidas.", "Un procedimiento almacenado que devuelve valores."], c: 1 },
+        { q: "19. ¿Qué comando se utiliza para añadir una nueva columna a una tabla existente?", a: ["UPDATE TABLE ... ADD ...", "ALTER TABLE ... ADD ...", "MODIFY TABLE ... ADD ...", "ALTER TABLE ... INSERT ..."], c: 1 },
+        { q: "20. La integridad referencial en SQL se suele implementar mediante:", a: ["PRIMARY KEY.", "UNIQUE.", "FOREIGN KEY.", "CHECK."], c: 2 },
+        { q: "21. ¿Qué valor devuelve la función SUM si todas las filas de la columna tienen valores NULL?", a: ["0.", "NULL.", "Error.", "Un aviso."], c: 1 },
+        { q: "22. El operador SQL 'IN' se utiliza para:", a: ["Especificar múltiples valores en una cláusula WHERE.", "Buscar valores dentro de un rango.", "Unir dos tablas por una columna común.", "Insertar datos en una tabla."], c: 0 },
+        { q: "23. ¿Qué comando se utiliza para guardar los cambios realizados en una transacción?", a: ["SAVE.", "COMMIT.", "ROLLBACK.", "CHECKPOINT."], c: 1 },
+        { q: "24. ¿Qué comando se utiliza para deshacer los cambios de una transacción que aún no ha sido guardada?", a: ["UNDO.", "CANCEL.", "ROLLBACK.", "REVERT."], c: 2 },
+        { q: "25. En SQL, ¿cuál es el propósito de la restricción UNIQUE?", a: ["Asegurar que todos los valores en una columna sean diferentes.", "Asegurar que la columna no tenga valores NULL.", "Definir la clave primaria de la tabla.", "Vincular dos tablas."], c: 0 },
+        { q: "26. ¿Qué tipo de JOIN devuelve todas las filas cuando hay una coincidencia en una de las tablas?", a: ["INNER JOIN.", "LEFT JOIN.", "FULL OUTER JOIN.", "CROSS JOIN."], c: 2 },
+        { q: "27. ¿Qué función SQL se utiliza para devolver el valor más alto en una columna numérica?", a: ["TOP().", "HIGH().", "MAX().", "UPPER()."], c: 2 },
+        { q: "28. ¿Qué palabra clave se usa para devolver solo valores distintos en una consulta?", a: ["UNIQUE.", "DISTINCT.", "DIFFERENT.", "ONLY."], c: 1 },
+        { q: "29. ¿Qué sentencia SQL se utiliza para actualizar datos en una base de datos?", a: ["SAVE.", "UPDATE.", "MODIFY.", "CHANGE."], c: 1 },
+        { q: "30. ¿Qué sentencia SQL se utiliza para extraer datos de una base de datos?", a: ["EXTRACT.", "GET.", "SELECT.", "OPEN."], c: 2 },
+        { q: "31. ¿Qué operador se usa para seleccionar valores dentro de un rango inclusivo?", a: ["BETWEEN.", "RANGE.", "WITHIN.", "IN."], c: 0 },
+        { q: "32. ¿Cuál es el puerto por defecto para una conexión a una base de datos MySQL?", a: ["1433.", "1521.", "3306.", "5432."], c: 2 },
+        { q: "33. En SQL, ¿cómo se selecciona una columna llamada 'Nombre' de una tabla llamada 'Personas'?", a: ["EXTRACT Nombre FROM Personas.", "SELECT Personas.Nombre.", "SELECT Nombre FROM Personas.", "SELECT Nombre IN Personas."], c: 2 },
+        { q: "34. ¿Cómo se seleccionan todas las columnas de una tabla llamada 'Personas'?", a: ["SELECT [all] FROM Personas.", "SELECT * FROM Personas.", "SELECT Personas.", "SELECT ALL FROM Personas."], c: 1 },
+        { q: "35. ¿Cómo se seleccionan todas las filas de la tabla 'Personas' donde el valor de la columna 'Nombre' es 'Juan'?", a: ["SELECT * FROM Personas WHERE Nombre='Juan'.", "SELECT * FROM Personas WHERE Nombre<>'Juan'.", "SELECT [all] FROM Personas WHERE Nombre='Juan'.", "SELECT * FROM Personas LIKE Nombre='Juan'."], c: 0 },
+        { q: "36. En SQL, ¿cómo se inserta una nueva fila en la tabla 'Personas'?", a: ["INSERT INTO Personas VALUES ('Juan', 'Perez');", "INSERT Personas VALUES ('Juan', 'Perez');", "INSERT VALUES ('Juan', 'Perez') INTO Personas;", "ADD NEW ROW Personas VALUES ('Juan', 'Perez');"], c: 0 },
+        { q: "37. Dada la siguiente consulta:\nSELECT P# FROM P WHERE CIUDAD='Londres' AND NOT EXISTS (SELECT * FROM SPJ SPJX WHERE SPJX.P# = P.P# AND SPJX.J# = 'J1');\n¿Qué estamos obteniendo?", a: ["Los P# de las piezas suministradas a todos los proyectos de Londres.", "Los P# de las piezas de Londres que no han sido suministradas al proyecto J1.", "Los P# de las piezas suministradas únicamente al proyecto J1.", "Ninguna de las respuestas es correcta."], c: 1 },
+        { q: "38. ¿Cuál de las siguientes consultas en SQL contesta a la pregunta \"Obtener los P# de las piezas suministradas a algún proyecto tales que la cantidad media suministrada en total sea mayor que 320\"?", a: ["SELECT DISTINCT P# FROM SPJ GROUP BY P# WHERE AVG(cantidad) > 320;", "SELECT DISTINCT P# FROM SPJ WHERE AVG(cantidad) > 320; GROUP BY P#", "SELECT DISTINCT P# FROM SPJ GROUP BY P# HAVING AVG(cantidad) > 320;", "SELECT DISTINCT P# FROM SPJ GROUP BY J# HAVING AVG(cantidad) > 320;"], c: 2 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('sql_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('sql_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('sql_idx', currentIdx);
+        localStorage.setItem('sql_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
