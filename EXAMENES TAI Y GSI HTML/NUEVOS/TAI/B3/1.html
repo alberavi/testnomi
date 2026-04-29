@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modelo ER y DFD</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">MODELO ER Y DFD</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 42</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>En blanco</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    // Datos íntegros del documento [cite: 1116-1413]
+    const questions = [
+        { q: "1. En el modelo Entidad-Relación, el conjunto nominado de valores homogéneos que puede tomar una cierta característica, se denomina:", a: ["Atributo.", "Dominio.", "Entidad.", "Diccionario de datos."], c: 1 },
+        { q: "2. En el modelo Entidad-Relación extendido:", a: ["Una entidad regular es aquella cuya existencia depende de otra entidad.", "Una entidad débil es aquella que tiene existencia por sí misma.", "Todas las ocurrencias de un tipo de entidad deben tener los mismos atributos.", "Una relación es regular si asocia una entidad regular y una entidad fuerte."], c: 2 },
+        { q: "3. Una relación según Métrica v3, NO se caracteriza por:", a: ["Nombre.", "Tipo de Correspondencia.", "Cardinalidad.", "Dominio."], c: 3 },
+        { q: "4. ¿Cuál de los siguientes enunciados NO es un objetivo en la elaboración del modelo conceptual de datos?", a: ["Identificar y definir las entidades que quedan dentro del ámbito del sistema.", "Identificar y definir los métodos asociados a cada una de las entidades del sistema.", "Identificar y definir los atributos de cada entidad y sus dominios correspondientes.", "Identificar y definir las relaciones existentes entre las entidades."], c: 1 },
+        { q: "5. Señale cómo se denominan, en el Modelo Entidad-Relación básico, al número máximo de ocurrencias de cada entidad que pueden intervenir en la asociación o interrelación que está considerando:", a: ["Tipo de correspondencia de la asociación.", "Cardinalidad de la entidad.", "Grado de la asociación.", "Dominio de las entidades de la asociación."], c: 0 },
+        { q: "6. Señale cómo se denomina, en el modelo entidad-relación extendido, la relación por la que un supertipo se descompone en uno o varios subtipos, los cuales heredan todos los atributos y relaciones del supertipo, además de tener los suyos propios.", a: ["Generalización.", "Asociación.", "Especialización.", "Agregación."], c: 2 },
+        { q: "7. El modelo entidad-relación está formado por:", a: ["Clases, objetos e instancias.", "Variables y métodos.", "Entidades, atributos y relaciones.", "Entidades, objetos y clases."], c: 2 },
+        { q: "8. En un modelo de datos Entidad-Relación, ¿qué se entiende por 'entidad débil'?", a: ["Una entidad que no se encuentra relacionada con otra.", "Una entidad que hereda todos sus atributos de otra.", "Una entidad cuya existencia depende de la existencia de otra.", "Ninguna de las respuestas anteriores define una entidad débil."], c: 2 },
+        { q: "9. Qué esquema de bases de datos incluye la descripción de todos los datos e interrelaciones entre éstos, así como las restricciones de integridad y de confidencialidad:", a: ["Esquema interno.", "Esquema conceptual.", "Esquema externo.", "Esquema físico."], c: 1 },
+        { q: "10. Señale la respuesta incorrecta sobre las relaciones en el Modelo Entidad-Relación Extendido:", a: ["Una relación se caracteriza por el nombre, tipo de correspondencia y la cardinalidad.", "La relación puede ser regular, si asocia tipos de entidad regulares, o débil, si asocia un tipo de entidad débil con un tipo de entidad regular.", "Dentro de las relaciones débiles se distinguen la dependencia en existencia y la dependencia en identificación.", "Se dice que una relación es exclusiva cuando la existencia de una relación entre dos tipos de entidades implica la existencia de las otras relaciones."], c: 3 },
+        { q: "11. Señale la respuesta correcta de las siguientes afirmaciones sobre el modelo Entidad-Relación Extendido:", a: ["Es un requisito el conocer el SGDB en el que se va a implementar.", "Es dependiente del entorno físico.", "Se centra en los datos, independientemente del procesamiento que los transforma.", "Debe proporcionar a los usuarios toda la información que necesiten garantizando la eficiencia del proceso."], c: 2 },
+        { q: "12. Tenemos las entidades 'opositor' y 'oposición' y sabemos que a los opositores se les permite apuntase a varias oposiciones distintas. Si quisiera crear el modelo conceptual de base de datos, ¿qué relación crearía?", a: ["Una relación N:M.", "Una relación 1:N.", "Una relación 1:1.", "El modelo conceptual no admite relaciones, sólo el modelo relacional lo permite."], c: 0 },
+        { q: "13. ¿Cuál de las siguientes afirmaciones sobre el modelo Entidad-Relación es correcta?", a: ["En la especialización un supertipo se descompone en uno o varios subtipos, los cuales heredan todos los atributos y relaciones del supertipo.", "La generalización consiste en relacionar dos tipos de entidades que normalmente son de dominios independientes, pero coyunturalmente se asocian.", "La agregación permite abstraer un tipo de entidad de nivel superior (supertipo) a partir de varios tipos de entidad (subtipos).", "La asociación consiste en construir un nuevo tipo de entidad como composición de otros."], c: 0 },
+        { q: "14. En una relación del modelo Entidad-Relación:", a: ["La cardinalidad es igual que el tipo de correspondencia.", "La cardinalidad máxima es igual que el tipo de correspondencia.", "La cardinalidad mínima es igual con el tipo de correspondencia.", "Todas las respuestas son falsas."], c: 1 },
+        { q: "15. Un atributo puede ser:", a: ["Derivado, compuesto o significado.", "Obligatorio, derivado o compuesto.", "Obligatorio, derivado o significado.", "Obligatorio, compuesto o significado."], c: 1 },
+        { q: "16. En el modelo Entidad-Relación Extendido, a la abstracción de un tipo de entidad superior (supertipo) a partir de varios tipos de entidad (subtipos) se le denomina:", a: ["Generalización.", "Especialización.", "Agregación.", "Asociación."], c: 0 },
+        { q: "17. En el modelo Entidad-Relación podemos definir entidad como:", a: ["Cualquier objeto u elemento (real o abstracto) acerca del cual se puede almacenar información en la base de datos.", "Cualquier asociación entre elementos.", "El número de relaciones en las que un elemento puede aparecer.", "Una propiedad concreta de una relación."], c: 0 },
+        { q: "18. En el modelo entidad /relación, ¿qué se entiende por 'tipo de correspondencia'?", a: ["El número máximo de ocurrencias de cada entidad que pueden intervenir en la relación.", "El número de entidades que participan en una relación.", "El número mínimo y máximo de ocurrencias de una entidad que pueden estar relacionadas con una ocurrencia de otra entidad participante en la relación.", "Es el número de elementos con características comunes que componen una entidad."], c: 0 },
+        { q: "19. Indicar cuál de los siguientes tipos de flujos NO aparece en los diagramas de flujo de datos:", a: ["Iteración.", "Consulta.", "Actualización.", "Diálogo."], c: 0 },
+        { q: "20. Los procesos de control en un DFD de acuerdo a la notación empleada en Métrica versión 3 representan:", a: ["Con dos líneas paralelas en un extremo y una línea vertical que las une.", "Mediante una elipse con un identificador y un nombre significativo en su interior.", "Con una flecha con trazo discontinuo que indica la dirección de flujo y que se etiqueta con un nombre representativo.", "Con un rectángulo, con trazo discontinuo, subdividido en tres casillas donde se indica el nombre del proceso, un número identificativo y la localización."], c: 3 },
+        { q: "21. ¿Cuál de las siguientes afirmaciones es incorrecta respecto de los DFD?", a: ["El DFD de nivel 0 o Diagrama de Contexto es el de menor detalle.", "En el DFD de nivel 0 aparece un solo proceso que representa el sistema.", "En el DFD de nivel 1 aparece un proceso por cada subsistema.", "En el DFD de nivel 1 aparecen las entidades externas y los flujos de datos entre éstas y los subsistemas."], c: 3 },
+        { q: "22. Elija la respuesta correcta en relación al Diagrama de Flujo de Datos:", a: ["Su objetivo es la obtención del modelo lógico de procesos de sistema, teniendo en cuenta las restricciones físicas del mismo.", "Una de sus principales desventajas es que el mantenimiento del sistema se complica, ya que es necesario actualizar gran cantidad de documentación.", "Permite identificar gráficamente los límites del sistema y la lógica de los procesos.", "Exige descomponer el sistema hasta el nivel 5, como mínimo, para reflejar fidedignamente la semántica del problema."], c: 2 },
+        { q: "23. Indique cuál de los siguientes es un tipo de flujo de datos:", a: ["De extracción.", "De comentario.", "De diálogo.", "De interacción."], c: 2 },
+        { q: "24. ¿Qué objetos NO forman parte de un DFD?", a: ["Entidades externas.", "Condiciones.", "Procesos.", "Almacenes de datos."], c: 1 },
+        { q: "25. Cuál de las siguientes reglas NO es necesario cumplir para conseguir que un DFD se consistente:", a: ["Que no falten flujos de datos de entrada o salida que acompañaban al proceso de nivel superior.", "Que no aparezca algún flujo que no estuviese ya asociado al proceso de nivel superior.", "Que todos los elementos del DFD resultante deben estar conectados directa o indirectamente con los flujos del proceso origen.", "Que todos los flujos de control de procesos provengan sólo de procesos del mismo nivel."], c: 3 },
+        { q: "26. En un DFD, ¿de qué tipos pueden ser los flujos de datos?", a: ["Consulta, actualización, intercambio.", "Consulta, actualización, borrado, diálogo.", "Consulta, actualización, diálogo.", "Consulta, modificación, borrado, intercambio."], c: 2 },
+        { q: "27. Indicar cuál de las siguientes respuestas NO se corresponde con un elemento del DFD:", a: ["Almacén de datos.", "Flujo de datos.", "Entidad externa.", "Entidad interna."], c: 3 },
+        { q: "28. Indique cuál de las siguientes afirmaciones sobre los distintos niveles de DFD es cierta, el DFD de más alto nivel (Nivel 0):", a: ["Es solo conocido como diagrama 0.", "Solo puede incluir una entidad externa.", "Solo puede incluir un flujo de datos que representa procedencia y destino de la información.", "Solo incluye un proceso que corresponde con el sistema en estudio."], c: 3 },
+        { q: "29. En los modelos entidad-relación que se usan para modelar conceptualmente un esquema relacional:", a: ["Se produce dependencia por existencia cuando una entidad fuerte no puede existir sin otra entidad débil.", "Se produce dependencia por identificación cuando las ocurrencias de la entidad fuerte no se pueden identificar solo mediante sus propios atributos, si no que se tiene que añadir la clave de la ocurrencia de otra entidad débil.", "La cardinalidad es el número de entidades con la cual otra entidad se puede asociar mediante una relación binaria.", "El grado es el número de valores que puede tomar el atributo de una entidad."], c: 2 },
+        { q: "30. ¿Cuál de las siguientes afirmaciones sobre los DFD es cierta?", a: ["Todo proceso, independientemente del nivel del diagrama, debe tener al menos una entrada y una salida.", "Los procesos incluidos en el diagrama de nivel 0 pueden no tener entrada o salida.", "Los flujos de datos presentes en el DFD de nivel 0 pueden dividirse en varios de datos en DFDs de niveles posteriores.", "Todos los flujos de datos deben terminar en un almacén de datos o en un proceso."], c: 0 },
+        { q: "31. ¿Cuál de las siguientes características relacionadas con los modelos conceptuales de datos es FALSA?", a: ["Representan la visión estática del dominio de la información del Sistema de información a modelar.", "Ayudan a representar las necesidades de usuario.", "Representan toda la información que va a tratar el Sistema de Información objeto del análisis.", "Representan también el dominio de negocio del sistema de información."], c: 2 },
+        { q: "32. ¿Cómo se representa en el modelo entidad-relación extendido una relación?", a: ["Rectángulo simple.", "Rectángulo doble.", "Arco.", "Rombo."], c: 3 },
+        { q: "33. En el modelo entidad-relación extendido, señale la respuesta correcta:", a: ["Una relación no puede tener atributos propios.", "Las relaciones unarias se conocen también como relaciones exclusivas.", "La razón de cardinalidad es el número máximo de ocurrencias de cada tipo de entidad que pueden intervenir en una ocurrencia de la relación que se está tratando.", "No hay obligación en que una relación tenga un nombre."], c: 2 },
+        { q: "34. En el modelo entidad-relación extendido, construir un nuevo tipo de entidad como composición de otros y su tipo de relación y así poder manejarlo en un nivel de abstracción mayor se conoce como:", a: ["Categorías.", "Agregación.", "Desagregación.", "Generalización."], c: 1 },
+        { q: "35. ¿Cómo se representa en el modelo entidad-relación extendido una jerarquía total?", a: ["Con una doble línea entre el supertipo y el triángulo.", "Con una línea simple entre el supertipo y el triángulo.", "Con un círculo o una O en el triángulo invertido.", "Con una letra d en el triángulo invertido."], c: 0 },
+        { q: "36. En el modelo entidad-relación extendido, ¿con qué letra se representa las uniones por categorías?", a: ["d.", "o.", "U.", "C."], c: 2 },
+        { q: "37. En una jerarquía del modelo entidad-relación extendido, si una ocurrencia del supertipo solo puede pertenecer a uno de los subtipos, se denomina:", a: ["Jerarquía total.", "Jerarquía parcial.", "Jerarquía disjunta.", "Jerarquía solapada."], c: 2 },
+        { q: "38. En una jerarquía del modelo entidad-relación extendido, si toda ocurrencia del supertipo pertenece siempre a algún subtipo, se denomina:", a: ["Jerarquía total.", "Jerarquía parcial.", "Jerarquía disjunta.", "Jerarquía solapada."], c: 0 },
+        { q: "39. En una jerarquía del modelo entidad-relación extendido, si una ocurrencia del supertipo puede pertenecer a varios subtipos, se denomina:", a: ["Jerarquía total.", "Jerarquía parcial.", "Jerarquía disjunta.", "Jerarquía solapada."], c: 3 },
+        { q: "40. En una jerarquía del modelo entidad-relación extendido, si una ocurrencia del supertipo no pertenece a algún subtipo, se denomina:", a: ["Jerarquía total.", "Jerarquía parcial.", "Jerarquía disjunta.", "Jerarquía solapada."], c: 1 },
+        { q: "41. En el modelo entidad-relación extendido, ¿con qué letra se representa una jerarquía disjunta?", a: ["d.", "o.", "U.", "C."], c: 0 },
+        { q: "42. En el modelo entidad-relación extendido, ¿con qué letra se representa una jerarquía solapada?", a: ["d.", "o.", "U.", "C."], c: 1 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('er_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('er_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('er_idx', currentIdx);
+        localStorage.setItem('er_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
