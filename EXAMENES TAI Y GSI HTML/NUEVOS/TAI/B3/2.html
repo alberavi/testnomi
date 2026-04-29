@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Diseño de Bases de Datos</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">DISEÑO DE BASES DE DATOS</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 50</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>En blanco</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    // Datos extraídos directamente del documento [cite: 473-808]
+    const questions = [
+        { q: "1. ¿Cuál de las siguientes NO es un objetivo perseguido por Codd en la presentación de su modelo relacional?", a: ["Independencia lógica.", "Independencia conceptual.", "Independencia física.", "Uniformidad."], c: 1 },
+        { q: "2. Según la integridad de los datos en el modelo relacional. ¿A qué regla de integridad le corresponde la siguiente definición: \"Los valores de claves foráneas deben existir en la clave primaria referenciada o bien deben ser valores nulos\"?", a: ["La regla de integridad referencial.", "La regla de integridad de dominio.", "La regla de integridad foránea inversa.", "La regla de integridad de unicidad."], c: 0 },
+        { q: "3. Las consecuencias principales de que una base de datos NO esté normalizada adecuadamente son:", a: ["Errores de inconsistencias, incoherencias, actualización y redundancia de datos.", "Problemas de bloque en las transacciones de las bases de datos.", "Problemas de disponibilidad de la base de datos.", "Dificultad para dimensionar adecuadamente las necesidades de almacenamiento de la base de datos."], c: 0 },
+        { q: "4. ¿Cuál de las siguientes opciones NO representa uno de los niveles de abstracción de bases de datos?", a: ["Interno.", "Externo.", "Sintáctico.", "Conceptual."], c: 2 },
+        { q: "5. ¿Cuál de las siguientes operaciones NO se considera fundamental en el álgebra relacional?", a: ["Proyección.", "Intersección.", "Selección.", "Unión."], c: 1 },
+        { q: "6. El modelo de datos relacional fue introducido por:", a: ["Codd.", "Hamming.", "Ritchie.", "Adleman."], c: 0 },
+        { q: "7. Dentro del modelo relacional, señale la afirmación ERRÓNEA:", a: ["En una relación puede haber varias claves candidatas.", "Una clave primaria es, a su vez, clave candidata.", "Si se elimina un atributo de una clave candidata, ésta deja de serlo.", "Una relación puede no tener clave candidata."], c: 3 },
+        { q: "8. Según la teoría de la normalización, para pasar una relación de 1FN a 2FN hay que eliminar:", a: ["De ella los grupos repetitivos.", "Las dependencias parciales de la clave externas.", "Las dependencias parciales de las claves candidatas.", "Las dependencias transitivas de la clave primaria."], c: 2 },
+        { q: "9. ¿Cuál de los siguientes es un operador fundamental del álgebra relacional?", a: ["Intersección.", "Producto cartesiano.", "Agrupación.", "Cociente."], c: 1 },
+        { q: "10. ¿Cuál de las siguientes afirmaciones sobre la Tercera Forma Normal (3FN) es correcta?", a: ["Una entidad está en 3FN si está en 2FN y todos sus atributos no principales dependen directamente de la clave primaria, es decir, no hay dependencias funcionales transitivas de atributos no principales respecto de las claves.", "Una entidad está en 3FN si está en 2FN y todos sus atributos que no forman parte de las claves candidatas (atributos no principales) tienen dependencia funcional completa respecto de éstas.", "La 3FN es el nivel más elevado de normalización de una tabla.", "Una tabla está en 3FN cuando está en 2FN y además todos los atributos, tanto principales como no principales, son atómicos."], c: 0 },
+        { q: "11. ¿Qué nivel de la arquitectura ANSI/X3/SPARC contiene las vistas externas de la base de datos?", a: ["Nivel físico.", "Nivel conceptual.", "Nivel lógico.", "Las vistas están fuera del modelo de base de datos, ya que son externas."], c: 2 },
+        { q: "12. ¿Cuál de las siguientes tareas NO corresponde a una tarea del diseño físico de una base de datos?", a: ["Traducir el esquema lógico para el SGBD específico.", "Diseñar los mecanismos de seguridad.", "Transformación de entidades.", "Seleccionar los índices secundarios."], c: 2 },
+        { q: "13. ¿Cuál de los siguientes NO es un objetivo de la normalización de base de datos?", a: ["Proporcionar una estructura más regular para la representación de tablas.", "Optimizar la base de datos.", "Evitar anomalías en las operaciones de manipulación de datos.", "La eliminación de dependencias entre atributos."], c: 1 },
+        { q: "14. Una relación, si los atributos que no forman parte de ninguna clave dependen de forma completa de la clave principal se dice que está en:", a: ["Tercera Forma Normal.", "Cuarta Forma Normal.", "Quinta Forma Normal.", "Segunda Forma Normal."], c: 3 },
+        { q: "15. En una tabla, si cada determinante, atributo que determina completamente a otro, es clave candidata se dice que está en:", a: ["Primera Forma Normal.", "Segunda Forma Normal.", "Forma Normal de Boyce-Codd.", "Quinta Forma Normal."], c: 2 },
+        { q: "16. Si en una base de datos relacional tenemos una tabla que contiene una tupla cuya única clave ajena tiene un valor nulo:", a: ["Estaremos incumpliendo la regla de integridad de entidad.", "Estaremos incumpliendo la regla de integridad referencial.", "Dicha tupla no está relacionada con ninguna otra tupla de la entidad a la que hace referencia la clave ajena.", "Existirá una tupla en la entidad a la que hace referencia la clave ajena, con la que estará relacionada."], c: 2 },
+        { q: "17. ¿Cuál es una restricción inherente al modelo relacional de los sistemas gestores de bases de datos?", a: ["El atributo que forma parte de la clave tiene que ser numérico.", "El atributo que forma parte de la clave no puede ser numérico.", "El atributo que forma parte de la clave no puede tomar el valor cero.", "El atributo que forma parte de la clave no puede tomar valores nulos."], c: 3 },
+        { q: "18. ¿Cómo se llama el operador del álgebra relacional que aplicado sobre una relación permite obtener un subconjunto de sus atributos manteniendo el mismo número de tuplas?", a: ["Unión de conjuntos.", "Producto cartesiano.", "Selección.", "Proyección."], c: 3 },
+        { q: "19. ¿Cuál de las siguientes afirmaciones NO es correcta?", a: ["Las bases de datos relacionales se normalizan para evitar la redundancia de datos.", "Ningún atributo que compone una clave primaria puede ser nulo.", "Un atributo nulo representa el valor cero o una cadena vacía.", "Uno de los objetivos de la normalización es facilitar el mantenimiento de datos y programas."], c: 2 },
+        { q: "20. Una tabla se dice que está en Tercera Forma Normal si se encuentra en Segunda Forma Normal y:", a: ["Las únicas dependencias funcionales elementales son aquellas en las que la clave principal determinan un atributo.", "Todo atributo secundario depende totalmente de la clave completa.", "Los valores que componen los atributos son elementales y únicos.", "No existen atributos no primarios que son transitivamente dependientes de cada posible clave."], c: 3 },
+        { q: "21. En una tabla de una base de datos relacional, si no existen grupos repetitivos, y todos los elementos son independientes entre sí y dependen solamente de la clave primaria de forma plena, ¿ante qué forma normal nos encontramos?", a: ["1FN.", "2FN.", "3FN.", "No se encuentra en ninguna forma normal."], c: 2 },
+        { q: "22. En el modelo relacional, una relación R, decimos que está en Segunda Forma Normal (2FN) si:", a: ["Está en Primera Forma Normal (1FN) y todos los atributos que no forman parte de las claves candidatas tienen dependencia funcional completa respecto de éstas.", "Todos los atributos que no forman parte de las claves candidatas tienen dependencia funcional completa.", "Todos sus atributos no principales dependen directamente de la clave primaria.", "No tiene grupos repetitivos."], c: 0 },
+        { q: "23. La tabla siguiente EMPLEADOS (COD_EMPLEADO, COD_DEPARTAMENTO, TIPO, EDAD, PLANTA_DEPARTAMENTO) donde la clave principal es COD_EMPLEADO Y COD_DEPARTAMENTO.", a: ["Cumple la 2FN.", "No cumple la 3FN, pero cumple la segunda.", "No cumple la 2FN.", "No cumple la 4FN, pero cumple la tercera."], c: 2 },
+        { q: "24. Partiendo del diagrama Entidad/Relación (Empleados N:1 Departamentos). ¿Cuántas tablas generaría la transformación al modelo relacional?", a: ["Dos.", "Tres.", "Cuatro.", "Cinco."], c: 0 },
+        { q: "25. En una relación entre BECAS y ASPIRANTES (1:N), ¿cómo se reflejará?", a: ["En una nueva tabla cuya clave primaria será la concatenación de los atributos claves.", "Se propaga la clave primaria BECAS.", "En una nueva tabla con concatenación de cuatro valores.", "Se propaga la clave primaria de cualquier de las dos."], c: 0 },
+        { q: "26. En álgebra relacional la operación que obtiene una nueva relación formada por las tuplas que pertenecen a las dos relaciones de partida, se llama:", a: ["Unión.", "Intersección.", "Diferencia.", "Producto cartesiano."], c: 1 },
+        { q: "27. Relación con atributos A, B, C y D. Clave candidata (A, B). (A, B) determina C, y C determina D. Indique la respuesta correcta:", a: ["La tabla no cumple ninguna forma normal.", "La tabla está en 1FN, pero no en 2FN.", "La tabla está en 1FN y en 2FN, pero no en 3FN.", "La tabla está en 1FN, en 2FN y en 3FN."], c: 2 },
+        { q: "28. Tal y como se muestra en el diagrama E/R (Dpto compuesto por Unidad, Unidad dirigida por Titular). Señale la falsa:", a: ["Un Departamento está compuesto por una o varias Unidades.", "Un Departamento puede ser dirigido por un Titular y todo Titular debe dirigir a un Dpto.", "Cada Unidad es dirigida por un Titular.", "Un Departamento puede participar en varias Comisiones."], c: 1 },
+        { q: "29. Relación entre DEPARTAMENTO y COMISIÓN MINISTERIAL (N:M). ¿Cómo se reflejaría?", a: ["Se propaga el identificador de la Comisión.", "Se propaga el identificador del Departamento.", "Se crea tabla nueva donde los atributos de la relación son la clave.", "Se crea tabla nueva donde las claves de ambas forman la clave primaria."], c: 3 },
+        { q: "30. En una tabla de provincias y otra de municipios (donde parte de la clave es la provincia), ¿se puede borrar una provincia?", a: ["Si, no hay ningún problema.", "Si, aunque no podría dar de altas nuevos.", "Sólo si no hay ninguna población perteneciente a esa provincia.", "No, las provincias son estables."], c: 2 },
+        { q: "31. Cuanto más alta sea la forma normal aplicable a una tabla:", a: ["Menor será la cohesión relacional.", "Menor será el acoplamiento relacional.", "Menos vulnerable será a inconsistencias y anomalías.", "Más vulnerable será a inconsistencias."], c: 2 },
+        { q: "32. Señale cuál de las siguientes afirmaciones sobre la arquitectura ANSI/X3/SPARC es correcta:", a: ["El nivel externo también recibe el nombre de nivel físico.", "El nivel interno también recibe el nombre de nivel lógico.", "El nivel externo define los datos que se almacenan.", "El nivel externo contiene las vistas externas y permite ver a cada usuario su parte de interés."], c: 3 },
+        { q: "33. ¿Cuál de las siguientes afirmaciones sobre la normalización es cierta?", a: ["Existen solo 3 Formas Normales.", "Una tabla está en 2FN cuando existe dependencia funcional del resto de columnas con respecto a las claves candidatas.", "Una tabla está en 1FN cuando existe dependencia funcional completa respecto a la clave primaria.", "Una tabla en 1FN tiene el máximo grado."], c: 1 },
+        { q: "34. En relación al esquema conceptual ANSI/X3/SPARC, ¿qué afirmación NO es correcta?", a: ["Independiente del SGBD.", "Refleja la representación de los datos a partir del modelo ER.", "Corresponde a la visión de cada aplicación.", "Debe ser independiente del esquema físico."], c: 2 },
+        { q: "35. El operador JOIN es un operador compuesto de:", a: ["Selección, proyección y unión.", "Selección, producto cartesiano y proyección.", "Diferencia, unión y producto cartesiano.", "Unión, proyección y producto cartesiano."], c: 1 },
+        { q: "36. ¿Qué esquema incluye la descripción de todos los datos, interrelaciones y restricciones de integridad?", a: ["Esquema interno.", "Esquema conceptual.", "Esquema externo.", "Esquema físico."], c: 1 },
+        { q: "37. En un diagrama entidad/relación:", a: ["Una alta redundancia es buena.", "Baja redundancia es mala.", "Si hay ciclos debemos eliminar relaciones siempre.", "No es conveniente romper ciclos si cada relación aporta información distinta."], c: 3 },
+        { q: "38. Dada una relación ternaria en un diagrama E/R, ¿en cuántas relaciones se transformará?", a: ["1", "2", "3", "4"], c: 3 },
+        { q: "39. La normalización se aplica en:", a: ["El diseño físico.", "El diseño conceptual.", "El diseño lógico.", "El diseño interno."], c: 2 },
+        { q: "40. Señale la afirmación INCORRECTA sobre el modelo lógico relacional:", a: ["La cardinalidad es el número de tuplas.", "El grado es el número de atributos.", "Un dominio es un conjunto de valores.", "Cada fila de una relación puede ser única."], c: 3 },
+        { q: "41. La desnormalización controlada del modelo físico se aplica para:", a: ["Estructura más regular.", "Incrementar flexibilidad.", "Mejorar tiempos de respuesta.", "Reducir o simplificar el número de acceso."], c: 3 },
+        { q: "42. En el modelo relacional, señale la correcta:", a: ["Un valor nulo representa cero.", "Un valor nulo representa un valor desconocido.", "Un valor nulo representa cadena vacía.", "Un valor nulo representa false."], c: 1 },
+        { q: "43. Relación 'ASOCIADA A' (1:1) con atributo 'fecha_asociacion'. ¿En cuántas relaciones se transforma?", a: ["1", "2", "3", "4"], c: 2 },
+        { q: "44. Jerarquía E/R: tabla para supertipo y tablas para subtipos con clave ajena. ¿Cuándo es apropiado?", a: ["Si los subtipos tienen muchos atributos distintos.", "Porque mejora eficiencia de todos los accesos.", "Si se diferencian en pocos atributos.", "En todo caso."], c: 0 },
+        { q: "45. Desnormalización controlada para reducir el número de accesos:", a: ["Optimización.", "Cálculo de accesos.", "Caminos de acceso.", "Normalización inversa."], c: 0 },
+        { q: "46. Respecto a la regla de integridad de entidad, señale la INCORRECTA:", a: ["Ninguno de los atributos de la clave primaria puede ser nulo.", "Ninguno de los atributos de las claves candidatas puede ser nulo.", "La clave primaria es irreducible.", "No se aplica a las claves candidatas."], c: 1 },
+        { q: "47. En el modelo relacional, la extensión de una relación es:", a: ["El número de atributos.", "El esquema.", "El conjunto de filas o tuplas.", "El conjunto de dominios."], c: 2 },
+        { q: "48. En el modelo relacional, la cardinalidad de una relación es:", a: ["El número de atributos.", "Atributos en clave primaria.", "El número de filas o tuplas.", "El número de dominios."], c: 2 },
+        { q: "49. En el modelo relacional, el grado de una relación es:", a: ["El número de atributos.", "Atributos en clave primaria.", "El número de filas o tuplas.", "El número de dominios."], c: 0 },
+        { q: "50. En transformación de E/R a relacional, las relaciones de agregación:", a: ["Se transforman como las 1:N.", "Se transforman como las 1:1.", "Se transforman como las N:M.", "Depende del tipo de correspondencia."], c: 0 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('bd_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('bd_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('bd_idx', currentIdx);
+        localStorage.setItem('bd_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
