@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Aplicaciones Web - TAI</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 850px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+        code { background: #eee; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">APLICACIONES WEB</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 86</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>En blanco</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "1. ¿Cuál de los siguientes elementos NO ha sido incorporado en HTML5?", a: ["<address>", "<aside>", "<nav>", "<section>"], c: 0 },
+        { q: "2. ¿Cuál de los siguientes elementos ha sido incorporado en HTML5?", a: ["<h3>", "<main>", "<base>", "<samp>"], c: 1 },
+        { q: "3. ¿Qué elemento de HTML5 marca el texto que debe introducir el usuario?", a: ["<code>", "<var>", "<dfn>", "<kbd>"], c: 3 },
+        { q: "4. ¿Qué elemento de HTML5 marca variables de programas y similares?", a: ["<code>", "<var>", "<dfn>", "<samp>"], c: 1 },
+        { q: "5. ¿Qué elemento de HTML5 representa una oportunidad de salto de línea?", a: ["<br>", "<vbr>", "<wbr>", "<xbr>"], c: 2 },
+        { q: "6. ¿Qué elemento NO está soportado en HTML5?", a: ["<b>", "<i>", "<q>", "<strike>"], c: 3 },
+        { q: "7. ¿Qué atributo de HTML5 permite ejecutar un script asíncronamente tan pronto como esté disponible?", a: ["defer", "async", "load", "exec"], c: 1 },
+        { q: "8. ¿Qué atributo de HTML5 indica que el script se ejecutará cuando la página se haya cargado?", a: ["async", "wait", "defer", "ready"], c: 2 },
+        { q: "9. ¿Cómo se define el tipo de documento en HTML5?", a: ["<!DOCTYPE html5>", "<html>", "<doctype html>", "<!DOCTYPE html>"], c: 3 },
+        { q: "10. ¿Cuál de los siguientes es un lenguaje de marcado basado en XML para describir gráficos vectoriales en 2D?", a: ["Canvas", "VML", "OpenGL", "SVG"], c: 3 },
+        { q: "11. ¿Qué tecnología permite la comunicación bidireccional en tiempo real entre cliente y servidor?", a: ["HTTP/2", "AJAX", "WebSockets", "JSONP"], c: 2 },
+        { q: "12. En CSS3, ¿qué propiedad se usa para redondear las esquinas de un elemento?", a: ["corner-radius", "border-round", "box-radius", "border-radius"], c: 3 },
+        { q: "13. ¿Cuál es el formato estándar para el intercambio de datos en la web moderna, más ligero que XML?", a: ["JSON", "YAML", "CSV", "SOAP"], c: 0 },
+        { q: "14. ¿Qué significa XML?", a: ["X-Markup Language", "eXtensible Markup Language", "eXtra Modern Language", "eXample Markup Language"], c: 1 },
+        { q: "15. ¿Qué etiqueta HTML se usa para definir una lista desplegable?", a: ["<list>", "<input type='dropdown'>", "<dropdown>", "<select>"], c: 3 },
+        { q: "16. En JavaScript, ¿qué método se usa para escribir en la consola del navegador?", a: ["console.log()", "print()", "write()", "log.console()"], c: 0 },
+        { q: "17. ¿Qué selector de CSS se utiliza para aplicar un estilo cuando el usuario pasa el ratón por encima de un elemento?", a: [":active", ":hover", ":focus", ":visited"], c: 1 },
+        { q: "18. En PHP, ¿qué superglobal se utiliza para recoger datos enviados a través de un formulario con el método POST?", a: ["$GET", "$REQUEST", "$POSTS", "$_POST"], c: 3 },
+        { q: "19. ¿Cuál es el lenguaje de script que se ejecuta principalmente en el lado del cliente?", a: ["Java", "Python", "JavaScript", "Perl"], c: 2 },
+        { q: "20. ¿Qué framework de JavaScript fue desarrollado por Google?", a: ["Angular", "React", "Vue", "Ember"], c: 0 },
+        { q: "21. ¿Qué elemento de HTML5 se utiliza para dibujar gráficos en pantalla mediante scripts?", a: ["<svg>", "<paint>", "<graphic>", "<canvas>"], c: 3 },
+        { q: "22. En el modelo de caja de CSS (Box Model), ¿cuál es el espacio que queda entre el contenido y el borde?", a: ["Margin", "Border", "Padding", "Outline"], c: 2 },
+        { q: "23. ¿Qué protocolo es la versión segura de HTTP?", a: ["SHTTP", "HTTP2", "SSL", "HTTPS"], c: 3 },
+        { q: "24. En CSS, ¿qué propiedad controla el tamaño del texto?", a: ["text-style", "font-size", "text-size", "font-weight"], c: 1 },
+        { q: "25. ¿Cuál es la función principal de un navegador web?", a: ["Crear bases de datos", "Interpretar y mostrar archivos HTML", "Compilar código C++", "Enviar correos electrónicos"], c: 1 },
+        { q: "26. ¿Qué etiqueta XML se utiliza para indicar la versión de XML?", a: ["<xml version='1.0'>", "<?xml version='1.0'?>", "<!DOCTYPE xml>", "<xml encoding='utf-8'>"], c: 1 },
+        { q: "27. ¿Qué lenguaje define la presentación de los documentos web?", a: ["HTML", "XML", "CSS", "PHP"], c: 2 },
+        { q: "28. ¿Qué significa el acrónimo AJAX?", a: ["Asynchronous Java and XML", "Always Jointly Advanced XML", "Asynchronous JavaScript and XML", "Automated JavaScript and XML"], c: 2 },
+        { q: "29. ¿Qué método de JavaScript convierte una cadena de texto en un objeto JSON?", a: ["JSON.stringify()", "JSON.parse()", "JSON.toObject()", "JSON.convert()"], c: 1 },
+        { q: "30. ¿Qué propiedad CSS se utiliza para cambiar el color de fondo?", a: ["color", "bg-color", "background-color", "fill"], c: 2 },
+        { q: "31. ¿Qué etiqueta HTML define el título de la página?", a: ["<head>", "<meta>", "<header>", "<title>"], c: 3 },
+        { q: "32. ¿Qué atributo HTML especifica un texto alternativo para una imagen?", a: ["title", "longdesc", "alt", "caption"], c: 2 },
+        { q: "33. ¿Cuál de los siguientes NO es un framework de CSS?", a: ["Bootstrap", "Tailwind", "Sass", "Bulma"], c: 2 },
+        { q: "34. ¿Qué lenguaje utiliza el servidor Node.js?", a: ["Java", "Python", "JavaScript", "Ruby"], c: 2 },
+        { q: "35. ¿Qué extensión suelen tener las hojas de estilo externas?", a: [".html", ".js", ".css", ".style"], c: 2 },
+        { q: "36. En HTML, ¿qué elemento crea un hipervínculo?", a: ["<link>", "<a>", "<href>", "<url>"], c: 1 },
+        { q: "37. ¿Qué tecnología adapta la web al tamaño de la pantalla?", a: ["Adaptive Design", "Responsive Web Design", "Fluid Layout", "Flexbox Only"], c: 1 },
+        { q: "38. ¿Qué etiqueta de HTML5 se usa para integrar un vídeo?", a: ["<media>", "<movie>", "<video>", "<source>"], c: 2 },
+        { q: "39. ¿Cuál es el puerto por defecto para HTTP?", a: ["21", "80", "443", "8080"], c: 1 },
+        { q: "40. ¿Cuál es el puerto por defecto para HTTPS?", a: ["80", "22", "443", "3306"], c: 2 },
+        { q: "41. ¿Qué es el DOM?", a: ["Data Object Model", "Document Object Model", "Document Oriented Media", "Digital Object Management"], c: 1 },
+        { q: "42. ¿Qué herramienta inspecciona el HTML/CSS de una página?", a: ["Historial", "Marcadores", "DevTools (F12)", "Cookies"], c: 2 },
+        { q: "43. ¿Qué lenguaje es común para apps nativas en iOS?", a: ["Kotlin", "Swift", "C#", "Java"], c: 1 },
+        { q: "44. ¿Qué lenguaje es el estándar para apps nativas en Android?", a: ["Swift", "Objective-C", "Kotlin", "Python"], c: 2 },
+        { q: "45. ¿Qué framework permite crear apps híbridas con tecnologías web?", a: ["Ionic", "Unity", "Django", "Laravel"], c: 0 },
+        { q: "46. ¿Qué significa SPA?", a: ["Simple Page Application", "Single Page Application", "Secure Protocol Access", "System Process Automation"], c: 1 },
+        { q: "47. ¿Qué comando de PHP muestra texto en el navegador?", a: ["print_line", "show", "echo", "console.log"], c: 2 },
+        { q: "48. ¿Qué unidad CSS es relativa al tamaño de fuente del elemento raíz?", a: ["px", "em", "rem", "%"], c: 2 },
+        { q: "49. ¿Qué librería JavaScript facilita manipular el DOM?", a: ["jQuery", "D3.js", "Three.js", "Lodash"], c: 0 },
+        { q: "50. ¿Qué es un CMS?", a: ["Content Management System", "Code Management Server", "Client Messaging Service", "Computer Metadata System"], c: 0 },
+        { q: "51. ¿Cuál es un CMS popular?", a: ["WordPress", "Photoshop", "Chrome", "SQL"], c: 0 },
+        { q: "52. ¿Qué atributo identifica un elemento de forma única?", a: ["class", "id", "name", "type"], c: 1 },
+        { q: "53. ¿Qué atributo aplica estilos a un grupo de elementos?", a: ["id", "style", "group", "class"], c: 3 },
+        { q: "54. ¿Qué es Babel?", a: ["Un servidor", "Un transpilador de código", "Una base de datos", "Un framework de CSS"], c: 1 },
+        { q: "55. ¿Qué herramienta gestiona paquetes en Node.js?", a: ["NuGet", "Composer", "npm", "pip"], c: 2 },
+        { q: "56. ¿Qué es Sass?", a: ["Un lenguaje de programación", "Un preprocesador de CSS", "Un servidor web", "Un navegador"], c: 1 },
+        { q: "57. ¿Qué etiqueta define el cuerpo del documento?", a: ["<head>", "<main>", "<body>", "<footer>"], c: 2 },
+        { q: "58. ¿Qué etiqueta inserta un salto de línea?", a: ["<lb>", "<break>", "<br>", "<hr>"], c: 2 },
+        { q: "59. ¿Qué etiqueta crea una lista numerada?", a: ["<ul>", "<ol>", "<li>", "<list>"], c: 1 },
+        { q: "60. ¿Qué etiqueta crea una lista con viñetas?", a: ["<ul>", "<ol>", "<li>", "<list>"], c: 0 },
+        { q: "61. ¿Qué etiqueta define una celda en una tabla?", a: ["<th>", "<tr>", "<td>", "<table>"], c: 2 },
+        { q: "62. ¿Qué etiqueta define una fila en una tabla?", a: ["<th>", "<tr>", "<td>", "<table>"], c: 1 },
+        { q: "63. ¿Qué elemento permite introducir texto de varias líneas?", a: ["<input type='text'>", "<text>", "<textarea>", "multi"], c: 2 },
+        { q: "64. ¿Cómo se comenta en HTML?", a: ["//", "/* */", "", "#"], c: 2 },
+        { q: "65. ¿Qué propiedad CSS controla el espaciado entre letras?", a: ["letter-spacing", "word-spacing", "line-height", "indent"], c: 0 },
+        { q: "66. ¿Qué propiedad pone el texto en negrita?", a: ["font-style", "font-weight", "decoration", "variant"], c: 1 },
+        { q: "67. ¿Cómo se selecciona un id 'demo' en CSS?", a: [".demo", "#demo", "demo", "*demo"], c: 1 },
+        { q: "68. ¿Cómo se selecciona una clase 'test' en CSS?", a: [".test", "#test", "test", "*test"], c: 0 },
+        { q: "69. ¿Cuál es el valor por defecto de 'position'?", a: ["relative", "absolute", "fixed", "static"], c: 3 },
+        { q: "70. ¿Qué significa SEO?", a: ["Search Engine Optimization", "Secure External Object", "Site Efficiency", "Output"], c: 0 },
+        { q: "71. ¿Qué es una Cookie?", a: ["Virus", "Archivo de datos en el navegador", "Imagen", "Etiqueta"], c: 1 },
+        { q: "72. ¿Qué significa API?", a: ["Application Programming Interface", "Access Protocol", "Process", "Information"], c: 0 },
+        { q: "73. ¿Qué lenguaje es la base de Ruby on Rails?", a: ["Python", "PHP", "Ruby", "Perl"], c: 2 },
+        { q: "74. ¿Qué es TypeScript?", a: ["Navegador", "Superset de JS con tipos", "Base NoSQL", "Framework"], c: 1 },
+        { q: "75. ¿Qué hace 'alert()'?", a: ["Cierra", "Cuadro de diálogo", "Guarda", "Imprime"], c: 1 },
+        { q: "76. ¿Qué etiqueta incluye un JS externo?", a: ["<js>", "<script>", "<javascript>", "<link>"], c: 1 },
+        { q: "77. ¿Forma correcta de un array en JS?", a: ["()", "[]", "{}", "<>"], c: 1 },
+        { q: "78. ¿Sentencia IF en JavaScript?", a: ["if i=5", "if (i == 5)", "if i==5", "if 5"], c: 1 },
+        { q: "79. ¿Bucle FOR en JS?", a: ["for (i <= 5)", "for i=1", "for (i=0; i<=5; i++)", "for (i=0; i<=5)"], c: 2 },
+        { q: "80. ¿Redondear 7.25 al entero más cercano?", a: ["rnd()", "round()", "Math.round()", "Math.rnd()"], c: 2 },
+        { q: "81. ¿Operador de asignación?", a: ["*", "-", "=", "x"], c: 2 },
+        { q: "82. ¿Qué significa PWA?", a: ["Private", "Progressive Web App", "Public", "Personal"], c: 1 },
+        { q: "83. En Ruby, ¿qué son los símbolos?", a: ["Variables", "Cadenas inmutables", "Errores", "Comentarios"], c: 1 },
+        { q: "84. ¿Qué clase usa Rails para la Vista?", a: ["Active Record", "Action View", "Ruby Record", "Ruby View"], c: 1 },
+        { q: "85. Sobre las apps híbridas:", a: ["Acceso total hardware", "Se ven en el navegador", "Se desarrollan con Ionic", "No van a tiendas"], c: 2 },
+        { q: "86. ¿Qué es Capacitor?", a: ["UI Framework", "ORM", "Framework acceso capacidades dispositivo", "Plugin push"], c: 2 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('web_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('web_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('web_idx', currentIdx);
+        localStorage.setItem('web_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
