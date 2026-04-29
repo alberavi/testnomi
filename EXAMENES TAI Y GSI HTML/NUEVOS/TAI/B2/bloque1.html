@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Periféricos</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">PERIFÉRICOS</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 50</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>Sin contestar</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    // Banco de preguntas con el texto íntegro del PDF [cite: 12-333, 340-389]
+    const questions = [
+        { q: "1. Las unidades SSD:", a: ["Son unidades de almacenamiento que realizan la misma función que el disco duro del ordenador.", "Son unidades de almacenamiento que realizan la misma función que la memoria RAM del ordenador.", "Contienen el hardware para las comunicaciones Ethernet.", "Contienen el hardware para la dotación de conexiones USB del ordenador."], c: 0 },
+        { q: "2. En relación a la estructura física de un disco, ¿qué es un sector?", a: ["Conjunto de varias pistas.", "Cada una de las divisiones de una pista.", "Cada uno de los círculos concéntricos del disco.", "Cada una de las caras del disco."], c: 1 },
+        { q: "3. Respecto a la estructura lógica de un disco duro y sus características, ¿qué se entiende por latencia media?", a: ["Revoluciones por minuto de los platos.", "Tiempo medio que tarda la aguja en situarse en la pista y el sector deseado.", "Velocidad a la que puede transferir la información a la computadora una vez la aguja está situada en la pista y sector correctos.", "Tiempo medio que tarda la aguja en situarse en el sector deseado."], c: 3 },
+        { q: "4. El tipo de escáner que se utiliza para hacer copias digitales de libros o documentos que, por ser antiguos o muy valiosos, no se les quiere deteriorar durante el proceso, se le conoce con el nombre de:", a: ["Plano.", "Tambor.", "Rodillo.", "Cenital."], c: 3 },
+        { q: "5. La velocidad del USB 3.0 es:", a: ["15 veces superior a la del USB 2.0.", "Similar a la del USB 2.0.", "10 veces superior a la del USB 2.0", "480 Mbps."], c: 2 },
+        { q: "6. ¿Con qué dispositivo se relaciona la tecnología de reconocimiento de pulso acústico?", a: ["Memoria RAM.", "Pantalla táctil.", "Tarjeta de sonido.", "Disco duro."], c: 1 },
+        { q: "7. ¿Cuál de los siguientes estándares se basa en una comunicación en serie?", a: ["PATA.", "SCSI 1.", "SATA.", "SCSI 3.1."], c: 2 },
+        { q: "8. ¿Cuál de las siguientes opciones describe la impresión con tecnología de sublimación de tinta?", a: ["Utilizan el calor para la transferencia de la tinta al soporte de impresión.", "Un conjunto de agujas con temperatura alta, recorren el papel sensible a la temperatura, volviéndose en esos puntos de color negro.", "Se proyectan pequeñas cantidades de tinta hacia el soporte.", "Se golpea el soporte y con la fuerza del impacto se transfiere la tinta."], c: 0 },
+        { q: "9. ¿Cuál de las siguientes afirmaciones sobre los discos SSD es INCORRECTA?", a: ["El origen de las siglas SSD es Solid State Drive.", "El acceso a la información almacenada en un disco SSD es más rápido que en un disco duro HDD.", "La copia y duplicación de archivos en un disco SSD es más lenta que en un disco HDD.", "El coste de un disco SSD, a igualdad de tamaño, es superior al de un disco HDD."], c: 2 },
+        { q: "10. En cuanto a impresoras de impacto, hay varios tipos principales, señale cuál de las siguientes NO es un tipo:", a: ["De margarita.", "Matricial.", "De inyección.", "De bola."], c: 2 },
+        { q: "11. Es una tecnología de impresión 3D:", a: ["Inyección de aglutinante.", "Impresión de chorro continuo.", "Inyección de tinta térmica.", "Inyección por gota a la demanda."], c: 0 },
+        { q: "12. Hablando de las zonas de un disco duro, señale la FALSA:", a: ["Cilindro es un conjunto de varias pistas.", "Clúster es un conjunto continuo de sectores.", "Sector es cada uno de los lados de un plato.", "Pista es una circunferencia dentro de una cara."], c: 2 },
+        { q: "13. Indique cuál de las siguientes siglas NO corresponde a un tipo de monitor, según la tecnología empleada para formas las imágenes:", a: ["CRT.", "LCD.", "ARP.", "TFT."], c: 2 },
+        { q: "14. ¿Cuántos pines tiene un conector USB Tipo C?", a: ["12.", "18.", "22.", "24."], c: 3 },
+        { q: "15. De las siguientes afirmaciones, señale la INCORRECTA:", a: ["Thunderbolt 2 alcanza una velocidad de transmisión de 20 Gbps y utiliza el conector DisplayPort.", "Thunderbolt 1 alcanza una velocidad de transmisión de 10 Gbps y utiliza el conector DisplayPort.", "Thunderbolt 1 y Thunderbolt 2 operan en modo bidireccional.", "Thunderbolt 3 utiliza un conector USB tipo C."], c: 2 },
+        { q: "16. En relación al puerto DVI, señale la respuesta INCORRECTA:", a: ["DVI-I admite señales digital y analógica.", "DVI-B admite señal digital.", "DVI-A admite señal analógica.", "DVI-D admite señal digital."], c: 1 },
+        { q: "17. La velocidad de SAS-3 es:", a: ["6 Gbps.", "12 Gbps.", "16 Gbps.", "8 Gbps."], c: 1 },
+        { q: "18. Tiene que grabar en una memoria externa un fichero de vídeo de una hora con una calidad de 1,2 Mbits/seg. Le piden hacerlo en el dispositivo más barato con capacidad para almacenarlo. ¿Cuál de los siguientes elegiría?", a: ["Memoria USB. 64 MBytes. 1 euro", "Memoria USB. 128 MBytes. 3 euros", "CD. 650 MBytes. 5 euros", "DVD. 4,7 GBytes. 10 euros"], c: 2 },
+        { q: "19. Una resolución 1080p, representa:", a: ["1080 líneas de resolución horizontal progressive scan y entrelazada.", "1080 líneas de resolución vertical progressive scan y no entrelazada.", "1080 líneas de resolución vertical progressive scan y entrelazada.", "1080 líneas de resolución horizontal progressive scan y no entrelazada."], c: 1 },
+        { q: "20. En relación con las imágenes electrónicas definidas en la NTI Digitalización de documentos, señale la respuesta INCORRECTA:", a: ["Será fiel al documento origen.", "No contendrá caracteres o gráficos que no figurasen en el documento origen, salvo la incorporación de un membrete conforme a la imagen institucional del organismo en cuestión.", "Respetará la geometría del documento origen en tamaños y proporciones.", "El nivel de resolución mínimo será de 200ppp."], c: 1 },
+        { q: "21. De entre los componentes digitales de un documento electrónico fruto de un proceso de digitalización según la NTI Digitalización de documentos, señale la INCORRECTA:", a: ["Imagen electrónica.", "Metadatos mínimos.", "Firma electrónica.", "Opcionalmente, los metadatos relacionados con el proceso de digitalización."], c: 2 },
+        { q: "22. ¿Cuál de los siguientes tipos de USB utiliza conectores completamente simétricos?", a: ["USB-A.", "USB-B.", "USB-C.", "USB-S."], c: 2 },
+        { q: "23. La velocidad de USB 4.0 USB 4 es:", a: ["10 Gbps.", "20 Gbps.", "30 Gbps.", "40 Gbps."], c: 3 },
+        { q: "24. USB 3.2 Gen 2x1 se corresponde con la versión:", a: ["USB 2.0.", "USB 3.0.", "USB 3.1 Gen 1.", "USB 3.1 Gen 2."], c: 3 },
+        { q: "25. En relación con DisplayPort señale la respuesta INCORRECTA:", a: ["Interfaz analógica que transmite video y audio.", "DisplayPort 2.0 ofrece una velocidad de 77,37 Gbps de manera efectiva.", "DisplayPort Alt Mode 2.0 soporta resoluciones de 16K a 60 Hz.", "El puerto MiniDP ha sido desarrollado por Apple."], c: 0 },
+        { q: "26. Indique el número máximo de carriles que soporta PCIe:", a: ["2.", "4.", "8.", "16."], c: 3 },
+        { q: "27. ¿En qué consiste la tecnología de impresión 3D FDM?", a: ["En el uso de un láser para imprimir objetos.", "En depositar polímero fundido sobre una base plana, capa a capa.", "En la aplicación de un haz de luz ultravioleta a una resina líquida sensible a la luz.", "En inyectar capas de fotopolímero líquido."], c: 1 },
+        { q: "28. La interfaz de conexión SATA 3.0 utiliza un cable de datos que conecta el puerto SATA y el disco duro. Señale la respuesta correcta:", a: ["Es un cable de 7 pines exclusivo.", "Es un cable de 7 pines compartido.", "Es un cable de 5 pines exclusivo.", "Es un cable de 5 pines compartido."], c: 0 },
+        { q: "29. ¿Cuál de los siguientes interfaces permite trabajar a una velocidad de 16 Gbps?", a: ["SATA 3.0.", "SATAe.", "SAS-4.", "Ultra 2 SCSI 3."], c: 1 },
+        { q: "30. ¿Qué respuesta es INCORRECTA en relación con NVMe?", a: ["Es una interfaz para acceder a medios de almacenamiento no volátiles conectados a PCIe.", "NVMe significa Non Volatile Memory Express.", "Se utiliza de forma intensiva para acceder a discos duros.", "Es una alternativa a SATA."], c: 2 },
+        { q: "31. ¿Qué medio de almacenamiento tiene mayor velocidad de lectura?", a: ["SSD SATA II.", "SSD NVMe.", "SSD SATA 2,5.", "SSD SATA M.2."], c: 1 },
+        { q: "32. ¿Qué tecnología de monitor NO existe?", a: ["CRT.", "TLED.", "LCD.", "IPS."], c: 1 },
+        { q: "33. Para conectar un disco duro SATA a la placa base utilizaremos:", a: ["Un conector IDE.", "Un conector SATA y un cable de alimentación SATA.", "Un conector SATA que proporcione además alimentación eléctrica.", "Ninguna de las respuestas es correcta."], c: 1 },
+        { q: "34. ¿Qué velocidad de transferencia máxima ofrece SATA 3.0?", a: ["1,5 Gbps.", "3 Gbps.", "6 Gbps.", "12 Gbps."], c: 2 },
+        { q: "35. ¿A partir de qué versión de USB la velocidad de transferencia de datos supera 1 Gbps?", a: ["USB 1.1.", "USB 2.0.", "USB 3.0.", "USB 3.1."], c: 2 },
+        { q: "36. Señale la tecnología empleada para la impresión 3D:", a: ["CCD (Charged Coupled Device).", "SLS (Sinterización Selectiva por Láser).", "Chroma subsampling.", "WIA (Windows Image Acquisition)."], c: 1 },
+        { q: "37. NO es un espacio de color:", a: ["RGB.", "CMYK.", "HSM.", "HSB."], c: 2 },
+        { q: "38. La medida del número de bits utilizados para definir cada píxel es:", a: ["Resolución.", "Área de imagen.", "Profundidad de bit o de color.", "Ninguna es verdadera."], c: 2 },
+        { q: "39. Un monitor cuya resolución es de 640x480 tiene:", a: ["480 líneas de exploración (resolución vertical).", "640 líneas de exploración (resolución vertical).", "480 pixeles (resolución horizontal).", "Ninguna de las respuestas anteriores es cierta."], c: 0 },
+        { q: "40. En relación con un escáner, la resolución interpolada es:", a: ["Una resolución calculada que genera nuevos puntos a partir de otros reales más próximos.", "La cantidad de puntos individuales de una imagen captada mediante el sensor.", "La empleada por los programas OCR para identificar el texto.", "La que determina la profundidad del color."], c: 0 },
+        { q: "41. ¿Cuál de las siguientes es una tecnología de almacenamiento en disco mediante bus serie?", a: ["SATA.", "ATA.", "SCSI.", "DLT."], c: 0 },
+        { q: "42. Respecto a la norma USB indique la respuesta INCORRECTA:", a: ["USB Type-C es lo mismo que USB 3.1", "La diferencia entre USB 3.1 Gen 1 y USB 3.1 Gen 2 se reduce solamente a la velocidad.", "USB 3.2 permite velocidades de hasta 20 Gbps.", "Los dispositivos USB 2.0 pueden lograr una velocidad de transferencia máxima hasta de 480 Mbps."], c: 0 },
+        { q: "43. ¿Cuál de los siguientes componentes de almacenamiento ofrece el acceso más rápido a los datos en reposo?", a: ["Disco duro.", "Memoria RAM.", "Disco SSD.", "Pendrive USB."], c: 2 },
+        { q: "44. La impresión más económica, una vez teniendo el dispositivo es:", a: ["La de gel.", "La láser.", "La de inyección.", "Las tres por igual."], c: 1 },
+        { q: "45. Indique la principal diferencia entre discos mecánicos, SSD's y NVMe por tamaño, velocidad y duración:", a: ["Los más rápidos son los SSD's y los más reducidos en tamaño (no en capacidad) los NVMe.", "Los discos mecánicos más grandes son más baratos que los SSD's más grandes.", "Los discos con mayor capacidad son los discos mecánicos y los más rápidos son los NVMe.", "Los discos SSD's y los NVMe son ópticos y por tanto con mayor durabilidad."], c: 2 },
+        { q: "46. Cuando utilizamos el término QWERTY, nos estamos refiriendo:", a: ["A un tipo de impresora.", "A un tipo de teclado.", "A un tipo de ratón.", "A un tipo de pantalla."], c: 1 },
+        { q: "47. ¿Qué significa HDD?", a: ["Hard Definition Disk.", "Hard Disk Drive.", "Heavy Disk Device.", "Height Definition Dictionary."], c: 1 },
+        { q: "48. Para conectar una tarjeta gráfica a la placa base, de los siguientes puertos o bus de expansión, ¿cuál se usa?", a: ["SATA.", "PCI-Express.", "IDE.", "COM."], c: 1 },
+        { q: "49. Se consideran periféricos de entrada:", a: ["Micrófono e impresora.", "Altavoces, auriculares e impresora.", "Teclado, ratón y escáner.", "Impresora, cámara, teclado y ratón."], c: 2 },
+        { q: "50. Señale la respuesta correcta:", a: ["PCIe 5.0 trabaja a 64 Gbps.", "HDMI 2.1 trabaja a 40 Gbps.", "Thunderbolt 5.0 ofrece una velocidad por defecto a 80 Gbps.", "USB 4 2.0 ofrece una velocidad por defecto de 120 Gbps."], c: 2 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('p_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('p_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('p_idx', currentIdx);
+        localStorage.setItem('p_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
