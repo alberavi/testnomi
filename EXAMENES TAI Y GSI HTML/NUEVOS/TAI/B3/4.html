@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Jakarta EE y .NET</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --correct: #27ae60;
+            --incorrect: #c0392b;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        #quiz-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 850px; width: 100%; }
+        .main-title { text-align: center; color: var(--primary); font-size: 2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; text-transform: uppercase; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .question { font-weight: 600; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; }
+        .option { background: #fff; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; line-height: 1.4; }
+        .option:hover:not(.disabled) { background: #f8f9fa; border-color: #bbb; }
+        .correct { background-color: var(--correct) !important; color: white; border-color: #1e8449 !important; }
+        .incorrect { background-color: var(--incorrect) !important; color: white; border-color: #922b21 !important; }
+        .disabled { cursor: not-allowed; pointer-events: none; }
+        .controls { margin-top: 30px; display: flex; justify-content: space-between; gap: 15px; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; flex: 1; transition: 0.3s; }
+        #next-btn { background: #3498db; color: white; }
+        #reset-btn { background: #95a5a6; color: white; max-width: 150px; }
+        #results-screen { display: none; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
+        .stat-val { display: block; font-size: 2rem; font-weight: 800; }
+        code { background: #f1f1f1; padding: 2px 5px; border-radius: 4px; font-family: 'Consolas', monospace; color: #d63384; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="main-title">JAKARTA EE Y .NET</div>
+
+    <div id="quiz-ui">
+        <div class="progress">PREGUNTA <span id="current-idx">1</span> DE 70</div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+        <div class="controls">
+            <button id="reset-btn" onclick="resetQuiz()">Reiniciar</button>
+            <button id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <h2>Resultado del Examen</h2>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="res-c" style="color:var(--correct)">0</span>Correctas</div>
+            <div class="stat-card"><span class="stat-val" id="res-i" style="color:var(--incorrect)">0</span>Incorrectas</div>
+            <div class="stat-card"><span class="stat-val" id="res-s">0</span>En blanco</div>
+        </div>
+        <button onclick="resetQuiz()" style="background:var(--primary); color:white; width:100%">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "1. Dado el siguiente código Java, indique el valor de la variable elegido al final de la ejecución:\n\nint notas[]={7,8,5,6,7,5};\nint posicion = notas.length - 2;\nint elegido = notas[posicion];", a: ["5.", "6.", "7.", "8."], c: 2 },
+        { q: "2. Dado el siguiente código Java, indique el valor de la variable sencillo al final de la ejecución:\n\nint num = 1;\nint sencillo = 0;\nwhile (++num <= 5)\nsencillo += num;", a: ["14.", "16.", "18.", "20."], c: 0 },
+        { q: "3. Marque la respuesta correcta respecto a la declaración de esta variable:\nprivate static int i=3;", a: ["El valor de i es compartido por todas las instancias de la clase en la que fue declarada.", "El valor de i no puede ser cambiado tras la inicialización.", "El valor de i no es compartido por todas las instancias de la clase.", "La variable i solo es accesible desde fuera de la clase."], c: 0 },
+        { q: "4. En Java, ¿qué método de la clase String se utiliza para comparar dos cadenas de texto ignorando mayúsculas y minúsculas?", a: ["compare()", "equals()", "equalsIgnore()", "equalsIgnoreCase()"], c: 3 },
+        { q: "5. ¿Cuál de los siguientes es un servidor de aplicaciones para Java EE / Jakarta EE?", a: ["Apache HTTP Server.", "NGINX.", "WildFly.", "IIS."], c: 2 },
+        { q: "6. En el contexto de Jakarta EE, ¿qué significan las siglas JPA?", a: ["Java Process API.", "Java Persistence API.", "Jakarta Programming Application.", "Java Protocol Adapter."], c: 1 },
+        { q: "7. ¿Cuál de las siguientes interfaces en Java se utiliza para manejar colecciones que no permiten elementos duplicados?", a: ["List.", "Set.", "Map.", "Queue."], c: 1 },
+        { q: "8. En .NET, ¿qué componente es el responsable de compilar el código MSIL a código máquina nativo?", a: ["JIT (Just-In-Time).", "CLR (Common Language Runtime).", "CIL.", "GC (Garbage Collector)."], c: 0 },
+        { q: "9. ¿Cuál de los siguientes lenguajes NO es soportado oficialmente por la plataforma .NET?", a: ["C#.", "F#.", "PHP.", "Visual Basic."], c: 2 },
+        { q: "10. ¿Qué herramienta de .NET se utiliza para la gestión de paquetes y dependencias?", a: ["NuGet.", "Maven.", "NPM.", "Pip."], c: 0 },
+        { q: "11. En Jakarta EE, los componentes que gestionan la lógica de negocio y se ejecutan en el contenedor de aplicaciones se denominan:", a: ["Servlets.", "EJB (Enterprise JavaBeans).", "JSP.", "JSF."], c: 1 },
+        { q: "12. ¿Cuál es la extensión de los archivos de código fuente de C#?", a: [".java", ".cpp", ".cs", ".aspx"], c: 2 },
+        { q: "13. ¿Qué arquitectura de .NET permite ejecutar aplicaciones en Windows, Linux y macOS?", a: [".NET Framework.", ".NET Core / .NET 5+.", "ASP.NET Classic.", "Silverlight."], c: 1 },
+        { q: "14. En Java, ¿qué palabra clave se utiliza para que una clase herede de otra?", a: ["implements", "inherits", "extends", "instanceof"], c: 2 },
+        { q: "15. ¿Qué componente de Jakarta EE permite generar contenido web dinámico mezclando HTML con código Java?", a: ["JDBC.", "JNDI.", "JSP (JavaServer Pages).", "JTA."], c: 2 },
+        { q: "16. ¿Qué significa CLR en el entorno .NET?", a: ["Common Language Runtime.", "Code Level Runtime.", "Central Logic Repository.", "Common Library Resource."], c: 0 },
+        { q: "17. ¿Cuál es el nombre del recolector de basura automático en Java y .NET?", a: ["Memory Guard.", "Garbage Collector.", "Resource Manager.", "Null Pointer Fixer."], c: 1 },
+        { q: "18. En .NET, para definir una clase que no puede ser heredada se utiliza la palabra clave:", a: ["final", "static", "sealed", "private"], c: 2 },
+        { q: "19. ¿Cuál es el framework principal de .NET para crear aplicaciones web?", a: ["WPF.", "Entity Framework.", "ASP.NET.", "WinForms."], c: 2 },
+        { q: "20. En Java, ¿qué excepción se lanza cuando intentamos acceder a un objeto que es 'null'?", a: ["IOException.", "NullPointerException.", "ArrayIndexOutOfBoundsException.", "SQLException."], c: 1 },
+        { q: "21. ¿Qué tecnología de Jakarta EE se utiliza para la comunicación asíncrona mediante mensajería?", a: ["JPA.", "JAX-RS.", "JMS (Java Message Service).", "JSF."], c: 2 },
+        { q: "22. En .NET, ¿qué es Entity Framework?", a: ["Un servidor web.", "Un ORM (Object-Relational Mapping).", "Un compilador.", "Un lenguaje de programación."], c: 1 },
+        { q: "23. La JVM (Java Virtual Machine) ejecuta un código intermedio llamado:", a: ["Binary.", "Bytecode.", "Assembly.", "Source Code."], c: 1 },
+        { q: "24. En C#, ¿cuál es el operador para realizar una comparación de igualdad?", a: ["=", "===", "==", "equals"], c: 2 },
+        { q: "25. ¿Qué anotación se usa comúnmente en Jakarta EE para inyectar dependencias?", a: ["@Inject", "@Override", "@Deprecated", "@Test"], c: 0 },
+        { q: "26. ¿Cuál de los siguientes es un entorno de desarrollo (IDE) común para .NET?", a: ["Eclipse.", "Visual Studio.", "IntelliJ IDEA.", "NetBeans."], c: 1 },
+        { q: "27. ¿Qué palabra clave se usa en Java para indicar que un método no devuelve ningún valor?", a: ["null", "none", "void", "empty"], c: 2 },
+        { q: "28. En .NET, ¿cómo se llama el lenguaje intermedio al que se compila el código fuente antes de pasar por el JIT?", a: ["MSIL / CIL.", "Machine Code.", "Native Code.", "XML."], c: 0 },
+        { q: "29. ¿Qué componente de Jakarta EE se encarga de interceptar peticiones HTTP y generar respuestas?", a: ["EJB.", "Servlet.", "JPA.", "JCA."], c: 1 },
+        { q: "30. ¿Qué arquitectura de desarrollo sigue ASP.NET Core por defecto para aplicaciones web?", a: ["P2P.", "MVC (Modelo-Vista-Controlador).", "Mainframe.", "Batch."], c: 1 },
+        { q: "31. ¿Qué es el GAC en el contexto de .NET Framework?", a: ["Global Assembly Cache.", "General Application Compiler.", "Graphic API Connector.", "Global Access Control."], c: 0 },
+        { q: "32. En Java, para manejar errores se utiliza el bloque:", a: ["if / else", "try / catch", "switch / case", "while / do"], c: 1 },
+        { q: "33. ¿Cuál es el nombre de la especificación para servicios web RESTful en Jakarta EE?", a: ["JAX-WS.", "JAX-RS.", "JPA.", "JTA."], c: 1 },
+        { q: "34. En .NET, ¿qué es un archivo .dll?", a: ["Data Logical Link.", "Dynamic Link Library.", "Developer List Log.", "Direct Loop Layer."], c: 1 },
+        { q: "35. ¿Qué palabra clave se utiliza en C# para manejar la herencia de interfaces?", a: ["extends", "implements", ": (dos puntos)", "using"], c: 2 },
+        { q: "36. ¿Qué es LINQ en .NET?", a: ["Un servidor de bases de datos.", "Language Integrated Query.", "Una librería gráfica.", "Un protocolo de red."], c: 1 },
+        { q: "37. En Java, ¿qué visibilidad tiene un atributo marcado como 'protected'?", a: ["Solo dentro de la propia clase.", "En cualquier parte del proyecto.", "En la clase, el paquete y las subclases.", "Solo en las subclases de otros paquetes."], c: 2 },
+        { q: "38. ¿Cuál es la raíz de la jerarquía de todas las clases en Java?", a: ["Object.", "Main.", "System.", "Root."], c: 0 },
+        { q: "39. En .NET, ¿qué palabra clave se usa para importar espacios de nombres (namespaces)?", a: ["import", "include", "using", "require"], c: 2 },
+        { q: "40. ¿Qué significa 'Managed Code' (Código Administrado) en .NET?", a: ["Código escrito en C++.", "Código cuya ejecución es gestionada por el CLR.", "Código que no requiere recolector de basura.", "Código que solo corre en modo administrador."], c: 1 },
+        { q: "41. ¿Cuál de los siguientes NO es un tipo de dato primitivo en Java?", a: ["int", "double", "String", "boolean"], c: 2 },
+        { q: "42. ¿Qué tecnología de Jakarta EE se utiliza para asegurar la atomicidad de las operaciones en base de datos?", a: ["JTA (Java Transaction API).", "JNDI.", "JSF.", "JSP."], c: 0 },
+        { q: "43. En C#, ¿qué palabra clave se usa para definir una constante?", a: ["static", "final", "const", "immutable"], c: 2 },
+        { q: "44. ¿Qué es 'Reflection' en Java y .NET?", a: ["Un método para duplicar objetos.", "La capacidad de un programa de inspeccionarse a sí mismo en tiempo de ejecución.", "Un sistema de seguridad de red.", "Un modo de renderizado gráfico."], c: 1 },
+        { q: "45. ¿Qué comando se usa en la terminal para compilar un archivo Java?", a: ["java", "compile", "javac", "run"], c: 2 },
+        { q: "46. En .NET, ¿qué es Kestrel?", a: ["Un motor de base de datos.", "Un servidor web ligero y multiplataforma.", "Un lenguaje de programación.", "Una herramienta de testing."], c: 1 },
+        { q: "47. ¿Qué es un 'Assembly' en .NET?", a: ["Un lenguaje ensamblador.", "La unidad mínima de despliegue y versionado (exe o dll).", "Una base de datos integrada.", "Un conector de hardware."], c: 1 },
+        { q: "48. En Java, ¿qué palabra clave se utiliza para crear una instancia de una clase?", a: ["create", "build", "new", "instance"], c: 2 },
+        { q: "49. ¿Cuál de estos es un framework de persistencia popular en Java que implementa JPA?", a: ["Spring Boot.", "Hibernate.", "Angular.", "Docker."], c: 1 },
+        { q: "50. ¿Qué es WCF en el ecosistema .NET?", a: ["Web Control Framework.", "Windows Communication Foundation.", "World Connection File.", "Wide Core Feature."], c: 1 },
+        { q: "51. ¿Qué interfaz debe implementar una clase en Java para poder ser comparada u ordenada?", a: ["Serializable.", "Cloneable.", "Comparable.", "Runnable."], c: 2 },
+        { q: "52. En C#, ¿qué hace el operador '??' (null-coalescing)?", a: ["Compara si dos objetos son iguales.", "Devuelve el valor de la izquierda si no es nulo; de lo contrario, devuelve el de la derecha.", "Lanza una excepción si el valor es nulo.", "Es un operador ternario."], c: 1 },
+        { q: "53. ¿Qué es Maven?", a: ["Un servidor de aplicaciones.", "Una herramienta de gestión y construcción de proyectos Java.", "Un lenguaje de scripts.", "Una base de datos NoSQL."], c: 1 },
+        { q: "54. En Jakarta EE, ¿dónde se suelen configurar los recursos como fuentes de datos (DataSources)?", a: ["En el código fuente.", "En el descriptor de despliegue (web.xml) o en el servidor de aplicaciones.", "En el registro de Windows.", "No se configuran."], c: 1 },
+        { q: "55. ¿Qué palabra clave se usa en Java para llamar al constructor de la clase padre?", a: ["this", "parent", "super", "base"], c: 2 },
+        { q: "56. En .NET, para ejecutar código asíncrono se utilizan las palabras clave:", a: ["sync / await", "async / await", "start / wait", "begin / end"], c: 1 },
+        { q: "57. ¿Qué es JNDI en Jakarta EE?", a: ["Java Network Debug Interface.", "Java Naming and Directory Interface.", "Java Node Discovery Index.", "Jakarta Native Driver Interface."], c: 1 },
+        { q: "58. En C#, ¿cuál es el tipo de dato para números enteros de 64 bits?", a: ["int", "short", "long", "byte"], c: 2 },
+        { q: "59. ¿Qué anotación se utiliza en JUnit para indicar que un método es una prueba unitaria?", a: ["@Test", "@Run", "@Verify", "@Check"], c: 0 },
+        { q: "60. ¿Qué significa 'Interop' en .NET?", a: ["Internet Operability.", "Capacidad de interactuar con código no administrado (como C++ o COM).", "Protocolo de red interna.", "Intercambio de archivos."], c: 1 },
+        { q: "61. En Java, la interfaz 'Runnable' se utiliza para:", a: ["Entrada y salida de datos.", "Crear hilos de ejecución (Threads).", "Conectar a bases de datos.", "Serializar objetos."], c: 1 },
+        { q: "62. ¿Qué es el archivo 'csproj' en un proyecto .NET?", a: ["Un script de configuración.", "Un archivo XML que define la estructura y dependencias del proyecto.", "El código compilado.", "Un archivo de recursos de imagen."], c: 1 },
+        { q: "63. ¿Cuál de estos NO es un componente de la arquitectura Jakarta EE?", a: ["Web Container.", "EJB Container.", "Database Engine.", "Applet Container."], c: 2 },
+        { q: "64. En C#, ¿qué palabra clave se usa para permitir que un método sea sobrescrito en una subclase?", a: ["override", "virtual", "abstract", "new"], c: 1 },
+        { q: "65. ¿Qué es Spring Framework?", a: ["Un sistema operativo.", "Un framework integral para el desarrollo de aplicaciones Java.", "Un servidor web.", "Un lenguaje de programación."], c: 1 },
+        { q: "66. ¿Qué componente de .NET se encarga de la seguridad de acceso al código?", a: ["CAS (Code Access Security).", "IIS.", "Kestrel.", "MSBuild."], c: 0 },
+        { q: "67. En Java, ¿qué hace la palabra clave 'synchronized'?", a: ["Acelera el código.", "Previene que múltiples hilos accedan simultáneamente a un bloque de código.", "Copia objetos.", "Conecta a internet."], c: 1 },
+        { q: "68. ¿Qué es UNITY en el contexto de desarrollo .NET?", a: ["Un framework de persistencia.", "Una plataforma de desarrollo 3D en tiempo real para juegos y simulaciones.", "Una librería de criptografía.", "Un motor de búsqueda."], c: 1 },
+        { q: "69. ¿Qué framework multiplataforma de .NET permite crear apps móviles nativas desde una base de código común?", a: [".NET MAUI.", ".NET MUI.", ".NET MONO.", "Silverlight."], c: 0 },
+        { q: "70. ¿Qué API en Jakarta EE permite el intercambio de mensajes entre componentes de aplicaciones?", a: ["JMail.", "JSMS.", "JMX.", "JMS (Java Message Service)."], c: 3 }
+    ];
+
+    let currentIdx = parseInt(localStorage.getItem('jnet_idx')) || 0;
+    let history = JSON.parse(localStorage.getItem('jnet_history')) || [];
+
+    function loadQuestion() {
+        if (currentIdx >= questions.length) return showResults();
+        
+        const q = questions[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        const answered = history.find(h => h.id === currentIdx);
+
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = String.fromCharCode(97 + i) + ") " + txt;
+            
+            if (answered) {
+                div.classList.add('disabled');
+                if (i === q.c) div.classList.add('correct');
+                if (i === answered.uAns && i !== q.c) div.classList.add('incorrect');
+            } else {
+                div.onclick = () => selectOption(i, div);
+            }
+            container.appendChild(div);
+        });
+    }
+
+    function selectOption(idx, el) {
+        const correct = questions[currentIdx].c;
+        const all = document.querySelectorAll('.option');
+        all.forEach(opt => opt.classList.add('disabled'));
+
+        let status = (idx === correct) ? 'correct' : 'incorrect';
+        if (status === 'correct') el.classList.add('correct');
+        else {
+            el.classList.add('incorrect');
+            all[correct].classList.add('correct');
+        }
+        
+        history = history.filter(h => h.id !== currentIdx);
+        history.push({ id: currentIdx, uAns: idx, status: status });
+        save();
+    }
+
+    function nextQuestion() {
+        if (!history.find(h => h.id === currentIdx)) {
+            history.push({ id: currentIdx, uAns: null, status: 'skipped' });
+        }
+        currentIdx++;
+        save();
+        loadQuestion();
+    }
+
+    function save() {
+        localStorage.setItem('jnet_idx', currentIdx);
+        localStorage.setItem('jnet_history', JSON.stringify(history));
+    }
+
+    function showResults() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'block';
+        
+        const c = history.filter(h => h.status === 'correct').length;
+        const i = history.filter(h => h.status === 'incorrect').length;
+        const s = questions.length - (c + i);
+
+        document.getElementById('res-c').innerText = c;
+        document.getElementById('res-i').innerText = i;
+        document.getElementById('res-s').innerText = s;
+    }
+
+    function resetQuiz() {
+        localStorage.clear();
+        history = [];
+        currentIdx = 0;
+        document.getElementById('quiz-ui').style.display = 'block';
+        document.getElementById('results-screen').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+</body>
+</html>
