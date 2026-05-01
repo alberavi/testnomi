@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sistemas Operativos - TAI</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; font-size: 1.5rem; }
+        .progress { font-size: 0.9rem; color: #666; margin-bottom: 20px; }
+        .question { font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; }
+        .options { list-style: none; padding: 0; }
+        .option { background: #ebedef; margin-bottom: 10px; padding: 12px; border-radius: 5px; cursor: pointer; transition: 0.3s; border: 2px solid transparent; }
+        .option:hover { background: #dfe4e8; }
+        .selected { border-color: #3498db; background: #e8f4fd; }
+        
+        /* Colores de validación */
+        .correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; }
+        .incorrect { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+        
+        .controls { margin-top: 20px; display: flex; justify-content: space-between; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #next-btn { background-color: #3498db; color: white; }
+        #next-btn:disabled { background-color: #ccc; }
+        #results { display: none; text-align: center; }
+        .summary-item { margin: 10px 0; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="quiz-section">
+        <h1>Sistemas Operativos (Bloque 2 - Tema 4)</h1>
+        <div class="progress" id="progress">Pregunta 1 de 60</div>
+        <div class="question" id="question-text"></div>
+        <ul class="options" id="options-list"></ul>
+        <div class="controls">
+            <button id="next-btn" onclick="handleNext()">Siguiente</button>
+        </div>
+    </div>
+
+    <div id="results">
+        <h1>Resultado Final</h1>
+        <div class="summary-item" style="color: #28a745;">Correctas: <span id="res-correct">0</span></div>
+        <div class="summary-item" style="color: #dc3545;">Incorrectas: <span id="res-incorrect">0</span></div>
+        <div class="summary-item" style="color: #666;">Sin contestar: <span id="res-unanswered">0</span></div>
+        <button onclick="restartQuiz()" style="background: #34495e; color: white; margin-top: 20px;">Reiniciar Test</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "1. Cuál de los siguientes sistemas de archivos NO fue creado para Windows:", a: ["NTFS", "FAT16", "FAT32", "Ext2"], correct: 3 },
+        { q: "2. Algoritmo Round Robin:", a: ["Provoca aplazamientos indefinidos", "Hace uso de 'quantum' o 'time-slice'", "Prioriza el proceso más corto restante", "Prioriza el proceso más corto"], correct: 1 },
+        { q: "3. La paginación puede provocar:", a: ["Error Memory Exception", "Fragmentación interna", "Fragmentación externa", "Fragmentación interna y externa"], correct: 1 },
+        { q: "4. Permisos 'chmod 754':", a: ["Dueño: r-x, Grupo: total, Otros: r", "Dueño: total, Grupo: r-x, Otros: r", "Dueño: total, Grupo: r, Otros: r-x", "Dueño: r, Grupo: r, Otros: total"], correct: 1 },
+        { q: "5. Permisos total dueño, r-w grupo, r resto:", a: ["chmod 764", "chmod 654", "chmod 731", "chmod 752"], correct: 0 },
+        { q: "6. En UNIX, 'daemon' se refiere a:", a: ["Proceso corto", "Proceso sin padre", "Siempre ejecutándose", "Siempre en segundo plano (background)"], correct: 3 },
+        { q: "7. NO es una distribución Linux:", a: ["Lollipop", "Red Hat", "Suse", "Debian"], correct: 0 },
+        { q: "8. NO es un estado de un proceso:", a: ["En ejecución", "Bloqueado", "Listo", "Ocioso"], correct: 3 },
+        { q: "9. Archivos de configuración en Linux:", a: ["/etc", "/bin", "/boot", "/root"], correct: 0 },
+        { q: "10. Versión 2.0 de Android:", a: ["Cupcake", "Donut", "Eclair", "Honeycom"], correct: 2 },
+        { q: "11. Versión 8.1 de Android:", a: ["Lollipop", "Marshmallow", "Pie", "Oreo"], correct: 3 },
+        { q: "12. Versión actual de iOS (según test):", a: ["14", "15", "17", "16"], correct: 2 },
+        { q: "13. Capa iOS Objective C y multimedia:", a: ["Core OS", "Core Services", "Media", "Cocoa Touch"], correct: 2 },
+        { q: "14. Capa núcleo de Firefox OS:", a: ["Gaia", "Gecko", "Gona", "Gonk"], correct: 3 },
+        { q: "15. Implementación libre protocolo Windows en UNIX:", a: ["Samba", "LDAP", "Active Directory", "Kerberos"], correct: 0 },
+        { q: "16. Proceso zombie en Linux:", a: ["Se marca como <zombie>", "Envía SIGPOLL", "Envía KILL", "Aún tiene entrada en tabla de procesos"], correct: 3 },
+        { q: "17. Registro Windows - configuración predeterminada todos usuarios:", a: ["HKEY_CLASSES_ROOT", "HKEY_LOCAL_MACHINE\\Software\\Classes", "HKEY_CURRENT_USER\\Software\\Classes", "HKEY_CURRENT_CONFIG"], correct: 1 },
+        { q: "18. NO es categoría de servicio en la nube Microsoft:", a: ["Informática con servidor", "IaaS", "PaaS", "SaaS"], correct: 0 },
+        { q: "19. Aplicación Win10 para apps virtuales Win32:", a: ["WSL", "Hello", "App-V", "Defender"], correct: 2 },
+        { q: "20. Estructura control fichero UNIX:", a: ["I-nodo", "Cluster", "Bloque de control", "Ninguna"], correct: 0 },
+        { q: "21. NO es distribución basada en Debian:", a: ["Knoppix", "Trisquel", "Ubuntu", "CentOS"], correct: 3 },
+        { q: "22. Emparejar: 1-ls, 2-pwd, 3-cat, 4-more:", a: ["1-I, 2-II, 3-III, 4-IV", "1-I, 2-III, 3-IV, 4-II", "1-II, 2-III, 3-IV, 4-I", "1-III, 2-IV, 3-I, 4-II"], correct: 1 },
+        { q: "23. Versión 5.1 de Android:", a: ["Lollipop", "Marshmallow", "Pie", "Oreo"], correct: 0 },
+        { q: "24. Interfaz Windows 10:", a: ["Modern UI", "Continuum", "Aero", "Space"], correct: 1 },
+        { q: "25. Interfaz Windows 8:", a: ["Modern UI", "Continuum", "Aero", "Space"], correct: 0 },
+        { q: "26. Tamaño máx archivo JFS2:", a: ["64 GB", "1 TB", "16 TB", "32 TB"], correct: 2 },
+        { q: "27. INCORRECTA sobre Reiser4:", a: ["Evolución ReiserFS", "Admira journaling", "Soporta compresión/cifrado", "Tamaño máx 4 TB"], correct: 3 },
+        { q: "28. Sistema ficheros permite 6 EB:", a: ["XFS", "NTFS", "HFS", "APFS"], correct: 0 },
+        { q: "29. Ext4 se caracteriza por:", a: ["pages", "segments", "extents", "filespaces"], correct: 2 },
+        { q: "30. NO es cierta sobre APFS:", a: ["Permite snapshots", "Volumen máx 7,5 EB", "Soporta compresión", "Encriptación no nativa"], correct: 3 },
+        { q: "31. ¿Qué es Windows Insider?:", a: ["Simulador Kernel Linux", "Asistente virtual", "Cifrado de datos", "Programa últimas compilaciones"], correct: 3 },
+        { q: "32. Niveles Directorio Activo (alto a bajo):", a: ["Bosques, dominios, UO", "Bosques, UO, dominios", "UO, bosques, dominios", "UO, dominios, bosques"], correct: 0 },
+        { q: "33. Basada en Ubuntu:", a: ["Ututo", "Peppermint OS", "Manjaro", "Arch Linux"], correct: 1 },
+        { q: "34. Basada en Lubuntu:", a: ["Kubuntu", "Peppermint OS", "Xubuntu", "Edubuntu"], correct: 1 },
+        { q: "35. Distribución que usa Pacman:", a: ["Manjaro", "Q4OS", "Linux Mint", "Elementary OS"], correct: 0 },
+        { q: "36. Ejecutables administración Linux:", a: ["/bin", "/sbin", "/root", "/etc"], correct: 1 },
+        { q: "37. Archivos logs Linux:", a: ["/etc", "/bin", "/var", "/tmp"], correct: 2 },
+        { q: "38. Redirección '1>&2':", a: ["stderr a stdout", "stdout a stderr", "stderr a archivo", "stdout a archivo"], correct: 1 },
+        { q: "39. Redirección '2>&1':", a: ["stderr a stdout", "stdout a stderr", "stderr a archivo", "stdout a archivo"], correct: 0 },
+        { q: "40. Redireccionar stderr concatenando:", a: ["1>", "2>", "1>>", "2>>"], correct: 3 },
+        { q: "41. Permisos 741 con umask:", a: ["741", "036", "022", "713"], correct: 1 },
+        { q: "42. Runtime Android 10.0:", a: ["Dalvik", "ARM", "ART", "JRE"], correct: 2 },
+        { q: "43. NO es característica de Android:", a: ["Código abierto", "Kernel Linux", "Sistema ficheros propio almacenamiento", "Google Play"], correct: 2 },
+        { q: "44. Reemplazo página no referenciada ciclo anterior:", a: ["NRU", "LRU", "NFU", "LFU"], correct: 0 },
+        { q: "45. Reemplazo página no usada ciclo anterior:", a: ["NRU", "LRU", "NFU", "LFU"], correct: 1 },
+        { q: "46. INCORRECTA algoritmos memoria real:", a: ["Primer ajuste: el primero mayor", "Peor ajuste: no requiere búsqueda exhaustiva", "Sig. ajuste: usa puntero", "Mejor ajuste: el que menos exceda"], correct: 1 },
+        { q: "47. Planificación NO apropiativa:", a: ["FCFS", "Round Robin", "SRTF", "Prioridad + RR"], correct: 0 },
+        { q: "48. Planificador a medio plazo:", a: ["Candidatos a listos", "Asigna procesador", "Bloqueados a listos", "Suspende o reanuda procesos"], correct: 3 },
+        { q: "49. NO es objetivo planificación:", a: ["Justicia", "Evitar inanición", "Maximizar tiempo respuesta", "Predecible"], correct: 2 },
+        { q: "50. Particiones Unix CORRECTA:", a: ["No usa bloque 0", "Bloque 1 es de arranque", "I-nodos al final", "Bloques datos tienen archivos y directorios"], correct: 3 },
+        { q: "51. NO es capa personalización Android:", a: ["MIUI", "PenPoint OS", "One UI", "OriginOS"], correct: 1 },
+        { q: "52. Afirmación NO correcta:", a: ["Proc 64 no carga DLL 32", "Proc 32 no carga DLL 64", "RPC entre 64 y 32 solo mismo equipo", "RPC entre 64 y 32 mismo o distinto equipo"], correct: 2 },
+        { q: "53. NO es función SO:", a: ["Autorizaciones", "Administrar CPU", "Rutinas interrupciones", "Conjunto software y hardware necesario"], correct: 3 },
+        { q: "54. NO es algoritmo planificación Win/Linux:", a: ["Algoritmo agrupación", "FCFS", "SJF", "Round Robin"], correct: 0 },
+        { q: "55. Instancia programa ejecución:", a: ["Proceso terminal", "Proceso o thread", "Gestión E/S", "Proceso o threat"], correct: 1 },
+        { q: "56. SO UNIX con 4 capas (Cocoa Touch):", a: ["Android", "Windows Phone", "iOS", "Firefox OS"], correct: 2 },
+        { q: "57. Algoritmo trabajos menos tiempo primero:", a: ["Round Robin", "FCFS", "HRN", "SJF"], correct: 3 },
+        { q: "58. Planificación no apropiativa es:", a: ["No puede ser suspendido ni arrebatar CPU", "Nunca genera ciclos infinitos", "Reloj lanza interrupciones periódicas", "Interrupciones por prioridades"], correct: 0 },
+        { q: "59. Modos funcionamiento UNIX:", a: ["Usuario y Proceso", "Microkernel y Kernel", "Usuario y Kernel", "Proceso y Microkernel"], correct: 2 },
+        { q: "60. Qué minimizan algoritmos reemplazo:", a: ["Marcos página", "Tiempo acceso marcos", "Tasa fallos página", "Tiempo acceso heap"], correct: 2 }
+    ];
+
+    let currentIdx = 0;
+    let userAnswers = JSON.parse(localStorage.getItem('testAnswers')) || new Array(questions.length).fill(null);
+    let answeredInSession = false;
+
+    const qText = document.getElementById('question-text');
+    const optionsList = document.getElementById('options-list');
+    const progress = document.getElementById('progress');
+    const nextBtn = document.getElementById('next-btn');
+
+    function loadQuestion() {
+        const q = questions[currentIdx];
+        progress.innerText = `Pregunta ${currentIdx + 1} de ${questions.length}`;
+        qText.innerText = q.q;
+        optionsList.innerHTML = '';
+        answeredInSession = userAnswers[currentIdx] !== null;
+
+        q.a.forEach((opt, i) => {
+            const li = document.createElement('li');
+            li.className = 'option';
+            li.innerText = opt;
+            
+            // Si ya estaba contestada (por localStorage o sesión)
+            if (userAnswers[currentIdx] !== null) {
+                if (i === q.correct) li.classList.add('correct');
+                if (i === userAnswers[currentIdx] && i !== q.correct) li.classList.add('incorrect');
+            }
+
+            li.onclick = () => selectOption(i);
+            optionsList.appendChild(li);
+        });
+
+        nextBtn.innerText = currentIdx === questions.length - 1 ? "Finalizar" : "Siguiente";
+    }
+
+    function selectOption(index) {
+        if (answeredInSession) return; // Evitar cambiar respuesta tras ver colores
+        
+        userAnswers[currentIdx] = index;
+        localStorage.setItem('testAnswers', JSON.stringify(userAnswers));
+        answeredInSession = true;
+        loadQuestion(); // Recargar para mostrar colores
+    }
+
+    function handleNext() {
+        if (currentIdx < questions.length - 1) {
+            currentIdx++;
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('quiz-section').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+
+        let correct = 0, incorrect = 0, unanswered = 0;
+        userAnswers.forEach((ans, i) => {
+            if (ans === null) unanswered++;
+            else if (ans === questions[i].correct) correct++;
+            else incorrect++;
+        });
+
+        document.getElementById('res-correct').innerText = correct;
+        document.getElementById('res-incorrect').innerText = incorrect;
+        document.getElementById('res-unanswered').innerText = unanswered;
+    }
+
+    function restartQuiz() {
+        localStorage.removeItem('testAnswers');
+        userAnswers = new Array(questions.length).fill(null);
+        currentIdx = 0;
+        document.getElementById('quiz-section').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+
+</body>
+</html>

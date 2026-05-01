@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SGBD - TAI Bloque 2 Tema 5</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { color: #1a3a5a; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 30px; }
+        .progress { font-weight: bold; color: #7f8c8d; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .question { font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: #2c3e50; }
+        .options { list-style: none; padding: 0; }
+        .option { background: #f8f9fa; margin-bottom: 12px; padding: 15px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid #e9ecef; }
+        .option:hover { background: #e2e6ea; border-color: #ced4da; }
+        .correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
+        .incorrect { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+        .controls { margin-top: 30px; display: flex; justify-content: flex-end; }
+        button { padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: background 0.3s; }
+        #next-btn { background-color: #3498db; color: white; }
+        #next-btn:hover { background-color: #2980b9; }
+        #results { display: none; text-align: center; }
+        .stat-box { display: flex; justify-content: space-around; margin: 30px 0; }
+        .stat { padding: 20px; border-radius: 10px; min-width: 120px; }
+        .stat-val { font-size: 2rem; display: block; font-weight: bold; }
+        .restart-btn { background-color: #2c3e50; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="quiz-section">
+        <h1>Sistemas de Gestión de Bases de Datos</h1>
+        <div class="progress" id="progress">Pregunta 1 de 46</div>
+        <div class="question" id="question-text">Cargando pregunta...</div>
+        <ul class="options" id="options-list"></ul>
+        <div class="controls">
+            <button id="next-btn" onclick="handleNext()">Siguiente</button>
+        </div>
+    </div>
+
+    <div id="results">
+        <h1>Resultados del Test</h1>
+        <div class="stat-box">
+            <div class="stat" style="background: #d4edda; color: #155724;">
+                <span class="stat-val" id="res-correct">0</span> Correctas
+            </div>
+            <div class="stat" style="background: #f8d7da; color: #721c24;">
+                <span class="stat-val" id="res-incorrect">0</span> Incorrectas
+            </div>
+            <div class="stat" style="background: #e2e3e5; color: #383d41;">
+                <span class="stat-val" id="res-unanswered">0</span> En blanco
+            </div>
+        </div>
+        <button class="restart-btn" onclick="restartQuiz()">Reiniciar Test</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "1. ¿Cuál de los siguientes sistemas de bases de datos es orientado a objetos?", a: ["MySQL", "SQLite", "Zope Object DB", "MariaDB"], correct: 2 },
+        { q: "2. Señale el gestor de bases de datos relacional:", a: ["PostgreSQL", "Datawarehouse", "Snowflake", "CouchDB"], correct: 0 },
+        { q: "3. La ejecución de una transacción en un SGBD debe cumplir:", a: ["Consistencia y herencia", "Atomicidad y herencia", "Atomicidad y consistencia", "Abstracción y polimorfismo"], correct: 2 },
+        { q: "4. ¿Qué es MongoDB?", a: ["NoSQL de código abierto basada en documentos JSON", "Almacén en memoria como caché/bróker", "Extensión de PostgreSQL geográfica", "Relacional compatible con Oracle"], correct: 0 },
+        { q: "5. Base de Datos NoSQL de tipo clave-valor:[cite: 2]", a: ["MongoDB", "Redis", "CouchDB", "Knosys"], correct: 1 },
+        { q: "6. Característica NoSQL FALSA:[cite: 2]", a: ["Suelen no usar SQL", "No suelen usar JOIN por coste", "Escalado horizontal más sencillo", "Garantizan completamente ACID"], correct: 3 },
+        { q: "7. Proyecto Apache de base de datos NoSQL:[cite: 2]", a: ["Hadoop", "CouchDB", "Ignite", "MetaModel"], correct: 1 },
+        { q: "8. Afirmación CORRECTA sobre MongoDB:[cite: 2]", a: ["Permite instrucciones SQL", "Equivalente a tabla es Documento", "Utiliza BSON para almacenar datos", "Soporta transacciones multi-documento"], correct: 2 },
+        { q: "9. NO se considera una de las reglas de CODD:[cite: 2]", a: ["Actualización de vistas", "Valores nulos", "No subversión", "Independencia del catálogo"], correct: 3 },
+        { q: "10. NO es NoSQL basada en clave-valor:[cite: 2]", a: ["Cassandra", "Dynamo", "Radiant", "Oracle NoSQL"], correct: 2 },
+        { q: "11. Característica propia de NoSQL:[cite: 2]", a: ["Soportan JOIN", "Garantizan ACID", "Estructuras fijas", "Escalan bien horizontalmente"], correct: 3 },
+        { q: "12. Entre los tipos de NoSQL NO se encuentran:[cite: 2]", a: ["Orientadas a filas", "Orientadas a documentos", "Clave/valor", "Orientadas a objetos"], correct: 3 },
+        { q: "13. Características de NoSQL:[cite: 2]", a: ["Datos estructurados enormes", "Control estricto ACID", "Sistemas distribuidos", "Modelo relacional"], correct: 2 },
+        { q: "14. Son bases de datos NoSQL:[cite: 2]", a: ["MongoDB y MariaDB", "HBase y DynamoDB", "MariaDB, Cassandra y BigTable", "Memcached y ObjectDB"], correct: 1 },
+        { q: "15. ¿Quién desarrolló inicialmente Cassandra?[cite: 2]", a: ["Apache", "Facebook", "Apple", "Twitter"], correct: 1 },
+        { q: "16. Ventaja principal de un SGBD NoSQL:[cite: 2]", a: ["Relacional sin SQL", "Estructuras fijas", "Propiedades ACID", "Escalabilidad y rendimiento"], correct: 3 },
+        { q: "17. Sistema de bases de datos orientado a objetos:[cite: 2]", a: ["GemStone", "ObjectDB", "Son correctas a y b", "Ninguna es correcta"], correct: 2 },
+        { q: "18. ¿Cuál NO es una ventaja de NoSQL?[cite: 2]", a: ["Eficiencia en grandes datos", "Eficiencia en tiempo real", "Estructuras flexibles", "Genera cuellos de botella"], correct: 3 },
+        { q: "19. En Oracle, una vista materializada:[cite: 2]", a: ["Almacena info de todas las vistas", "Almacena definición de tabla", "Almacena el resultado de una consulta", "Se actualiza siempre automáticamente"], correct: 2 },
+        { q: "20. Tecnología de almacenamiento InnoDB:[cite: 2]", a: ["Para base de datos Oracle", "Por defecto en MySQL", "Basada en código ISAM", "No permite full-text"], correct: 1 },
+        { q: "21. En Oracle, un tablespace es:[cite: 2]", a: ["Espacio de fichero de índice", "Espacio físico de datos", "Espacio de fichero de tabla", "Espacio lógico de almacenamiento de datos"], correct: 3 },
+        { q: "22. Alternativa en otros SGBD a vistas materializadas de Oracle:[cite: 2]", a: ["Vistas indexadas", "Vistas normalizadas", "Vistas físicas", "No existen alternativas"], correct: 0 },
+        { q: "23. Estructuras de memoria y procesos en ORACLE que acceden a ficheros:[cite: 2]", a: ["Réplica", "Segmento", "Instancia", "Tablespace"], correct: 2 },
+        { q: "24. La regla 2 de Codd es:[cite: 2]", a: ["Valores nulos", "Acceso garantizado", "Actualización de vistas", "Integridad referencial"], correct: 1 },
+        { q: "25. Regla de Independencia de Integridad de Codd:[cite: 2]", a: ["Inalterados a nivel lógico", "Definidos en sublenguaje y catálogo dinámico", "Requiere CASCADE", "Claves ajenas coinciden con primaria"], correct: 1 },
+        { q: "26. ¿Cuál de las siguientes es una regla de Codd?[cite: 2]", a: ["No subversión", "No concurrencia", "Restricción", "No replicación"], correct: 0 },
+        { q: "27. Afirmación de reglas de Codd:[cite: 2]", a: ["No permitir valores vacíos", "Cambios físicos no afectan nivel lógico", "No info redundante ni cíclica", "No instalación distribuida"], correct: 1 },
+        { q: "28. NO es una de las doce reglas de Codd:[cite: 2]", a: ["Independencia física", "Independencia de distribución", "Independencia de actualización", "Independencia de integridad"], correct: 2 },
+        { q: "29. ACID corresponde a:[cite: 2]", a: ["Auth, Consist, Integ, Durab", "Atom, Confid, Ident, Durab", "Atomicity, Consistency, Isolation, Durability", "Avail, Consist, Isol, Durab"], correct: 2 },
+        { q: "30. Las reglas de Codd sirven para:[cite: 2]", a: ["Integrar modelo conceptual", "Bases de datos relacionadas y normalizadas", "Cumplir ANSI-SPARC", "Describir niveles entidad-relación"], correct: 1 },
+        { q: "31. NO es una regla de Codd:[cite: 2]", a: ["Independencia física", "No subversión", "Inserción/Supresión de bajo nivel", "Actualización de vistas"], correct: 2 },
+        { q: "32. NO es característica obligatoria de SGBD Orientado a Objetos:[cite: 2]", a: ["Objetos complejos", "Tipos de datos fijos", "Identificador independiente", "Esquema incluye clases"], correct: 1 },
+        { q: "33. Machine Learning Services para SQL Server:[cite: 2]", a: ["Copia y distribución", "Capacidad ejecutar Python y R", "Producto calidad datos", "Servicio principal almacenamiento"], correct: 1 },
+        { q: "34. Componentes de proceso de un SGBD:[cite: 2]", a: ["Interfaces y modelo", "Compilador DML, precompilador DML, intérprete DDL y motor", "Gestor de ficheros y transacciones", "Estructuras de datos y motor"], correct: 1 },
+        { q: "35. Acceso mediante nombre de tabla, columna y clave primaria:[cite: 2]", a: ["Regla fundamental", "Regla de la información", "Regla del acceso garantizado", "Regla de valores nulos"], correct: 2 },
+        { q: "36. Principio BASE:[cite: 2]", a: ["Basically Available, Soft state, Eventual consistency", "BSON, Serial, Eventual", "Basically Available, Serial, Independent", "BSON, Soft state, Independent"], correct: 0 },
+        { q: "37. NoSQL orientadas a grafos:[cite: 2]", a: ["FlockDB, OrientDB, SimpleDB", "Neo4j, OrientDB, CouchDB", "InfinityGraph, AllegroGraph, RethinkDB", "Neo4j, OrientDB, AllegroGraph"], correct: 3 },
+        { q: "38. Sobre Redis:[cite: 2]", a: ["Orientado a columnas", "Remote Dictionary Server", "Lenguaje Python", "Solo Windows"], correct: 1 },
+        { q: "39. NO es base de datos de series temporales:[cite: 2]", a: ["InfluxDB", "QuestDB", "AWS Timestream", "IndexedDB"], correct: 3 },
+        { q: "40. Señale la respuesta correcta:[cite: 2]", a: ["Hbase es grafos", "Bigtable creado por Google", "IndexedDB persistente en servidor", "SQLite altamente escalable"], correct: 1 },
+        { q: "41. Tipos de segmentos en Oracle:[cite: 2]", a: ["Datos, índices, rollback, temporales, bootstrap", "Datos, control, commit, rollback, temporales", "Índices, bootstrap, control, joins, datos", "Temporales, rollback, joins, datos, índices"], correct: 0 },
+        { q: "42. Estructura física en Oracle compuesta por:[cite: 2]", a: ["Redo log, control y datos", "Datos y rollback", "Control, temporales y datos", "Redo log y control"], correct: 0 },
+        { q: "43. Elementos del SGBD Oracle:[cite: 2]", a: ["Procesos y memoria principal", "Archivos, procesos y protocolos", "Instancia y protocolos", "Archivos y la instancia"], correct: 3 },
+        { q: "44. Lenguaje de procedimiento compilado en Oracle:[cite: 2]", a: ["Transact SQL", "PL/SQL", "Python", "SQL"], correct: 1 },
+        { q: "45. NO es una base de datos NoSQL:[cite: 2]", a: ["MongoDB", "Cassandra", "HBase", "Kaltura"], correct: 3 },
+        { q: "46. Tipo de base de datos Neo4j:[cite: 2]", a: ["Clave-valor", "Documentos", "Familia de columnas", "Grafos"], correct: 3 }
+    ];
+
+    let currentIdx = 0;
+    let userAnswers = JSON.parse(localStorage.getItem('sgbdAnswers')) || new Array(questions.length).fill(null);
+    let answeredInSession = false;
+
+    function loadQuestion() {
+        const q = questions[currentIdx];
+        document.getElementById('progress').innerText = `Pregunta ${currentIdx + 1} de ${questions.length}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optionsList = document.getElementById('options-list');
+        optionsList.innerHTML = '';
+        answeredInSession = userAnswers[currentIdx] !== null;
+
+        q.a.forEach((opt, i) => {
+            const li = document.createElement('li');
+            li.className = 'option';
+            li.innerText = opt;
+            
+            if (userAnswers[currentIdx] !== null) {
+                if (i === q.correct) li.classList.add('correct');
+                if (i === userAnswers[currentIdx] && i !== q.correct) li.classList.add('incorrect');
+            }
+
+            li.onclick = () => selectOption(i);
+            optionsList.appendChild(li);
+        });
+
+        document.getElementById('next-btn').innerText = currentIdx === questions.length - 1 ? "Finalizar" : "Siguiente";
+    }
+
+    function selectOption(index) {
+        if (answeredInSession) return;
+        userAnswers[currentIdx] = index;
+        localStorage.setItem('sgbdAnswers', JSON.stringify(userAnswers));
+        answeredInSession = true;
+        loadQuestion();
+    }
+
+    function handleNext() {
+        if (currentIdx < questions.length - 1) {
+            currentIdx++;
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('quiz-section').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+
+        let correct = 0, incorrect = 0, unanswered = 0;
+        userAnswers.forEach((ans, i) => {
+            if (ans === null) unanswered++;
+            else if (ans === questions[i].correct) correct++;
+            else incorrect++;
+        });
+
+        document.getElementById('res-correct').innerText = correct;
+        document.getElementById('res-incorrect').innerText = incorrect;
+        document.getElementById('res-unanswered').innerText = unanswered;
+    }
+
+    function restartQuiz() {
+        localStorage.removeItem('sgbdAnswers');
+        userAnswers = new Array(questions.length).fill(null);
+        currentIdx = 0;
+        document.getElementById('quiz-section').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
+
+</body>
+</html>
