@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test BIII – Repaso Práctico</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #17171f;
+    --border: #2a2a38;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --correct: #10b981;
+    --wrong: #ef4444;
+    --unanswered: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+
+  header {
+    width: 100%;
+    max-width: 780px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  header h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+
+  /* Progress bar */
+  #progress-wrap {
+    width: 100%;
+    max-width: 780px;
+    margin-bottom: 28px;
+  }
+
+  #progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  #progress-bar-outer {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  #progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+
+  /* Card */
+  #card {
+    width: 100%;
+    max-width: 780px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 40px;
+    animation: fadeSlide .3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  #question-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent2);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  #question-text {
+    font-size: clamp(1rem, 2.2vw, 1.18rem);
+    font-weight: 700;
+    line-height: 1.55;
+    margin-bottom: 28px;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 12px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .1s;
+    user-select: none;
+  }
+
+  .option:hover:not(.disabled) {
+    border-color: var(--accent);
+    background: #1a1a28;
+    transform: translateX(3px);
+  }
+
+  .option-letter {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 20px;
+    padding-top: 2px;
+  }
+
+  .option-text { font-size: 0.95rem; line-height: 1.5; }
+
+  .option.correct  { border-color: var(--correct); background: #0d2b22; }
+  .option.wrong    { border-color: var(--wrong);   background: #2b0d0d; }
+  .option.reveal   { border-color: var(--correct); background: #0d2b22; }
+  .option.disabled { cursor: default; }
+
+  /* Feedback */
+  #feedback {
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: none;
+  }
+
+  #feedback.correct { background: #0d2b22; color: var(--correct); border: 1px solid var(--correct); display: block; }
+  #feedback.wrong   { background: #2b0d0d; color: var(--wrong);   border: 1px solid var(--wrong);   display: block; }
+
+  /* Navigation */
+  #nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    gap: 12px;
+  }
+
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:hover { opacity: .85; transform: scale(1.02); }
+  .btn:active { transform: scale(.97); }
+
+  #btn-prev { background: var(--border); color: var(--text); }
+  #btn-next { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+  #btn-finish { background: linear-gradient(135deg, var(--unanswered), #f97316); color: #fff; }
+  .btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+  #skip-label { font-size: 0.78rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  /* Results */
+  #results {
+    width: 100%;
+    max-width: 780px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    text-align: center;
+    display: none;
+    animation: fadeSlide .4s ease;
+  }
+
+  #results h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  #results .subtitle { color: var(--muted); margin-bottom: 40px; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .stat-box {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 16px;
+  }
+
+  .stat-box .num {
+    font-size: 2.6rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-box .label { font-size: 0.82rem; color: var(--muted); }
+  .stat-box.correct-box  { border-color: var(--correct); }
+  .stat-box.correct-box  .num { color: var(--correct); }
+  .stat-box.wrong-box    { border-color: var(--wrong); }
+  .stat-box.wrong-box    .num { color: var(--wrong); }
+  .stat-box.skip-box     { border-color: var(--unanswered); }
+  .stat-box.skip-box     .num { color: var(--unanswered); }
+
+  #score-bar-wrap { margin-bottom: 36px; }
+  #score-bar-wrap p { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
+  #score-bar-outer { height: 12px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  #score-bar-inner { height: 100%; border-radius: 999px; transition: width 1s ease; background: linear-gradient(90deg, var(--correct), var(--accent2)); }
+
+  #btn-restart {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    padding: 14px 40px;
+    font-size: 1rem;
+  }
+
+  @media(max-width:540px) {
+    #card, #results { padding: 24px 20px; }
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Test BIII – Repaso Práctico</h1>
+  <p id="subtitle-count"></p>
+</header>
+
+<div id="progress-wrap">
+  <div id="progress-info">
+    <span id="prog-text">Pregunta 1 de N</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div id="progress-bar-outer">
+    <div id="progress-bar-inner" style="width:0%"></div>
+  </div>
+</div>
+
+<div id="card">
+  <div id="question-tag"></div>
+  <div id="question-text"></div>
+  <div class="options" id="options-container"></div>
+  <div id="feedback"></div>
+  <div id="nav">
+    <button class="btn" id="btn-prev">← Anterior</button>
+    <span id="skip-label"></span>
+    <button class="btn" id="btn-next">Siguiente →</button>
+    <button class="btn" id="btn-finish" style="display:none">Ver resultado</button>
+  </div>
+</div>
+
+<div id="results">
+  <h2>¡Test completado!</h2>
+  <p class="subtitle">Aquí tienes tu resultado final</p>
+  <div class="stats-grid">
+    <div class="stat-box correct-box"><div class="num" id="res-correct">0</div><div class="label">Correctas</div></div>
+    <div class="stat-box wrong-box"><div class="num" id="res-wrong">0</div><div class="label">Incorrectas</div></div>
+    <div class="stat-box skip-box"><div class="num" id="res-skip">0</div><div class="label">Sin contestar</div></div>
+  </div>
+  <div id="score-bar-wrap">
+    <p id="score-pct-text"></p>
+    <div id="score-bar-outer"><div id="score-bar-inner" style="width:0%"></div></div>
+  </div>
+  <button class="btn" id="btn-restart">Volver a intentar</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  // ── TEMA 2 (Modelo relacional, E/R) ─────────────────────────────────────────
+  {
+    t: "Tema 2 – Modelo E/R",
+    q: "Según el E/R extendido, un trabajador:",
+    opts: [
+      "Tendrá un puesto en la u. central y otro en la u. exterior",
+      "Tendrá un puesto en u. exterior y al menos otro en la u. central",
+      "Trabajará en la u. exterior o en la u. central",
+      "Tendrá varios puestos en la u. central y en la u. exterior"
+    ],
+    ans: 2
+  },
+  {
+    t: "Tema 2 – Modelo E/R",
+    q: "La participación de una entidad en la relación es:",
+    opts: [
+      "El máximo de ocurrencias que pueden aparecer",
+      "El mínimo de ocurrencias que pueden aparecer",
+      "El máximo y mínimo de ocurrencias que pueden aparecer",
+      "No existe el concepto de participación"
+    ],
+    ans: 2
+  },
+  {
+    t: "Tema 2 – Modelo E/R",
+    q: "¿Cómo se denomina el conjunto de atributos que permiten distinguir entidades débiles?",
+    opts: ["Clave primaria débil", "Clave foránea", "Clave compuesta", "Discriminante"],
+    ans: 3
+  },
+  {
+    t: "Tema 2 – Modelo E/R",
+    q: "Son aquellas cuya existencia depende de otras instancias de entidad.",
+    opts: ["Entidades débiles", "Entidades fuertes", "Entidades primarias", "Entidades secundarias"],
+    ans: 0
+  },
+  {
+    t: "Tema 2 – Modelo E/R",
+    q: "¿Una elipse dentro de otra elipse representa un atributo?",
+    opts: ["Monovalorado", "Trivaluado", "Multivalorado", "Débil"],
+    ans: 2
+  },
+  {
+    t: "Tema 2 – Modelo relacional",
+    q: "¿Cómo se transforma al modelo relacional una relación 1:1?",
+    opts: [
+      "Se propaga la clave en las dos direcciones",
+      "Se crea una nueva tabla",
+      "La relación 1:1 se tiene que descomponer",
+      "Creando una entidad débil"
+    ],
+    ans: 0
+  },
+  {
+    t: "Tema 2 – Formas normales",
+    q: "¿Es también conocida como forma normal de proyección-unión (PJ/NF)?",
+    opts: ["2FN", "5FN", "3FN", "4FN"],
+    ans: 1
+  },
+  // ── TEMA 1 – DFD ────────────────────────────────────────────────────────────
+  {
+    t: "Tema 1 – DFD",
+    q: "En un DFD, indique qué conexión está permitida:",
+    opts: [
+      "Entre una E. externa y un proceso",
+      "Entre dos E. externas",
+      "Entre dos almacenes",
+      "Entre una E. externa y un almacén"
+    ],
+    ans: 0
+  },
+  {
+    t: "Tema 1 – DFD",
+    q: "¿Qué conexiones NO están permitidas dentro de un DFD?",
+    opts: ["ENTIDAD – PROCESO", "PROCESO – PROCESO", "PROCESO – ALMACEN", "ALMACEN – ALMACEN"],
+    ans: 3
+  },
+  {
+    t: "Tema 1 – DFD",
+    q: "¿Qué tipo de flujo no existe en un DFD?",
+    opts: ["Inicialización", "Consulta", "Actualización", "Diálogo"],
+    ans: 0
+  },
+  {
+    t: "Tema 1 – DFD",
+    q: "En un Diagrama de Flujo de Datos o DFD se denomina proceso primitivo a:",
+    opts: [
+      "A cualquiera de los procesos que aparecen en el nivel 1 de descomposición",
+      "Al proceso principal del Diagrama de Contexto a descomponer",
+      "Aquel proceso que no necesita descomposición",
+      "Aquel proceso que coordina y sincroniza las actividades de otros procesos"
+    ],
+    ans: 2
+  },
+  {
+    t: "Tema 1 – Diagramas de flujo",
+    q: "¿Cuál no es una norma recomendada para la construcción de diagramas de flujo?",
+    opts: [
+      "Se escriben de arriba abajo y de izquierda a derecha",
+      "Los símbolos llevan en su interior su función exacta y unívoca",
+      "Las líneas de flujo no deben cruzarse",
+      "Podemos incorporar nuevos símbolos declarándolos debidamente"
+    ],
+    ans: 3
+  },
+  {
+    t: "Tema 1 – Diagramas de flujo",
+    q: "¿De qué forma son los elementos de decisión en un diagrama de flujo?",
+    opts: ["Forma de rombo", "Forma de rectángulo", "Forma circular", "Forma elíptica"],
+    ans: 0
+  },
+  {
+    t: "Tema 1 – DFD",
+    q: "¿Los procesos que comunican almacenes con procesos solo pueden ser?",
+    opts: [
+      "Control y flujo",
+      "Consulta, control y diálogo",
+      "Consulta, actualización y diálogo",
+      "Control y comunicación"
+    ],
+    ans: 2
+  },
+  {
+    t: "Tema 1 – DFD",
+    q: "En Métrica v3, un diagrama de flujo de datos o DFD de nivel 0 se denomina:",
+    opts: ["Diagrama de nivel superior", "Diagrama de detalle", "Diagrama de expansión", "Diagrama de contexto"],
+    ans: 3
+  },
+  // ── TEMA 2 – Programación ───────────────────────────────────────────────────
+  {
+    t: "Tema 2 – Programación",
+    q: "El tipo especial de variable que se usa para contener la dirección de memoria de otra variable ¿se llama?",
+    opts: ["Puntero", "Acumulador", "Registro", "Tupla"],
+    ans: 0
+  },
+  {
+    t: "Tema 2 – Programación",
+    q: "¿La técnica que permite que un programa se llame a sí mismo es?",
+    opts: ["Iteración", "Selfmorph", "Recursividad", "Autollamada"],
+    ans: 2
+  },
+  {
+    t: "Tema 2 – Programación",
+    q: "Cuando el paso de un parámetro se hace mediante su dirección de memoria se conoce como paso por…",
+    opts: ["Valor", "DMA", "IRQ", "Referencia"],
+    ans: 3
+  },
+  {
+    t: "Tema 2 – Pruebas",
+    q: "Las pruebas de integración que tratan de encontrar fallos en la respuesta de un módulo son…",
+    opts: ["Estructurales", "Funcionales", "Alfa", "Beta"],
+    ans: 1
+  },
+  {
+    t: "Tema 2 – Python",
+    q: "¿Qué librería de Python está especializada en la manipulación y análisis de datos?",
+    opts: ["NumPy", "Matplotlib", "Scrapy", "Pandas"],
+    ans: 3
+  },
+  {
+    t: "Tema 2 – Python",
+    q: "¿Biblioteca de código abierto para aprendizaje automático en Python?",
+    opts: ["Scipy", "TensorFlow", "Keras", "Theano"],
+    ans: 1
+  },
+  {
+    t: "Tema 2 – Python",
+    q: "¿Qué método en Python borra y retorna el último elemento de una lista?",
+    opts: ["len()", "droplast()", "drop()", "delast()"],
+    ans: 2
+  },
+  {
+    t: "Tema 2 – C#",
+    q: "¿Qué secuencia de escape hará sonar la alerta o timbre del sistema en C#?",
+    opts: ["\\a", "\\b", "\\f", "\\n"],
+    ans: 0
+  },
+  {
+    t: "Tema 2 – C#",
+    q: "¿Qué método de una cadena devuelve una copia de la cadena en minúsculas en C#?",
+    opts: ["Upper()", "Lower()", "ToUpper()", "ToLower()"],
+    ans: 3
+  },
+  {
+    t: "Tema 2 – PHP",
+    q: "¿Qué delimitador engloba código PHP dentro de una página web?",
+    opts: [
+      "<?php \"…código php…\" ?>",
+      "<?php> \"…código php…\" <¿>",
+      "<?php> \"…código php…\" <\\¿>",
+      "<?php> \"…código php…\" </¿>"
+    ],
+    ans: 0
+  },
+  {
+    t: "Tema 2 – PHP",
+    q: "¿Qué opción no sería válida para hacer comentarios en código PHP?",
+    opts: ["/* comentario */", "// comentario", "# comentario", "- - comentario"],
+    ans: 3
+  },
+  {
+    t: "Tema 2 – POA",
+    q: "En POA, una unidad modular que se disemina por la estructura de otras unidades funcionales:",
+    opts: ["Concepto", "Componente", "Aspecto", "Capa"],
+    ans: 2
+  },
+  // ── TEMA 4 – Patrones de diseño / UML ───────────────────────────────────────
+  {
+    t: "Tema 4 – UML",
+    q: "¿Cuál no es un tipo de diagrama UML de estructura?",
+    opts: ["Clases", "Objetos", "Actividad", "Paquetes"],
+    ans: 2
+  },
+  {
+    t: "Tema 4 – Patrones",
+    q: "¿De qué tipo es el patrón de diseño 'Bridge'?",
+    opts: ["Creacional", "Comportamiento", "Estructural", "Lineal"],
+    ans: 2
+  },
+  // ── TEMA 3 – SQL ─────────────────────────────────────────────────────────────
+  {
+    t: "Tema 3 – SQL (Vistas/Triggers)",
+    q: "¿Cómo eliminaríamos la vista 'Brazil Customers'?",
+    opts: [
+      "CLS VIEW [Brazil Customers];",
+      "CLEAN VIEW [Brazil Customers];",
+      "DROP VIEW [Brazil Customers];",
+      "DEL VIEW [Brazil Customers];"
+    ],
+    ans: 2
+  },
+  {
+    t: "Tema 3 – SQL (Índices)",
+    q: "¿Qué tipo de índice asegura que no hay valores duplicados en el índice clave?",
+    opts: [
+      "Con la cláusula NO DISTINC",
+      "Con la cláusula UNIQUE",
+      "Con la cláusula ONLY",
+      "Con la cláusula NO REPETEABLE"
+    ],
+    ans: 1
+  },
+  {
+    t: "Tema 3 – SQL (Permisos)",
+    q: "Sentencia para quitar los permisos de INSERT y UPDATE en 'mi_tabla' para usuario:",
+    opts: [
+      "GRANT INSERT, UPDATE ON mi_tabla FROM usuario;",
+      "ALTER PERMISSION INSERT, UPDATE ON mi_tabla FROM usuario;",
+      "REVOKE INSERT, UPDATE ON mi_tabla FROM usuario;",
+      "UNGRANT INSERT, UPDATE ON mi_tabla FROM usuario;"
+    ],
+    ans: 2
+  },
+  {
+    t: "Tema 3 – SQL (Triggers)",
+    q: "¿Con qué sentencia desactivarías un disparador (trigger) llamado 'Disparador'?",
+    opts: [
+      "DISABLE TRIGGER Disparador…",
+      "DROP TRIGGER Disparador…",
+      "UNABLE TRIGGER Disparador…",
+      "ALTER TRIGGER Disparador…"
+    ],
+    ans: 0
+  },
+  // ── REPASO BIII (preguntas con texto) ────────────────────────────────────────
+  {
+    t: "Repaso BIII – DFD",
+    q: "En un DFD, ¿qué conexión de las siguientes NO está permitida?",
+    opts: ["ENTIDAD – PROCESO", "ALMACÉN – ALMACÉN", "PROCESO – PROCESO", "PROCESO – ALMACÉN"],
+    ans: 1
+  },
+  {
+    t: "Repaso BIII – DFD",
+    q: "¿Cuál es el máximo nivel de descomposición de un DFD?",
+    opts: [
+      "Nivel 0 Diagrama de contexto",
+      "Nivel 1 Diagrama de sistema",
+      "Nivel 5 Diagrama de operación",
+      "Procesos primitivos"
+    ],
+    ans: 3
+  },
+  {
+    t: "Repaso BIII – Foreign Key",
+    q: "¿Cuál NO es una característica de la Foreign Key (clave externa)?",
+    opts: [
+      "Una clave externa puede tener un nombre diferente de su clave principal",
+      "Las claves externas pueden ser nulas aunque las claves primarias no puedan",
+      "Asegura que las filas en una tabla tengan filas correspondientes en otra",
+      "Las claves externas son nulas si la principal lo es también"
+    ],
+    ans: 3
+  },
+  {
+    t: "Repaso BIII – 4FN",
+    q: "¿Cuándo se encuentra una tabla en 4FN?",
+    opts: [
+      "Si está en la forma de Boyce-Codd y no tiene dependencias de atributos que determinan completamente a otro",
+      "Si, y solo si, para cada dependencia multivaluada no funcional X->>Y, X es una super-clave candidata o clave primaria",
+      "Todos los atributos no son atómicos",
+      "No existen relaciones de dependencias de reunión (join) no triviales que no se generen desde las claves"
+    ],
+    ans: 1
+  },
+  {
+    t: "Repaso BIII – C#",
+    q: "¿Qué Hello World está escrito en C#?",
+    opts: [
+      "Console.WriteLine(\"Hello World!\");",
+      "<?php echo \"Hello world!\"; ?>",
+      "cout << \"Hello World!\";",
+      "printf(\"Hello World!\");"
+    ],
+    ans: 0
+  },
+  {
+    t: "Repaso BIII – Java",
+    q: "¿Qué interface Java nos permite acceder a servicios de control de autenticación y acceso?",
+    opts: ["JSSE", "JSSI", "JAAS", "JASA"],
+    ans: 2
+  },
+  {
+    t: "Repaso BIII – Patrones",
+    q: "¿Cuál NO es un patrón de diseño creacional?",
+    opts: ["Object pool", "Builder", "Factory method", "Composite"],
+    ans: 3
+  },
+  {
+    t: "Repaso BIII – UML",
+    q: "Hablando de estereotipos de clase en UML, ¿cuál de los siguientes NO lo es?",
+    opts: ["Interface", "Enumeration", "Utility", "Focused"],
+    ans: 3
+  },
+  {
+    t: "Repaso BIII – Python",
+    q: "¿Cómo definiríamos que la clase Perro hereda de la clase Animal en Python?",
+    opts: [
+      "class Perro extends Animal:",
+      "class Perro inherits Animal",
+      "class Perro(Animal):",
+      "class Perro implements Animal"
+    ],
+    ans: 2
+  },
+  {
+    t: "Repaso BIII – Web",
+    q: "¿En cuanto a la seguridad en servicios Web, qué mecanismo usaría para la autenticación de usuarios?",
+    opts: ["SAML", "UDDI", "WSDL", "WS-Policy"],
+    ans: 0
+  },
+  // ── TEMA 21 – Exámenes oficiales ────────────────────────────────────────────
+  {
+    t: "Examen oficial – DFD",
+    q: "¿Qué afirmación sobre los DFD es correcta?",
+    opts: [
+      "Sólo los almacenes de tipo espontáneo pueden generar datos",
+      "Sólo los almacenes de tipo sumidero están comunicados directamente con una entidad externa",
+      "Un almacén requiere de un proceso intermediario para relacionarse con una entidad externa",
+      "En los DFD, un almacén de datos no puede crear ni destruir datos, sólo transformarlos"
+    ],
+    ans: 2
+  },
+  {
+    t: "Examen oficial – Data Warehouse",
+    q: "En un entorno de Data Warehouse, ¿a qué se denomina una tabla de hechos?",
+    opts: [
+      "Representa los aspectos de interés, mediante los cuales los usuarios podrán filtrar y manipular la información",
+      "Provee una estructura para acceder flexible a los datos para explorar y analizar sus relaciones",
+      "Es la tabla que contiene el proceso ETL",
+      "Son datos instantáneos en el tiempo, filtrados, agrupados y explorados a través de condiciones definidas en las tablas de dimensiones"
+    ],
+    ans: 3
+  },
+  {
+    t: "Examen oficial – Data Warehouse",
+    q: "¿Qué afirmación sobre los entornos Data Warehouse NO es correcta?",
+    opts: [
+      "Integra y consolida fuentes de datos externas, en una única plataforma sólida y distribuida",
+      "Mejora la entrega de información completa, correcta, consistente, oportuna y accesible",
+      "Elimina la producción y el procesamiento de datos que no son utilizados ni necesarios",
+      "Permite a los usuarios acceder directamente a la información en línea"
+    ],
+    ans: 0
+  },
+  {
+    t: "Examen oficial – ETL",
+    q: "En un Data Warehouse, el conjunto de operaciones que se conoce como ETL consiste en:",
+    opts: [
+      "Convertir datos disponibles en fuentes origen en datos compatibles y congruentes para cargarlos en el DW",
+      "Eliminar y limpiar datos de baja calidad (Data Cleansing) del DW que se consideran obsoletos",
+      "Modificar la estructura del DW para ajustarla a las necesidades de las consultas",
+      "Cargar los datos al ROLAP"
+    ],
+    ans: 0
+  },
+  {
+    t: "Examen oficial – DFD",
+    q: "En los DFD, ¿cuál de los siguientes es un elemento de los mismos?",
+    opts: ["Entidad interna", "Base de datos", "Almacén de datos", "Procesamiento"],
+    ans: 2
+  },
+  {
+    t: "Examen oficial – Data Warehouse",
+    q: "'Colección de datos orientada a un dominio, integrada, no volátil y variante en el tiempo para ayudar en la toma de decisiones' corresponde a la definición de:",
+    opts: ["Data Mining", "Una herramienta OLAP", "Data warehouse", "Un sistema ETL"],
+    ans: 2
+  },
+  {
+    t: "Examen oficial – Requisitos",
+    q: "¿Cuál de entre los siguientes es un estándar para la especificación de requisitos software?",
+    opts: ["IEEE 29119", "ISO/IEC 25010", "IEEE 830", "ISO 27000"],
+    ans: 2
+  },
+  {
+    t: "Examen oficial – DFD",
+    q: "En Métrica v3, un diagrama de flujo de datos o DFD de nivel 0 se denomina:",
+    opts: ["Diagrama de nivel superior", "Diagrama de detalle", "Diagrama de expansión", "Diagrama de contexto"],
+    ans: 3
+  },
+  {
+    t: "Examen oficial – DFD",
+    q: "Los flujos de datos que comunican procesos con almacenes en un DFD pueden ser:",
+    opts: [
+      "De consulta, de actualización y de diálogo",
+      "De consulta, de eliminación y de diálogo",
+      "De consulta, de actualización y de eliminación",
+      "De actualización, de eliminación y de control"
+    ],
+    ans: 0
+  },
+  {
+    t: "Examen oficial – Patrones",
+    q: "¿Cuál de los siguientes patrones de diseño está clasificado como patrón de comportamiento?",
+    opts: ["Builder", "Singleton", "Visitor", "Flyweight"],
+    ans: 2
+  },
+  {
+    t: "Examen oficial – ETL",
+    q: "En relación a los almacenes de datos, ¿en qué consiste un ETL?",
+    opts: [
+      "Es un proceso que permite extraer datos heterogéneos, transformarlos y cargarlos sobre un sistema homogéneo",
+      "Es un proceso que permite extraer datos homogéneos, truncarlos y cargarlos sobre un sistema heterogéneo",
+      "Es un lenguaje estandarizado para consolidar los procesos de extracción de datos",
+      "Es una carga extendida que permite la carga de datos heterogéneos sin procesarlos (raw)"
+    ],
+    ans: 0
+  },
+  {
+    t: "Examen oficial – Requisitos IEEE 830",
+    q: "De acuerdo al estándar IEEE 830, ¿cuáles son las características deseables de los requisitos?",
+    opts: [
+      "Confidencialidad, No ambiguos, Completos, Consistentes, Clasificados, Verificables, Modificables, Trazables",
+      "Corrección, No ambiguos, Completos, Consistentes, Clasificados, Verificables, Modificables, Trazables",
+      "Corrección, No ambiguos, Completos, Consistentes, Disponibles, Verificables, Modificables, Trazables",
+      "Corrección, No ambiguos, Completos, Íntegros, Clasificados, Verificables, Modificables, Trazables"
+    ],
+    ans: 1
+  },
+  {
+    t: "Examen oficial – DFD",
+    q: "Los almacenes de datos de un DFD:",
+    opts: [
+      "Representan datos en movimiento",
+      "Representan datos almacenados en dispositivo de acceso rápido",
+      "Comprenden cualquier tipo de almacén accesible por ordenador ya sea local o remoto",
+      "Pueden representar un cajón de papeles, un archivador manual, un fichero o una base de datos"
+    ],
+    ans: 3
+  },
+  // ── SESION 4 TEMA 4 – BD ────────────────────────────────────────────────────
+  {
+    t: "BD – Índices",
+    q: "Respecto a índices de una BD, ¿cuál es la FALSA?",
+    opts: [
+      "Los índices son estructuras que se utilizan para acceder rápidamente a la información almacenada en las tablas",
+      "La creación de índices mejora siempre las prestaciones de la base de datos",
+      "Los índices son útiles cuando queremos consultar la información de una tabla",
+      "Durante el diseño inicial de las tablas podemos anticipar la utilización de alguno de los índices pero no de todos"
+    ],
+    ans: 1
+  },
+  {
+    t: "BD – Oracle",
+    q: "En BD Oracle, ¿con qué función extraeríamos el mes de la fecha actual del sistema?",
+    opts: [
+      "EXTRACT(MONTH FROM SYSDATE)",
+      "SYSDATE.getMonth",
+      "READ(MONTH FROM SYSDATE)",
+      "SYSDATE.MONTH"
+    ],
+    ans: 0
+  },
+  {
+    t: "BD – Triggers",
+    q: "¿Con qué elementos se asocian los disparadores de una tabla o vista?",
+    opts: [
+      "INSERT, UPDATE, DELETE",
+      "GRANT, FETCH, VIEW",
+      "CREATE, UPDATE, READ",
+      "INSERT, UPDATE, JOIN"
+    ],
+    ans: 0
+  },
+  {
+    t: "BD – Procedimientos",
+    q: "¿El código de un procedimiento almacenado cómo queda delimitado?",
+    opts: ["{}", "START – STOP", "INIT – LAST", "BEGIN – END"],
+    ans: 3
+  },
+  {
+    t: "BD – Oracle INSTEAD OF",
+    q: "En Oracle 10g, ¿qué afirmación es FALSA en relación con INSTEAD OF?",
+    opts: [
+      "Significa 'en lugar de'",
+      "No puede asociarse con vistas",
+      "Ejecuta un código distinto al que lo ha disparado",
+      "Permiten que vistas no actualizables puedan serlo"
+    ],
+    ans: 1
+  },
+  // ── TEMA 5 – Informes / Algoritmos ──────────────────────────────────────────
+  {
+    t: "Tema 5 – Java Informes",
+    q: "¿Cuál es el nombre del paquete open source Java para la generación de informes?",
+    opts: ["iReport", "SaintReport", "JasperReports", "xStream"],
+    ans: 2
+  },
+  {
+    t: "Tema 2 – Patrones",
+    q: "El patrón de diseño cuyo propósito es desacoplar una abstracción de su implementación de manera que las dos puedan evolucionar independientemente es:",
+    opts: ["Facade", "Bridge", "Adapter", "Wrapper"],
+    ans: 1
+  },
+  {
+    t: "Examen oficial – Interfaz usuario",
+    q: "Indique cuál de las siguientes afirmaciones es cierta en el contexto del diseño de interfaces de usuario:",
+    opts: [
+      "Es un conjunto de elementos hardware y software que presentan información exclusivamente estática al usuario",
+      "Los manuales, ayudas, referencias y tutoriales se pueden considerar parte de la interfaz de usuario",
+      "Sólo existen dos puntos de vista respecto de la interfaz de usuario: el del usuario y el del diseñador",
+      "Sólo existen dos puntos de vista respecto de la interfaz de usuario: el del usuario y el del programador"
+    ],
+    ans: 1
+  }
+];
+
+// ─── Deduplicación por texto de pregunta ────────────────────────────────────
+const seen = new Set();
+const questions = QUESTIONS.filter(q => {
+  const key = q.q.trim().toLowerCase();
+  if (seen.has(key)) return false;
+  seen.add(key);
+  return true;
+});
+
+// ─── Estado ─────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'test_biii_answers_v1';
+let current = 0;
+let answers = new Array(questions.length).fill(null); // null = sin contestar, number = índice opción
+
+function loadStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.answers && data.answers.length === questions.length) {
+        answers = data.answers;
+      }
+    }
+  } catch(e) {}
+}
+
+function saveStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers })); } catch(e) {}
+}
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const cardEl       = document.getElementById('card');
+const resultsEl    = document.getElementById('results');
+const qtag         = document.getElementById('question-tag');
+const qtext        = document.getElementById('question-text');
+const optsEl       = document.getElementById('options-container');
+const feedbackEl   = document.getElementById('feedback');
+const btnPrev      = document.getElementById('btn-prev');
+const btnNext      = document.getElementById('btn-next');
+const btnFinish    = document.getElementById('btn-finish');
+const skipLabel    = document.getElementById('skip-label');
+const progText     = document.getElementById('prog-text');
+const progPct      = document.getElementById('prog-pct');
+const progBar      = document.getElementById('progress-bar-inner');
+const subtitleCnt  = document.getElementById('subtitle-count');
+
+subtitleCnt.textContent = `${questions.length} preguntas · responde a tu ritmo`;
+
+// ─── Render pregunta ─────────────────────────────────────────────────────────
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+function render() {
+  const q = questions[current];
+  const answered = answers[current];
+  const total = questions.length;
+
+  // Progress
+  const answered_count = answers.filter(a => a !== null).length;
+  const pct = Math.round((current + 1) / total * 100);
+  progText.textContent = `Pregunta ${current + 1} de ${total}`;
+  progPct.textContent = `${pct}%`;
+  progBar.style.width = pct + '%';
+
+  // Question
+  qtag.textContent = q.t;
+  qtext.textContent = q.q;
+
+  // Options
+  optsEl.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option' + (answered !== null ? ' disabled' : '');
+    if (answered !== null) {
+      if (i === q.ans) div.classList.add(answered === i ? 'correct' : 'reveal');
+      else if (i === answered) div.classList.add('wrong');
+    }
+    div.innerHTML = `<span class="option-letter">${LETTERS[i]}</span><span class="option-text">${opt}</span>`;
+    if (answered === null) {
+      div.addEventListener('click', () => selectAnswer(i));
+    }
+    optsEl.appendChild(div);
+  });
+
+  // Feedback
+  feedbackEl.className = '';
+  feedbackEl.style.display = 'none';
+  if (answered !== null) {
+    if (answered === q.ans) {
+      feedbackEl.className = 'correct';
+      feedbackEl.textContent = '✓ ¡Correcto!';
+    } else {
+      feedbackEl.className = 'wrong';
+      feedbackEl.textContent = `✗ Incorrecto. La respuesta correcta es: ${LETTERS[q.ans]}) ${q.opts[q.ans]}`;
+    }
+  }
+
+  // Nav buttons
+  btnPrev.disabled = current === 0;
+  const isLast = current === total - 1;
+  btnNext.style.display = isLast ? 'none' : '';
+  btnFinish.style.display = isLast ? '' : 'none';
+
+  // Skip label
+  const unanswered = answers.filter(a => a === null).length;
+  skipLabel.textContent = unanswered > 0 ? `${unanswered} sin contestar` : '';
+}
+
+function selectAnswer(i) {
+  answers[current] = i;
+  saveStorage();
+  render();
+}
+
+btnPrev.addEventListener('click', () => { if (current > 0) { current--; render(); } });
+btnNext.addEventListener('click', () => { if (current < questions.length - 1) { current++; render(); } });
+btnFinish.addEventListener('click', showResults);
+
+function showResults() {
+  let correct = 0, wrong = 0, skip = 0;
+  answers.forEach((a, i) => {
+    if (a === null) skip++;
+    else if (a === questions[i].ans) correct++;
+    else wrong++;
+  });
+
+  cardEl.style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  resultsEl.style.display = 'block';
+
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+  document.getElementById('res-skip').textContent = skip;
+
+  const pct = Math.round(correct / questions.length * 100);
+  document.getElementById('score-pct-text').textContent = `Nota: ${correct} / ${questions.length}  (${pct}%)`;
+  setTimeout(() => { document.getElementById('score-bar-inner').style.width = pct + '%'; }, 100);
+}
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  answers = new Array(questions.length).fill(null);
+  current = 0;
+  saveStorage();
+  cardEl.style.display = '';
+  document.getElementById('progress-wrap').style.display = '';
+  resultsEl.style.display = 'none';
+  render();
+});
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+loadStorage();
+render();
+</script>
+</body>
+</html>
