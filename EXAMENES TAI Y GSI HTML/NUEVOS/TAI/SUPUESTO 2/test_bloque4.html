@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Bloque 4</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c2030;
+    --border: #2a3040;
+    --accent: #4af0c0;
+    --accent2: #f04a7a;
+    --accent3: #f0c04a;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --correct: #22c55e;
+    --wrong: #ef4444;
+    --unanswered: #6b7280;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+
+  .header {
+    width: 100%;
+    max-width: 780px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(74,240,192,0.3);
+  }
+
+  .header .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    width: 100%;
+    max-width: 780px;
+    margin-bottom: 20px;
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #4af0f0);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Card */
+  .card {
+    width: 100%;
+    max-width: 780px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #4af0f0, var(--accent2));
+  }
+
+  .question-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .question-category {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    display: inline-block;
+    margin-bottom: 16px;
+  }
+
+  .question-text {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    color: var(--text);
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    text-align: left;
+    width: 100%;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.5;
+    user-select: none;
+  }
+
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(74,240,192,0.05);
+    transform: translateX(3px);
+  }
+
+  .option:disabled { cursor: default; transform: none; }
+
+  .opt-letter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 22px;
+    padding-top: 1px;
+  }
+
+  .option.correct {
+    border-color: var(--correct);
+    background: rgba(34,197,94,0.1);
+  }
+  .option.correct .opt-letter { color: var(--correct); }
+
+  .option.wrong {
+    border-color: var(--wrong);
+    background: rgba(239,68,68,0.1);
+  }
+  .option.wrong .opt-letter { color: var(--wrong); }
+
+  .option.reveal-correct {
+    border-color: var(--correct);
+    background: rgba(34,197,94,0.06);
+  }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 20px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct-fb {
+    background: rgba(34,197,94,0.12);
+    border: 1px solid var(--correct);
+    color: var(--correct);
+  }
+  .feedback.wrong-fb {
+    background: rgba(239,68,68,0.12);
+    border: 1px solid var(--wrong);
+    color: var(--wrong);
+  }
+
+  /* Nav */
+  .nav {
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    gap: 12px;
+  }
+
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+
+  .btn-prev {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-prev:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+  .btn-next {
+    background: var(--accent);
+    color: #0d0f14;
+  }
+  .btn-next:hover:not(:disabled) { opacity: 0.85; }
+
+  .btn-finish {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  /* Results */
+  .results {
+    width: 100%;
+    max-width: 780px;
+    display: none;
+  }
+
+  .results.show { display: block; }
+
+  .results-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .results-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2));
+  }
+
+  .results-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+
+  .results-score-big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin: 24px 0;
+    text-shadow: 0 0 40px rgba(74,240,192,0.4);
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 12px;
+  }
+
+  .stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-val.c { color: var(--correct); }
+  .stat-val.w { color: var(--wrong); }
+  .stat-val.u { color: var(--unanswered); }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-restart {
+    background: var(--accent);
+    color: #0d0f14;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+  .btn-restart:hover { opacity: 0.85; }
+
+  /* Question nav dots */
+  .dot-nav {
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .dot {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .dot:hover { border-color: var(--accent); }
+  .dot.active { border-color: var(--accent); color: var(--accent); background: rgba(74,240,192,0.08); }
+  .dot.answered-correct { background: rgba(34,197,94,0.2); border-color: var(--correct); color: var(--correct); }
+  .dot.answered-wrong { background: rgba(239,68,68,0.2); border-color: var(--wrong); color: var(--wrong); }
+
+  @media (max-width: 600px) {
+    .card { padding: 24px 18px; }
+    .results-grid { grid-template-columns: 1fr; }
+    .results-score-big { font-size: 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>TEST BLOQUE 4</h1>
+  <div class="subtitle">Redes · Linux · Windows · BBDD · Virtualización</div>
+</div>
+
+<div class="dot-nav" id="dotNav"></div>
+
+<div class="progress-wrap">
+  <div class="progress-meta">
+    <span id="progressLabel">Pregunta 1 de N</span>
+    <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<!-- Quiz -->
+<div class="card" id="quizCard">
+  <div class="question-num" id="qNum"></div>
+  <div class="question-category" id="qCat"></div>
+  <div class="question-text" id="qText"></div>
+  <div class="options" id="optionsContainer"></div>
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<div class="nav">
+  <button class="btn btn-prev" id="btnPrev" onclick="go(-1)">← Anterior</button>
+  <button class="btn btn-next btn-finish" id="btnNext" onclick="goNext()">Siguiente →</button>
+</div>
+
+<!-- Results -->
+<div class="results" id="results">
+  <div class="results-card">
+    <div class="results-title">🎯 Resultado Final</div>
+    <div class="results-score-big" id="scorePercent"></div>
+    <div class="results-grid">
+      <div class="stat-box">
+        <div class="stat-val c" id="statCorrect">0</div>
+        <div class="stat-label">✅ Correctas</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val w" id="statWrong">0</div>
+        <div class="stat-label">❌ Incorrectas</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val u" id="statUnanswered">0</div>
+        <div class="stat-label">⬜ Sin contestar</div>
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restart()">↺ Reiniciar Test</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'bloque4_state_v2';
+
+const questions = [
+  // ── SUBNETTING / REDES ──
+  {cat:"Redes · Subnetting", q:"Primera IP disponible para asignar a un host de la red a la que pertenece el host 172.30.23.0/20:", opts:["172.30.8.1","172.30.14.1","172.30.16.1","172.30.23.1"], ans:2},
+  {cat:"Redes · Subnetting", q:"¿Cuál de las siguientes direcciones estaría dentro del rango de direcciones privadas?", opts:["192.132.1.1","172.23.18.1","144.168.37.3","92.123.47.8"], ans:1},
+  {cat:"Redes · Subnetting", q:"Tenemos esta dirección 10.1.x.x/255.255.0.0. ¿Máscara de red apropiada para planificar 52 subredes?", opts:["255.255.236.0","255.255.240.0","255.255.248.0","255.255.252.0"], ans:3},
+  {cat:"Redes · Subnetting", q:"Tiene este direccionamiento 10.48.100.0/24, para 3 edificios: uno con 100 direcciones IP y los otros dos con necesidad de aproximadamente 25 direcciones. ¿Cuál de las siguientes es la mejor solución?", opts:["10.48.100.0/26, 10.48.100.128/27 y 10.48.100.160/28","10.48.100.0/25, 10.48.100.128/26 y 10.48.100.192/26","10.48.100.0/25, 10.48.100.128/27 y 10.48.100.160/27","10.48.100.0/26, 10.48.100.128/27 y 10.48.100.192/28"], ans:2},
+  {cat:"Redes · Subnetting", q:"¿Cuál de las siguientes no puede ser una dirección IP pública de Internet?", opts:["217.9.215.1","197.165.276.1","162.198.207.3","174.158.254.203"], ans:1},
+  {cat:"Redes · Subnetting", q:"Indique cuál, de entre las siguientes, es una dirección de loopback:", opts:["10000000.00000000.00000000.00000001","01111111.00000000.00000000.00000001","01111110.01111111.00000000.00000001","11111110.01111111.01111111.00000001"], ans:1},
+  {cat:"Redes · Subnetting", q:"En una clase C son necesarias 18 subredes con el requisito de tener el mayor número de hosts posible. ¿Qué máscara de subred sería la adecuada?", opts:["255.255.255.192","255.255.255.224","255.255.255.240","255.255.255.248"], ans:3},
+  {cat:"Redes · Subnetting", q:"Rango de direccionamiento IP: 10.200.10.128/28. ¿Cuál de los siguientes equipos NO tiene dirección IP correspondiente a ese rango?", opts:["10.200.10.130","10.200.10.135","10.200.10.140","10.200.10.145"], ans:3},
+  {cat:"Redes · Subnetting", q:"La red 13.1.0.0 con máscara 255.255.192.0. ¿Cuántos bits tiene la máscara de red?", opts:["26","17","18","19"], ans:2},
+  {cat:"Redes · Subnetting", q:"El direccionamiento 13.1.0.0/23. ¿Cuál es el número máximo de hosts disponible?", opts:["510","1022","254","2046"], ans:0},
+  {cat:"Redes · IPv6", q:"¿Cuál es el prefijo para las direcciones unicast de enlace local en el protocolo IPv6?", opts:["::1/128","FF00::/8","FF80::/10","FE80::/10"], ans:3},
+  {cat:"Redes · Subnetting", q:"Dado el direccionamiento 10.0.0.0/22, ¿cuál es el rango de hosts asignable?", opts:["10.0.0.1 - 10.0.3.254","10.3.1.0 - 10.3.254.255","10.0.0.1 - 10.0.7.254","10.0.0.1 - 10.0.15.254"], ans:0},
+  {cat:"Redes · Subnetting", q:"¿Cuántos hosts son asignables en la siguiente subred 172.150.0.0/21?", opts:["1022","2046","510","1024"], ans:1},
+  {cat:"Redes · Subnetting", q:"Para una subred con máscara 255.255.252.0, ¿cuántas direcciones de host se pueden asignar?", opts:["1022","2046","510","1024"], ans:0},
+  {cat:"Redes · Subnetting", q:"¿Cuál es la wildcard de la dirección 122.240.14.15 con máscara 255.248.0.0?", opts:["0.7.255.255","0.0.7.255","0.255.255.255","0.0.255.255"], ans:0},
+  {cat:"Redes · IPv6", q:"¿Qué dirección IPv6 no es correcta?", opts:["2001:0DB8::1428:57AB","2001:0DB8::1428:57AB","2001:0DB8:0:0:0:0:ABCD:57AB","2001:0DB8::1428:ABGD:57AB"], ans:3},
+  {cat:"Redes · Subnetting", q:"¿De qué clase es la máscara de red 255.255.0.0?", opts:["Clase B","Clase A","Clase D","Clase C"], ans:0},
+  {cat:"Redes · Subnetting", q:"¿Cuál de las siguientes direcciones IP puede pertenecer a la red Internet?", opts:["10.1.20.35","192.100.100.20","172.16.1.20","192.168.20.20"], ans:1},
+  {cat:"Redes · Subnetting", q:"¿Cuál es la dirección de broadcast de la red a la que pertenece el host 172.30.23.0/21?", opts:["172.30.31.255","172.30.24.255","172.30.23.255","172.30.15.255"], ans:2},
+  {cat:"Redes · Subnetting", q:"¿Qué dirección es inválida para un host de la subred a la que pertenece el host 192.168.31.55/28?", opts:["192.168.31.48","192.168.31.49","192.168.31.50","192.168.31.62"], ans:0},
+  {cat:"Redes · Subnetting", q:"¿Cuál es la wildcard de la dirección 122.240.14.15 con máscara 255.224.0.0?", opts:["0.15.255.255","0.31.255.255","0.0.15.255","0.0.31.255"], ans:1},
+  {cat:"Redes · Subnetting", q:"La red 10.0.4.0 con máscara 255.255.255.128. ¿Cuántos bits tiene la máscara de red?", opts:["24","26","25","23"], ans:2},
+  {cat:"Redes · Subnetting", q:"Dado el direccionamiento 10.0.0.0/21, ¿cuál es el rango de hosts asignable?", opts:["10.0.3.1 - 10.0.3.254","10.0.0.1 - 10.0.0.254","10.0.3.0 - 10.0.3.255","10.0.0.1 - 10.0.7.254"], ans:3},
+
+  // ── NORMATIVA ──
+  {cat:"Normativa", q:"Según el artículo 9.3 de la Constitución Española, la Constitución garantiza:", opts:["El principio de legalidad, la retroactividad de las disposiciones sancionadoras no favorables o restrictivas de derechos individuales...","El principio de legalidad, la irretroactividad de las disposiciones sancionadoras no favorables o restrictivas de derechos colectivos...","El principio de legalidad, la jerarquía normativa, la publicidad de las normas, la irretroactividad de las disposiciones sancionadoras no favorables o restrictivas de derechos individuales, la seguridad jurídica, la responsabilidad y la interdicción de la arbitrariedad de los poderes públicos","El principio de legalidad, la irretroactividad de las disposiciones sancionadoras, las condiciones para que la libertad e igualdad sean reales, la participación ciudadana..."], ans:2},
+  {cat:"Normativa · ENI", q:"¿Cuál de las siguientes NO es una norma técnica de desarrollo del Esquema Nacional de Interoperabilidad contemplada en el RD 4/2010?", opts:["Norma técnica de política de gestión de documentos electrónicos","Norma técnica de requisitos de conexión a la red de comunicaciones de las AAPP","Norma técnica de interoperabilidad de tratamiento y preservación de bases de datos","Norma técnica de catálogo de servicios y aplicaciones"], ans:3},
+  {cat:"Normativa · RD 203/2021", q:"Según el artículo 2 del Real Decreto 203/2021, por el que se aprueba el Reglamento de actuación y funcionamiento del sector público por medios electrónicos, NO es uno de sus principios generales:", opts:["Proporcionalidad","Personalización y proactividad","Sostenibilidad","Interoperabilidad"], ans:2},
+
+  // ── LINUX I ──
+  {cat:"Linux · Arranque", q:"Está en modo gráfico (nivel 5). ¿Cómo pasar a modo texto, multiusuario y SIN los servicios de red?", opts:["Es el nivel 3. Teclee telinit 3 o init 3.","Es el nivel 2. Teclee telinit 2 o init 2.","Es el nivel 6. Teclee telinit 6 o init 6.","Es el nivel 10. Teclee telinit 10 o init 10."], ans:1},
+  {cat:"Linux · Paquetes", q:"Seleccione la incorrecta en cuanto a administrador de paquetes por distribución correspondiente:", opts:["APT - UBUNTU","APT - DEBIAN","YUM - CENTOS","APT - RED HAT"], ans:3},
+  {cat:"Linux · Comandos", q:"¿Qué comando debe insertar para programar una parada del servidor en 25 minutos?", opts:["shutdown -r +25","shutdown -h +25","shutdown -c +25","shutdown -k +25"], ans:1},
+  {cat:"Linux · Comandos", q:"¿Qué comando debe ejecutar para conocer la versión exacta de su núcleo de Linux?", opts:["uname -v","grep kernel /var/log/messages","uname -r","dmesg |grep vmlinuz"], ans:2},
+  {cat:"Linux · Arranque", q:"¿Cuál de los siguientes NO es un gestor de arranque de sistemas Linux?", opts:["LILO","STITCH","GRUB2","SYSLINUX"], ans:1},
+  {cat:"Linux · Hardware", q:"¿Cómo conocer exactamente su modelo de procesador?", opts:["Cat /proc/procinfo","Cat /proc/cpuinfo","Cat /proc/meminfo","Cat /proc/net"], ans:1},
+  {cat:"Linux · Paquetes", q:"En Linux, si fuese necesario eliminar un paquete instalado y su fichero de configuración, ¿qué opción debe usar el comando apt-get?", opts:["cleanup","uninstall","purge","auto-remove"], ans:2},
+  {cat:"Linux · Paquetes", q:"Existen unas máquinas con Red Hat Enterprise Linux antiguo, y se necesitan listar los paquetes instalados. ¿Cómo lo haría?", opts:["Rpm -qi","Rpm -qa","Rpm -a","Rpm -al"], ans:1},
+  {cat:"Linux · Paquetes", q:"Se desean actualizar todos los paquetes de RHEL (versión 5.5) a la última versión. ¿Cómo lo haría?", opts:["Apt-get update","Apt-get update all","Yum update","Yum latest"], ans:2},
+  {cat:"Linux · Comandos", q:"¿Cómo podría, en Debian, obtener la información acerca de la memoria disponible?", opts:["Memory--show","Free -h","Cat /var/meminfo","Cat /proc/memory"], ans:1},
+  {cat:"Linux · Paquetes", q:"Se necesita conocer más información acerca del paquete 'tzdata'. ¿Qué comando ejecutaría en Debian?", opts:["Apt-get show tzdata","Apt info tzdata","Dpk --info -r tzdata","Apt-cache show tzdata"], ans:3},
+  {cat:"Linux · Paquetes", q:"Se necesita conocer si Tomcat ha sido instalado. ¿Cuál es la orden para obtener la información en servidores Linux?", opts:["Dpkg --get-selections | grep tomcat","Man --version tomcat","Cat /etc/tomcat_version","Vi /proc/tomcat"], ans:0},
+  {cat:"Linux · Hardware", q:"De cara a poder configurar protecciones contra desbordamientos de buffer, necesita conocer información acerca del procesador en Debian. ¿Qué comando permite obtener dicha información?", opts:["getcpu","cat /proc/cpuinfo","cat /etc/processor","scancpu"], ans:1},
+  {cat:"Linux · Paquetes", q:"Es necesario que se actualice el servidor S1 al último software disponible. ¿Cuál sería la orden que se debe ejecutar?", opts:["apt-get update; apt-get dist-upgrade","apt-get dist-install; apt-get update","apt-cache update; apt-dist upgrade","apt-dist-upgrade; apt-get install all"], ans:0},
+  {cat:"Linux · Comandos", q:"El comando que se emplearía para cancelar una orden de 'shutdown' pendiente es:", opts:["Shutdown -u","Shutdown --off","Shutdown --cancel","Shutdown -c"], ans:3},
+  {cat:"Linux · Seguridad", q:"¿Cuál es el comando que permite averiguar cuándo se ha realizado el último cambio de contraseña de un usuario dado?", opts:["Update-preferences login","chage","modify_login","dpkg-reconfigure userpass"], ans:1},
+  {cat:"Linux · Paquetes", q:"Debe comprobar de forma manual cuál es la versión del paquete nginx instalado. ¿Qué orden se debe ejecutar?", opts:["dpkg --show nginx","apt-cache show nginx | grep Version","dpkg --get-selections | grep nginx","apt show nginx -v"], ans:1},
+  {cat:"Linux · Paquetes", q:"En Linux, indique cómo buscar los paquetes disponibles de salt:", opts:["apt-cache search salt","apt find salt","dpkg-give salt","apt-mark find salt"], ans:0},
+  {cat:"Linux · Comandos", q:"Debe comprobar si se está ejecutando 'systemd' y obtener su ID de proceso. ¿Qué comando usaría?", opts:["pidof systemd","pid systemd","getpid systemd","apt --get-pid systemd"], ans:0},
+  {cat:"Linux · Paquetes", q:"¿Cómo desinstalaría el paquete 'mozilla' en un Linux Red Hat?", opts:["apt-get remove mozilla","dpkg desinstall mozilla","yum uninstall mozilla","rpm -e mozilla"], ans:3},
+
+  // ── LINUX II – Boot/Arranque ──
+  {cat:"Linux · Arranque", q:"Si ve que Linux no reconoce sus discos SATA, ¿qué debe hacer?", opts:["Sustituir los discos por SCSI o IDE.","Cambiar para una distribución más reciente.","Cambiar la compatibilidad del SATA a IDE.","Comprar una tarjeta controladora SATA compatible."], ans:2},
+  {cat:"Linux · Arranque", q:"El directorio /boot está en la tercera partición del segundo disco (hdb3). ¿Cuál es la ruta al núcleo en el fichero de configuración de GRUB?", opts:["(hd1,3)/kernel","(hd0,3)/kernel","(hd2,3)/boot/kernel","(hd1,2)/boot/kernel"], ans:3},
+  {cat:"Linux · Arranque", q:"La línea id:5:initdefault: fue sustituida por default:3:initdefault:. ¿Qué ocurre?", opts:["como 'default' es desconocido, init no arranca y el núcleo entra en pánico","init pasa en runlevel 3 por defecto, ya que el identificador no significa nada","init ya no entiende la línea: pasa a modo single","se ignora la línea e init retoma la antigua configuración en runlevel 5"], ans:1},
+  {cat:"Linux · Arranque", q:"Está en modo gráfico (nivel 5). ¿Cómo pasar a modo texto, multiusuario y CON los servicios de red?", opts:["Es el nivel 3. Teclee telinit 3 o init 3.","Es el nivel 2. Teclee telinit 2 o init 2.","Es el nivel 6. Teclee telinit 6 o init 6.","Es el nivel 10. Teclee telinit 10 o init 10."], ans:0},
+  {cat:"Linux · Arranque", q:"¿Qué acción de init ejecuta un comando una sola vez al principio del boot de la máquina?", opts:["sysinit","bootwait","once","off"], ans:0},
+  {cat:"Linux · Servicios", q:"¿Cómo parar el servicio ssh, sea cual sea el nivel actual, con Red Hat?", opts:["/etc/init.d/sshd stop","rcsshd stop","service ssh stop","chkconfig sshd off"], ans:0},
+  {cat:"Linux · Comandos", q:"¿Qué comando debe insertar para programar un nuevo inicio del ordenador en 25 minutos?", opts:["shutdown -r +25","shutdown -h +25","shutdown -c +25","shutdown -k +25"], ans:0},
+  {cat:"Linux · Arranque", q:"¿Cuál es el comando más importante para acceder a los registros de inicio de Linux?", opts:["mensajes","dmesg","syslog","cat"], ans:1},
+  {cat:"Linux · Arranque", q:"Un módulo llamado nvidia no se ha cargado durante el inicio. ¿Cómo saber si el núcleo ha intentado cargarlo?", opts:["grep nvidia /etc/log/messages","grep nvidia /var/log/dmesg","grep nvidia /var/log/messages","grep nvidia /etc/log/dmesg"], ans:2},
+  {cat:"Linux · Arranque", q:"¿Qué componente cargado en el boot puede cargar los primeros módulos?", opts:["init","sysconfig","initrd","vmlinuz"], ans:2},
+  {cat:"Linux · Comandos", q:"Desconoce la sintaxis del comando who. Para obtener ayuda desde este comando, tiene que teclear:", opts:["who --help","who -h","who help","man who"], ans:0},
+  {cat:"Linux · Comandos", q:"No recuerda el nombre exacto de un comando; sólo que contiene la expresión 'passwd'. ¿Qué comando debe teclear para obtener la lista de páginas del manual?", opts:["man -k passwd","man man passwd","man 1 passwd","man 5 passwd"], ans:0},
+
+  // ── LINUX III – Usuarios/Gestión ──
+  {cat:"Linux · Administración", q:"Comando para conocer la versión de RHEL que tienen sus máquinas:", opts:["rm -f /etc/redhat-release","cat /etc/redhat-version","cat /etc/redhat-release","mv /etc/redhat-release"], ans:2},
+  {cat:"Linux · Administración", q:"¿Dónde se almacena información sobre los usuarios que pueden acceder al sistema de manera legítima?", opts:["/etc/passwd","/etc/users","/etc/shadow","/etc/groups"], ans:0},
+  {cat:"Linux · Usuarios", q:"Se ha decidido crear un usuario 'traslado' con clave 'zzzz' que pertenezca al grupo 'migracion' y cuyo directorio principal sea /traslado/respaldo. ¿Cómo lo haría?", opts:["Useradd traslado -d /traslado/respaldo -p migración -g zzzz","Useradd -d /traslado/respaldo -g migración -p zzzz traslado","Useradd -g /traslado/respaldo -g migración -p zzzz traslado","Useradd -p /traslado/respaldo -g migración -d zzzz traslado"], ans:1},
+  {cat:"Linux · Usuarios", q:"'udocker' es un usuario ya creado. ¿Cómo añadiría este usuario al grupo 'docker'?", opts:["Usermod -a -G docker udocker","Useradd -G docker udocker","Editando el fichero /var/group añadiendo 'udocker' al final","Editando el fichero /etc/passwd añadiendo 'udocker' al final"], ans:0},
+  {cat:"Linux · Comandos", q:"Le piden el nombre de la máquina Linux a la que está conectado. ¿Cuál sería el comando para obtenerlo?", opts:["servename","hostname","sysname","giveservename"], ans:1},
+  {cat:"Linux · Usuarios", q:"Se le pide crear un usuario 'migracion' que pertenezca al grupo 'temporales'. ¿Cómo lo haría?", opts:["Usernew migración group temporales","Useradd migración group temporales","Usernew migración -g temporales","Useradd migración -g temporales"], ans:3},
+  {cat:"Linux · Usuarios", q:"¿Cuál de los siguientes comandos permite conocer qué usuarios pertenecen a un grupo llamado 'usuarios_ssh'?", opts:["Cat /etc/group | grep usuarios_ssh","sysadmin --check --group=usuarios_ssh","groupadd -list| grep usuarios_ssh","grep usuarios:ssh /etc/* -R-S"], ans:0},
+  {cat:"Linux · Usuarios", q:"¿Cómo eliminaría al usuario 'u' de un grupo de usuarios denominado 'usuarios_ssh'?", opts:["deluser u usuarios_ssh","groupdel -u u usuarios_ssh","groupmod --delete u usuarios_ssh","gpasswd u usuarios_ssh"], ans:0},
+  {cat:"Linux · Administración", q:"Entre los comandos que nos muestran la versión del SO, ¿cuál NO tiene esa finalidad?", opts:["lsb_release -a","Uname -n","Cat /etc/*release","Cat /etc/issue"], ans:1},
+  {cat:"Linux · Seguridad", q:"La guía CCN-STIC-612 sugiere que no se deben disponer de ficheros con permisos de escritura globales. Dado un fichero /home/fichero, ¿cómo corregiría el permiso?", opts:["Chown o-w /home/fichero","Chmod -c o-w /home/fichero","Chmod 646 /home/fichero","Chmod -r o+w /home/fichero"], ans:1},
+  {cat:"Linux · Permisos", q:"¿Cómo buscar en '/home' todos aquellos directorios que sean modificables por todos los usuarios?", opts:["Find /home -xdev -fstype d -perm -0002 -print","Find /home -xdev -fstype f -perm -0020 -print","Find /home -xdev -type d -perm -0002 -print","Find /home -xdev -type f -perm -0002 -print"], ans:2},
+  {cat:"Linux · Seguridad", q:"Se ha detectado que no ha asignado caducidad a las contraseñas. ¿En qué fichero se puede cambiar el valor de 'PASS_MAX_DAYS'?", opts:["/etc/passpreferences.conf","/etc/global_defs","/etc/users.config","/etc/login.defs"], ans:3},
+  {cat:"Linux · Seguridad", q:"Para la búsqueda de ficheros creados/modificados en los últimos 3 días (vulnerabilidad Struts), ¿qué comando emplearía?", opts:["Find / -type f -mtime -3","Find / -type f -ntime -3","Find / -type f -modify-time-3","Find / -type f --3d"], ans:0},
+  {cat:"Linux · Comandos", q:"Para visualizar periódicamente los ficheros creados por el usuario 'www-data' en '/var/www', ¿qué comando lo permitiría?", opts:["search -l -R/var/www/ | fgrep www-data","find -l -R/var/www/ -u www-data","grep -l -R/var/www/ --user www-data","watch -d 'ls -l -R /var/www | fgrep www-data'"], ans:3},
+  {cat:"Linux · Almacenamiento", q:"¿Con qué comando averiguaría cuál es el sistema de ficheros correspondiente al punto de montaje /home?", opts:["Df -h | grep /home","mount | grep /home","du -sh | grep /home","discover -v | grep /home"], ans:1},
+  {cat:"Linux · Usuarios", q:"¿Cuál sería la manera correcta de crear un usuario 'operador' perteneciente al grupo 'investigadores' especificando la Shell y su home?", opts:["createuser -g investigadores -s /bin/bash -d /home/operador operador","useradd -g investigadores -s /bin/bash -d /home/operador operador","createuser -g investigadores -s /bin/bash -h /home/operador operador","useradd -g investigadores -s /bin/bash -h /home/operador operador"], ans:1},
+  {cat:"Linux · Permisos", q:"Se quiere evitar que el usuario 'operador' pueda borrar ficheros del usuario 'investigador' en /proyectos. ¿Cuál es la manera correcta?", opts:["chmod 644 /proyectos/*","chown 644 /proyectos/*","chmod 777 /proyectos/*","chmod 647 /proyectos/*"], ans:0},
+  {cat:"Linux · Seguridad", q:"¿Con qué orden aumentaría a 1024 el máximo permitido en ficheros abiertos para el grupo users?", opts:["echo \"users soft nofile 1024\" >>/etc/security/filelimits.conf","echo \"users soft nofile 1024\" >>/etc/security/files.conf","echo \"@users soft nofile 1024\" >>/etc/security/limits.conf; echo \"@users hard nofile 1024\" >>/etc/security/limits.conf","echo \"@users soft nofile 1024\" >>/etc/security/soft.conf"], ans:2},
+
+  // ── LINUX IV – Dispositivos/FS ──
+  {cat:"Linux · Hardware", q:"¿Qué comando permite listar el bus PCI?", opts:["lspci","pcilist","dmesg|grep pci","pciinfo"], ans:0},
+  {cat:"Linux · Hardware", q:"¿Cómo obtener los detalles del periférico USB 046d:092e?", opts:["lspci -u | grep '046d:092e'","lsusb -v | grep 046d:092e","lssub -v -d 046d:092e","cat /proc/usb/046d/092e"], ans:1},
+  {cat:"Linux · Hardware", q:"¿Qué driver utiliza el IRQ 23 en su máquina?", opts:["grep '23:' /proc/interrupts","grep '23:' /proc/irq","grep 23: /proc/interrupts","grep 23: /proc/irq"], ans:0},
+  {cat:"Linux · Almacenamiento", q:"¿Por qué un sistema de ficheros con diario es preferible a los otros?", opts:["Porque es más reciente","Porque es más rápido","Porque es más fiable","Porque no hay nada más"], ans:2},
+  {cat:"Linux · Almacenamiento", q:"¿Dónde se sitúa el MBR?", opts:["Al principio del disco","Al principio de la primera partición primaria","Al principio de la partición extendida","Al principio de la primera partición lógica"], ans:0},
+  {cat:"Linux · Almacenamiento", q:"¿Qué parámetro se debe pasar a fdisk para listar las particiones del disco /dev/sdb?", opts:["El -m: fdisk -m /dev/sdb","El -p: fdisk -p /dev/sdb","El -l: fdisk -l /dev/sdb","El -n: fdisk -n /dev/sdb"], ans:2},
+  {cat:"Linux · Almacenamiento", q:"Linux aún no ve la partición que usted ha creado. ¿Cómo actualizar la tabla de las particiones del núcleo?", opts:["partprobe /dev/hdb","cat /proc/partitions","touch /dev/hdb1","Hay que reiniciar obligatoriamente"], ans:0},
+  {cat:"Linux · Almacenamiento", q:"¿Cómo conocer el tamaño en MB utilizado en el sistema de ficheros montado en /home?", opts:["du -s /home","df -Kp /home","free /home","df -m /home"], ans:3},
+  {cat:"Linux · Almacenamiento", q:"¿Qué comando puede insertar para comprobar el estado de un disco que estuvo guardado durante mucho tiempo (/dev/sdd)?", opts:["fsck -c /dev/sdd","mkfs -t ext3 -c /dev/sdd","badblocks -vw /dev/sdd","badblocks -v /dev/sdd"], ans:3},
+  {cat:"Linux · Almacenamiento", q:"¿Cómo conocer el tamaño en bytes de un bloque del sistema de ficheros ext3 en /dev/hdb1?", opts:["dumpe2fs -h /dev/hdb1| grep -i 'block size'","tune2fs -j /dev/hdb1","dumpe3fs -h /dev/hdb1| grep -i 'block size'","tune3fs -j /dev/hdb1"], ans:0},
+  {cat:"Linux · Almacenamiento", q:"Se ha equivocado de tamaño al crear la partición de swap. ¿Cómo desactivarla?", opts:["swapstop /dev/hdb3","rmswap /dev/hdb3","swapoff /dev/hdb3","No se puede: hay que suprimir la línea de fstab y reiniciar"], ans:2},
+  {cat:"Linux · Almacenamiento", q:"¿Cómo obtener la lista de todas las particiones y ficheros de swap?", opts:["cat /proc/swaps","free -m","free -s","cat /proc/swap"], ans:0},
+  {cat:"Linux · Cuotas", q:"¿Cómo editar las cuotas del usuario tai?", opts:["Con el comando editquota tai","Con el comando edquota tai","Con el comando quotaon tai","Con el comando quotachek tai"], ans:1},
+  {cat:"Linux · Permisos", q:"¿Cuál sería la máscara más severa para todo el mundo excepto usted?", opts:["700","066","077","022"], ans:2},
+  {cat:"Linux · Permisos", q:"Con chmod, ¿cuáles son los parámetros para suprimir permisos de escritura a los demás, dar lectura y ejecución al grupo y todos los permisos a usted?", opts:["u=rwx,g=rx,o-w","u=rwx,g=rw,o+w","u=rwx,g=rw,o-x","u=rwx,g=rw,o-r"], ans:0},
+  {cat:"Linux · Permisos", q:"Quiere crear un directorio donde todo el mundo pueda escribir ficheros, todos los ficheros tengan el mismo grupo, pero nadie pueda suprimir los ficheros de los demás. ¿Cuáles deben ser los derechos?", opts:["rwxrwsrwt, o sea, 3777 en octal","rwxrwxrwt, o sea, 1777 en octal","rwxrwsrwt, o sea, 4777 en octal","rwxrwsrwx, o sea, 2777 en octal"], ans:1},
+  {cat:"Linux · Shell", q:"La línea siguiente: echo 'hola, la fecha es'; date; exit:", opts:["Visualiza el texto y luego la fecha y espera una inserción","No hace nada: usted sale","Sale únicamente si el comando date funciona","Como A pero luego deja el shell"], ans:3},
+  {cat:"Linux · Comandos", q:"¿Cuál es la forma más sencilla de crear la ruta fuentes/C/backup cuando ninguno de esos directorios existe?", opts:["mkdir fuentes/C/backup","mkdir -p fuentes/C/backup","mkdir fuentes ; cd fuentes ; mkdir C ; cd C; mkdir backup","mkdir -p fuentes C backup"], ans:1},
+  {cat:"Linux · Comandos", q:"¿Cómo crear un vínculo simbólico de /tmp/seb hacia /home/seb/tmp?", opts:["ln -s /tmp/seb /home/seb/tmp","ln /tmp/seb /home/seb/tmp","ln -s /home/seb/tmp /tmp/seb","ln /home/seb/tmp /tmp/seb"], ans:0},
+  {cat:"Linux · Comandos", q:"En un directorio con múltiples ficheros, ¿cómo visualizar la lista detallada de modo que los últimos modificados aparezcan al final?", opts:["ls ltc","ls ltR","ls ltr","ls ltF"], ans:2},
+  {cat:"Linux · Comandos", q:"Quiere buscar todas las instancias del programa 'startappli' dentro del path. ¿Qué comando utiliza?", opts:["whereis -b startappli","which startappli","which -a startappli","locate startappli"], ans:2},
+  {cat:"Linux · vi", q:"En el editor vi, ¿cómo entrar en modo de inserción en el sitio actual, sea cual sea la palabra anterior?", opts:["[Esc] i","[Esc] a","[Esc]: i",":i"], ans:0},
+  {cat:"Linux · vi", q:"¿Cuáles son los tres medios de dejar vi guardando el fichero?", opts:["ZZ, :wq o bien :x","ZZ, :wq o bien :q","ZZ, :wr o bien :x","ZZ, :wr o bien :q"], ans:0},
+  {cat:"Linux · Redirección", q:"Como usuario, para listar la totalidad de los ficheros del sistema y colocar todos los resultados en una lista, ¿qué redirección debe indicar?", opts:["2>dev/null >lista",">lista 2>lista","1>lista 2>&1","2>1 >list"], ans:2},
+  {cat:"Linux · Redirección", q:"¿Cómo suprimir todos los mensajes de error?", opts:["2>/dev/null","2>/dev/zero",">/dev/null 2>&1","2>fic ; rm fic"], ans:0},
+  {cat:"Linux · Comandos", q:"¿Cómo recuperar la línea 27ª de un fichero fic (partiendo de que fic contiene más de 27 líneas)?", opts:["cat -n fic | grep ^27 | cut d' ' -f2-","grep -n '' fic | grep ^27 | cut d: -f2-","tail -27 fic | head -1","head 27fic | tail -1"], ans:3},
+  {cat:"Linux · Almacenamiento", q:"¿Cómo crear un sistema de ficheros de tipo ext2 en /dev/hda5, sin opciones particulares?", opts:["mkfs -t ext2 /dev/hda5","tune2fs -j /dev/hda5","e2label /dev/hda5 DATOS","Ninguna es correcta"], ans:0},
+
+  // ── LINUX V – Red ──
+  {cat:"Linux · Red", q:"Se necesita configurar el interfaz de red eth0 en modo promiscuo. ¿Cuál sería el comando?", opts:["Ifconfig eth0-promisc","Ifconfig eth0 promisc","Ifconfig eth0 promiscuous","Ifconfig eth0 --promiscuous"], ans:1},
+  {cat:"Linux · Red", q:"El comando ifconfig ya no viene instalado por defecto. ¿Qué debe ejecutar para obtener la IP del servidor?", opts:["if","systemctl interfaces","interfaces","ip address"], ans:3},
+  {cat:"Linux · Cron", q:"En crontab-e se añade: '0 5 * * 1 tar -zcf /var/backups/home.tgz /home/'. ¿Cuál es el resultado?", opts:["Se ejecuta un backup de /home/ a las 5:00 a.m una vez por semana","El comando tar da un error de sintaxis","El comando tar nunca se llega a ejecutar","Se ejecuta un backup de /home/ a las 5:00 a.m una vez al mes"], ans:0},
+  {cat:"Linux · Red", q:"¿Cómo obtener de forma remota la información de los usuarios conectados a la máquina s1, siendo 'u' un usuario válido?", opts:["Ssh u@s1 `who`","Ssh u:s1 `who`","Ssh s1 --login u `who`","Sssh --user=command=`who` s1"], ans:0},
+  {cat:"Linux · Red", q:"¿Cómo añadir una ruta al destino 10.254.252.4 a través del gateway 10.253.1.254?", opts:["Route new-net 10.254.252.4 netmask 255.255.255.0 gw 10.253.1.254","Route add-net 10.254.252.4 netmask 255.255.255.0 gw via 10.253.1.254","Route add-net 10.254.252.4 netmask 255.255.255.0 gw add 10.253.1.254","Route add-net 10.254.252.4 netmask 255.255.255.0 gw 10.253.1.254"], ans:3},
+  {cat:"Linux · Red", q:"¿Cómo podría listar las rutas existentes?", opts:["Ip route path","Ip route list","Ip show route","Ip view route"], ans:1},
+  {cat:"Linux · Red", q:"¿Qué parámetro del comando ARP hay que usar para mostrar la tabla ARP?", opts:["arp-all","arp-i","arp-a","arp-g"], ans:2},
+  {cat:"Linux · Red", q:"¿En qué fichero se modifican los DNS en máquinas RedHat 6?", opts:["/etc/serverdns.conf","/etc/sysconfig/resolv.conf","/etc/resolv.conf","/etc/sysconfig/serverdns.conf"], ans:2},
+  {cat:"Linux · Seguridad", q:"En Debian 8.7, ¿cuál es la ruta del fichero de log donde encontrar mensajes de intentos de conexión SSH inválidos?", opts:["/var/auth/ssh.log","/var/log/ssh_auth.log","/var/log/users.log","/var/log/auth.log"], ans:3},
+  {cat:"Linux · Red", q:"¿Cuál de los siguientes comandos se usará para mostrar la tabla de rutas?", opts:["netstat -nr","ipconfig -a","ipconfig -nr","netstat -routes"], ans:0},
+  {cat:"Linux · Red", q:"Los servidores del GRR utilizan Linux Red Hat. ¿Qué fichero habría que modificar para configurar el DNS?", opts:["/etc/resolv.conf","/etc/hosts","/etc/fstab","/etc/dnsmasq.conf"], ans:0},
+  {cat:"Linux · Red", q:"¿Qué comando utilizaría para comprobar que el servidor DNS resuelve la dirección www.grr.es?", opts:["dnslookup www.grr.es","nslookup www.grr.es","nslookup -name: www.grr.es","dnslookup -name: www.grr.es"], ans:1},
+  {cat:"Linux · Red", q:"Para el NTP en servidores Red Hat, ¿qué fichero deberá modificar para especificar la IP de los nuevos servidores?", opts:["/etc/realt.conf","/etc/time.conf","/etc/ntp.conf","/etc/ntp/ntp.conf"], ans:3},
+  {cat:"Linux · Red", q:"Una vez configurado el NTP, ¿cómo comprobaría si ya se ha sincronizado?", opts:["ntpdd -c sync","ntpdc -c sync","ntpdd -c loopinfo","ntpdc -c loopinfo"], ans:3},
+  {cat:"Linux · Red", q:"Para configurar la interfaz eth0 en un servidor Red Hat de forma permanente, ¿qué parámetro debe modificar?", opts:["IP en el fichero /var/sysconfig/network/ifcfg-eth0","IPADDR en el fichero /var/sysconfig/network/ifcfg-eth0","IP en el fichero /etc/sysconfig/network-scripts/ifcfg-eth0","IPADDR en el fichero /etc/sysconfig/network-scripts/ifcfg-eth0"], ans:3},
+  {cat:"Linux · Red", q:"¿Cuál de las siguientes configuraciones del fichero de DNS es correcta si el servidor de DNS tiene la IP 82.0.0.90?", opts:["nameserver 82.0.0.90","dnsserver 82.0.0.90","servername 82.0.0.90","serverdns 82.0.0.90"], ans:0},
+  {cat:"Linux · Red", q:"Poner ruta persistente a la red 10.0.5.0/24 con máscara 255.255.255.0 y gateway 10.0.5.150 en un sistema Solaris:", opts:["route -p add -net 10.0.5.0/24 -gateway 10.0.5.150","route new -p -net 10.0.5.0/24 -gateway 10.0.5.150","route -static add -net 10.0.5.0/24 -gateway 10.0.5.150","route add -static -net 10.0.5.0/24 -gateway 10.0.5.150"], ans:0},
+  {cat:"Linux · Comandos", q:"¿Cómo hacer un tar.gz de las configuraciones ubicadas en /backup/tomcat?", opts:["tar.gz -czvf configuraciones.tar.gz /backup/tomcat","tar -czvf /backup/tomcat/configuraciones.tar.gz","tar -czvf configuraciones.tar.gz /backup/tomcat/","tar -xvf configuraciones.tar.gz /backup/tomcat/"], ans:2},
+  {cat:"Linux · Red", q:"¿Cómo podría saber si el servidor está escuchando por el puerto 777?", opts:["Netstat-i:777","Ip port:777","lsof -i:777","Listen-i:777"], ans:2},
+  {cat:"Linux · Red", q:"¿Qué tipo de registro DNS es necesario para la recepción de correos electrónicos?", opts:["A","MX","CNAME","TXT"], ans:1},
+
+  // ── LINUX VI – Red avanzada ──
+  {cat:"Linux · Red", q:"¿Qué entrada del fichero de configuración de eth0 en Red Hat permite declarar la tarjeta como cliente DHCP?", opts:["onboot=dhcp","master=dhcp","bootproto=dhcp","ipaddr=dhcp"], ans:2},
+  {cat:"Linux · Red", q:"¿Cómo visualizar la tabla de encaminamiento? Señale la INCORRECTA:", opts:["route","netstat -n","netstat -r","netstat -rn"], ans:1},
+  {cat:"Linux · Red", q:"¿Qué línea se debe modificar en /etc/nsswitch.conf para forzar la resolución DNS en primer lugar?", opts:["services: dns files","networks: dns files","hosts: dns files","netgroup: dns files"], ans:2},
+  {cat:"Linux · Red", q:"¿Cómo conocer el puerto de red asociado al servicio ntp?", opts:["grep ^ntp /etc/services","netstat -a | grep ntp","ps -ef| grep ntp","grep ntp /etc/protocols"], ans:0},
+  {cat:"Linux · Red", q:"¿Qué ruta del fichero da la lista de los protocolos IP conocidos por el sistema?", opts:["/etc/protocols","/etc/protocol","/etc/ip","/etc/tcp"], ans:0},
+  {cat:"Linux · Red", q:"Es un superservicio que se encarga del acceso a otros servicios de redes y los controla, aplicando una configuración de acceso específica a cada uno de ellos:", opts:["telnet","xinetd","dns","dhcpd"], ans:1},
+  {cat:"Linux · Red", q:"¿Qué debe añadir a la configuración del servidor DHCP para que todos los clientes puedan recibir su nombre de anfitrión?", opts:["opción host-name 'nombre'; en el bloque host","línea use-hostnames en la configuración general","línea use-host-decl-name on; en la configuración subnet","línea use-host-decl-name on; en la configuración general"], ans:3},
+  {cat:"Linux · Red", q:"¿Cómo se llama el proceso que gestiona el servicio dns?", opts:["bind","named","dnsd","resolvd"], ans:1},
+  {cat:"Linux · Red", q:"¿Cómo se debe llamar la zona de resolución inversa de la subred 10.17.32.0/22?", opts:["32.17.10.in-addr.arpa","10.17.32.0.in-addr.arpa","el nombre que quiera","32.17.10.0.in-addr.arpa"], ans:0},
+  {cat:"Linux · Red", q:"¿Cuál es la cadena completa de envío, traspaso y recepción de correo?", opts:["MTA -> MUA -> DMA -> MU","MUA -> MTA -> MDA -> MUA","MUA -> MTA -> ... -> MTA -> MDA -> MUA","MUA -> MTA -> ... -> MTA -> MUA"], ans:2},
+  {cat:"Linux · Cron", q:"¿Qué línea crontab ejecuta el comando 'checkall' de lunes a viernes a las 23h, únicamente en el mes de junio?", opts:["* 23 * 6 1,5 checkall","0 23 0 6 1-5 checkall","23 * 6 1-5 checkall","0 23 * 6 1-5 checkall"], ans:3},
+
+  // ── LINUX VII – Seguridad/FTP ──
+  {cat:"Linux · Seguridad", q:"¿Cuál es el nombre del principal servidor FTP más utilizado actualmente en Linux?", opts:["proftpd","ftpd","wu-ftpd","vsftpd"], ans:3},
+  {cat:"Linux · Seguridad", q:"¿Qué realiza el comando: pwgen -s 8 6?", opts:["Genera 6 contraseñas aleatorias de una longitud de 8 caracteres","Genera 8 contraseñas aleatorias de una longitud de 6 caracteres","Genera 86 contraseñas aleatorias","Da error"], ans:0},
+  {cat:"Linux · Seguridad", q:"¿Cómo bloquear toda conexión nueva?", opts:["pasando en init 1","modificando todos los shells en /bin/false","bloqueando todos los terminales dentro de /etc/securetty","creando el fichero /etc/nologin"], ans:3},
+  {cat:"Linux · Seguridad", q:"¿Cómo conservar (en el boot) las configuraciones de ulimit?", opts:["creando un script iniciado por init","modificando /etc/security/limits.conf","modificando el fichero /etc/profile con una serie de ulimit","modificando el fichero ~/.bashrc de los usuarios y en /etc/skel"], ans:1},
+  {cat:"Linux · Red", q:"¿Cómo aislar los puertos abiertos y las conexiones activas en su máquina?", opts:["netstat -nr","netstat -a","netstat -a -A inet","netstat -a inet"], ans:2},
+  {cat:"Linux · Seguridad", q:"¿Para qué sirve el comando nmap? Señale la FALSA:", opts:["Facilitar una tarjeta de la red","Probar los puertos remotos de una máquina de la red","Obtener información de seguridad en una máquina de la red","Conocer el sistema operativo de una máquina remota"], ans:0},
+  {cat:"Linux · Seguridad", q:"¿Cuál es la ruta al/los fichero/s de configuración de los TCP Wrappers?", opts:["/etc/hosts.allow","/etc/hosts.deny","/etc/hosts.conf","A y B son correctas"], ans:3},
+  {cat:"Linux · Firewall", q:"El comando iptables -F:", opts:["Lista todas las reglas","Suprime todas las reglas de una sola vez","Borra una regla de una cadena en particular por número","Verifica una regla en particular antes de añadirla"], ans:1},
+  {cat:"Linux · Firewall", q:"¿Cómo se prohíbe toda conexión de la subred 10.17.32.0/22, salvo a las IP 10.17.32.5, con IPTABLES?", opts:["iptables -A INPUT -s 10.17.32.0/22 ! 10.17.32.5 -j DROP","iptables -A INPUT -s 10.17.32.0/22 ; 10.17.32.5 -j DROP","iptables -A INPUT -s 10.17.32.0/22 ; 10.17.32.5 -j ACCEPT","iptables -A INPUT -s 10.17.32.0/22 ! 10.17.32.5 -j ACCEPT"], ans:0},
+  {cat:"Linux · Firewall", q:"¿Cómo impedir cualquier conexión TCP saliente con destino a un servicio ssh, con IPTABLES?", opts:["iptables -A OUTPUT -p tcp -dport 22","iptables -A OUTPUT -p tcp -dport 23","iptables -A OUTPUT -p tcp -sport 22","iptables -A OUTPUT -p tcp -sport 23"], ans:0},
+  {cat:"Linux · Paquetes", q:"¿Cuál es el comando correcto para actualizar paquetes en Debian/Ubuntu?", opts:["Debian/Ubuntu: aptget-update / Red Hat: yum update / OpenSUSE: zypper update","Debian/Ubuntu: aptget-upgrade / Red Hat: yum update / OpenSUSE: zypper update","Debian/Ubuntu: yum update / Red Hat: aptget-update / OpenSUSE: zypper update","Debian/Ubuntu: yum upgrade / Red Hat: aptget-update / OpenSUSE: zypper update"], ans:1},
+
+  // ── LINUX VIII – LVM/RAID ──
+  {cat:"Linux · LVM", q:"Un RAID 5 está compuesto de 4 discos de 100 GB. ¿Cuál es la capacidad total de almacenamiento?", opts:["300 GB","400 GB","200 GB","333 GB"], ans:0},
+  {cat:"Linux · LVM", q:"¿Cuál es el tipo de partición necesaria para constituir un volumen físico?", opts:["fd","83","82","8e"], ans:3},
+  {cat:"Linux · LVM", q:"Un grupo de volúmenes vgLOCAL con PE de 64 MB. ¿Cuál es el parámetro para crear un volumen lógico de 12 GB?", opts:["lvcreate -l 64 -n lv_L1 vgLOCAL","lvcreate -l 192 -n lv_L1 vgLOCAL","lvcreate -l 12 -n lv_L1 vgLOCAL","lvcreate -l 12288 -n lv_L1 vgLOCAL"], ans:1},
+  {cat:"Linux · LVM", q:"Se desea ampliar lv_L1 hasta 20 GB y no hay más PE libre en el VG. ¿Cómo añadir el volumen físico /dev/sde?", opts:["vgextend -L +20G /dev/sde vgLOCAL","pvextend /dev/sde vgLOCAL","lvextend -l 320 /dev/vgLOCAL/lv_L1 /dev/sde","vgextend vgLOCAL /dev/sde"], ans:3},
+  {cat:"Linux · LVM", q:"¿Cuáles de estas sintaxis son correctas para aumentar a 20 GB el volumen lógico lv_L1?", opts:["lvextend -L 20G /dev/vgLOCAL/lv_L1","lvextend -l +128 /dev/vgLOCAL/lv_L1","lvextend -l 320 /dev/vgLOCAL/lv_L1","Todas son correctas"], ans:3},
+  {cat:"Linux · LVM", q:"¿Qué hace el comando pvmove?", opts:["Permite mover todos los PV de un PE hacia otro","Permite mover todos los PE de un PV hacia otro","Permite mover volúmenes lógicos","Permite mover volúmenes físicos"], ans:1},
+  {cat:"Linux · RAID", q:"¿Cómo se crearía un RAID formado por 2 discos sin redundancia?", opts:["mdadm -C /dev/md0 -l 1 -n 2 /dev/sdb2 /dev/sdb","mdadm -C /dev/md0 -l 2 -n 0 /dev/sdb2 /dev/sdb","mdadm -C /dev/md0 -l 0 -n 2 /dev/sdb2 /dev/sdb","mdadm -C /dev/md0 -l 5 -n 2 /dev/sdb2 /dev/sdb"], ans:2},
+  {cat:"Linux · RAID", q:"¿Cómo se puede comprobar el estado de un RAID (md0)?", opts:["cat /proc/mdstat","mdadm --detail /dev/md0","mdadm --state /dev/md0","A y B son ciertas"], ans:3},
+
+  // ── LINUX IX – Comprobaciones ──
+  {cat:"Linux · Red", q:"¿Cómo probar en Linux si se llega al puerto 567 de la máquina 10.1.45.88?", opts:["Ncc -zc 10.1.45.88 567","nc -zc 10.1.45.88 567","Ping -zc 10.1.45.88 567","Net -zc 10.1.45.88 567"], ans:1},
+  {cat:"Linux · Red", q:"¿Qué comando usaría en RHEL para comprobar que la comunicación está abierta en el puerto 422 de la IP 10.0.4.22?", opts:["nc -v -ip 10.0.4.22 -port 422","nc -v 10.0.4.22 422","nc -v 422 10.0.4.22","nc -v 10.0.4.22:422"], ans:1},
+  {cat:"Linux · Comandos", q:"¿Cuál de las siguientes expresiones mostrará el número de veces que está conectado el usuario root?", opts:["who |grep root |wc -l","who root |wc -l","who |grep wc -l","who <grep -v root>wc"], ans:0},
+  {cat:"Linux · Comandos", q:"¿Qué comando utilizamos para listar los archivos de un directorio ordenado por la fecha de último acceso?", opts:["ls -lag","ls -lau","ls -lac","ls -lar"], ans:1},
+  {cat:"Linux · RAID", q:"Dispone de 5 HDs de 6 TB configurados en RAID 6. ¿Qué capacidad neta de almacenamiento se obtendrá?", opts:["12 TB","18 TB","24 TB","30 TB"], ans:1},
+  {cat:"Linux · RAID", q:"¿Para qué sirve la utilidad 'mdadm' en Linux?", opts:["Da un error de sintaxis, este comando no existe","Para la creación y administración de RAID por software","Permite crear enlaces lógicos","Para leer un DVD en Linux"], ans:1},
+  {cat:"Linux · Firewall", q:"La máquina 'eth1' tiene Struts instalado. ¿Cuál sería la línea de iptables para bloquear el tráfico HTTPS estándar?", opts:["iptables -A INPUT -i eth1 -p tcp --dport 80 -j DROP","iptables -A INPUT -i eth1 -p tcp --dport 443 -j DROP","iptables -A INPUT -i eth1 -p tcp --dport https -j DISABLE","iptables -A INPUT -i eth1 -p tcp --dport http -j FAIL"], ans:1},
+  {cat:"Linux · Firewall", q:"¿Qué comando ejecutaría para borrar todas las reglas de iptables?", opts:["iptables --flush","no existe, hay que ir eliminando una a una","iptables --delete-all-rules","iptables --clear"], ans:0},
+  {cat:"Linux · Seguridad", q:"¿Qué comando utilizaría para crear una clave privada RSA en Linux?", opts:["Create-rsa","openssl","joe","generate"], ans:1},
+  {cat:"Linux · Seguridad", q:"¿Qué fichero permite comprobar el acceso a hosts concretos al sistema?", opts:["/etc/hosts.allow","/etc/sshd/sshd.conf","/etc/remote.conf","/etc/hosts"], ans:0},
+  {cat:"Linux · LVM", q:"¿Qué afirmación es cierta sobre el gestor de volúmenes lógicos de Linux LVM 2.0?", opts:["Un volumen lógico puede pertenecer a distintos grupos de volúmenes lógicos (LVG)","Un disco físico solo puede pertenecer a un volumen físico (PV)","Un grupo de LVG se puede formar a partir de varios PV","El número de LV incluidos en un grupo de LVG debe ser siempre par"], ans:2},
+  {cat:"Linux · Comandos", q:"Si queremos conocer las librerías vinculadas a un determinado programa en Linux, usaremos el comando:", opts:["ldd","linkedl","linklib","lk"], ans:0},
+  {cat:"Linux · RAID", q:"Se solicita configurar un RAID 10 de 4 discos de 100GB. ¿Qué afirmación es cierta?", opts:["No existe el tipo de RAID 10","Sólo puede configurarse en discos SaS","La capacidad total resultante es de 200GB","No es posible hacer un RAID 10 con 4 discos, son al menos 5"], ans:2},
+  {cat:"Linux · LVM", q:"¿Con qué comando se puede crear un nuevo grupo de volumen de LVM en servidor Linux?", opts:["vgcreate","volumen-add","lvm-add-volume","pvcreate"], ans:0},
+  {cat:"Linux · LVM", q:"¿Qué comando permite crear un volumen lógico en LVM?", opts:["Pvcreate -l","lvm-add -logical","Lvcreate","lvadd"], ans:2},
+  {cat:"Linux · LVM", q:"Si fuese necesario, ¿con qué comando se restauran los metadatos de un grupo de volúmenes LVM?", opts:["vgcfgrestore","lvmgrestore","importlvm","lvmrestore"], ans:0},
+  {cat:"Linux · LVM", q:"¿Qué comando permite visualizar la información de los grupos de volúmenes disponibles de LVM?", opts:["vgdisplay","lvmdisplay","lvm-show volume-group","cat /proc/lvminfo"], ans:0},
+  {cat:"Linux · LVM", q:"¿Qué comando debería usar para añadir un volumen físico ya inicializado a un grupo de volúmenes existentes en LVM?", opts:["vgextend","volume-extend","lvm-extend-volume","pvadd"], ans:0},
+
+  // ── WINDOWS I ──
+  {cat:"Windows · Active Directory", q:"En Directorio Activo ¿a qué se le denomina Árbol?", opts:["A un conjunto de usuarios","A un conjunto de recursos","A un conjunto de servicios","A un conjunto de dominios"], ans:3},
+  {cat:"Windows · Active Directory", q:"En Directorio Activo ¿qué objetos se pueden añadir a un grupo?", opts:["Sólo usuarios","Sólo equipos","Usuarios, equipos y otros grupos","Sólo usuarios y equipos"], ans:2},
+  {cat:"Windows · Sistema", q:"Una de las características del sistema operativo Windows es:", opts:["Hay dos tipos de eventos: de sincronización y de notificación","El modelo de E/S de bajo nivel es síncrono","El registro de Windows sólo almacena información de hardware y software","El registro de Windows es un único fichero que podemos mantener con regedit"], ans:0},
+  {cat:"Windows · PowerShell", q:"En Windows PowerShell, los comandos que se ejecutan se denominan:", opts:["runshell","scriptlets","runlets","cmdlets"], ans:3},
+  {cat:"Windows · Exchange", q:"Señale la respuesta correcta. Microsoft Exchange Server es un:", opts:["servidor de correo electrónico al que puede accederse mediante un navegador web y es compatible con aplicaciones cliente como Microsoft Outlook","gestor de base de datos relacional que utiliza ADO.NET","sistema operativo que utiliza HDFS para aprovechar Map-Reduce","producto que permite la monitorización del rendimiento de los servidores"], ans:0},
+  {cat:"Windows · LDAP", q:"LDAP es un directorio jerárquico y distribuido que…", opts:["Está optimizado para la lectura y búsqueda de información (lectura intensiva)","Está optimizado para procesar un gran volumen de actualizaciones (escritura intensiva)","La información reside en un único punto y no dispone de capacidades de replicación","Puede contener información de usuarios pero no información de políticas de acceso"], ans:0},
+  {cat:"Windows · LDAP", q:"¿Qué es LDAP?", opts:["Un servicio de transporte","Un servidor de correo","Un servicio de directorio","Un servicio de alertas"], ans:2},
+  {cat:"Windows · LDAP", q:"Señalar cuál de las siguientes NO es una ventaja del uso de directorios LDAP para la autenticación de usuarios:", opts:["La mayoría de aplicaciones comerciales permiten su integración fácilmente","Están optimizados para las búsquedas","Permiten implantar Single Sign On sin ningún mecanismo adicional","La replicación con los directorios /etc/passwd está automatizada"], ans:3},
+  {cat:"Windows · LDAP", q:"En relación al servicio de directorio, señálese la afirmación falsa:", opts:["Generalmente la información soporta más lecturas que escrituras","Habitualmente es un componente central en el diseño de la seguridad","Los datos se organizan en una estructura poco jerarquizada","El estándar X.500 fue la base del estándar LDAP"], ans:2},
+  {cat:"Windows · LDAP", q:"Señale la respuesta incorrecta entre las siguientes afirmaciones sobre LDAP:", opts:["LDAP es un conjunto de protocolos abiertos usado para acceder a información guardada centralmente","Cualquiera puede acceder a su cuenta desde cualquier máquina en la red activa LDAP","LDAP se usa como directorio telefónico virtual","LDAP no es capaz de propagar sus directorios a otros servidores LDAP"], ans:3},
+  {cat:"Windows · LDAP", q:"Indique qué afirmación en relación al protocolo LDAP es VERDADERA:", opts:["Es un protocolo para acceder a un directorio X.500 que precisa la pila de protocolos OSI","La estructura interna del directorio X.500 está definida mediante el protocolo LDAP","Un servidor LDAP siempre requiere que el cliente LDAP se autentique antes de acceder","El protocolo LDAP está descrito usando ASN.1"], ans:3},
+  {cat:"Windows · Server", q:"¿Cuál es el nuevo tipo de implementación de Windows Server 2016 sin interfaz gráfica, sólo administrable de forma remota?", opts:["Core Server","Nano Server","Mini server","Cloud Server"], ans:1},
+  {cat:"Windows · Server", q:"Multipoint Server (MPS) en Windows Server 2016 consiste en:", opts:["Un servicio para múltiples puntos de restauración del sistema","El nuevo servidor de correo electrónico de Microsoft","Un servicio que proporciona acceso simultáneo a múltiples usuarios en un mismo equipo con sesiones independientes","Un servicio de seguridad centralizada"], ans:2},
+  {cat:"Windows · Comandos", q:"¿Con qué comando se pueden listar los certificados de usuario?", opts:["Certmgr.msc","Certlm.msc","Certmanager.msc","Certusr.msc"], ans:0},
+  {cat:"Windows · Comandos", q:"¿Con qué comando podemos iniciar el firewall de Windows en modo seguridad avanzada?", opts:["Fw.msc","Wf.msc","Firewall.msc","Frwll.msc"], ans:1},
+  {cat:"Windows · Comandos", q:"¿Con qué comando se abren las opciones de Internet Explorer?", opts:["Inetcpl.cpl","Inet.cpl","Inet.msc","Inetopt.msc"], ans:0},
+  {cat:"Windows · GPO", q:"¿Cómo podríamos solucionar las dependencias de nombres en las GPOs tras renombrar dominios con sus respectivos cambios en el DNS?", opts:["Dcgpofix","Gpofix","Gpfixup","Fixgpo"], ans:2},
+  {cat:"Windows · GPO", q:"¿Cuál es el orden de procesamiento de las GPO?", opts:["Dominio-sitio-ou-locales","Locales-sitio-dominio-ou","Sitio-dominio-ou-locales","Locales-dominio-sitio-ou"], ans:1},
+  {cat:"Windows · Active Directory", q:"Dentro de los componentes lógicos del Directorio Activo, no encontramos:", opts:["Árboles","Bosque","Dominio","Sitios"], ans:3},
+  {cat:"Windows · Active Directory", q:"Estándar de la ITU para servicios de directorio:", opts:["X.400","X.700","X.500","X.100"], ans:2},
+  {cat:"Windows · GPO", q:"¿Qué extensión tienen las plantillas administrativas específicas del idioma para la configuración de directivas?", opts:["Admx","Adml","Gpox","Adm"], ans:1},
+  {cat:"Windows · Sistema", q:"¿Qué es el Loopback adapter o adaptador de red de bucle invertido?", opts:["Componente software que tiene como fin simular una tarjeta de red activa","Adaptador de red que tiene como fin simular una tarjeta de red activa","Adaptador de red instalado por defecto en sistemas Windows","No existe ese concepto"], ans:0},
+  {cat:"Windows · Comandos", q:"Herramienta de línea de comandos no instalada por defecto para instalar, configurar, habilitar, deshabilitar y quitar dispositivos del sistema:", opts:["Devcon","Devman","Devconf","Devmgmt.msc"], ans:0},
+  {cat:"Windows · Virtualización", q:"¿Cómo se llama el software actual de virtualización de Microsoft?", opts:["Hyper-v","Virtual server","Xen","Vmware"], ans:0},
+  {cat:"Windows · Active Directory", q:"¿Existe la posibilidad de que el Controlador de Dominio no sea un servidor Microsoft?", opts:["Imposible. Microsoft mantiene un protocolo de comunicaciones de dominio específico","Es posible, siempre y cuando los ordenadores dispongan del cliente del servidor de dominio","Es lo normal. Los servicios de control de dominio se encomiendan siempre a servidores Novell","Existen opciones distintas a las propietarias de Microsoft, como por ejemplo Samba"], ans:3},
+  {cat:"Windows · Accesibilidad", q:"¿Cuál de los siguientes lectores de pantalla viene integrado en el Sistema Operativo Windows?", opts:["Window Eyes","Narrator","Blindows","JAWS (Job Access With Speech)"], ans:1},
+  {cat:"Windows · Seguridad", q:"En Windows 10 Profesional, ¿qué utilidad tiene BitLocker?", opts:["Bloquear el disco duro en los portátiles con el fin de protegerle en el transporte","Instalar una seguridad biométrica en el inicio de sesión","Realizar un cifrado del disco duro","Bloquear el acceso a carpetas de todos los usuarios a los usuarios sin privilegios administrativos"], ans:2},
+  {cat:"Windows · Comandos", q:"En Windows 10 Profesional, desde una consola cmd, ¿qué comando abre las conexiones de red?", opts:["appwiz.cpl","nconect.cpl","pnet.cpl","ncpa.cpl"], ans:3},
+  {cat:"Windows · Servicios", q:"En Windows 10 el servicio 'BITS', ¿qué función realiza?", opts:["Transfiere archivos en segundo plano mediante el uso de ancho de banda de red inactivo","Activar los bits de control en comunicaciones cifradas","Proporciona la tecnología de cifrado de archivos básica del sistema de archivos NTFS","Habilita la detección, descarga e instalación de actualizaciones de Windows"], ans:0},
+  {cat:"Windows · Active Directory", q:"En Directorio Activo ¿Qué se elimina al borrar un grupo?", opts:["El grupo y los permisos y derechos asociados a él","El grupo, los permisos y derechos asociados y los usuarios que pertenezcan a él","El grupo, todos los grupos y usuarios que pertenezcan a él","Solamente se elimina el grupo, los permisos y derechos de los usuarios se mantienen"], ans:0},
+  {cat:"Windows · Active Directory", q:"¿Para qué se utiliza un dominio de Directorio Activo?", opts:["Se utiliza para arrancar el sistema operativo","Generar redes independientes entre un conjunto de ordenadores","Llevar un inventario de todos los componentes de un conjunto de ordenadores","Aplicar políticas a un conjunto de ordenadores"], ans:3},
+  {cat:"Windows · Comandos", q:"En Windows 7 Profesional, ¿cuál de las siguientes es la manera correcta de borrar un perfil de usuario?", opts:["Borrar la carpeta del usuario dentro de la carpeta 'Usuarios'","En Sistema > Perfiles de Usuario > Eliminar perfil","En Cuentas de usuario > Configurar las propiedades avanzadas del perfil del usuario > Eliminar","En Cuentas de Usuario > Administrar credenciales > Eliminar"], ans:2},
+
+  // ── WINDOWS II ──
+  {cat:"Windows · Comandos", q:"¿Qué debe escribir para arrancar el visor de eventos en Windows?", opts:["eventvwr","eventviewer","services.msc","eventsrv"], ans:0},
+  {cat:"Windows · GPO", q:"En Windows, ¿qué comando actualiza la configuración de las directivas de grupo?", opts:["gpresult","gpcheck","gpupdate","dsup"], ans:2},
+  {cat:"Windows · Active Directory", q:"Defina en qué consiste el Directorio Activo:", opts:["Es el usuario que está logado actualmente en el sistema","Es el conjunto de políticas de grupo que se aplican a los usuarios de una red Novell","Es un almacén de datos estructurado que permite almacenar información sobre los objetos o recursos de una red para facilitar su localización y administración","Es un almacén de datos que contiene información de los programas software instalados"], ans:2},
+  {cat:"Windows · Comandos", q:"Comando Windows para saber las cuentas de usuario que pertenecen al grupo Administradores locales:", opts:["net local administradores","net localgroup admin","net local admin","net localgroup administradores"], ans:3},
+  {cat:"Windows · Comandos", q:"¿Cuál es el comando Windows para limpiar una dirección IP configurada automáticamente por DHCP?", opts:["ifconfig /release","ipconfig /flushdns","ipconfig /release","ifconfig /flushdns"], ans:2},
+  {cat:"Windows · Comandos", q:"Comando Windows para saber la configuración actual de las políticas de cuentas y contraseñas de una máquina local:", opts:["net computer","net localgroup","net config","net accounts"], ans:3},
+  {cat:"Windows · Comandos", q:"¿Cómo se obtiene la lista de procesos que se están ejecutando en un equipo local o remoto desde cmd?", opts:["tasklist","sólo para equipos remotos mediante PowerShell","pslist","tree"], ans:0},
+  {cat:"Windows · PowerShell", q:"En el puesto cliente W10 mediante PowerShell, ¿qué comando da información de procesos del equipo local?", opts:["Get-List-Process","Get-Process","Get-Item","Get-Commands"], ans:1},
+  {cat:"Windows · PowerShell", q:"Con PowerShell se copia una carpeta 'carpeta' a un directorio vacío 'destino'. ¿Qué comando se ejecutaría?", opts:["Copy-Item 'carpeta' -Destination 'destino' -Recurse","Copy-Directory 'carpeta' -Destination 'destino'","Copy-Contents 'carpeta' -Destination 'destino'","Copy 'carpeta' 'destino' -Recursive"], ans:0},
+  {cat:"Windows · Comandos", q:"Desde el símbolo del sistema debe renombrar todo fichero con extensión 'gz' a extensión 'rar'. ¿Qué opción es correcta?", opts:["Change *.gz *.rar","move *.gz *.rar","convert *.gz *.rar","ren *.gz *.rar"], ans:3},
+  {cat:"Windows · Active Directory", q:"¿Qué comando se elegiría en W Server 2008 R2 para búsquedas en ordenadores cuyo nombre empieza por xyz?", opts:["dsquery computer domainroot -name xyz*","dsquery pc domainroot -name xyz*","dsquery ou domainroot -name xyz*","dsquery search domainroot -name xyz*"], ans:0},
+  {cat:"Windows · Comandos", q:"¿Qué puerto utiliza el Escritorio Remoto?", opts:["443","25","3389","3905"], ans:2},
+  {cat:"Windows · Active Directory", q:"¿Qué herramienta de línea de comandos emplearía para añadir un usuario al directorio activo en W Server?", opts:["dscreate","adduser","dsadd","dacreate"], ans:2},
+  {cat:"Windows · Seguridad", q:"¿Qué herramienta podría servir para gestionar contraseñas de la cuenta local de los equipos unidos al dominio?", opts:["SRM","LAPS","APTICRON","TRUECRYPT"], ans:1},
+  {cat:"Windows · PowerShell", q:"¿Qué extensión tienen los archivos de secuencias de comandos de Windows PowerShell?", opts:["psp","psw","pws","ps1"], ans:3},
+  {cat:"Windows · Comandos", q:"Se necesita listar todos los servicios que están en ejecución en las máquinas con W7. ¿Qué ejecutable usaría?", opts:["services.msc","service.msc","regedit.msc","servicesreg.msc"], ans:0},
+  {cat:"Windows · Firewall", q:"Para activar el firewall en sistemas W7, ¿cuál es el comando correcto?", opts:["netsh advfirewall set firewall state on","netsh advfirewall set profile on","netsh advfirewall set on","netsh advfirewall set currentprofile state on"], ans:3},
+  {cat:"Windows · Firewall", q:"Se necesita aceptar conexiones entrantes por el puerto 80 usando TCP. ¿Cuál es el comando correcto?", opts:['netsh advfirewall firewall add rule name="Open 80" dir=in action=allow protocol=TCP localport=80','netsh advfirewall firewall add rule name="Open 80" dir=input action=allow protocol=TCP localport=80','netsh advfirewall firewall add rule name="Open 80" dir=input action=allow protocol=TCP port=80','netsh advfirewall firewall add rule name="Open 80" dir=incoming action=allow protocol=TCP portlocal=80'], ans:0},
+  {cat:"Windows · Comandos", q:"Cuando se administran sistemas operativos Windows, el ejecutable de la herramienta de escritorio remoto es:", opts:["mtscs","mstsc","mtcsc","mctss"], ans:1},
+  {cat:"Windows · Actualizaciones", q:"La tecnología WSUS de Microsoft:", opts:["Es una solución de administración de puntos de conexión basada en la nube","Espacio de trabajo integral donde los equipos pueden tener conversaciones en grupos","Proveer actualizaciones de seguridad para los sistemas operativos Microsoft","Forma más personal de iniciar sesión biométricamente en el sistema"], ans:2},
+  {cat:"Windows · Herramientas", q:"En sistemas Windows, ¿cuál es la herramienta que permite realizar tareas de inventario, distribución de software y control remoto?", opts:["SCCM (System Center Configuration Manager)","SAK, system administration kit","AMK, administration and management kit","RSM, remote server manager"], ans:0},
+  {cat:"Windows · Red", q:"¿Qué es IPAM en Windows Server?", opts:["IP Address Management","Internet Process Advanced Management","IP Access Management","Ninguna de las anteriores"], ans:0},
+
+  // ── BBDD ──
+  {cat:"BBDD · Oracle", q:"En relación al gestor de base de datos ORACLE, señala la correcta:", opts:["Un tablespace es una unidad lógica de almacenamiento","Un datafile puede pertenecer a varios tablespace","Un segmento es una unidad mínima de almacenamiento físico","Una extensión es una agrupación de índices multinivel"], ans:0},
+  {cat:"BBDD · MySQL", q:"Se pide hacer un backup de todas las bases de datos MySQL. ¿Cuál es el comando correcto?", opts:["mysqldump --all-databases -u=u_mysql -p=xyz > /tmp/backup.sql","mysqldump --all-databases -u u_mysql -pxyz > /tmp/backup.sql","mysql --backup --all-databases -u=u_mysql -p=xyz > /tmp/backup.sql","mysql --backup --all-databases -u u_mysql -pxyz > /tmp/backup.sql"], ans:1},
+  {cat:"BBDD · MySQL", q:"¿Cuál es el puerto por defecto de MySQL?", opts:["3306","5432","1526","1433"], ans:0},
+  {cat:"BBDD · Oracle", q:"Para realizar un backup de las bases de datos Oracle 10G se utilizaría:", opts:["rman","oracle_backup","rmandump","back_dudd"], ans:0},
+  {cat:"BBDD · MongoDB", q:"Señale la afirmación correcta en relación a MongoDB:", opts:["Almacena la información en documentos BSON","Por defecto soporta consultas SQL","Utiliza el lenguaje CQL para consultas","Al no utilizar tablas, no incorpora el concepto de transacción"], ans:0},
+  {cat:"BBDD · PostgreSQL", q:"¿Qué comando le permitiría comprobar que el servidor postgres está ejecutándose, usando el usuario postgres?", opts:["Ps -ef postgres","Ps -v server","Ps -U postgres -u postgres u","Ps --process=postgres"], ans:2},
+  {cat:"BBDD · MySQL", q:"¿Cómo obtener la información de la versión del servidor local de MySQL, con usuario 'u_acme' y clave 'p_acme'?", opts:["Mysqldump -v","mysqladmin version -u u_acme -pp_acme","mysql versión -u u_acme -pp_acme","dpkg-get-selections | grep mysql"], ans:1},
+  {cat:"BBDD · PostgreSQL", q:"¿Cuál es el puerto por defecto de postgreSQL?", opts:["1521","5432","5984","5433"], ans:1},
+  {cat:"BBDD · PostgreSQL", q:"El comando del sistema, desde el usuario postgres, para crear usuarios en postgreSQL es:", opts:["createuser","admin-postgresql","su -u postgres -add","postgresql-accounts"], ans:0},
+  {cat:"BBDD · Oracle", q:"¿Qué parámetro de 'expdp' debemos utilizar para que un proceso de exportación de datos en Oracle 11g sea consistente en el tiempo?", opts:["Consistente-mode","Flashback_time","Consistente-backup","Swift-mode"], ans:1},
+  {cat:"BBDD · PostgreSQL", q:"¿Cómo hacer un backup de todas las bases de datos desde el usuario postgres?", opts:["Pg_dumpall > ficherosalida","Postgres-backup --output=ficherosalida","Db-backup -O ficherosalida","Export-db ficherosalida"], ans:0},
+  {cat:"BBDD · MariaDB", q:"Puerto utilizado por MariaDB:", opts:["3306","5432","1433","MariaDB no es un sistema gestor de BBDD"], ans:0},
+  {cat:"BBDD · Oracle", q:"Solución de Oracle de alta disponibilidad que le permite a varios servidores trabajar sobre la misma BBDD:", opts:["Oracle CPD","Oracle RAC","Oracle Cluster","RMAN"], ans:1},
+  {cat:"BBDD · PostgreSQL", q:"¿Qué comando permite desde consola Linux, con el usuario postgres, crear una base de datos?", opts:["createdb","db_create","ps-create-database","psql-create"], ans:0},
+  {cat:"BBDD · PostgreSQL", q:"¿Qué comando se realiza para la restauración de una copia previa en postgreSQL?", opts:["Psql acceda < acceda","Restore acceda -input=acceda","Pg_rescue -input=acceda","Db_restore < acceda"], ans:0},
+  {cat:"BBDD · MongoDB", q:"Comando que permite acceder al Mongo Shell:", opts:["Mongod","Shell mongo","Mongo","Mongodb"], ans:2},
+  {cat:"BBDD · MongoDB", q:"Comando que permite mostrar las bases de datos disponibles en una instancia en MongoDB:", opts:["Show databases","Show db","List databases","Show dbs"], ans:3},
+  {cat:"BBDD · MongoDB", q:"¿Qué comando se utiliza para cambiar de base de datos en MongoDB?", opts:["Changedb","Use","Change","Define"], ans:1},
+  {cat:"BBDD · MongoDB", q:"¿Qué comando se utiliza para hacer una copia de seguridad de la base de datos en MongoDB?", opts:["Mongodump","Mongobackup","Mongocopy","Mongorestore"], ans:0},
+  {cat:"BBDD · Cassandra", q:"¿Cuál es la consola estándar para interactuar con CassandraDB?", opts:["Sqlsh","Cqlsh","Cassandrad","Cassandrash"], ans:1},
+  {cat:"BBDD · Cassandra", q:"Puerto utilizado por Cassandra DB:", opts:["9160","27017","5984","6379"], ans:0},
+  {cat:"BBDD · Riak", q:"El puerto 8098 es usado por:", opts:["Cassandra","Riak","Hbase","MySql"], ans:1},
+  {cat:"BBDD · MongoDB", q:"MongoDB es un almacén de datos ___ para documentos ___.", opts:["Relacional; XML","Relacional; JSON","No Relacional; TXT","No Relacional; JSON"], ans:3},
+
+  // ── VIRTUALIZACIÓN ──
+  {cat:"Virtualización", q:"¿Cuál de los siguientes NO es un software de virtualización?", opts:["Citrix XenServer","Parallels","Guacamole","Cameyo"], ans:2},
+  {cat:"Docker", q:"Docker, comando para mostrar la información de todo el sistema sobre la instalación de Docker:", opts:["docker ps","docker info","docker inspect","docker systeminfo"], ans:1},
+  {cat:"Docker", q:"¿Con qué sentencia se puede crear un SSOO y arrancarlo a partir de una imagen llamada SW2008?", opts:["docker run SW2008","docker start SW2008","start docker SW2008","docker start run SW2008"], ans:0},
+  {cat:"Docker", q:"¿Qué comando utilizaría para listar todos los contenedores, estén o no en marcha?", opts:["docker ps","docker ps -a","docker list","docker list-container -all"], ans:1},
+  {cat:"Virtualización", q:"¿A qué se refieren las siglas VDI?", opts:["Virtual Disk Infrastructure","Virtual Definition Infraestructure","Virtual Desktop Infrastructure","Virtual Desktop Interface"], ans:2},
+  {cat:"Docker", q:"¿Qué debe ejecutar para listar los contenedores en ejecución?", opts:["docker --list","docker list","docker containers ls","docker ps"], ans:3},
+  {cat:"Docker", q:"Dado el identificador '4d78338ee766' en ejecución, ¿qué orden de Docker necesita para detenerlo?", opts:["docker stop 4d78338ee766","docker shutdown 4d78338ee766","docker rm 4d78338ee766","docker undeploy 4d78338ee766"], ans:0},
+  {cat:"Docker", q:"¿Qué comando usaría para buscar una imagen de Jenkins en Docker Hub?", opts:["docker find jenkins","docker show jenkins","docker search jenkins","docker --find Jenkins"], ans:2},
+  {cat:"Virtualización", q:"Referente a VMware, ¿qué solución permite realizar backups de las máquinas virtuales?", opts:["Veeam Backup & Replication","Oracle Acronis Director","Hadoop Recover","Reactive X"], ans:0},
+  {cat:"Docker", q:"¿Cómo podría ver en Docker Hub las imágenes disponibles?", opts:["docker show images","docker images","docker list","docker list-images"], ans:1},
+  {cat:"Virtualización", q:"¿Cuál de las siguientes propuestas elegiría para proporcionar un entorno de virtualización?", opts:["Cassandra","Proxmox VE","Gkrellm","Hadoop"], ans:1},
+  {cat:"Docker", q:"¿Con qué comando podemos borrar una imagen en un contenedor Docker?", opts:["docker delete IMAGE","docker rmi IMAGE","docker remove IMAGE","docker rm IMAGE"], ans:1},
+  {cat:"Docker", q:"¿Qué hace el comando docker image?", opts:["gestiona imágenes","carga una imagen desde un fichero","muestra el contenido de una imagen cuando le especificas el nombre","lista las imágenes"], ans:0},
+  {cat:"Virtualización", q:"¿Cómo se llama la plataforma de Red Hat de nube híbrida para desarrollar y ejecutar aplicaciones de contenedores?", opts:["Red Open Container Platform","Origin KD Container Platform","OpenShift Container Platform","Red Hat Container Platform"], ans:2},
+  {cat:"Virtualización", q:"¿Cuál de los siguientes es un Hipervisor Tipo 2?", opts:["Hyper-V","Xen","Oracle VM Server for x86/SPARC","VMware Workstation"], ans:3},
+  {cat:"Kubernetes", q:"En el ámbito de Kubernetes señale la FALSA:", opts:["POD: Unidad de computación desplegable más pequeñas que se pueden crear y gestionar en Kubernetes","KUBELET: Es el agente de nodo principal que se ejecuta en cada nodo de un cluster","Kube-proxy: es la aplicación que brinda la funcionalidad de Kubernetes a través de una interfaz RESTful y almacena el estado del clúster","PodSpec: es un objeto YAML o JSON que describe un pod"], ans:2},
+  {cat:"Kubernetes", q:"Comando utilizado en Kubernetes para eliminar un recurso:", opts:["Kubectl delete","Kubectl erase","Kubelet delete","Kubelet erase"], ans:0},
+  {cat:"Microservicios", q:"En el ámbito de microservicios, ¿cuál de los siguientes NO es un API Gateway?", opts:["king","kong","ocelot","zuul"], ans:0},
+  {cat:"Seguridad · CCN", q:"¿Qué herramienta, desarrollada por el CCN-CERT, es una plataforma de análisis avanzado de malware?", opts:["CLARA","ADA","PILAR","STIC"], ans:1},
+  {cat:"Seguridad · CCN", q:"¿Qué herramienta desarrollada por el CCN-CERT agiliza la labor de análisis de ciberdelincuentes y permite compartir información de ciberamenazas?", opts:["LUCIA","REYES","CLARA","ADA"], ans:1},
+
+  // ── VARIOS ──
+  {cat:"Virtualización", q:"En el software Terminal Server de Microsoft, el protocolo utilizado para comunicar cliente y servidor es:", opts:["B, C y D son falsas","RDSI","RDP","X.25"], ans:2},
+  {cat:"Virtualización", q:"Respecto a productos de virtualización, señale la afirmación falsa:", opts:["Virtual Box es una solución de virtualización de Oracle","Hyper-V es una solución de virtualización de Microsoft","La distribución Red Hat mantiene una infraestructura de virtualización para el kernel de Linux","VMWare Player es una solución de virtualización de escritorio gratuita y de fuentes abiertas"], ans:3},
+  {cat:"Red", q:"El protocolo de terminales virtuales en ARPANET se llama:", opts:["VNC","RDP","TELNET","VTP"], ans:2},
+  {cat:"Virtualización", q:"En virtualización de escritorios, un broker es:", opts:["un sistema que permite gestionar las conexiones para facilitar el aprovisionamiento de máquinas virtuales","el nombre que recibe un hypervisor de tipo 2","cualquier error que provoque la desconexión entre el servidor y el cliente","un software de virtualización para el sistema operativo MAC OS X"], ans:0},
+];
+
+// ── State ──
+let current = 0;
+let answers = [];
+let locked = [];
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) {
+      const d = JSON.parse(s);
+      if (d.answers && d.answers.length === questions.length) {
+        answers = d.answers;
+        locked = d.locked;
+        current = d.current || 0;
+        return;
+      }
+    }
+  } catch(e){}
+  answers = new Array(questions.length).fill(null);
+  locked  = new Array(questions.length).fill(false);
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({answers, locked, current}));
+  } catch(e){}
+}
+
+function render() {
+  const q = questions[current];
+  const n = questions.length;
+
+  document.getElementById('qNum').textContent = `PREGUNTA ${current+1} DE ${n}`;
+  document.getElementById('qCat').textContent = q.cat;
+  document.getElementById('qText').textContent = q.q;
+
+  // Progress
+  const answered = answers.filter(a => a !== null).length;
+  document.getElementById('progressLabel').textContent = `Pregunta ${current+1} de ${n}`;
+  document.getElementById('progressPct').textContent = Math.round(answered/n*100) + '%';
+  document.getElementById('progressFill').style.width = (answered/n*100) + '%';
+
+  // Options
+  const cont = document.getElementById('optionsContainer');
+  cont.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.disabled = locked[current];
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt}</span>`;
+
+    if (locked[current]) {
+      if (i === q.ans) btn.classList.add(answers[current] === i ? 'correct' : 'reveal-correct');
+      else if (i === answers[current]) btn.classList.add('wrong');
+    }
+
+    btn.onclick = () => selectAnswer(i);
+    cont.appendChild(btn);
+  });
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  if (locked[current] && answers[current] !== null) {
+    fb.className = 'feedback show ' + (answers[current] === q.ans ? 'correct-fb' : 'wrong-fb');
+    fb.textContent = answers[current] === q.ans
+      ? '✅ ¡CORRECTO!'
+      : `❌ INCORRECTO — La respuesta correcta era: ${letters[q.ans]}) ${q.opts[q.ans]}`;
+  } else {
+    fb.className = 'feedback';
+  }
+
+  // Nav buttons
+  document.getElementById('btnPrev').disabled = current === 0;
+  const btnNext = document.getElementById('btnNext');
+  if (current === n - 1) {
+    btnNext.textContent = '🏁 Finalizar';
+    btnNext.classList.add('btn-finish');
+  } else {
+    btnNext.textContent = 'Siguiente →';
+    btnNext.classList.remove('btn-finish');
+  }
+
+  // Dots
+  renderDots();
+}
+
+function renderDots() {
+  const nav = document.getElementById('dotNav');
+  nav.innerHTML = '';
+  questions.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot';
+    d.textContent = i+1;
+    if (i === current) d.classList.add('active');
+    if (locked[i] && answers[i] !== null) {
+      d.classList.add(answers[i] === questions[i].ans ? 'answered-correct' : 'answered-wrong');
+    }
+    d.onclick = () => { current = i; render(); };
+    nav.appendChild(d);
+  });
+}
+
+function selectAnswer(idx) {
+  if (locked[current]) return;
+  answers[current] = idx;
+  locked[current] = true;
+  saveState();
+  render();
+}
+
+function go(dir) {
+  const next = current + dir;
+  if (next < 0 || next >= questions.length) return;
+  current = next;
+  saveState();
+  render();
+}
+
+function goNext() {
+  if (current === questions.length - 1) {
+    showResults();
+  } else {
+    go(1);
+  }
+}
+
+function showResults() {
+  document.getElementById('quizCard').style.display = 'none';
+  document.querySelector('.nav').style.display = 'none';
+  document.getElementById('dotNav').style.display = 'none';
+  document.querySelector('.progress-wrap').style.display = 'none';
+
+  const correct = answers.filter((a, i) => a !== null && a === questions[i].ans).length;
+  const wrong   = answers.filter((a, i) => a !== null && a !== questions[i].ans).length;
+  const unanswered = answers.filter(a => a === null).length;
+  const total   = questions.length;
+  const pct     = Math.round(correct/total*100);
+
+  document.getElementById('scorePercent').textContent = pct + '%';
+  document.getElementById('statCorrect').textContent   = correct;
+  document.getElementById('statWrong').textContent     = wrong;
+  document.getElementById('statUnanswered').textContent = unanswered;
+
+  document.getElementById('results').classList.add('show');
+}
+
+function restart() {
+  answers = new Array(questions.length).fill(null);
+  locked  = new Array(questions.length).fill(false);
+  current = 0;
+  saveState();
+
+  document.getElementById('quizCard').style.display = '';
+  document.querySelector('.nav').style.display = '';
+  document.getElementById('dotNav').style.display = '';
+  document.querySelector('.progress-wrap').style.display = '';
+  document.getElementById('results').classList.remove('show');
+  render();
+}
+
+// Init
+loadState();
+render();
+</script>
+</body>
+</html>
